@@ -1,26 +1,79 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #FAF9F7;
+  --foreground: #111111;
+  --primary: #FF8400;
+  --primary-foreground: #111111;
+  --card: #FFFFFF;
+  --card-foreground: #111111;
+  --border: #CBCCC9;
+  --muted: #F2F3F0;
+  --muted-foreground: #666666;
+  --accent: #F2F3F0;
+  --accent-foreground: #111111;
+  --secondary: #E7E8E5;
+  --secondary-foreground: #111111;
+  --destructive: #D93C15;
+  --input: #CBCCC9;
+  --ring: #666666;
+  --white: #FFFFFF;
+  --black: #000000;
+  --green-dark: #1E3D2F;
+  --green-footer: #214032;
+  --gold: #C4956A;
+  --gray-light: #FAF9F7;
+  --gray-text: #888888;
+  --gray-border: #E8E7E5;
+  --radius-m: 16px;
+  --radius-pill: 999px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-green-dark: var(--green-dark);
+  --color-green-footer: var(--green-footer);
+  --color-gold: var(--gold);
+  --color-gray-light: var(--gray-light);
+  --color-gray-text: var(--gray-text);
+  --color-gray-border: var(--gray-border);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-input: var(--input);
+  --color-white: var(--white);
+  --color-black: var(--black);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html, body {
+    height: 100%;
+  }
+
+  .font-primary {
+    font-family: "Cormorant Garamond", serif;
+  }
+
+  .font-secondary {
+    font-family: "Inter", sans-serif;
+  }
+
+  .font-mono {
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  .icon-lucide {
+    font-family: "lucide";
+    font-style: normal;
+    font-weight: normal;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Inter", sans-serif;
 }
