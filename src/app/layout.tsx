@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: "TiP - Luxury Travel Concierge",
@@ -24,7 +25,9 @@ export default function RootLayout({
         />
       </head>
       <body className="h-full antialiased font-secondary">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
