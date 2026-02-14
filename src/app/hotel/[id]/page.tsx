@@ -1,67 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import TopBar from "@/components/TopBar";
 import Footer from "@/components/Footer";
-
-const hotels: Record<string, {
-  name: string;
-  location: string;
-  tagline: string;
-  description: string;
-  rating: number;
-  established: number;
-  stars: number;
-  heroImage: string;
-  interiorImage: string;
-}> = {
-  "le-bristol-paris": {
-    name: "Le Bristol Paris",
-    location: "Paris, France",
-    tagline: "PALACE HOTEL",
-    description: "A legendary Parisian palace on Rue du Faubourg Saint-Honoré, where timeless French elegance meets warm, genuine hospitality since 1925.",
-    rating: 9.6,
-    established: 1925,
-    stars: 3,
-    heroImage: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1920&h=600&fit=crop",
-    interiorImage: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=500&fit=crop",
-  },
-  "aman-tokyo": {
-    name: "Aman Tokyo",
-    location: "Tokyo, Japan",
-    tagline: "URBAN SANCTUARY",
-    description: "Rising above the Imperial Palace gardens, Aman Tokyo brings the brand's signature serenity to one of the world's most dynamic cities.",
-    rating: 9.5,
-    established: 2014,
-    stars: 0,
-    heroImage: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=1920&h=600&fit=crop",
-    interiorImage: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=600&h=500&fit=crop",
-  },
-  "claridges": {
-    name: "Claridge's",
-    location: "London, UK",
-    tagline: "HERITAGE LUXURY",
-    description: "The iconic Art Deco landmark in the heart of Mayfair, where British elegance and impeccable service define the luxury experience.",
-    rating: 9.4,
-    established: 1856,
-    stars: 0,
-    heroImage: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&h=600&fit=crop",
-    interiorImage: "https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=600&h=500&fit=crop",
-  },
-  "the-peninsula": {
-    name: "The Peninsula",
-    location: "Hong Kong",
-    tagline: "GRAND DAME",
-    description: "The Grande Dame of the Far East, offering unparalleled views of Victoria Harbour and legendary service since 1928.",
-    rating: 9.3,
-    established: 1928,
-    stars: 0,
-    heroImage: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1920&h=600&fit=crop",
-    interiorImage: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=600&h=500&fit=crop",
-  },
-};
+import { apiClient } from "@/lib/api-client";
+import { formatLocation, getImageUrl, type Hotel } from "@/types/hotel";
 
 const benefits = [
   { icon: "✦", title: "Room Upgrade", description: "Complimentary upgrade to the next room category, subject to availability at check-in." },
@@ -70,7 +15,10 @@ const benefits = [
   { icon: "○", title: "Early Check-in & Late Checkout", description: "Check in as early as 12pm and check out as late as 4pm, subject to availability." },
 ];
 
-const rooms = [
+// TODO: Replace with backend room details API once available
+// Backend currently only provides room names in `available_rooms` array
+// Hard-coded room details below include pricing, sizes, features
+const HARDCODED_ROOMS = [
   {
     name: "Superior Room",
     size: "35 m²",
@@ -99,9 +47,68 @@ const rooms = [
 
 export default function HotelDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const hotelId = params.id as string;
-  const hotel = hotels[hotelId] || hotels["le-bristol-paris"];
+
+  const [hotel, setHotel] = useState<Hotel | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadHotel() {
+      try {
+        setIsLoading(true);
+        const hotelData = await apiClient.getHotelById(hotelId);
+        setHotel(hotelData);
+      } catch (err) {
+        console.error('Failed to load hotel:', err);
+        setError('Hotel not found');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (hotelId) {
+      loadHotel();
+    }
+  }, [hotelId]);
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-background">
+        <TopBar activeLink="Dream Hotels" />
+        <div className="flex items-center justify-center py-40">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
+
+  if (error || !hotel) {
+    return (
+      <main className="min-h-screen bg-background">
+        <TopBar activeLink="Dream Hotels" />
+        <div className="flex flex-col items-center justify-center py-40">
+          <h1 className="font-primary text-[42px] italic text-green-dark">Hotel Not Found</h1>
+          <p className="mt-4 text-gray-text">The hotel you're looking for doesn't exist.</p>
+          <Link
+            href="/dream-hotels"
+            className="mt-8 rounded-full bg-green-dark px-8 py-3 text-[13px] font-semibold text-white hover:bg-green-dark/90"
+          >
+            Back to Hotels
+          </Link>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
+
+  // Helper function to derive tagline from hotel data
+  const getTagline = () => {
+    if (hotel.star_rating === "5") return "PALACE HOTEL";
+    if (hotel.star_rating) return `${hotel.star_rating} STAR HOTEL`;
+    return "LUXURY HOTEL";
+  };
 
   return (
     <main className="min-h-screen bg-background">
@@ -110,14 +117,14 @@ export default function HotelDetailPage() {
       {/* Hero */}
       <section className="relative h-[560px] w-full overflow-hidden">
         <img
-          src={hotel.heroImage}
+          src={getImageUrl(hotel.image?.[0])}
           alt={hotel.name}
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         <div className="relative z-10 flex h-full flex-col justify-end px-20 pb-16">
           <span className="mb-3 inline-block w-fit rounded-full bg-gold/90 px-4 py-1.5 text-[11px] font-semibold tracking-[2px] text-white">
-            {hotel.tagline}
+            {getTagline()}
           </span>
           <h1 className="font-primary text-[56px] font-normal italic leading-none text-white">
             {hotel.name}
@@ -136,7 +143,7 @@ export default function HotelDetailPage() {
               WHY WE LOVE IT
             </span>
             <h2 className="mt-3 font-primary text-[38px] italic leading-snug text-green-dark">
-              Where Grandeur Feels Like Home
+              {formatLocation(hotel)}
             </h2>
             <p className="mt-5 text-[15px] leading-[1.8] text-gray-text">
               {hotel.name} is one of those rare hotels where everything feels both
@@ -149,25 +156,35 @@ export default function HotelDetailPage() {
               where tradition meets modern luxury.
             </p>
             <div className="mt-8 flex gap-12">
-              <div>
-                <p className="font-primary text-[32px] font-semibold text-green-dark">{hotel.rating}</p>
-                <p className="text-[12px] text-gray-text">Guest Rating</p>
-              </div>
-              {hotel.stars > 0 && (
+              {hotel.review_summary && (
                 <div>
-                  <p className="font-primary text-[32px] font-semibold text-green-dark">{hotel.stars}</p>
-                  <p className="text-[12px] text-gray-text">Michelin Stars</p>
+                  <p className="font-primary text-[32px] font-semibold text-green-dark">
+                    {hotel.review_summary.average_rating.toFixed(1)}
+                  </p>
+                  <p className="text-[12px] text-gray-text">Guest Rating (out of 5)</p>
                 </div>
               )}
-              <div>
-                <p className="font-primary text-[32px] font-semibold text-green-dark">{hotel.established}</p>
-                <p className="text-[12px] text-gray-text">Established</p>
-              </div>
+              {hotel.star_rating && (
+                <div>
+                  <p className="font-primary text-[32px] font-semibold text-green-dark">
+                    {hotel.star_rating}
+                  </p>
+                  <p className="text-[12px] text-gray-text">Star Rating</p>
+                </div>
+              )}
+              {hotel.review_summary && (
+                <div>
+                  <p className="font-primary text-[32px] font-semibold text-green-dark">
+                    {hotel.review_summary.total_reviews}
+                  </p>
+                  <p className="text-[12px] text-gray-text">Reviews</p>
+                </div>
+              )}
             </div>
           </div>
           <div className="w-[400px] overflow-hidden rounded-lg">
             <img
-              src={hotel.interiorImage}
+              src={getImageUrl(hotel.image?.[1] || hotel.image?.[0])}
               alt={`${hotel.name} interior`}
               className="h-[480px] w-full object-cover"
             />
@@ -218,7 +235,7 @@ export default function HotelDetailPage() {
             </h2>
           </div>
           <div className="grid grid-cols-3 gap-6">
-            {rooms.map((room) => (
+            {HARDCODED_ROOMS.map((room) => (
               <div
                 key={room.name}
                 className="group overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-lg"

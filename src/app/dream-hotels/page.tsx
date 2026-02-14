@@ -1,29 +1,44 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import TopBar from "@/components/TopBar";
 import Footer from "@/components/Footer";
-
-const featuredHotels = [
-  { id: "le-bristol-paris", name: "Le Bristol Paris", location: "Paris, France", rating: 9.6, image: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&h=400&fit=crop", tag: "Palace" },
-  { id: "aman-tokyo", name: "Aman Tokyo", location: "Tokyo, Japan", rating: 9.5, image: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=600&h=400&fit=crop", tag: "Urban Sanctuary" },
-  { id: "claridges", name: "Claridge's", location: "London, UK", rating: 9.4, image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop", tag: "Heritage" },
-  { id: "the-peninsula", name: "The Peninsula", location: "Hong Kong", rating: 9.3, image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&h=400&fit=crop", tag: "Grand Dame" },
-];
-
-const moreHotels = [
-  { id: "park-hyatt-sydney", name: "Park Hyatt Sydney", location: "Sydney, Australia", rating: 9.2, image: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&h=400&fit=crop", tag: "Waterfront" },
-  { id: "four-seasons-bora-bora", name: "Four Seasons Bora Bora", location: "French Polynesia", rating: 9.7, image: "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=600&h=400&fit=crop", tag: "Island Paradise" },
-  { id: "mandarin-oriental-bangkok", name: "Mandarin Oriental Bangkok", location: "Bangkok, Thailand", rating: 9.4, image: "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=600&h=400&fit=crop", tag: "Riverside" },
-  { id: "ritz-paris", name: "Ritz Paris", location: "Paris, France", rating: 9.5, image: "https://images.unsplash.com/photo-1455587734955-081b22074882?w=600&h=400&fit=crop", tag: "Legendary" },
-];
+import { apiClient } from "@/lib/api-client";
+import { formatLocation, getImageUrl, type Hotel } from "@/types/hotel";
 
 const partners = [
   "VIRTUOSO", "FOUR SEASONS", "ĀMAN", "PENINSULA",
   "PARK HYATT", "EDITION", "MANDARIN ORIENTAL", "ROSEWOOD"
 ];
 
+// Helper function to derive tag from hotel data
+function getHotelTag(hotel: Hotel): string {
+  if (hotel.star_rating === "5") return "PALACE";
+  if (hotel.star_rating) return `${hotel.star_rating} STAR`;
+  return "LUXURY";
+}
+
 export default function DreamHotelsPage() {
+  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadHotels() {
+      try {
+        setIsLoading(true);
+        const data = await apiClient.getHotels({ limit: 100, language: 'en' });
+        setHotels(data);
+      } catch (error) {
+        console.error('Failed to load hotels:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadHotels();
+  }, []);
+
   return (
     <main className="min-h-screen bg-gray-light">
       {/* Hero */}
@@ -116,66 +131,48 @@ export default function DreamHotelsPage() {
             Featured Hotels & Destinations
           </h2>
         </div>
-        <div className="grid grid-cols-4 gap-6">
-          {featuredHotels.map((hotel) => (
-            <Link
-              key={hotel.id}
-              href={`/hotel/${hotel.id}`}
-              className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
-            >
-              <div className="relative h-56 overflow-hidden">
-                <img
-                  src={hotel.image}
-                  alt={hotel.name}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
-                  {hotel.tag.toUpperCase()}
-                </div>
-                <div className="absolute right-3 top-3 rounded-full bg-green-dark px-2.5 py-1 text-[12px] font-semibold text-white">
-                  {hotel.rating}
-                </div>
-              </div>
-              <div className="p-5">
-                <h3 className="font-primary text-[18px] font-semibold text-green-dark">
-                  {hotel.name}
-                </h3>
-                <p className="mt-1 text-[13px] text-gray-text">{hotel.location}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
 
-        {/* More hotels */}
-        <div className="mt-6 grid grid-cols-4 gap-6">
-          {moreHotels.map((hotel) => (
-            <Link
-              key={hotel.id}
-              href={`/hotel/${hotel.id}`}
-              className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
-            >
-              <div className="relative h-56 overflow-hidden">
-                <img
-                  src={hotel.image}
-                  alt={hotel.name}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
-                  {hotel.tag.toUpperCase()}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
+          </div>
+        ) : hotels.length === 0 ? (
+          <div className="py-20 text-center">
+            <p className="text-gray-text">No hotels available at the moment.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-6">
+            {hotels.map((hotel) => (
+              <Link
+                key={hotel.id}
+                href={`/hotel/${hotel.id}`}
+                className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
+              >
+                <div className="relative h-56 overflow-hidden">
+                  <img
+                    src={getImageUrl(hotel.image?.[0])}
+                    alt={hotel.name}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
+                    {getHotelTag(hotel)}
+                  </div>
+                  {hotel.review_summary && (
+                    <div className="absolute right-3 top-3 rounded-full bg-green-dark px-2.5 py-1 text-[12px] font-semibold text-white">
+                      {hotel.review_summary.average_rating.toFixed(1)}
+                    </div>
+                  )}
                 </div>
-                <div className="absolute right-3 top-3 rounded-full bg-green-dark px-2.5 py-1 text-[12px] font-semibold text-white">
-                  {hotel.rating}
+                <div className="p-5">
+                  <h3 className="font-primary text-[18px] font-semibold text-green-dark">
+                    {hotel.name}
+                  </h3>
+                  <p className="mt-1 text-[13px] text-gray-text">{formatLocation(hotel)}</p>
                 </div>
-              </div>
-              <div className="p-5">
-                <h3 className="font-primary text-[18px] font-semibold text-green-dark">
-                  {hotel.name}
-                </h3>
-                <p className="mt-1 text-[13px] text-gray-text">{hotel.location}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Partners Section */}
