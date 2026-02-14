@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import TopBar from "@/components/TopBar";
 import Footer from "@/components/Footer";
+import HotelMap from "@/components/HotelMap";
 import { apiClient } from "@/lib/api-client";
 import { formatLocation, getImageUrl, type Hotel } from "@/types/hotel";
 
@@ -88,16 +89,17 @@ export default function DreamHotelsPage() {
 
       {/* Discovery / Map Section */}
       <section className="bg-white">
-        {/* Map placeholder */}
-        <div className="flex h-[520px] items-center justify-center bg-[#E8E4D8]">
-          <div className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-dark/10">
-              <span className="text-2xl">🗺️</span>
+        {/* Interactive Map */}
+        {isLoading ? (
+          <div className="flex h-[520px] items-center justify-center bg-[#E8E4D8]">
+            <div className="text-center">
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
+              <p className="text-[16px] font-medium text-green-dark">Loading hotels...</p>
             </div>
-            <p className="text-[16px] font-medium text-green-dark">Explore Hotels Worldwide</p>
-            <p className="mt-1 text-[13px] text-gray-text">Interactive map with 200+ curated properties</p>
           </div>
-        </div>
+        ) : (
+          <HotelMap hotels={hotels} />
+        )}
 
         {/* Search filters */}
         <div className="px-20 py-10">

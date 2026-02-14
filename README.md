@@ -2,6 +2,33 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### 1. Configure Environment Variables
+
+Create or update `.env.local` file in the project root with the following:
+
+```bash
+# Google Maps API Key (required for interactive map on Dream Hotels page)
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
+
+# API Configuration
+API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_API_BASE_URL=/api
+
+# S3 Image Configuration
+NEXT_PUBLIC_S3_ENDPOINT=https://tip-s3-bucket.s3.us-west-1.amazonaws.com
+```
+
+**To get a Google Maps API Key:**
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the **Maps JavaScript API**
+4. Go to **Credentials** and create an API key
+5. (Optional) Restrict the API key to your domain for security
+6. Copy the API key and add it to `.env.local`
+
+### 2. Run the Development Server
+
 First, run the development server:
 
 ```bash
