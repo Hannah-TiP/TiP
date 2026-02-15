@@ -28,7 +28,7 @@ export default function DreamHotelsPage() {
     async function loadHotels() {
       try {
         setIsLoading(true);
-        const data = await apiClient.getHotels({ limit: 100, language: 'en' });
+        const data = await apiClient.getHotels({ per_page: 100, language: 'en' });
         setHotels(data);
       } catch (error) {
         console.error('Failed to load hotels:', error);
