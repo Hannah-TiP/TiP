@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
-import SignInModal from "@/components/SignInModal";
 import SubscribePopup from "@/components/SubscribePopup";
+import { useAuth } from "@/contexts/AuthContext";
 
 const mainNavLinks = [
   { label: "DREAM HOTELS", href: "/dream-hotels" },
@@ -67,7 +67,7 @@ const membershipTiers = [
 const partners = ["VIRTUOSO", "EDITION", "PARK HYATT", "ĀMAN", "IHG", "ACCOR", "FOUR SEASONS", "PENINSULA"];
 
 export default function HomePage() {
-  const [showSignIn, setShowSignIn] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
   const [showSubscribe, setShowSubscribe] = useState(false);
   const [lang, setLang] = useState<"EN" | "KR">("EN");
 
@@ -131,12 +131,21 @@ export default function HomePage() {
             >
               MY PAGE
             </Link>
-            <button
-              onClick={() => setShowSignIn(true)}
-              className="rounded-full border border-white/30 px-5 py-2 text-[11px] font-medium tracking-[1px] text-white transition-colors hover:bg-white/10"
-            >
-              SIGN IN
-            </button>
+            {isAuthenticated ? (
+              <button
+                onClick={logout}
+                className="rounded-full border border-white/30 px-5 py-2 text-[11px] font-medium tracking-[1px] text-white transition-colors hover:bg-white/10"
+              >
+                LOG OUT
+              </button>
+            ) : (
+              <Link
+                href="/sign-in"
+                className="rounded-full border border-white/30 px-5 py-2 text-[11px] font-medium tracking-[1px] text-white transition-colors hover:bg-white/10"
+              >
+                SIGN IN
+              </Link>
+            )}
           </div>
         </nav>
 
@@ -419,7 +428,6 @@ export default function HomePage() {
       </footer>
 
       {/* Modals */}
-      <SignInModal isOpen={showSignIn} onClose={() => setShowSignIn(false)} />
       <SubscribePopup isOpen={showSubscribe} onClose={() => setShowSubscribe(false)} />
     </main>
   );

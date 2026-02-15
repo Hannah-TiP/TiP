@@ -34,8 +34,13 @@ export async function POST() {
       );
     }
 
-    const data = await response.json();
-    cookieStore.set('access_token', data.access_token, {
+    const responseData = await response.json();
+
+    // Create response first
+    const nextResponse = NextResponse.json({ success: true });
+
+    // Set cookie on response
+    nextResponse.cookies.set('access_token', responseData.data.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -43,7 +48,7 @@ export async function POST() {
       path: '/',
     });
 
-    return NextResponse.json({ success: true });
+    return nextResponse;
   } catch (error) {
     return NextResponse.json(
       { message: 'Internal server error' },
