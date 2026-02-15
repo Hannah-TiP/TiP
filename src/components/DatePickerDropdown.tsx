@@ -57,8 +57,8 @@ export default function DatePickerDropdown({
     return `${months[parseInt(month) - 1].slice(0, 3)} ${parseInt(day)}, ${year}`;
   };
 
-  const handleDayClick = (day: number) => {
-    const date = formatDate(day, currentMonth, currentYear);
+  const handleDayClick = (day: number, month: number, year: number) => {
+    const date = formatDate(day, month, year);
     if (selectingCheckIn) {
       setTempCheckIn(date);
       setTempCheckOut("");
@@ -84,12 +84,12 @@ export default function DatePickerDropdown({
     return date === tempCheckIn || date === tempCheckOut;
   };
 
-  const isToday = (day: number) => {
+  const isToday = (day: number, month: number, year: number) => {
     const today = new Date();
     return (
       day === today.getDate() &&
-      currentMonth === today.getMonth() &&
-      currentYear === today.getFullYear()
+      month === today.getMonth() &&
+      year === today.getFullYear()
     );
   };
 
@@ -100,7 +100,15 @@ export default function DatePickerDropdown({
     return date < today;
   };
 
+  const canGoPrevMonth = () => {
+    const today = new Date();
+    const currentMonthDate = new Date(currentYear, currentMonth, 1);
+    const thisMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    return currentMonthDate > thisMonthDate;
+  };
+
   const prevMonth = () => {
+    if (!canGoPrevMonth()) return;
     if (currentMonth === 0) {
       setCurrentMonth(11);
       setCurrentYear(currentYear - 1);
@@ -134,18 +142,22 @@ export default function DatePickerDropdown({
       const date = formatDate(day, month, year);
       const selected = date === tempCheckIn || date === tempCheckOut;
       const inRange = tempCheckIn && tempCheckOut && date > tempCheckIn && date < tempCheckOut;
-      const past = isPast(day) && month === currentMonth && year === currentYear;
+      const dateObj = new Date(year, month, day);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const past = dateObj < today;
+      const today_highlight = isToday(day, month, year);
 
       days.push(
         <button
           key={day}
-          onClick={() => !past && handleDayClick(day)}
+          onClick={() => !past && handleDayClick(day, month, year)}
           disabled={past}
           className={`flex h-9 w-9 items-center justify-center rounded-full text-[13px] transition-colors
             ${selected ? "bg-green-dark text-white" : ""}
             ${inRange ? "bg-green-dark/10" : ""}
             ${past ? "cursor-not-allowed text-gray-300" : "hover:bg-gray-100"}
-            ${isToday(day) && !selected ? "ring-1 ring-green-dark" : ""}
+            ${today_highlight && !selected ? "ring-1 ring-green-dark" : ""}
           `}
         >
           {day}
@@ -189,8 +201,12 @@ export default function DatePickerDropdown({
         {/* Current month */}
         <div className="flex-1">
           <div className="mb-4 flex items-center justify-between">
-            <button onClick={prevMonth} className="rounded p-1 hover:bg-gray-100">
-              <span className="icon-lucide text-lg">&#xe89d;</span>
+            <button
+              onClick={prevMonth}
+              disabled={!canGoPrevMonth()}
+              className={`rounded-full p-2 text-[18px] font-bold ${canGoPrevMonth() ? 'hover:bg-gray-100 text-green-dark' : 'opacity-30 cursor-not-allowed text-gray-400'}`}
+            >
+              ←
             </button>
             <span className="text-[14px] font-semibold text-green-dark">
               {months[currentMonth]} {currentYear}
@@ -216,8 +232,8 @@ export default function DatePickerDropdown({
             <span className="text-[14px] font-semibold text-green-dark">
               {months[nextMonthNum]} {nextMonthYear}
             </span>
-            <button onClick={nextMonth} className="rounded p-1 hover:bg-gray-100">
-              <span className="icon-lucide text-lg">&#xe89f;</span>
+            <button onClick={nextMonth} className="rounded-full p-2 text-[18px] font-bold text-green-dark hover:bg-gray-100">
+              →
             </button>
           </div>
           <div className="mb-2 grid grid-cols-7 gap-1">
