@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import DatePickerDropdown from "./DatePickerDropdown";
 import GuestsDropdown from "./GuestsDropdown";
 import DestinationDropdown from "./DestinationDropdown";
@@ -8,8 +9,9 @@ import TripTypeDropdown from "./TripTypeDropdown";
 import TravelStyleDropdown from "./TravelStyleDropdown";
 
 export default function SearchBar() {
+  const router = useRouter();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [destination, setDestination] = useState("");
+  const [destination, setDestination] = useState<{ id: number; name: string } | null>(null);
   const [dates, setDates] = useState({ checkIn: "", checkOut: "" });
   const [guests, setGuests] = useState({ adults: 2, children: 0 });
   const [tripType, setTripType] = useState("Leisure");
@@ -19,8 +21,33 @@ export default function SearchBar() {
     setActiveDropdown(activeDropdown === name ? null : name);
   };
 
+  const handleSearch = () => {
+    // Validate that destination is selected
+    if (!destination) {
+      alert("Please select a destination");
+      return;
+    }
+
+    // Build search query parameters
+    const params = new URLSearchParams();
+    params.set('cityId', destination.id.toString());
+    params.set('city', destination.name);
+
+    if (dates.checkIn) params.set('checkIn', dates.checkIn);
+    if (dates.checkOut) params.set('checkOut', dates.checkOut);
+
+    params.set('adults', guests.adults.toString());
+    params.set('children', guests.children.toString());
+
+    if (tripType) params.set('tripType', tripType);
+    if (travelStyle) params.set('travelStyle', travelStyle);
+
+    // Navigate to search results page
+    router.push(`/search?${params.toString()}`);
+  };
+
   return (
-    <div className="relative">
+    <div className="relative z-[100]">
       <div
         className="flex items-center rounded-lg bg-white/95"
         style={{
@@ -38,7 +65,7 @@ export default function SearchBar() {
             DESTINATION
           </span>
           <span className="text-[14px] font-medium text-green-dark">
-            {destination || "Where to?"}
+            {destination?.name || "Where to?"}
           </span>
         </div>
 
@@ -125,9 +152,7 @@ export default function SearchBar() {
         {/* Search Button */}
         <button
           className="ml-auto mr-3 flex h-12 items-center gap-2 rounded-lg bg-green-dark px-6 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
-          onClick={() => {
-            console.log("Search:", { destination, dates, guests, tripType, travelStyle });
-          }}
+          onClick={handleSearch}
         >
           <span className="icon-lucide">&#xe8b6;</span>
           Search
@@ -137,9 +162,9 @@ export default function SearchBar() {
       {/* Dropdowns */}
       {activeDropdown === "destination" && (
         <DestinationDropdown
-          value={destination}
-          onChange={(val) => {
-            setDestination(val);
+          value={destination?.name || ""}
+          onChange={(cityData) => {
+            setDestination(cityData);
             setActiveDropdown(null);
           }}
           onClose={() => setActiveDropdown(null)}

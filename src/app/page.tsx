@@ -74,7 +74,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-black">
       {/* Hero Section */}
-      <section className="relative h-screen w-full overflow-hidden">
+      <section className="relative h-screen w-full overflow-visible">
         {/* Background Image */}
         <img
           src="https://images.unsplash.com/photo-1561238349-24053008a28e?w=1920&h=1080&fit=crop"
@@ -170,7 +170,7 @@ export default function HomePage() {
         </div>
 
         {/* Search Bar */}
-        <div className="absolute bottom-[60px] left-1/2 z-20 w-[1280px] -translate-x-1/2">
+        <div className="absolute bottom-[60px] left-1/2 z-[100] w-[1280px] -translate-x-1/2">
           <SearchBar />
         </div>
       </section>

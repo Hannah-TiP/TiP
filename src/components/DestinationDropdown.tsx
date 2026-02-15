@@ -1,23 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { apiClient } from "@/lib/api-client";
+import type { City } from "@/types/hotel";
 
 interface DestinationDropdownProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (cityData: { id: number; name: string }) => void;
   onClose: () => void;
 }
-
-const popularDestinations = [
-  { city: "Paris", country: "France", icon: "🗼" },
-  { city: "Tokyo", country: "Japan", icon: "🗾" },
-  { city: "New York", country: "United States", icon: "🗽" },
-  { city: "London", country: "United Kingdom", icon: "🇬🇧" },
-  { city: "Dubai", country: "UAE", icon: "🏜️" },
-  { city: "Singapore", country: "Singapore", icon: "🦁" },
-  { city: "Hong Kong", country: "China", icon: "🏙️" },
-  { city: "Sydney", country: "Australia", icon: "🦘" },
-];
 
 export default function DestinationDropdown({
   value,
@@ -26,6 +17,27 @@ export default function DestinationDropdown({
 }: DestinationDropdownProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState(value);
+  const [cities, setCities] = useState<City[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch cities from API
+  useEffect(() => {
+    async function fetchCities() {
+      try {
+        setLoading(true);
+        setError(null);
+        const citiesData = await apiClient.getCities('en');
+        setCities(citiesData);
+      } catch (err) {
+        console.error('Failed to fetch cities:', err);
+        setError('Failed to load destinations');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCities();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -37,10 +49,8 @@ export default function DestinationDropdown({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
-  const filteredDestinations = popularDestinations.filter(
-    (dest) =>
-      dest.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dest.country.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredDestinations = cities.filter((city) =>
+    city.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -64,28 +74,45 @@ export default function DestinationDropdown({
         </div>
       </div>
 
-      {/* Popular destinations */}
+      {/* Destinations list */}
       <div className="max-h-[320px] overflow-auto p-2">
-        <p className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-400">
-          Popular Destinations
-        </p>
-        {filteredDestinations.map((dest) => (
-          <button
-            key={dest.city}
-            onClick={() => onChange(`${dest.city}, ${dest.country}`)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-50"
-          >
-            <span className="text-xl">{dest.icon}</span>
-            <div>
-              <p className="text-[14px] font-medium text-green-dark">{dest.city}</p>
-              <p className="text-[12px] text-gray-500">{dest.country}</p>
-            </div>
-          </button>
-        ))}
-        {filteredDestinations.length === 0 && (
-          <p className="px-3 py-4 text-center text-[13px] text-gray-500">
-            No destinations found
-          </p>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-green-dark border-t-transparent"></div>
+          </div>
+        ) : error ? (
+          <div className="px-3 py-4 text-center">
+            <p className="text-[13px] text-red-500">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 text-[12px] text-green-dark underline hover:no-underline"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <>
+            <p className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-400">
+              Destinations
+            </p>
+            {filteredDestinations.map((city) => (
+              <button
+                key={city.id}
+                onClick={() => onChange({ id: city.id, name: city.name })}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-50"
+              >
+                <span className="icon-lucide text-gray-400">&#xe551;</span>
+                <div>
+                  <p className="text-[14px] font-medium text-green-dark">{city.name}</p>
+                </div>
+              </button>
+            ))}
+            {filteredDestinations.length === 0 && !loading && (
+              <p className="px-3 py-4 text-center text-[13px] text-gray-500">
+                No destinations found
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -1,5 +1,5 @@
 import type { User } from '@/types/auth';
-import type { Hotel } from '@/types/hotel';
+import type { Hotel, City } from '@/types/hotel';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -105,6 +105,14 @@ class ApiClient {
   async getHotelById(hotelId: number | string): Promise<Hotel> {
     const response = await this.request<{ data: Hotel }>(
       `/hotels/${hotelId}`
+    );
+    return response.data;
+  }
+
+  // City methods
+  async getCities(language: string = 'en'): Promise<City[]> {
+    const response = await this.request<{ data: City[] }>(
+      `/cities?language=${language}`
     );
     return response.data;
   }
