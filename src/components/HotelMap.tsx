@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+import { useCallback, useState, useEffect, useRef } from "react";
+import { GoogleMap, useJsApiLoader, InfoWindow } from "@react-google-maps/api";
 import Link from "next/link";
 import { Hotel, formatLocation, getImageUrl } from "@/types/hotel";
 
@@ -19,27 +19,28 @@ const defaultCenter = {
   lng: 0,
 };
 
+// Libraries array must be static to prevent unnecessary reloads
+const libraries: ("marker")[] = ["marker"];
+
 const mapOptions = {
   disableDefaultUI: false,
   zoomControl: true,
   streetViewControl: false,
   mapTypeControl: false,
   fullscreenControl: true,
-  styles: [
-    {
-      featureType: "poi",
-      elementType: "labels",
-      stylers: [{ visibility: "off" }],
-    },
-  ],
+  mapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID", // Required for Advanced Markers
+  // Note: styles property is not supported when mapId is present
+  // Configure map styling in Google Cloud Console instead
 };
 
 export default function HotelMap({ hotels }: HotelMapProps) {
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    libraries,
   });
 
   const onLoad = useCallback((map: google.maps.Map) => {
@@ -59,8 +60,72 @@ export default function HotelMap({ hotels }: HotelMapProps) {
   }, [hotels]);
 
   const onUnmount = useCallback(() => {
+    // Clean up markers
+    markersRef.current.forEach(marker => {
+      marker.map = null;
+    });
+    markersRef.current = [];
     setMap(null);
   }, []);
+
+  // Create advanced markers when map is loaded
+  useEffect(() => {
+    if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement) return;
+
+    // Clean up existing markers
+    markersRef.current.forEach(marker => {
+      marker.map = null;
+    });
+    markersRef.current = [];
+
+    // Create new markers
+    const hotelsWithCoordinates = hotels.filter(
+      (hotel) => hotel.latitude && hotel.longitude
+    );
+
+    hotelsWithCoordinates.forEach((hotel) => {
+      // Create custom marker element
+      const markerElement = document.createElement('div');
+      markerElement.className = 'custom-marker';
+      markerElement.style.cssText = `
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background-color: #C4956A;
+        border: 2px solid #1E3D2F;
+        cursor: pointer;
+        transition: transform 0.2s;
+      `;
+
+      markerElement.addEventListener('mouseenter', () => {
+        markerElement.style.transform = 'scale(1.2)';
+      });
+
+      markerElement.addEventListener('mouseleave', () => {
+        markerElement.style.transform = 'scale(1)';
+      });
+
+      const marker = new window.google.maps.marker.AdvancedMarkerElement({
+        map,
+        position: { lat: hotel.latitude!, lng: hotel.longitude! },
+        content: markerElement,
+      });
+
+      marker.addListener('gmp-click', () => {
+        setSelectedHotel(hotel);
+      });
+
+      markersRef.current.push(marker);
+    });
+
+    return () => {
+      // Cleanup on unmount
+      markersRef.current.forEach(marker => {
+        marker.map = null;
+      });
+      markersRef.current = [];
+    };
+  }, [map, hotels]);
 
   if (loadError) {
     return (
@@ -86,11 +151,6 @@ export default function HotelMap({ hotels }: HotelMapProps) {
     );
   }
 
-  // Filter hotels that have valid coordinates
-  const hotelsWithCoordinates = hotels.filter(
-    (hotel) => hotel.latitude && hotel.longitude
-  );
-
   return (
     <GoogleMap
       mapContainerStyle={mapContainerStyle}
@@ -100,25 +160,6 @@ export default function HotelMap({ hotels }: HotelMapProps) {
       onUnmount={onUnmount}
       options={mapOptions}
     >
-      {hotelsWithCoordinates.map((hotel) => (
-        <Marker
-          key={hotel.id}
-          position={{
-            lat: hotel.latitude!,
-            lng: hotel.longitude!,
-          }}
-          onClick={() => setSelectedHotel(hotel)}
-          icon={{
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 8,
-            fillColor: "#C4956A",
-            fillOpacity: 1,
-            strokeColor: "#1E3D2F",
-            strokeWeight: 2,
-          }}
-        />
-      ))}
-
       {selectedHotel && selectedHotel.latitude && selectedHotel.longitude && (
         <InfoWindow
           position={{
