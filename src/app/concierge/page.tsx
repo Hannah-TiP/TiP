@@ -1,220 +1,520 @@
 "use client";
 
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import TopBar from "@/components/TopBar";
-import Image from "next/image";
-
-const quickChips = ["Couple trip", "Celebration", "Family", "Just Relaxing", "Just Solo"];
-
-const hotelCards = [
-  { name: "Hôtel Plaza Athénée", price: "€1,200/night", img: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=260&fit=crop" },
-  { name: "Le Bristol Paris", price: "€980/night", img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=260&fit=crop" },
-  { name: "The Ritz Paris", price: "€1,500/night", img: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=260&fit=crop" },
-];
-
-const activities = [
-  "Private Louvre tour",
-  "Seine River dinner cruise",
-  "Versailles day trip",
-  "Montmartre walking tour",
-  "Wine tasting in Le Marais",
-];
+import MessageList from '@/components/ai-chat/MessageList';
+import ChatInput from '@/components/ai-chat/ChatInput';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiClient } from '@/lib/api-client';
+import type { AIMessage, TripContext } from '@/types/ai-chat';
 
 export default function ConciergePage() {
+  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+
+  const [sessionId, setSessionId] = useState<string>('');
+  const [messages, setMessages] = useState<AIMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [tripContext, setTripContext] = useState<TripContext | null>(null);
+
+  // Check authentication
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/sign-in?redirect=/concierge');
+    }
+  }, [isAuthenticated, authLoading, router]);
+
+  // Initialize chat session
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const initSession = async () => {
+      console.log('[Concierge] Initializing chat session...');
+      try {
+        // Check for existing session in localStorage
+        const storedSessionId = localStorage.getItem('concierge_session_id');
+        console.log('[Concierge] Stored session ID:', storedSessionId);
+
+        if (storedSessionId) {
+          // Try to restore existing session
+          console.log('[Concierge] Restoring existing session...');
+          setSessionId(storedSessionId);
+          // Fetch history
+          try {
+            const historyResponse = await apiClient.getChatHistory(storedSessionId, 1, 50);
+            console.log('[Concierge] History response:', historyResponse);
+
+            // Backend returns either {success: true, data: {...}} or {code: 200, data: {...}}
+            const isSuccess = (historyResponse as any).success === true || (historyResponse as any).code === 200;
+            const historyData = historyResponse.data || (historyResponse as any).data;
+
+            if (isSuccess && historyData && historyData.messages && historyData.messages.length > 0) {
+              // Backend returns messages in reverse chronological order (newest first)
+              // Reverse to display chronologically (oldest first)
+              const chronologicalMessages = [...historyData.messages].reverse();
+              setMessages(chronologicalMessages);
+              console.log('[Concierge] Loaded', chronologicalMessages.length, 'messages from history');
+              // Extract trip context from latest message (now at the end after reversing)
+              const latestMessage = chronologicalMessages[chronologicalMessages.length - 1];
+              if (latestMessage.message_metadata?.trip_context) {
+                setTripContext(latestMessage.message_metadata.trip_context);
+              }
+              return;
+            }
+          } catch (err) {
+            console.error('[Concierge] Failed to restore session:', err);
+            localStorage.removeItem('concierge_session_id');
+          }
+        }
+
+        // Create new session
+        console.log('[Concierge] Creating new session...');
+        const response = await apiClient.createChatSession('en');
+        console.log('[Concierge] Create session response:', response);
+
+        // Backend returns either {success: true, data: {...}} or {code: 200, data: {...}}
+        const isSuccess = (response as any).success === true || (response as any).code === 200;
+        const responseData = response.data || (response as any).data;
+
+        if (isSuccess && responseData) {
+          setSessionId(responseData.session_id);
+          localStorage.setItem('concierge_session_id', responseData.session_id);
+          console.log('[Concierge] Session created:', responseData.session_id);
+
+          // Convert initial greeting to AIMessage format
+          if (responseData.chat_history && responseData.chat_history.length > 0) {
+            const initialMessages: AIMessage[] = responseData.chat_history.map((msg, index) => ({
+              id: index,
+              session_id: responseData.session_id,
+              role: msg.role,
+              content: msg.content,
+              message_type: 'text',
+              created_at: new Date().toISOString(),
+            }));
+            console.log('[Concierge] Initial messages:', initialMessages);
+            setMessages(initialMessages);
+          }
+        }
+      } catch (err) {
+        console.error('[Concierge] Failed to initialize chat:', err);
+        setError('Failed to initialize chat session. Please refresh the page.');
+      }
+    };
+
+    initSession();
+  }, [isAuthenticated]);
+
+  const handleSendMessage = async (content: string) => {
+    console.log('[Concierge] handleSendMessage called with:', content);
+    console.log('[Concierge] Current sessionId:', sessionId);
+    console.log('[Concierge] Current messages count:', messages.length);
+
+    if (!content.trim() || !sessionId) {
+      console.warn('[Concierge] Cannot send message - missing content or sessionId');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    // Add user message to UI immediately (optimistic update)
+    const userMessage: AIMessage = {
+      id: messages.length,
+      session_id: sessionId,
+      role: 'user',
+      content,
+      message_type: 'text',
+      created_at: new Date().toISOString(),
+    };
+    console.log('[Concierge] Adding user message to UI:', userMessage);
+    setMessages(prev => {
+      const newMessages = [...prev, userMessage];
+      console.log('[Concierge] New messages array length:', newMessages.length);
+      return newMessages;
+    });
+
+    try {
+      console.log('[Concierge] Calling apiClient.sendMessage...');
+      const response = await apiClient.sendMessage(sessionId, content, 'text');
+      console.log('[Concierge] Send message response:', response);
+
+      // Backend returns either {success: true, data: {...}} or {code: 200, data: {...}}
+      const isSuccess = (response as any).success === true || (response as any).code === 200;
+      const responseData = response.data || (response as any).data;
+
+      if (isSuccess && responseData) {
+        // Add assistant response to UI
+        const assistantMessage: AIMessage = {
+          id: messages.length + 1,
+          session_id: sessionId,
+          role: 'assistant',
+          content: responseData.response,
+          message_type: 'text',
+          message_metadata: {
+            intent: responseData.intent,
+            trips: responseData.trips,
+            has_trips: responseData.has_trips,
+            collection_status: responseData.collection_status,
+            next_field: responseData.next_field,
+            trip_context: responseData.trip_context,
+            trip_created: responseData.trip_created,
+            trip_id: responseData.trip_id,
+            trip: responseData.trip,
+          },
+          created_at: new Date().toISOString(),
+        };
+        console.log('[Concierge] Adding assistant message to UI:', assistantMessage);
+        setMessages(prev => [...prev, assistantMessage]);
+
+        // Update trip context if available
+        if (responseData.trip_context) {
+          console.log('[Concierge] Updating trip context:', responseData.trip_context);
+          setTripContext(responseData.trip_context);
+        }
+      }
+    } catch (err) {
+      console.error('[Concierge] Failed to send message:', err);
+      setError('Failed to send message. Please try again.');
+      // Remove optimistic user message on error
+      setMessages(prev => prev.slice(0, -1));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUploadImage = async (file: File) => {
+    if (!sessionId) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    console.log('[Concierge] Starting image upload - 3 step flow');
+
+    try {
+      // Step 1: Get S3 upload credentials
+      console.log('[Concierge] Step 1: Getting S3 credentials...');
+      const ext = file.name.split('.').pop() || 'jpg';
+      const credentialsResponse = await apiClient.getS3UploadCredentials(
+        sessionId,
+        'image',
+        ext
+      );
+
+      console.log('[Concierge] Credentials response:', credentialsResponse);
+
+      // Handle both response formats
+      const credentialsData = credentialsResponse.data || credentialsResponse;
+      const uploadUrl = credentialsData.upload_url;
+      const formData = credentialsData.form_data;
+      const mediaUrl = credentialsData.public_url; // Backend returns 'public_url' not 'media_url'
+
+      if (!uploadUrl || !formData || !mediaUrl) {
+        console.error('[Concierge] Missing required fields in credentials:', {
+          uploadUrl,
+          formData,
+          mediaUrl,
+          fullResponse: credentialsData
+        });
+        throw new Error('Invalid credentials response');
+      }
+
+      // Step 2: Upload directly to S3
+      console.log('[Concierge] Step 2: Uploading to S3...');
+      await apiClient.uploadToS3(uploadUrl, formData, file);
+      console.log('[Concierge] S3 upload successful, media URL:', mediaUrl);
+
+      // Add user image message immediately with S3 URL
+      const userImageMessage: AIMessage = {
+        id: messages.length,
+        session_id: sessionId,
+        role: 'user',
+        content: '',
+        message_type: 'image',
+        media_url: mediaUrl,
+        created_at: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, userImageMessage]);
+
+      // Step 3: Send S3 URL to backend for AI analysis
+      console.log('[Concierge] Step 3: Requesting image analysis...');
+      const analysisResponse = await apiClient.analyzeImageUrl(
+        sessionId,
+        mediaUrl,
+        undefined, // width
+        undefined, // height
+        file.name
+      );
+
+      console.log('[Concierge] Analysis response:', analysisResponse);
+
+      // Handle both response formats
+      const isSuccess = (analysisResponse as any).success === true || (analysisResponse as any).code === 200;
+      const responseData = analysisResponse.data || (analysisResponse as any).data;
+
+      if (isSuccess && responseData) {
+        // Add assistant analysis response
+        const assistantMessage: AIMessage = {
+          id: messages.length + 1,
+          session_id: sessionId,
+          role: 'assistant',
+          content: responseData.response,
+          message_type: 'text',
+          message_metadata: {
+            intent: responseData.intent,
+            analysis_result: responseData.analysis_result,
+            trips: responseData.trips,
+            has_trips: responseData.has_trips,
+          },
+          created_at: new Date().toISOString(),
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+
+        // Update trip context if available
+        if (responseData.message_metadata?.trip_context) {
+          setTripContext(responseData.message_metadata.trip_context);
+        }
+      }
+
+      console.log('[Concierge] Image upload flow complete');
+    } catch (err) {
+      console.error('[Concierge] Failed to upload image:', err);
+      setError('Failed to upload image. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUploadAudio = async (file: File) => {
+    if (!sessionId) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    console.log('[Concierge] Starting audio upload - 3 step flow');
+
+    try {
+      // Step 1: Get S3 upload credentials
+      console.log('[Concierge] Step 1: Getting S3 credentials...');
+      const ext = file.name.split('.').pop() || 'm4a';
+      const credentialsResponse = await apiClient.getS3UploadCredentials(
+        sessionId,
+        'audio',
+        ext
+      );
+
+      console.log('[Concierge] Credentials response:', credentialsResponse);
+
+      // Handle both response formats
+      const credentialsData = credentialsResponse.data || credentialsResponse;
+      const uploadUrl = credentialsData.upload_url;
+      const formData = credentialsData.form_data;
+      const mediaUrl = credentialsData.public_url; // Backend returns 'public_url' not 'media_url'
+
+      if (!uploadUrl || !formData || !mediaUrl) {
+        console.error('[Concierge] Missing required fields in credentials:', {
+          uploadUrl,
+          formData,
+          mediaUrl,
+          fullResponse: credentialsData
+        });
+        throw new Error('Invalid credentials response');
+      }
+
+      // Step 2: Upload directly to S3
+      console.log('[Concierge] Step 2: Uploading to S3...');
+      await apiClient.uploadToS3(uploadUrl, formData, file);
+      console.log('[Concierge] S3 upload successful, media URL:', mediaUrl);
+
+      // Add user audio message immediately with S3 URL (transcription will come from backend)
+      const userAudioMessage: AIMessage = {
+        id: messages.length,
+        session_id: sessionId,
+        role: 'user',
+        content: '', // Will be updated with transcription
+        message_type: 'audio',
+        media_url: mediaUrl,
+        created_at: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, userAudioMessage]);
+
+      // Step 3: Send S3 URL to backend for transcription and AI processing
+      console.log('[Concierge] Step 3: Requesting audio transcription...');
+      const transcriptionResponse = await apiClient.transcribeAudioUrl(
+        sessionId,
+        mediaUrl,
+        undefined, // duration
+        file.name
+      );
+
+      console.log('[Concierge] Transcription response:', transcriptionResponse);
+
+      // Handle both response formats
+      const isSuccess = (transcriptionResponse as any).success === true || (transcriptionResponse as any).code === 200;
+      const responseData = transcriptionResponse.data || (transcriptionResponse as any).data;
+
+      if (isSuccess && responseData) {
+        // Update user audio message with transcription
+        setMessages(prev => {
+          const updatedMessages = [...prev];
+          const lastMessage = updatedMessages[updatedMessages.length - 1];
+          if (lastMessage.message_type === 'audio') {
+            lastMessage.content = responseData.transcription;
+            lastMessage.message_metadata = {
+              transcription: responseData.transcription,
+            };
+          }
+          return updatedMessages;
+        });
+
+        // Add assistant response
+        const assistantMessage: AIMessage = {
+          id: messages.length + 1,
+          session_id: sessionId,
+          role: 'assistant',
+          content: responseData.response,
+          message_type: 'text',
+          message_metadata: {
+            intent: responseData.intent,
+            trips: responseData.trips,
+            has_trips: responseData.has_trips,
+          },
+          created_at: new Date().toISOString(),
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+
+        // Update trip context if available
+        if (responseData.message_metadata?.trip_context) {
+          setTripContext(responseData.message_metadata.trip_context);
+        }
+      }
+
+      console.log('[Concierge] Audio upload flow complete');
+    } catch (err) {
+      console.error('[Concierge] Failed to upload audio:', err);
+      setError('Failed to upload audio. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Show loading state during auth check
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3D2F] mx-auto mb-4" />
+          <p className="font-inter text-sm text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-screen bg-white flex flex-col">
       <TopBar activeLink="AI Chat" />
+
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border-b border-red-200 px-[60px] py-3">
+          <div className="flex items-center justify-between">
+            <p className="font-inter text-sm text-red-800">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-800 hover:text-red-900"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {/* Chat Side */}
-        <div className="w-[900px] flex flex-col border-r border-gray-100">
-          {/* Scrollable Messages */}
-          <div className="flex-1 overflow-y-auto px-[60px] py-[32px] space-y-6">
-            {/* Bot Message 1 */}
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                1
-              </div>
-              <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4 max-w-[600px]">
-                <p className="font-inter text-sm text-gray-800">
-                  Welcome to TiP Concierge! I&apos;m here to help you plan your perfect luxury trip. Where would you like to go?
-                </p>
-              </div>
-            </div>
-
-            {/* User Response */}
-            <div className="flex justify-end">
-              <div className="bg-[#1E3D2F] text-white rounded-2xl rounded-tr-sm px-5 py-4 max-w-[400px]">
-                <p className="font-inter text-sm">I&apos;d love to visit Paris for our anniversary!</p>
-              </div>
-            </div>
-
-            {/* Bot Message 2 */}
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                2
-              </div>
-              <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4 max-w-[600px]">
-                <p className="font-inter text-sm text-gray-800">
-                  Paris — a wonderful choice for an anniversary! What kind of trip are you envisioning?
-                </p>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {quickChips.map((chip) => (
-                    <button
-                      key={chip}
-                      className="px-4 py-2 rounded-full border border-[#1E3D2F]/20 text-[#1E3D2F] font-inter text-xs hover:bg-[#1E3D2F] hover:text-white transition-colors"
-                    >
-                      {chip}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* User Response */}
-            <div className="flex justify-end">
-              <div className="bg-[#1E3D2F] text-white rounded-2xl rounded-tr-sm px-5 py-4 max-w-[400px]">
-                <p className="font-inter text-sm">Couple trip — something really special and romantic.</p>
-              </div>
-            </div>
-
-            {/* Bot Message 3 */}
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                3
-              </div>
-              <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4 max-w-[600px]">
-                <p className="font-inter text-sm text-gray-800">
-                  How many nights are you considering, and do you have specific dates in mind?
-                </p>
-              </div>
-            </div>
-
-            {/* User Response */}
-            <div className="flex justify-end">
-              <div className="bg-[#1E3D2F] text-white rounded-2xl rounded-tr-sm px-5 py-4 max-w-[400px]">
-                <p className="font-inter text-sm">5 nights, around mid-March 2026.</p>
-              </div>
-            </div>
-
-            {/* Bot Message 4 */}
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                4
-              </div>
-              <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4 max-w-[600px]">
-                <p className="font-inter text-sm text-gray-800 mb-4">
-                  Wonderful! Here are my top hotel recommendations for a romantic Paris anniversary:
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                  {hotelCards.map((hotel) => (
-                    <div key={hotel.name} className="rounded-xl overflow-hidden border border-gray-100">
-                      <div className="relative w-full h-[100px]">
-                        <Image src={hotel.img} alt={hotel.name} fill className="object-cover" />
-                      </div>
-                      <div className="p-3">
-                        <p className="font-inter text-xs font-semibold text-[#1E3D2F]">{hotel.name}</p>
-                        <p className="font-inter text-xs text-gray-500 mt-1">{hotel.price}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Bot Message 5 */}
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                5
-              </div>
-              <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4 max-w-[600px]">
-                <p className="font-inter text-sm text-gray-800">
-                  I&apos;ve built a preliminary itinerary for you in the sidebar. Feel free to ask me to adjust anything — dining, spa, excursions — I&apos;m here to make it perfect.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Input Bar */}
-          <div className="border-t border-gray-100 px-[60px] py-5">
-            <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-5 py-3">
-              <input
-                type="text"
-                placeholder="Ask your concierge anything..."
-                className="flex-1 bg-transparent outline-none font-inter text-sm text-gray-800 placeholder:text-gray-400"
-              />
-              <button className="bg-[#1E3D2F] text-white rounded-lg px-5 py-2 font-inter text-sm hover:opacity-90 transition-opacity">
-                Send
-              </button>
-            </div>
-          </div>
+        <div className="flex-1 flex flex-col border-r border-gray-100">
+          <MessageList messages={messages} isLoading={isLoading} />
+          <ChatInput
+            onSendMessage={handleSendMessage}
+            onUploadImage={handleUploadImage}
+            onUploadAudio={handleUploadAudio}
+            isLoading={isLoading}
+          />
         </div>
 
         {/* Itinerary Sidebar */}
-        <div className="w-[540px] flex flex-col bg-[#FAFAF8] overflow-y-auto">
+        <div className="w-[420px] flex flex-col bg-[#FAFAF8] overflow-y-auto">
           <div className="px-8 py-8 flex-1">
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-cormorant text-2xl font-semibold text-[#1E3D2F]">Your Itinerary</h2>
-              <button className="font-inter text-xs text-[#1E3D2F] underline">Modify</button>
             </div>
 
-            {/* Trip Details */}
-            <div className="space-y-3 mb-8">
-              <div className="flex justify-between font-inter text-sm">
-                <span className="text-gray-500">Destination</span>
-                <span className="text-[#1E3D2F] font-medium">Paris, France</span>
-              </div>
-              <div className="flex justify-between font-inter text-sm">
-                <span className="text-gray-500">Dates</span>
-                <span className="text-[#1E3D2F] font-medium">Mar 15 – 20, 2026</span>
-              </div>
-              <div className="flex justify-between font-inter text-sm">
-                <span className="text-gray-500">Travelers</span>
-                <span className="text-[#1E3D2F] font-medium">2 Adults</span>
-              </div>
-            </div>
-
-            {/* Recommended Hotels */}
-            <h3 className="font-inter text-xs tracking-[2px] text-gray-400 uppercase mb-4">Recommended Hotels</h3>
-            <div className="space-y-3 mb-8">
-              {hotelCards.map((hotel) => (
-                <div key={hotel.name} className="flex items-center gap-3 bg-white rounded-xl p-3 border border-gray-100">
-                  <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0">
-                    <Image src={hotel.img} alt={hotel.name} fill className="object-cover" />
+            {tripContext ? (
+              <div className="space-y-3 mb-8">
+                {tripContext.destination && (
+                  <div className="flex justify-between font-inter text-sm">
+                    <span className="text-gray-500">Destination</span>
+                    <span className="text-[#1E3D2F] font-medium">{tripContext.destination}</span>
                   </div>
-                  <div>
-                    <p className="font-inter text-sm font-semibold text-[#1E3D2F]">{hotel.name}</p>
-                    <p className="font-inter text-xs text-gray-500">{hotel.price}</p>
+                )}
+                {tripContext.start_date && tripContext.end_date && (
+                  <div className="flex justify-between font-inter text-sm">
+                    <span className="text-gray-500">Dates</span>
+                    <span className="text-[#1E3D2F] font-medium">
+                      {new Date(tripContext.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} –{' '}
+                      {new Date(tripContext.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
                   </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Activities */}
-            <h3 className="font-inter text-xs tracking-[2px] text-gray-400 uppercase mb-4">Activities</h3>
-            <div className="space-y-3 mb-8">
-              {activities.map((activity) => (
-                <label key={activity} className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-[#1E3D2F] focus:ring-[#1E3D2F]" />
-                  <span className="font-inter text-sm text-gray-700">{activity}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Sidebar Footer */}
-          <div className="border-t border-gray-200 px-8 py-6">
-            <div className="flex justify-between mb-5">
-              <span className="font-inter text-sm text-gray-500">Estimated Cost</span>
-              <span className="font-inter text-lg font-semibold text-[#1E3D2F]">€8,400</span>
-            </div>
-            <div className="space-y-3">
-              <button className="w-full bg-[#1E3D2F] text-white rounded-lg py-3 font-inter text-sm font-medium hover:opacity-90 transition-opacity">
-                Book Request with TiP
-              </button>
-              <button className="w-full border border-[#1E3D2F] text-[#1E3D2F] rounded-lg py-3 font-inter text-sm font-medium hover:bg-[#1E3D2F]/5 transition-colors">
-                Human Agent Contact
-              </button>
-            </div>
+                )}
+                {tripContext.adults && (
+                  <div className="flex justify-between font-inter text-sm">
+                    <span className="text-gray-500">Travelers</span>
+                    <span className="text-[#1E3D2F] font-medium">
+                      {tripContext.adults} {tripContext.adults === 1 ? 'Adult' : 'Adults'}
+                      {tripContext.kids ? `, ${tripContext.kids} ${tripContext.kids === 1 ? 'Kid' : 'Kids'}` : ''}
+                    </span>
+                  </div>
+                )}
+                {tripContext.purpose && (
+                  <div className="flex justify-between font-inter text-sm">
+                    <span className="text-gray-500">Purpose</span>
+                    <span className="text-[#1E3D2F] font-medium">{tripContext.purpose}</span>
+                  </div>
+                )}
+                {tripContext.budget && (
+                  <div className="flex justify-between font-inter text-sm">
+                    <span className="text-gray-500">Budget</span>
+                    <span className="text-[#1E3D2F] font-medium">${tripContext.budget.toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="font-inter text-sm text-gray-400">
+                  Start planning your trip by chatting with our AI concierge!
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

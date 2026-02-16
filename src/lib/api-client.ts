@@ -1,5 +1,14 @@
 import type { User } from '@/types/auth';
 import type { Hotel, City } from '@/types/hotel';
+import type {
+  CreateSessionResponse,
+  SendMessageResponse,
+  ChatHistoryResponse,
+  MessageType,
+  S3UploadCredentialsResponse,
+  AnalyzeImageResponse,
+  TranscribeAudioResponse,
+} from '@/types/ai-chat';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -115,6 +124,148 @@ class ApiClient {
       `/cities?language=${language}`
     );
     return response.data;
+  }
+
+  // AI Chat methods
+  async createChatSession(language: string = 'en'): Promise<CreateSessionResponse> {
+    return this.request<CreateSessionResponse>('/ai-chat/create-session', {
+      method: 'POST',
+      body: JSON.stringify({ language }),
+    });
+  }
+
+  async sendMessage(
+    sessionId: string,
+    content: string,
+    messageType: MessageType = 'text'
+  ): Promise<SendMessageResponse> {
+    return this.request<SendMessageResponse>('/ai-chat/message', {
+      method: 'POST',
+      body: JSON.stringify({
+        session_id: sessionId,
+        content,
+        message_type: messageType,
+      }),
+    });
+  }
+
+  async getChatHistory(
+    sessionId: string,
+    page: number = 1,
+    perPage: number = 50
+  ): Promise<ChatHistoryResponse> {
+    return this.request<ChatHistoryResponse>(
+      `/ai-chat/history/${sessionId}?page=${page}&per_page=${perPage}`
+    );
+  }
+
+  // S3 Direct Upload Methods
+  async getS3UploadCredentials(
+    sessionId: string,
+    mediaType: 'image' | 'audio',
+    fileExtension: string
+  ): Promise<S3UploadCredentialsResponse> {
+    return this.request<S3UploadCredentialsResponse>('/media/get-upload-credentials', {
+      method: 'POST',
+      body: JSON.stringify({
+        session_id: sessionId,
+        media_type: mediaType,
+        file_extension: fileExtension,
+      }),
+    });
+  }
+
+  async uploadToS3(
+    uploadUrl: string,
+    formData: Record<string, string>,
+    file: File
+  ): Promise<string> {
+    const form = new FormData();
+
+    // Add all form fields from backend first (order matters for S3)
+    Object.entries(formData).forEach(([key, value]) => {
+      form.append(key, value);
+    });
+
+    // Add Content-Type field explicitly (required by S3 policy)
+    // This must match the file's actual MIME type
+    form.append('Content-Type', file.type);
+
+    // Add the file last (required by S3)
+    form.append('file', file);
+
+    console.log('[ApiClient] Uploading to S3:', {
+      uploadUrl,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      formFields: Object.keys(formData)
+    });
+
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      body: form,
+      // Don't set Content-Type header - browser will set it with boundary
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => 'Upload failed');
+      console.error('[ApiClient] S3 upload failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        responseBody: text
+      });
+      throw new Error(`S3 upload failed: ${text}`);
+    }
+
+    console.log('[ApiClient] S3 upload successful');
+
+    // Extract the file URL from the Location header or construct it
+    const location = response.headers.get('Location');
+    if (location) {
+      return location;
+    }
+
+    // If no Location header, construct URL from upload URL and key
+    const key = formData['key'];
+    const baseUrl = uploadUrl.split('?')[0];
+    return `${baseUrl}/${key}`;
+  }
+
+  async analyzeImageUrl(
+    sessionId: string,
+    mediaUrl: string,
+    width?: number,
+    height?: number,
+    filename?: string
+  ): Promise<AnalyzeImageResponse> {
+    return this.request<AnalyzeImageResponse>('/media/analyze-image', {
+      method: 'POST',
+      body: JSON.stringify({
+        session_id: sessionId,
+        media_url: mediaUrl,
+        width,
+        height,
+        filename,
+      }),
+    });
+  }
+
+  async transcribeAudioUrl(
+    sessionId: string,
+    mediaUrl: string,
+    duration?: number,
+    filename?: string
+  ): Promise<TranscribeAudioResponse> {
+    return this.request<TranscribeAudioResponse>('/media/transcribe-audio', {
+      method: 'POST',
+      body: JSON.stringify({
+        session_id: sessionId,
+        media_url: mediaUrl,
+        duration,
+        filename,
+      }),
+    });
   }
 }
 
