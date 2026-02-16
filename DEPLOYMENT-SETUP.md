@@ -111,7 +111,7 @@ server {
     server_name www.tip.zetos.io;
 
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:9200;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -303,11 +303,11 @@ docker pull ghcr.io/dev-zetos/tip-customer:production-latest
 docker stop tip-customer-production || true
 docker rm tip-customer-production || true
 
-# Run new production container on port 3001
+# Run new production container on port 9201
 docker run -d \
   --name tip-customer-production \
   --restart unless-stopped \
-  -p 3001:3000 \
+  -p 9201:3000 \
   -e NODE_ENV=production \
   ghcr.io/dev-zetos/tip-customer:production-latest
 
@@ -345,7 +345,8 @@ docker ps -a | grep tip-customer
 docker logs tip-customer-preview
 
 # Check if port is already in use
-sudo ss -tlnp | grep :3000
+sudo ss -tlnp | grep :9200  # For preview
+sudo ss -tlnp | grep :9201  # For production
 
 # Restart container
 docker restart tip-customer-preview
@@ -441,7 +442,7 @@ docker rm tip-customer-preview
 docker run -d \
   --name tip-customer-preview \
   --restart unless-stopped \
-  -p 3000:3000 \
+  -p 9200:3000 \
   ghcr.io/dev-zetos/tip-customer:preview-{previous-sha}
 ```
 
@@ -478,7 +479,7 @@ docker restart tip-customer-preview  # If just need to restart
 
 # Or roll back to specific version
 docker stop tip-customer-preview && docker rm tip-customer-preview
-docker run -d --name tip-customer-preview -p 3000:3000 {username}/tip-customer:preview-{sha}
+docker run -d --name tip-customer-preview -p 9200:3000 {username}/tip-customer:preview-{sha}
 ```
 
 ---
