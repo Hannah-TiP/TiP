@@ -33,12 +33,17 @@ RUN npm run build
 # Stage 3: Runner (Production)
 FROM node:20-alpine AS runner
 
+# Build arguments for labels
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
 # Labels for metadata
 LABEL org.opencontainers.image.title="TIP Customer Frontend"
 LABEL org.opencontainers.image.description="Travel Intelligence Perfected - Customer Web Application"
-LABEL org.opencontainers.image.created=$BUILD_DATE
-LABEL org.opencontainers.image.revision=$VCS_REF
-LABEL org.opencontainers.image.version=$VERSION
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.vendor="TIP Development Team"
 
 WORKDIR /app

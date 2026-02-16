@@ -66,6 +66,9 @@ jobs:
     needs: [test-and-build]
     # Only build Docker on develop branch push or manual dispatch
     if: (github.ref == 'refs/heads/develop' && github.event_name == 'push') || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      packages: write
     outputs:
       short_sha: ${{ steps.vars.outputs.short_sha }}
       registry: ${{ steps.vars.outputs.registry }}
