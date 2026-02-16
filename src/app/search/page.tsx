@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import TopBar from "@/components/TopBar";
@@ -16,7 +16,7 @@ function getHotelTag(hotel: Hotel): string {
   return "LUXURY";
 }
 
-export default function SearchResultsPage() {
+function SearchResultsContent() {
   const searchParams = useSearchParams();
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,7 +69,7 @@ export default function SearchResultsPage() {
 
   return (
     <main className="min-h-screen bg-gray-light">
-      <TopBar />
+      <TopBar activeLink="DREAM HOTELS" />
 
       {/* Search Section */}
       <section className="bg-white px-[100px] py-8">
@@ -206,5 +206,23 @@ export default function SearchResultsPage() {
 
       <Footer />
     </main>
+  );
+}
+
+export default function SearchResultsPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-gray-light">
+        <TopBar activeLink="DREAM HOTELS" />
+        <section className="bg-white px-[100px] py-8">
+          <div className="mx-auto max-w-7xl">
+            <p className="text-center text-gray-text">Loading search results...</p>
+          </div>
+        </section>
+        <Footer />
+      </main>
+    }>
+      <SearchResultsContent />
+    </Suspense>
   );
 }

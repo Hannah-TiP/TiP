@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import TopBar from "@/components/TopBar";
 import Footer from "@/components/Footer";
 import { apiClient } from "@/lib/api-client";
@@ -47,6 +47,7 @@ const HARDCODED_ROOMS = [
 
 export default function HotelDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const hotelId = params.id as string;
 
   const [hotel, setHotel] = useState<Hotel | null>(null);
@@ -298,7 +299,7 @@ export default function HotelDetailPage() {
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-dark/10">
                   <span className="text-lg text-green-dark">📍</span>
                 </div>
-                <p className="text-[14px] font-medium text-green-dark">{hotel.location}</p>
+                <p className="text-[14px] font-medium text-green-dark">{formatLocation(hotel)}</p>
                 <p className="mt-1 text-[12px] text-gray-text">Interactive map</p>
               </div>
             </div>

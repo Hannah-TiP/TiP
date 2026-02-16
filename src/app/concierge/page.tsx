@@ -268,6 +268,18 @@ export default function ConciergePage() {
       const responseData = typedAnalysisResponse.data;
 
       if (isSuccess && responseData) {
+        // Parse analysis_result if it's a JSON string
+        let parsedAnalysisResult: { landmark?: string; location?: string; description?: string } | undefined;
+        if (responseData.analysis_result) {
+          try {
+            parsedAnalysisResult = typeof responseData.analysis_result === 'string'
+              ? JSON.parse(responseData.analysis_result)
+              : responseData.analysis_result;
+          } catch (e) {
+            console.error('[Concierge] Failed to parse analysis_result:', e);
+          }
+        }
+
         // Add assistant analysis response
         const assistantMessage: AIMessage = {
           id: messages.length + 1,
@@ -277,7 +289,7 @@ export default function ConciergePage() {
           message_type: 'text',
           message_metadata: {
             intent: responseData.intent,
-            analysis_result: responseData.analysis_result,
+            analysis_result: parsedAnalysisResult,
             trips: responseData.trips,
             has_trips: responseData.has_trips,
           },
