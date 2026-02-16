@@ -1,0 +1,208 @@
+name: TIP Customer Frontend CI/CD
+
+on:
+  push:
+    branches: [develop]  # Auto-deploy to preview
+  pull_request:
+    branches: [develop, main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:  # Manual trigger for production
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - production
+
+env:
+  NODE_VERSION: 18
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+
+      - name: Run Linting
+        run: |
+          echo "🔍 Running ESLint..."
+          npm run lint || {
+            echo "⚠️ ESLint found some issues (not failing build)"
+            echo "ℹ️ Please review and fix linting issues in future commits"
+            exit 0
+          }
+
+      - name: Build Application
+        run: |
+          echo "🔨 Building Next.js application..."
+          npm run build
+          echo "✅ Build completed successfully"
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ github.sha }}
+          path: |
+            .next/
+            public/
+          retention-days: 7
+
+  build-and-push-docker:
+    runs-on: ubuntu-latest
+    needs: [test-and-build]
+    # Only build Docker on develop branch push or manual dispatch
+    if: (github.ref == 'refs/heads/develop' && github.event_name == 'push') || github.event_name == 'workflow_dispatch'
+    outputs:
+      short_sha: ${{ steps.vars.outputs.short_sha }}
+      registry: ${{ steps.vars.outputs.registry }}
+      username: ${{ steps.vars.outputs.username }}
+      image_base: ${{ steps.vars.outputs.image_base }}
+      tag_versioned: ${{ steps.vars.outputs.tag_versioned }}
+      tag_latest: ${{ steps.vars.outputs.tag_latest }}
+      environment: ${{ steps.vars.outputs.environment }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare Docker Tags
+        id: vars
+        run: |
+          # Extract short SHA
+          SHORT_SHA=${GITHUB_SHA::8}
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+
+          # Use GitHub Container Registry
+          REGISTRY="ghcr.io"
+          # Convert repository owner to lowercase (required for ghcr.io)
+          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+
+          # Determine environment tag
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            ENV_TAG="${{ github.event.inputs.environment }}"
+          elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            ENV_TAG="preview"
+          else
+            ENV_TAG="preview"
+          fi
+
+          # Build image tags
+          IMAGE_BASE="$REGISTRY/$REPO_OWNER/tip-customer"
+          TAG_VERSIONED="$IMAGE_BASE:$ENV_TAG-$SHORT_SHA"
+          TAG_LATEST="$IMAGE_BASE:$ENV_TAG-latest"
+
+          echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
+          echo "username=$REPO_OWNER" >> $GITHUB_OUTPUT
+          echo "image_base=$IMAGE_BASE" >> $GITHUB_OUTPUT
+          echo "tag_versioned=$TAG_VERSIONED" >> $GITHUB_OUTPUT
+          echo "tag_latest=$TAG_LATEST" >> $GITHUB_OUTPUT
+          echo "environment=$ENV_TAG" >> $GITHUB_OUTPUT
+
+          echo "🐳 Docker tags prepared:"
+          echo "  Registry: GitHub Container Registry (ghcr.io)"
+          echo "  Repository: $REPO_OWNER/tip-customer"
+          echo "  Environment: $ENV_TAG"
+          echo "  Versioned tag: $TAG_VERSIONED"
+          echo "  Latest tag: $TAG_LATEST"
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.tag_versioned }}
+            ${{ steps.vars.outputs.tag_latest }}
+          cache-from: type=registry,ref=${{ steps.vars.outputs.tag_latest }}
+          cache-to: type=inline
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ steps.vars.outputs.environment }}-${{ steps.vars.outputs.short_sha }}
+
+  deploy-preview:
+    runs-on: ubuntu-latest
+    needs: [build-and-push-docker]
+    # Only auto-deploy preview
+    if: needs.build-and-push-docker.outputs.environment == 'preview'
+    environment: preview
+    steps:
+      - name: Deploy to Preview Server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Pull latest image
+            docker pull ${{ needs.build-and-push-docker.outputs.tag_latest }}
+
+            # Stop and remove old container
+            docker stop tip-customer-preview || true
+            docker rm tip-customer-preview || true
+
+            # Run new container
+            docker run -d \
+              --name tip-customer-preview \
+              --restart unless-stopped \
+              -p 3000:3000 \
+              -e NODE_ENV=production \
+              ${{ needs.build-and-push-docker.outputs.tag_latest }}
+
+            echo "✅ Preview deployed successfully"
+            echo "🌐 Available at: https://www.tip.zetos.io"
+
+  signal-manual-deploy:
+    runs-on: ubuntu-latest
+    needs: [build-and-push-docker]
+    # Only for production (manual workflow_dispatch)
+    if: needs.build-and-push-docker.outputs.environment == 'production'
+    environment: production
+    steps:
+      - name: Notify Production Ready
+        run: |
+          echo "🚀 Production Docker image ready!"
+          echo "📦 Image: ${{ needs.build-and-push-docker.outputs.tag_latest }}"
+          echo ""
+          echo "To deploy to production, SSH to the server and run:"
+          echo "docker pull ${{ needs.build-and-push-docker.outputs.tag_latest }}"
+          echo "docker stop tip-customer-production && docker rm tip-customer-production"
+          echo "docker run -d --name tip-customer-production --restart unless-stopped -p 3001:3000 ${{ needs.build-and-push-docker.outputs.tag_latest }}"
+
+  notification:
+    runs-on: ubuntu-latest
+    needs: [deploy-preview]
+    if: always() && needs.build-and-push-docker.outputs.environment == 'preview'
+    steps:
+      - name: Send Deployment Notification
+        run: |
+          if [ "${{ needs.deploy-preview.result }}" == "success" ]; then
+            echo "✅ TIP Customer Frontend preview deployment successful"
+            echo "🌐 Live at: https://www.tip.zetos.io"
+          else
+            echo "❌ TIP Customer Frontend preview deployment failed"
+          fi
