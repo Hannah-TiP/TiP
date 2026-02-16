@@ -2,7 +2,7 @@
 # Multi-stage build for Next.js 16 App Router
 
 # Stage 1: Dependencies
-FROM node:18-alpine AS deps
+FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -11,7 +11,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 
 # Stage 2: Builder
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Build arguments
 ARG BUILD_DATE
@@ -31,7 +31,7 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # Stage 3: Runner (Production)
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 
 # Labels for metadata
 LABEL org.opencontainers.image.title="TIP Customer Frontend"
