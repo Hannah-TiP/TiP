@@ -177,7 +177,7 @@ jobs:
               --name tip-customer-preview \
               --restart unless-stopped \
               -p 9200:3000 \
-              -e NODE_ENV=production \
+              --env-file ~/.env.preview \
               ${{ needs.build-and-push-docker.outputs.tag_latest }}
 
             echo "✅ Preview deployed successfully"
@@ -209,7 +209,7 @@ jobs:
               --name tip-customer-production \
               --restart unless-stopped \
               -p 9201:3000 \
-              -e NODE_ENV=production \
+              --env-file ~/.env.production \
               ${{ needs.build-and-push-docker.outputs.tag_latest }}
 
             echo "✅ Production deployed successfully"
