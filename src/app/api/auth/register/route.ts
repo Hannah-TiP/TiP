@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
 const API_BASE_URL = process.env.API_BASE_URL;
 
@@ -63,7 +62,7 @@ export async function POST(request: NextRequest) {
     });
 
     return nextResponse;
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

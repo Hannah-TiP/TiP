@@ -93,7 +93,7 @@ export default function SignInPage() {
           </form>
 
           <div className="border-t border-gray-100 bg-gray-50 px-8 py-4 text-center text-sm">
-            <span className="text-gray-text">Don't have an account? </span>
+            <span className="text-gray-text">Don&apos;t have an account? </span>
             <Link href="/register" className="font-medium text-green-dark hover:underline">
               Sign up
             </Link>

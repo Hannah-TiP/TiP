@@ -34,7 +34,7 @@ export interface TripContext {
   purpose?: string;
   budget?: number;
   service_type?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface MessageMetadata {
@@ -91,8 +91,9 @@ export interface AISession {
 }
 
 export interface CreateSessionResponse {
-  success: boolean;
-  data: AISession;
+  success?: boolean;
+  code?: number;
+  data?: AISession;
 }
 
 export interface SendMessageRequest {
@@ -102,8 +103,9 @@ export interface SendMessageRequest {
 }
 
 export interface SendMessageResponse {
-  success: boolean;
-  data: {
+  success?: boolean;
+  code?: number;
+  data?: {
     session_id: string;
     response: string;
     intent?: IntentType;
@@ -119,8 +121,9 @@ export interface SendMessageResponse {
 }
 
 export interface ChatHistoryResponse {
-  success: boolean;
-  data: {
+  success?: boolean;
+  code?: number;
+  data?: {
     messages: AIMessage[];
     total: number;
     page: number;

@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
             Reset your password
           </h1>
           <p className="mt-2 text-gray-text">
-            We'll send you a verification code
+            We&apos;ll send you a verification code
           </p>
         </div>
 

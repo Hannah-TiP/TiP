@@ -90,7 +90,7 @@ export default function HotelDetailPage() {
         <TopBar activeLink="Dream Hotels" />
         <div className="flex flex-col items-center justify-center py-40">
           <h1 className="font-primary text-[42px] italic text-green-dark">Hotel Not Found</h1>
-          <p className="mt-4 text-gray-text">The hotel you're looking for doesn't exist.</p>
+          <p className="mt-4 text-gray-text">The hotel you&apos;re looking for doesn&apos;t exist.</p>
           <Link
             href="/dream-hotels"
             className="mt-8 rounded-full bg-green-dark px-8 py-3 text-[13px] font-semibold text-white hover:bg-green-dark/90"

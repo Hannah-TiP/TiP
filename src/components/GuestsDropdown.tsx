@@ -4,14 +4,14 @@ import { useEffect, useRef } from "react";
 
 interface GuestsDropdownProps {
   adults: number;
-  children: number;
-  onChange: (adults: number, children: number) => void;
+  kids: number;
+  onChange: (adults: number, kids: number) => void;
   onClose: () => void;
 }
 
 export default function GuestsDropdown({
   adults,
-  children,
+  kids,
   onChange,
   onClose,
 }: GuestsDropdownProps) {
@@ -43,7 +43,7 @@ export default function GuestsDropdown({
         </div>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => onChange(Math.max(1, adults - 1), children)}
+            onClick={() => onChange(Math.max(1, adults - 1), kids)}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-500 hover:border-green-dark hover:text-green-dark disabled:cursor-not-allowed disabled:opacity-50"
             disabled={adults <= 1}
           >
@@ -53,7 +53,7 @@ export default function GuestsDropdown({
             {adults}
           </span>
           <button
-            onClick={() => onChange(Math.min(10, adults + 1), children)}
+            onClick={() => onChange(Math.min(10, adults + 1), kids)}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-500 hover:border-green-dark hover:text-green-dark disabled:cursor-not-allowed disabled:opacity-50"
             disabled={adults >= 10}
           >
@@ -70,19 +70,19 @@ export default function GuestsDropdown({
         </div>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => onChange(adults, Math.max(0, children - 1))}
+            onClick={() => onChange(adults, Math.max(0, kids - 1))}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-500 hover:border-green-dark hover:text-green-dark disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={children <= 0}
+            disabled={kids <= 0}
           >
             −
           </button>
           <span className="w-6 text-center text-[15px] font-semibold text-green-dark">
-            {children}
+            {kids}
           </span>
           <button
-            onClick={() => onChange(adults, Math.min(6, children + 1))}
+            onClick={() => onChange(adults, Math.min(6, kids + 1))}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-500 hover:border-green-dark hover:text-green-dark disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={children >= 6}
+            disabled={kids >= 6}
           >
             +
           </button>

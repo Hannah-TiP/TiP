@@ -183,7 +183,7 @@ export default function SearchBar() {
       {activeDropdown === "guests" && (
         <GuestsDropdown
           adults={guests.adults}
-          children={guests.children}
+          kids={guests.children}
           onChange={(adults, children) => setGuests({ adults, children })}
           onClose={() => setActiveDropdown(null)}
         />

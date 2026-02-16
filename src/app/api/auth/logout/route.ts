@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
 const API_BASE_URL = process.env.API_BASE_URL;
@@ -23,7 +23,7 @@ export async function POST() {
     cookieStore.delete('device_id');
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

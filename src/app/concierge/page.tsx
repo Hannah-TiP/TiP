@@ -7,7 +7,20 @@ import MessageList from '@/components/ai-chat/MessageList';
 import ChatInput from '@/components/ai-chat/ChatInput';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api-client';
-import type { AIMessage, TripContext } from '@/types/ai-chat';
+import type {
+  AIMessage,
+  TripContext,
+  ChatHistoryResponse,
+  CreateSessionResponse,
+  SendMessageResponse,
+  AnalyzeImageResponse,
+  TranscribeAudioResponse
+} from '@/types/ai-chat';
+
+// Helper function to check if API response is successful
+function isSuccessResponse(response: { success?: boolean; code?: number }): boolean {
+  return response.success === true || response.code === 200;
+}
 
 export default function ConciergePage() {
   const router = useRouter();
@@ -43,12 +56,12 @@ export default function ConciergePage() {
           setSessionId(storedSessionId);
           // Fetch history
           try {
-            const historyResponse = await apiClient.getChatHistory(storedSessionId, 1, 50);
+            const historyResponse = await apiClient.getChatHistory(storedSessionId, 1, 50) as ChatHistoryResponse;
             console.log('[Concierge] History response:', historyResponse);
 
             // Backend returns either {success: true, data: {...}} or {code: 200, data: {...}}
-            const isSuccess = (historyResponse as any).success === true || (historyResponse as any).code === 200;
-            const historyData = historyResponse.data || (historyResponse as any).data;
+            const isSuccess = isSuccessResponse(historyResponse);
+            const historyData = historyResponse.data;
 
             if (isSuccess && historyData && historyData.messages && historyData.messages.length > 0) {
               // Backend returns messages in reverse chronological order (newest first)
@@ -71,12 +84,12 @@ export default function ConciergePage() {
 
         // Create new session
         console.log('[Concierge] Creating new session...');
-        const response = await apiClient.createChatSession('en');
+        const response = await apiClient.createChatSession('en') as CreateSessionResponse;
         console.log('[Concierge] Create session response:', response);
 
         // Backend returns either {success: true, data: {...}} or {code: 200, data: {...}}
-        const isSuccess = (response as any).success === true || (response as any).code === 200;
-        const responseData = response.data || (response as any).data;
+        const isSuccess = isSuccessResponse(response);
+        const responseData = response.data;
 
         if (isSuccess && responseData) {
           setSessionId(responseData.session_id);
@@ -137,12 +150,12 @@ export default function ConciergePage() {
 
     try {
       console.log('[Concierge] Calling apiClient.sendMessage...');
-      const response = await apiClient.sendMessage(sessionId, content, 'text');
+      const response = await apiClient.sendMessage(sessionId, content, 'text') as SendMessageResponse;
       console.log('[Concierge] Send message response:', response);
 
       // Backend returns either {success: true, data: {...}} or {code: 200, data: {...}}
-      const isSuccess = (response as any).success === true || (response as any).code === 200;
-      const responseData = response.data || (response as any).data;
+      const isSuccess = isSuccessResponse(response);
+      const responseData = response.data;
 
       if (isSuccess && responseData) {
         // Add assistant response to UI
@@ -250,8 +263,9 @@ export default function ConciergePage() {
       console.log('[Concierge] Analysis response:', analysisResponse);
 
       // Handle both response formats
-      const isSuccess = (analysisResponse as any).success === true || (analysisResponse as any).code === 200;
-      const responseData = analysisResponse.data || (analysisResponse as any).data;
+      const typedAnalysisResponse = analysisResponse as AnalyzeImageResponse;
+      const isSuccess = isSuccessResponse(typedAnalysisResponse);
+      const responseData = typedAnalysisResponse.data;
 
       if (isSuccess && responseData) {
         // Add assistant analysis response
@@ -352,8 +366,9 @@ export default function ConciergePage() {
       console.log('[Concierge] Transcription response:', transcriptionResponse);
 
       // Handle both response formats
-      const isSuccess = (transcriptionResponse as any).success === true || (transcriptionResponse as any).code === 200;
-      const responseData = transcriptionResponse.data || (transcriptionResponse as any).data;
+      const typedTranscriptionResponse = transcriptionResponse as TranscribeAudioResponse;
+      const isSuccess = isSuccessResponse(typedTranscriptionResponse);
+      const responseData = typedTranscriptionResponse.data;
 
       if (isSuccess && responseData) {
         // Update user audio message with transcription
