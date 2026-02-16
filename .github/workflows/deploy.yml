@@ -2,11 +2,13 @@ name: TIP Customer Frontend CI/CD
 
 on:
   push:
-    branches: [develop]  # Auto-deploy to preview
+    branches:
+      - develop  # Auto-deploy to preview
+      - main     # Auto-deploy to production
   pull_request:
     branches: [develop, main]
     types: [opened, synchronize, reopened]
-  workflow_dispatch:  # Manual trigger for production
+  workflow_dispatch:  # Manual trigger for production or preview
     inputs:
       environment:
         description: 'Environment to deploy to'
@@ -64,8 +66,8 @@ jobs:
   build-and-push-docker:
     runs-on: ubuntu-latest
     needs: [test-and-build]
-    # Only build Docker on develop branch push or manual dispatch
-    if: (github.ref == 'refs/heads/develop' && github.event_name == 'push') || github.event_name == 'workflow_dispatch'
+    # Build Docker on develop/main branch push or manual dispatch
+    if: ((github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') && github.event_name == 'push') || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
       packages: write
@@ -106,6 +108,8 @@ jobs:
           # Determine environment tag
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             ENV_TAG="${{ github.event.inputs.environment }}"
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            ENV_TAG="production"
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             ENV_TAG="preview"
           else
@@ -179,33 +183,59 @@ jobs:
             echo "✅ Preview deployed successfully"
             echo "🌐 Available at: https://www.tip.zetos.io"
 
-  signal-manual-deploy:
+  deploy-production:
     runs-on: ubuntu-latest
     needs: [build-and-push-docker]
-    # Only for production (manual workflow_dispatch)
+    # Auto-deploy to production
     if: needs.build-and-push-docker.outputs.environment == 'production'
     environment: production
     steps:
-      - name: Notify Production Ready
-        run: |
-          echo "🚀 Production Docker image ready!"
-          echo "📦 Image: ${{ needs.build-and-push-docker.outputs.tag_latest }}"
-          echo ""
-          echo "To deploy to production, SSH to the server and run:"
-          echo "docker pull ${{ needs.build-and-push-docker.outputs.tag_latest }}"
-          echo "docker stop tip-customer-production && docker rm tip-customer-production"
-          echo "docker run -d --name tip-customer-production --restart unless-stopped -p 3001:3000 ${{ needs.build-and-push-docker.outputs.tag_latest }}"
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Pull latest production image
+            docker pull ${{ needs.build-and-push-docker.outputs.tag_latest }}
+
+            # Stop and remove old container
+            docker stop tip-customer-production || true
+            docker rm tip-customer-production || true
+
+            # Run new production container on port 3001
+            docker run -d \
+              --name tip-customer-production \
+              --restart unless-stopped \
+              -p 3001:3000 \
+              -e NODE_ENV=production \
+              ${{ needs.build-and-push-docker.outputs.tag_latest }}
+
+            echo "✅ Production deployed successfully"
+            echo "🌐 Available at: https://www.travelinyourpocket.com"
 
   notification:
     runs-on: ubuntu-latest
-    needs: [deploy-preview]
-    if: always() && needs.build-and-push-docker.outputs.environment == 'preview'
+    needs: [build-and-push-docker, deploy-preview, deploy-production]
+    if: always()
     steps:
       - name: Send Deployment Notification
         run: |
-          if [ "${{ needs.deploy-preview.result }}" == "success" ]; then
-            echo "✅ TIP Customer Frontend preview deployment successful"
-            echo "🌐 Live at: https://www.tip.zetos.io"
-          else
-            echo "❌ TIP Customer Frontend preview deployment failed"
+          ENV="${{ needs.build-and-push-docker.outputs.environment }}"
+
+          if [ "$ENV" == "preview" ]; then
+            if [ "${{ needs.deploy-preview.result }}" == "success" ]; then
+              echo "✅ TIP Customer Frontend preview deployment successful"
+              echo "🌐 Live at: https://www.tip.zetos.io"
+            else
+              echo "❌ TIP Customer Frontend preview deployment failed"
+            fi
+          elif [ "$ENV" == "production" ]; then
+            if [ "${{ needs.deploy-production.result }}" == "success" ]; then
+              echo "✅ TIP Customer Frontend production deployment successful"
+              echo "🌐 Live at: https://www.travelinyourpocket.com"
+            else
+              echo "❌ TIP Customer Frontend production deployment failed"
+            fi
           fi

@@ -5,7 +5,8 @@ This guide walks you through setting up CI/CD for the TIP customer frontend.
 ## Overview
 
 - **Preview**: Auto-deploys to `www.tip.zetos.io` on push to `develop` branch
-- **Production**: Manual deploy to `www.travelinyourpocket.com` via GitHub Actions workflow dispatch
+- **Production**: Auto-deploys to `www.travelinyourpocket.com` on push to `main` branch
+- **Manual Deploy**: Optional manual trigger via GitHub Actions workflow dispatch for both environments
 
 ## Prerequisites
 
@@ -262,7 +263,24 @@ sudo systemctl reload nginx
 sudo certbot --nginx -d www.travelinyourpocket.com -d travelinyourpocket.com
 ```
 
-### Deploy to Production (Manual Trigger)
+### Deploy to Production (Automatic)
+
+Production now deploys automatically when you push to the `main` branch:
+
+```bash
+# Merge develop into main (or commit directly to main)
+git checkout main
+git merge develop
+git push origin main
+```
+
+This will automatically:
+- Build and push Docker image with `production` tag
+- Deploy to production server at www.travelinyourpocket.com
+
+### Manual Production Deployment (Optional)
+
+If you need to manually trigger a deployment:
 
 1. Go to GitHub repository → **Actions**
 2. Click **TIP Customer Frontend CI/CD** workflow
@@ -272,11 +290,7 @@ sudo certbot --nginx -d www.travelinyourpocket.com -d travelinyourpocket.com
    - **Environment**: `production`
 5. Click **Run workflow**
 
-This will:
-- Build and push Docker image with `production` tag
-- **NOT auto-deploy** (manual SSH required)
-
-### Manual Production Deployment on Server
+### Emergency Manual Deployment on Server
 
 ```bash
 # SSH to server
@@ -445,15 +459,15 @@ docker run -d \
 3. GitHub Actions automatically:
    - Runs tests and linting
    - Builds Docker image
-   - Pushes to Docker Hub
+   - Pushes to GitHub Container Registry
    - Deploys to www.tip.zetos.io
    ↓
 4. Test on preview site
    ↓
 5. When ready for production:
    - Merge develop → main
-   - Manually trigger production workflow
-   - Manually deploy on server
+   - Push to main branch
+   - GitHub Actions automatically deploys to production
 ```
 
 ### Emergency Rollback
