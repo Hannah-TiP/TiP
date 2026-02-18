@@ -38,7 +38,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         try {
-          console.log('[Auth] authorize called for:', credentials.email);
           const loginRes = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Language': 'en' },
@@ -48,15 +47,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               device_id: credentials.device_id,
             }),
           });
-          console.log('[Auth] login response status:', loginRes.status);
-          if (!loginRes.ok) {
-            const err = await loginRes.json().catch(() => ({}));
-            console.error('[Auth] login failed:', err);
-            return null;
-          }
-          const loginData = await loginRes.json();
-          console.log('[Auth] login success, fetching /me');
-          const { data } = loginData;
+          if (!loginRes.ok) return null;
+          const { data } = await loginRes.json();
 
           const meRes = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
             headers: {
@@ -64,13 +56,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               'Language': 'en',
             },
           });
-          console.log('[Auth] /me response status:', meRes.status);
-          if (!meRes.ok) {
-            console.error('[Auth] /me failed');
-            return null;
-          }
+          if (!meRes.ok) return null;
           const { data: user } = await meRes.json();
-          console.log('[Auth] authorize success for user id:', user.id);
 
           return {
             ...user,
@@ -79,8 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             refreshToken: data.refresh_token,
             deviceId: credentials.device_id,
           };
-        } catch (e) {
-          console.error('[Auth] authorize threw:', e);
+        } catch {
           return null;
         }
       },

@@ -77,7 +77,7 @@ export default function ForgotPasswordPage() {
       });
       if (result?.error) throw new Error('Failed to sign in after password reset');
 
-      router.push('/my-page');
+      window.location.href = '/my-page';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Password reset failed');
       setIsLoading(false);

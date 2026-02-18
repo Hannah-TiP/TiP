@@ -2,12 +2,11 @@
 
 import { Suspense, useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { getDeviceId } from '@/lib/device';
 import Link from 'next/link';
 
 function SignInForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,11 +26,10 @@ function SignInForm() {
         device_id,
         redirect: false,
       });
-      console.log('[SignIn] result:', result);
       if (result?.error) {
         setError('Invalid email or password');
       } else {
-        router.push(searchParams.get('redirect') || '/my-page');
+        window.location.href = searchParams.get('redirect') || '/my-page';
       }
     } catch {
       setError('Login failed');

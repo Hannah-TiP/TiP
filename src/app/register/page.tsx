@@ -76,7 +76,7 @@ export default function RegisterPage() {
       });
       if (result?.error) throw new Error('Failed to sign in after registration');
 
-      router.push('/my-page');
+      window.location.href = '/my-page';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
       setIsLoading(false);
