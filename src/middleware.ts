@@ -1,29 +1,23 @@
+import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 
-const protectedRoutes = ['/my-page'];
-const authRoutes = ['/sign-in'];
+export default auth((req) => {
+  const isLoggedIn = !!req.auth && !req.auth.error;
+  const { pathname } = req.nextUrl;
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const accessToken = request.cookies.get('access_token')?.value;
-  const isAuthenticated = !!accessToken;
+  const isProtectedRoute = pathname.startsWith('/my-page') || pathname === '/concierge';
+  const isAuthRoute = pathname === '/sign-in';
 
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-  if (isProtectedRoute && !isAuthenticated) {
-    const url = new URL('/sign-in', request.url);
+  if (isProtectedRoute && !isLoggedIn) {
+    const url = new URL('/sign-in', req.nextUrl);
     url.searchParams.set('redirect', pathname);
     return NextResponse.redirect(url);
   }
-
-  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
-  if (isAuthRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL('/my-page', request.url));
+  if (isAuthRoute && isLoggedIn) {
+    return NextResponse.redirect(new URL('/my-page', req.nextUrl));
   }
-
-  return NextResponse.next();
-}
+});
 
 export const config = {
-  matcher: ['/my-page/:path*', '/sign-in'],
+  matcher: ['/my-page/:path*', '/sign-in', '/concierge'],
 };

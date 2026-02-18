@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { Suspense, useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { getDeviceId } from '@/lib/device';
 import Link from 'next/link';
 
-export default function SignInPage() {
-  const { login } = useAuth();
+function SignInForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,14 +20,85 @@ export default function SignInPage() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      const device_id = await getDeviceId();
+      const result = await signIn('credentials', {
+        email,
+        password,
+        device_id,
+        redirect: false,
+      });
+      if (result?.error) {
+        setError('Invalid email or password');
+      } else {
+        router.push(searchParams.get('redirect') || '/my-page');
+      }
+    } catch {
+      setError('Login failed');
     } finally {
       setIsLoading(false);
     }
   };
 
+  return (
+    <div className="mt-8 w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-8">
+        <h2 className="text-center text-[20px] font-semibold text-green-dark">
+          Welcome back
+        </h2>
+
+        {error && (
+          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter your email"
+          required
+          disabled={isLoading}
+          className="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-green-dark"
+        />
+
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Enter your password"
+          required
+          disabled={isLoading}
+          className="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-green-dark"
+        />
+
+        <Link
+          href="/forgot-password"
+          className="text-sm text-green-dark hover:underline"
+        >
+          Forgot password?
+        </Link>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="flex h-12 w-full items-center justify-center rounded-lg bg-green-dark text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          {isLoading ? 'Signing in...' : 'Continue'}
+        </button>
+      </form>
+
+      <div className="border-t border-gray-100 bg-gray-50 px-8 py-4 text-center text-sm">
+        <span className="text-gray-text">Don&apos;t have an account? </span>
+        <Link href="/register" className="font-medium text-green-dark hover:underline">
+          Sign up
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export default function SignInPage() {
   return (
     <main className="flex min-h-screen flex-col bg-gray-light">
       {/* Top Bar */}
@@ -44,61 +118,9 @@ export default function SignInPage() {
           </p>
         </div>
 
-        <div className="mt-8 w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-8">
-            <h2 className="text-center text-[20px] font-semibold text-green-dark">
-              Welcome back
-            </h2>
-
-            {error && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                {error}
-              </div>
-            )}
-
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-              disabled={isLoading}
-              className="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-green-dark"
-            />
-
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-              disabled={isLoading}
-              className="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-green-dark"
-            />
-
-            <Link
-              href="/forgot-password"
-              className="text-sm text-green-dark hover:underline"
-            >
-              Forgot password?
-            </Link>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex h-12 w-full items-center justify-center rounded-lg bg-green-dark text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              {isLoading ? 'Signing in...' : 'Continue'}
-            </button>
-          </form>
-
-          <div className="border-t border-gray-100 bg-gray-50 px-8 py-4 text-center text-sm">
-            <span className="text-gray-text">Don&apos;t have an account? </span>
-            <Link href="/register" className="font-medium text-green-dark hover:underline">
-              Sign up
-            </Link>
-          </div>
-        </div>
+        <Suspense fallback={<div className="mt-8 h-64 w-[420px] animate-pulse rounded-xl bg-white" />}>
+          <SignInForm />
+        </Suspense>
       </div>
     </main>
   );

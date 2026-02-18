@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { getDeviceId } from '@/lib/device';
 import Link from 'next/link';
 
 export default function RegisterPage() {
-  const { register, sendVerificationCode } = useAuth();
+  const router = useRouter();
   const [step, setStep] = useState<'email' | 'verify'>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +31,15 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await sendVerificationCode(email, 'register');
+      const res = await fetch('/api/auth/send-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code_type: 'register' }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Failed to send verification code');
+      }
       setStep('verify');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send verification code');
@@ -44,10 +54,31 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await register(email, password, verificationCode);
+      const device_id = await getDeviceId();
+
+      // Step 1: Register via backend
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, device_id, verification_code: verificationCode }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      // Step 2: Sign in via NextAuth to establish the session
+      const result = await signIn('credentials', {
+        email,
+        password,
+        device_id,
+        redirect: false,
+      });
+      if (result?.error) throw new Error('Failed to sign in after registration');
+
+      router.push('/my-page');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
-    } finally {
       setIsLoading(false);
     }
   };
