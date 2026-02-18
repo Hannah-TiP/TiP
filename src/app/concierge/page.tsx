@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import TopBar from "@/components/TopBar";
 import MessageList from '@/components/ai-chat/MessageList';
 import ChatInput from '@/components/ai-chat/ChatInput';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import { apiClient } from '@/lib/api-client';
 import type {
   AIMessage,
@@ -24,7 +24,9 @@ function isSuccessResponse(response: { success?: boolean; code?: number }): bool
 
 export default function ConciergePage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { data: session, status } = useSession();
+  const isAuthenticated = !!session;
+  const authLoading = status === 'loading';
 
   const [sessionId, setSessionId] = useState<string>('');
   const [messages, setMessages] = useState<AIMessage[]>([]);

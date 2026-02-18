@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession, signOut } from 'next-auth/react';
 
 interface TopBarProps {
   activeLink: string;
@@ -15,7 +15,8 @@ const navLinks = [
 ];
 
 export default function TopBar({ activeLink }: TopBarProps) {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { data: session } = useSession();
+  const isAuthenticated = !!session;
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-10">
@@ -45,7 +46,7 @@ export default function TopBar({ activeLink }: TopBarProps) {
           );
         })}
 
-        {isAuthenticated && user ? (
+        {isAuthenticated ? (
           <>
             <Link
               href="/my-page"
@@ -58,7 +59,7 @@ export default function TopBar({ activeLink }: TopBarProps) {
               MY PAGE
             </Link>
             <button
-              onClick={logout}
+              onClick={() => signOut({ callbackUrl: '/' })}
               className="text-[11px] font-medium tracking-[2px] text-green-dark/50 hover:text-green-dark transition-colors"
             >
               LOGOUT

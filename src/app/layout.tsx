@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   title: "TiP - Luxury Travel Concierge",
@@ -25,9 +25,9 @@ export default function RootLayout({
         />
       </head>
       <body className="h-full antialiased font-secondary">
-        <AuthProvider>
+        <SessionProvider>
           {children}
-        </AuthProvider>
+        </SessionProvider>
       </body>
     </html>
   );

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { auth } from '@/auth';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('access_token')?.value;
+    const session = await auth();
+    const accessToken = session?.accessToken;
 
     if (!accessToken) {
       return NextResponse.json(

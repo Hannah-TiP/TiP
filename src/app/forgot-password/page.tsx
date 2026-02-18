@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { getDeviceId } from '@/lib/device';
 import Link from 'next/link';
 
 export default function ForgotPasswordPage() {
-  const { sendVerificationCode, resetPassword } = useAuth();
+  const router = useRouter();
   const [step, setStep] = useState<'email' | 'reset'>('email');
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -20,7 +22,15 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      await sendVerificationCode(email, 'forgot-password');
+      const res = await fetch('/api/auth/send-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code_type: 'forgot-password' }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Failed to send code');
+      }
       setStep('reset');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send code');
@@ -40,10 +50,36 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      await resetPassword(email, verificationCode, newPassword);
+      const device_id = await getDeviceId();
+
+      // Step 1: Reset password via backend
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          verification_code: verificationCode,
+          password: newPassword,
+          device_id,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Password reset failed');
+      }
+
+      // Step 2: Sign in via NextAuth to establish the session
+      const result = await signIn('credentials', {
+        email,
+        password: newPassword,
+        device_id,
+        redirect: false,
+      });
+      if (result?.error) throw new Error('Failed to sign in after password reset');
+
+      router.push('/my-page');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Password reset failed');
-    } finally {
       setIsLoading(false);
     }
   };
