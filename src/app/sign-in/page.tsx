@@ -27,6 +27,7 @@ function SignInForm() {
         device_id,
         redirect: false,
       });
+      console.log('[SignIn] result:', result);
       if (result?.error) {
         setError('Invalid email or password');
       } else {
