@@ -2,11 +2,13 @@ import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  console.log('[Middleware] cookies:', request.cookies.getAll().map(c => c.name));
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
     secureCookie: process.env.NODE_ENV === 'production',
   });
+  console.log('[Middleware] token:', token ? 'found' : 'null');
 
   const isLoggedIn = !!token && !token.error;
   const { pathname } = request.nextUrl;
