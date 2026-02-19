@@ -150,6 +150,10 @@ jobs:
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VCS_REF=${{ github.sha }}
             VERSION=${{ steps.vars.outputs.environment }}-${{ steps.vars.outputs.short_sha }}
+            NEXT_PUBLIC_S3_ENDPOINT=${{ secrets.NEXT_PUBLIC_S3_ENDPOINT }}
+            NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
+            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+            NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID }}
 
   deploy-preview:
     runs-on: ubuntu-latest
