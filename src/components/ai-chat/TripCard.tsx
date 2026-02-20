@@ -45,7 +45,8 @@ export default function TripCard({ trip }: TripCardProps) {
     // router.push(`/trips/${trip.id}`);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'TBD';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
