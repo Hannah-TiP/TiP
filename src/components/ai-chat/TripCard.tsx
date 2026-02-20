@@ -1,6 +1,7 @@
 "use client";
 
-import type { Trip } from '@/types/ai-chat';
+import type { Trip } from '@/types/trip';
+import { getImageUrl } from '@/types/hotel';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -8,22 +9,34 @@ interface TripCardProps {
   trip: Trip;
 }
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   'draft': 'bg-gray-200 text-gray-700',
   'waiting-for-proposal': 'bg-yellow-100 text-yellow-800',
-  'paid': 'bg-green-100 text-green-800',
-  'completed': 'bg-blue-100 text-blue-800',
+  'in-progress': 'bg-blue-100 text-blue-800',
+  'waiting-for-payment': 'bg-orange-100 text-orange-800',
+  'ready-to-travel': 'bg-green-100 text-green-800',
+  'traveling-now': 'bg-green-200 text-green-900',
+  'travel-completed': 'bg-gray-100 text-gray-700',
+  'canceled': 'bg-red-100 text-red-700',
 };
 
-const statusLabels = {
+const statusLabels: Record<string, string> = {
   'draft': 'Draft',
   'waiting-for-proposal': 'Pending',
-  'paid': 'Paid',
-  'completed': 'Completed',
+  'in-progress': 'Proposal Ready',
+  'waiting-for-payment': 'Awaiting Payment',
+  'ready-to-travel': 'Ready',
+  'traveling-now': 'Traveling',
+  'travel-completed': 'Completed',
+  'canceled': 'Canceled',
 };
 
 export default function TripCard({ trip }: TripCardProps) {
   const router = useRouter();
+  const displayName = trip.destination
+    ?? trip.preset_destination_cities_names
+    ?? trip.custom_destination_cities
+    ?? 'Trip';
 
   const handleClick = () => {
     // Navigate to trip details page if it exists
@@ -46,21 +59,21 @@ export default function TripCard({ trip }: TripCardProps) {
       <div className="relative w-full h-[140px]">
         {trip.cover_image ? (
           <Image
-            src={trip.cover_image}
-            alt={trip.destination}
+            src={getImageUrl(trip.cover_image)}
+            alt={displayName}
             fill
             className="object-cover"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#1E3D2F] to-[#C4956A] flex items-center justify-center">
-            <span className="font-cormorant text-2xl text-white">{trip.destination}</span>
+            <span className="font-cormorant text-2xl text-white">{displayName}</span>
           </div>
         )}
 
         {/* Status Badge */}
         <div className="absolute top-3 right-3">
-          <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${statusColors[trip.status]}`}>
-            {statusLabels[trip.status]}
+          <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${statusColors[trip.status] ?? 'bg-gray-100 text-gray-600'}`}>
+            {statusLabels[trip.status] ?? trip.status}
           </span>
         </div>
       </div>
@@ -68,7 +81,7 @@ export default function TripCard({ trip }: TripCardProps) {
       {/* Trip Info */}
       <div className="p-4">
         <h4 className="font-inter text-base font-semibold text-[#1E3D2F] mb-2">
-          {trip.destination}
+          {displayName}
         </h4>
 
         <div className="space-y-1 text-sm font-inter text-gray-600">

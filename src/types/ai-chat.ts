@@ -1,29 +1,12 @@
 // AI Chat types matching backend API response structure
 
+import type { Trip } from '@/types/trip';
+export type { Trip };
+
 export type IntentType = 'query_trips' | 'create_trip' | 'edit_trip' | 'upcoming_trips' | 'general';
 export type MessageRole = 'user' | 'assistant' | 'system';
 export type MessageType = 'text' | 'image' | 'audio';
 export type CollectionStatus = 'collecting' | 'collecting_optional' | 'awaiting_confirmation' | 'completed';
-
-export interface Trip {
-  id: number;
-  destination: string;
-  cover_image?: string;
-  start_date: string;
-  end_date: string;
-  start_time: number; // Unix timestamp
-  end_time: number;
-  adults: number;
-  kids?: number;
-  purpose?: string;
-  status: 'draft' | 'waiting-for-proposal' | 'paid' | 'completed';
-  budget?: number;
-  service_type?: string;
-  preset_destination_cities?: string;
-  custom_destination_cities?: string;
-  has_comments: boolean;
-  is_shared: boolean;
-}
 
 export interface TripContext {
   destination?: string;
