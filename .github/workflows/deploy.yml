@@ -212,6 +212,7 @@ jobs:
             docker rm tip-customer-preview || true
             docker run -d --name tip-customer-preview --restart unless-stopped \
               -p 9200:3000 --env-file ~/.env.tip.preview ${TAG}
+            docker image prune -f
             echo "✅ Preview deployed successfully"
             echo "🌐 Available at: https://www.tip.zetos.io"
           ENDSSH
@@ -262,6 +263,7 @@ jobs:
             docker rm tip-customer-production || true
             docker run -d --name tip-customer-production --restart unless-stopped \
               -p 9201:3000 --env-file ~/.env.tip.production ${TAG}
+            docker image prune -f
           ENDSSH
 
       - name: Health check (12 × 10s = 2min)
