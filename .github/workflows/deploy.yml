@@ -202,12 +202,16 @@ jobs:
       - name: Deploy preview container
         run: |
           TAG="${{ needs.build-and-push-docker.outputs.tag_latest }}"
+          GHCR_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          GHCR_USER="${{ github.actor }}"
           ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << ENDSSH
-            docker pull $TAG
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+            docker pull ${TAG}
+            docker logout ghcr.io
             docker stop tip-customer-preview || true
             docker rm tip-customer-preview || true
             docker run -d --name tip-customer-preview --restart unless-stopped \
-              -p 9200:3000 --env-file ~/.env.tip.preview $TAG
+              -p 9200:3000 --env-file ~/.env.tip.preview ${TAG}
             echo "✅ Preview deployed successfully"
             echo "🌐 Available at: https://www.tip.zetos.io"
           ENDSSH
@@ -248,12 +252,16 @@ jobs:
       - name: Deploy production container
         run: |
           TAG="${{ needs.build-and-push-docker.outputs.tag_latest }}"
+          GHCR_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          GHCR_USER="${{ github.actor }}"
           ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << ENDSSH
-            docker pull $TAG
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+            docker pull ${TAG}
+            docker logout ghcr.io
             docker stop tip-customer-production || true
             docker rm tip-customer-production || true
             docker run -d --name tip-customer-production --restart unless-stopped \
-              -p 9201:3000 --env-file ~/.env.tip.production $TAG
+              -p 9201:3000 --env-file ~/.env.tip.production ${TAG}
           ENDSSH
 
       - name: Health check (12 × 10s = 2min)
