@@ -9,6 +9,7 @@ import type {
   AnalyzeImageResponse,
   TranscribeAudioResponse,
 } from '@/types/ai-chat';
+import type { Trip, TripDetail } from '@/types/trip';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -123,6 +124,31 @@ class ApiClient {
     const response = await this.request<{ data: City[] }>(
       `/cities?language=${language}`
     );
+    return response.data;
+  }
+
+  // Trip methods
+  async getTrips(params?: {
+    status?: string;
+    page?: number;
+    per_page?: number;
+    exclude_canceled?: boolean;
+  }): Promise<Trip[]> {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.page !== undefined) searchParams.set('page', params.page.toString());
+    if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
+    if (params?.exclude_canceled !== undefined) searchParams.set('exclude_canceled', params.exclude_canceled.toString());
+
+    const query = searchParams.toString();
+    const endpoint = `/trip/list${query ? `?${query}` : ''}`;
+
+    const response = await this.request<{ data: { items: Trip[] } }>(endpoint);
+    return response.data.items;
+  }
+
+  async getTripById(id: number): Promise<TripDetail> {
+    const response = await this.request<{ data: TripDetail }>(`/trip/${id}`);
     return response.data;
   }
 
