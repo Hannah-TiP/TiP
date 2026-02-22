@@ -135,6 +135,24 @@ jobs:
           echo "  Versioned tag: $TAG_VERSIONED"
           echo "  Latest tag: $TAG_LATEST"
 
+      - name: Decrypt environment config
+        run: |
+          ENV="${{ steps.vars.outputs.environment }}"
+          gpg --quiet --batch --yes \
+            --decrypt \
+            --passphrase="${{ secrets.ENV_PASSPHRASE }}" \
+            "secrets/env.tip.${ENV}.gpg" > /tmp/env.${ENV}
+
+      - name: Extract build args
+        id: build-env
+        run: |
+          ENV="${{ steps.vars.outputs.environment }}"
+          set -a; source /tmp/env.${ENV}; set +a
+          echo "s3_endpoint=${NEXT_PUBLIC_S3_ENDPOINT}" >> $GITHUB_OUTPUT
+          echo "api_base_url=${NEXT_PUBLIC_API_BASE_URL}" >> $GITHUB_OUTPUT
+          echo "gmaps_key=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}" >> $GITHUB_OUTPUT
+          echo "gmaps_map_id=${NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}" >> $GITHUB_OUTPUT
+
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
@@ -150,10 +168,10 @@ jobs:
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VCS_REF=${{ github.sha }}
             VERSION=${{ steps.vars.outputs.environment }}-${{ steps.vars.outputs.short_sha }}
-            NEXT_PUBLIC_S3_ENDPOINT=${{ secrets.NEXT_PUBLIC_S3_ENDPOINT }}
-            NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
-            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
-            NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID }}
+            NEXT_PUBLIC_S3_ENDPOINT=${{ steps.build-env.outputs.s3_endpoint }}
+            NEXT_PUBLIC_API_BASE_URL=${{ steps.build-env.outputs.api_base_url }}
+            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ steps.build-env.outputs.gmaps_key }}
+            NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=${{ steps.build-env.outputs.gmaps_map_id }}
 
   deploy-preview:
     runs-on: ubuntu-latest
@@ -162,30 +180,37 @@ jobs:
     if: needs.build-and-push-docker.outputs.environment == 'preview'
     environment: preview
     steps:
-      - name: Deploy to Preview Server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            # Pull latest image
-            docker pull ${{ needs.build-and-push-docker.outputs.tag_latest }}
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-            # Stop and remove old container
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload preview env to server
+        run: |
+          gpg --quiet --batch --yes \
+            --decrypt \
+            --passphrase="${{ secrets.ENV_PASSPHRASE }}" \
+            secrets/env.tip.preview.gpg | \
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "cat > ~/.env.tip.preview && chmod 600 ~/.env.tip.preview"
+
+      - name: Deploy preview container
+        run: |
+          TAG="${{ needs.build-and-push-docker.outputs.tag_latest }}"
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << ENDSSH
+            docker pull $TAG
             docker stop tip-customer-preview || true
             docker rm tip-customer-preview || true
-
-            # Run new container on port 9200
-            docker run -d \
-              --name tip-customer-preview \
-              --restart unless-stopped \
-              -p 9200:3000 \
-              --env-file ~/.env.preview \
-              ${{ needs.build-and-push-docker.outputs.tag_latest }}
-
+            docker run -d --name tip-customer-preview --restart unless-stopped \
+              -p 9200:3000 --env-file ~/.env.tip.preview $TAG
             echo "✅ Preview deployed successfully"
             echo "🌐 Available at: https://www.tip.zetos.io"
+          ENDSSH
 
   deploy-production:
     runs-on: ubuntu-latest
@@ -194,30 +219,66 @@ jobs:
     if: needs.build-and-push-docker.outputs.environment == 'production'
     environment: production
     steps:
-      - name: Deploy to Production Server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            # Pull latest production image
-            docker pull ${{ needs.build-and-push-docker.outputs.tag_latest }}
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-            # Stop and remove old container
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload production env to server
+        run: |
+          gpg --quiet --batch --yes \
+            --decrypt \
+            --passphrase="${{ secrets.ENV_PASSPHRASE }}" \
+            secrets/env.tip.production.gpg | \
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "cat > ~/.env.tip.production && chmod 600 ~/.env.tip.production"
+
+      - name: Get current production image
+        id: prev-image
+        run: |
+          PREV_TAG=$(ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "docker ps --filter name=tip-customer-production --format '{{.Image}}'" 2>/dev/null || echo "")
+          echo "tag=${PREV_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Deploy production container
+        run: |
+          TAG="${{ needs.build-and-push-docker.outputs.tag_latest }}"
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << ENDSSH
+            docker pull $TAG
             docker stop tip-customer-production || true
             docker rm tip-customer-production || true
+            docker run -d --name tip-customer-production --restart unless-stopped \
+              -p 9201:3000 --env-file ~/.env.tip.production $TAG
+          ENDSSH
 
-            # Run new production container on port 9201
-            docker run -d \
-              --name tip-customer-production \
-              --restart unless-stopped \
-              -p 9201:3000 \
-              --env-file ~/.env.production \
-              ${{ needs.build-and-push-docker.outputs.tag_latest }}
-
-            echo "✅ Production deployed successfully"
-            echo "🌐 Available at: https://www.travelinyourpocket.com"
+      - name: Health check (12 × 10s = 2min)
+        run: |
+          PREV_TAG="${{ steps.prev-image.outputs.tag }}"
+          for i in $(seq 1 12); do
+            if ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+              "curl -sf http://localhost:9201/api/health"; then
+              echo "✅ Health check passed"
+              exit 0
+            fi
+            echo "⏳ Attempt $i/12 — waiting 10s..."
+            sleep 10
+          done
+          echo "❌ Health check failed — rolling back to ${PREV_TAG:-previous image}"
+          if [ -n "$PREV_TAG" ]; then
+            ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << ENDSSH
+              docker stop tip-customer-production || true
+              docker rm tip-customer-production || true
+              docker run -d --name tip-customer-production --restart unless-stopped \
+                -p 9201:3000 --env-file ~/.env.tip.production $PREV_TAG
+              echo "⏮️  Rolled back to $PREV_TAG"
+            ENDSSH
+          fi
+          exit 1
 
   notification:
     runs-on: ubuntu-latest

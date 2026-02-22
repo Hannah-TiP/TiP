@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Auto-encrypt .env files if content changed since last commit.
+# Requires: gpg, secrets/.passphrase
+
+SECRETS_DIR="secrets"
+PASSPHRASE_FILE="$SECRETS_DIR/.passphrase"
+
+GPG=$(command -v gpg || command -v gpg2 || echo "")
+
+if [ -z "$GPG" ]; then
+  echo "⚠️  gpg not found, skipping env encryption (install with: brew install gnupg)"
+  exit 0
+fi
+
+if [ ! -f "$PASSPHRASE_FILE" ]; then
+  echo "⚠️  $PASSPHRASE_FILE not found, skipping env encryption"
+  exit 0
+fi
+
+PASSPHRASE=$(cat "$PASSPHRASE_FILE")
+
+encrypt_if_changed() {
+  local env_file="$1"
+  local gpg_file="$2"
+  local label="$3"
+
+  if [ ! -f "$env_file" ]; then
+    return
+  fi
+
+  local needs_update=true
+
+  if [ -f "$gpg_file" ]; then
+    if diff -q "$env_file" \
+      <("$GPG" --quiet --batch --yes --decrypt --passphrase="$PASSPHRASE" "$gpg_file" 2>/dev/null) \
+      > /dev/null 2>&1; then
+      needs_update=false
+    fi
+  fi
+
+  if [ "$needs_update" = true ]; then
+    echo "🔐 $label changed — re-encrypting..."
+    "$GPG" --symmetric --cipher-algo AES256 \
+      --batch --yes \
+      --passphrase="$PASSPHRASE" \
+      --output "$gpg_file" \
+      "$env_file"
+    git add "$gpg_file"
+    echo "✅ $gpg_file updated and staged"
+  fi
+}
+
+encrypt_if_changed ".env.preview"    "$SECRETS_DIR/env.tip.preview.gpg"    "Preview env"
+encrypt_if_changed ".env.production" "$SECRETS_DIR/env.tip.production.gpg" "Production env"

@@ -33,6 +33,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Secrets — only encrypted files committed
+secrets/*
+!secrets/*.gpg
+
 # vercel
 .vercel
 
