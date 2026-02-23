@@ -9,7 +9,16 @@ import type {
   AnalyzeImageResponse,
   TranscribeAudioResponse,
 } from '@/types/ai-chat';
-import type { Trip, TripDetail } from '@/types/trip';
+import type {
+  Trip,
+  TripDetail,
+  CommentContent,
+  AgreeProposalResponse,
+  PayPalOrderResponse,
+  ReviewPayload,
+  Review,
+  S3TempCredentials,
+} from '@/types/trip';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -149,6 +158,72 @@ class ApiClient {
 
   async getTripById(id: number): Promise<TripDetail> {
     const response = await this.request<{ data: TripDetail }>(`/trip/${id}`);
+    return response.data;
+  }
+
+  async submitTrip(tripId: number): Promise<void> {
+    await this.request(`/trip/${tripId}/submit`, {
+      method: 'POST',
+    });
+  }
+
+  // Trip comments
+  async addComment(tripId: number, content: CommentContent[]): Promise<void> {
+    await this.request(`/trip/${tripId}/add-comment`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async markCommentRead(tripId: number): Promise<void> {
+    await this.request(`/trip/${tripId}/mark-comment-read`, {
+      method: 'POST',
+    });
+  }
+
+  // Proposal
+  async agreeProposal(tripId: number): Promise<AgreeProposalResponse> {
+    return this.request<AgreeProposalResponse>(`/trip/${tripId}/agree-proposal`, {
+      method: 'POST',
+    });
+  }
+
+  // Payment
+  async createPayment(tripId: number, amount: number): Promise<PayPalOrderResponse> {
+    const response = await this.request<{ data: PayPalOrderResponse }>('/paypal/create-payment', {
+      method: 'POST',
+      body: JSON.stringify({ trip_id: tripId, amount }),
+    });
+    return response.data;
+  }
+
+  async verifyPayment(tripId: number, paymentId: string): Promise<void> {
+    await this.request('/paypal/verify-payment', {
+      method: 'POST',
+      body: JSON.stringify({ trip_id: tripId, payment_id: paymentId }),
+    });
+  }
+
+  // Reviews
+  async createReview(itemId: number, data: ReviewPayload): Promise<void> {
+    await this.request(`/travel-plan-item/${itemId}/review`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMyReview(itemId: number): Promise<Review | null> {
+    try {
+      const response = await this.request<{ data: Review }>(`/travel-plan-item/${itemId}/review`);
+      return response.data;
+    } catch {
+      return null;
+    }
+  }
+
+  // S3 (generic, non-chat)
+  async getS3Credentials(): Promise<S3TempCredentials> {
+    const response = await this.request<{ data: S3TempCredentials }>('/media/s3-credentials');
     return response.data;
   }
 

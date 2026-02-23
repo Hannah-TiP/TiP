@@ -125,6 +125,52 @@ export interface Trip {
   has_unread_journal_messages?: boolean;
 }
 
+// ─── Comment / Proposal / Payment / Review payloads ──────────────────────────
+
+export interface CommentContent {
+  role: 'user';
+  type: 'text' | 'file';
+  message: string;
+  filePath?: string;
+}
+
+export interface AgreeProposalResponse {
+  status: string;
+  proposal_status: string;
+  pending_amount?: number;
+}
+
+export interface PayPalOrderResponse {
+  paypal_order_id: string;
+  order_data?: Record<string, unknown>;
+}
+
+export interface ReviewPayload {
+  score: number;           // 1-5
+  review_content: string;
+  photos?: string[];       // S3 URLs
+}
+
+export interface Review {
+  id: number;
+  travel_plan_item_id: number;
+  score: number;
+  review_content: string;
+  photos?: string[];
+  status?: string;
+  created_at?: string;
+}
+
+export interface S3TempCredentials {
+  access_key_id: string;
+  secret_access_key: string;
+  session_token: string;
+  bucket: string;
+  region: string;
+  prefix: string;
+  expiration: string;
+}
+
 // Detail response — GET /api/v1/trip/{id}
 // Extends Trip with proposal, itinerary, payment, and sharing fields
 export interface TripDetail extends Trip {

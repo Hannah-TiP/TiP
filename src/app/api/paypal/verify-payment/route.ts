@@ -3,10 +3,7 @@ import { auth } from '@/auth';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     const accessToken = session?.accessToken;
@@ -18,28 +15,32 @@ export async function GET(
       );
     }
 
-    const { id } = await params;
+    const body = await request.json();
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/trip/${id}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'Language': 'en',
-      },
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/paypal/verify-payment`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      }
+    );
 
     const data = await response.json();
 
     if (!response.ok) {
       return NextResponse.json(
-        { success: false, message: data.message || 'Trip not found' },
+        { success: false, message: data.message || 'Failed to verify payment' },
         { status: response.status }
       );
     }
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Trip detail API error:', error);
+    console.error('Verify payment API error:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }

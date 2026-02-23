@@ -300,6 +300,16 @@ export default function TripDetailPage() {
               </div>
             )}
 
+            {/* Review CTA */}
+            {trip.status === "travel-completed" && (
+              <Link
+                href={`/my-page/trip/${trip.id}/reviews`}
+                className="block w-full py-3 bg-[#C4956A] text-white text-sm font-semibold rounded-xl hover:bg-[#b3845c] transition-colors text-center"
+              >
+                Review Your Experience
+              </Link>
+            )}
+
           </div>
         </div>
       </div>
