@@ -56,7 +56,18 @@ export default function RegisterPage() {
     try {
       const device_id = await getDeviceId();
 
-      // Step 1: Register via backend
+      // Step 1: Verify email-device binding
+      const verifyRes = await fetch('/api/auth/verify-email-device', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, device_id, verification_code: verificationCode, code_type: 'register' }),
+      });
+      if (!verifyRes.ok) {
+        const data = await verifyRes.json();
+        throw new Error(data.message || 'Invalid verification code');
+      }
+
+      // Step 2: Register via backend
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
