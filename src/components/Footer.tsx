@@ -19,16 +19,11 @@ export default function Footer() {
     >
       {/* Top row */}
       <div className="flex justify-between items-start">
-        <span
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 28,
-            fontWeight: 700,
-            color: "#FFFFFF",
-          }}
-        >
-          TiP
-        </span>
+        <img
+          src="/bible_TIP_logo_noir.svg"
+          alt="TiP"
+          style={{ height: 40, filter: "brightness(0) invert(1)" }}
+        />
 
         <div className="flex" style={{ gap: 80 }}>
           <FooterColumn title="Explore" items={exploreLinks} />

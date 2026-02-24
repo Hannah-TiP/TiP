@@ -53,8 +53,8 @@ export default function DreamHotelsPage() {
 
         {/* Nav */}
         <nav className="relative z-10 flex h-16 items-center justify-between px-[60px]">
-          <Link href="/" className="font-primary text-[28px] font-bold text-white">
-            TiP
+          <Link href="/">
+            <img src="/bible_TIP_profil_400x400px.svg" alt="TiP" className="h-9" style={{ filter: "brightness(0) invert(1)" }} />
           </Link>
           <div className="flex items-center gap-8">
             <Link href="/dream-hotels" className="text-[11px] font-semibold tracking-[2px] text-white">

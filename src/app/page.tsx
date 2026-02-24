@@ -111,8 +111,8 @@ export default function HomePage() {
 
         {/* Nav Bar */}
         <nav className="relative z-10 flex h-[80px] items-center justify-between px-10">
-          <Link href="/" className="font-primary text-[32px] font-bold text-white">
-            TiP
+          <Link href="/">
+            <img src="/bible_TIP_profil_400x400px.svg" alt="TiP" className="h-10" style={{ filter: "brightness(0) invert(1)" }} />
           </Link>
           <div className="flex items-center gap-10">
             {mainNavLinks.map((link) => (
@@ -190,9 +190,7 @@ export default function HomePage() {
         <div className="mx-auto flex max-w-7xl items-start gap-20">
           {/* TiP Logo mark */}
           <div className="flex-shrink-0">
-            <div className="flex h-[60px] w-[60px] items-center justify-center rounded-lg bg-green-dark">
-              <span className="font-primary text-[24px] font-bold text-white">T</span>
-            </div>
+            <img src="/bible_TIP_profil_400x400px.svg" alt="TiP" className="h-[60px] w-[60px]" />
           </div>
 
           {/* Content */}
@@ -257,8 +255,8 @@ export default function HomePage() {
       <section className="bg-gray-light px-[100px] py-20">
         <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
           {/* TiP Logo */}
-          <div className="mb-6 flex h-[55px] w-[68px] items-center justify-center">
-            <span className="font-primary text-[36px] font-bold text-green-dark">TiP</span>
+          <div className="mb-6">
+            <img src="/bible_TIP_logo_noir.svg" alt="TiP" className="h-[60px]" />
           </div>
           <span className="text-[11px] font-semibold tracking-[4px] text-green-dark">
             BEGIN YOUR JOURNEY
@@ -366,8 +364,8 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl">
           {/* Top */}
           <div className="flex items-start justify-between">
-            <Link href="/" className="font-primary text-[28px] font-bold text-white">
-              TiP
+            <Link href="/">
+              <img src="/bible_TIP_logo_noir.svg" alt="TiP" className="h-10" style={{ filter: "brightness(0) invert(1)" }} />
             </Link>
             <div className="flex gap-20">
               <div>

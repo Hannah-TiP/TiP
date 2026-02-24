@@ -5,6 +5,10 @@ import { SessionProvider } from "next-auth/react";
 export const metadata: Metadata = {
   title: "TiP - Luxury Travel Concierge",
   description: "Dream Hotels, Thoughtfully Curated.",
+  icons: {
+    icon: "/bible_TIP_profil_400x400px.svg",
+    apple: "/bible_TIP_profil_400x400px.svg",
+  },
 };
 
 export default function RootLayout({

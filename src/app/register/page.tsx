@@ -86,8 +86,8 @@ export default function RegisterPage() {
   return (
     <main className="flex min-h-screen flex-col bg-gray-light">
       <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-10">
-        <Link href="/" className="font-primary text-[28px] font-bold text-green-dark">
-          TiP
+        <Link href="/">
+          <img src="/bible_TIP_profil_400x400px.svg" alt="TiP" className="h-9" />
         </Link>
       </div>
 
