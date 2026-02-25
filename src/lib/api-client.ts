@@ -1,4 +1,4 @@
-import type { User } from '@/types/auth';
+import type { User, ProfileData, UpdateProfileData } from '@/types/auth';
 import type { Hotel, City } from '@/types/hotel';
 import type {
   CreateSessionResponse,
@@ -92,6 +92,19 @@ class ApiClient {
 
   async getCurrentUser(): Promise<User> {
     return this.request<User>('/auth/me');
+  }
+
+  // Profile methods
+  async getProfile(): Promise<ProfileData> {
+    const response = await this.request<{ data: ProfileData }>('/profile');
+    return response.data;
+  }
+
+  async updateProfile(data: UpdateProfileData): Promise<void> {
+    await this.request('/profile/update', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   // Hotel methods

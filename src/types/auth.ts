@@ -27,6 +27,27 @@ export interface User {
   is_verified: boolean;
 }
 
+export interface ProfileData {
+  id: number;
+  first_name?: string;
+  last_name?: string;
+  avatar?: string;
+  country_id?: number;
+  gender?: string;
+  birth?: string;
+  membership?: string;
+  total_spent?: number;
+  preferences?: Record<string, unknown>;
+}
+
+export interface UpdateProfileData {
+  first_name?: string;
+  last_name?: string;
+  country_id?: number;
+  gender?: string;
+  birth?: string;
+}
+
 export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
