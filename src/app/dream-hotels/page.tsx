@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import TopBar from "@/components/TopBar";
 import Footer from "@/components/Footer";
@@ -15,14 +15,33 @@ const partners = [
 
 // Helper function to derive tag from hotel data
 function getHotelTag(hotel: Hotel): string {
-  if (hotel.star_rating === "5") return "PALACE";
-  if (hotel.star_rating) return `${hotel.star_rating} STAR`;
-  return "LUXURY";
+  if (!hotel.star_rating) return "HOTEL";
+  return hotel.star_rating.toUpperCase();
 }
+
+const STAR_RATING_OPTIONS = [
+  { value: "", label: "All types" },
+  { value: "5-star", label: "5 Star" },
+  { value: "4-star", label: "4 Star" },
+];
 
 export default function DreamHotelsPage() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Filter state
+  const [selectedCity, setSelectedCity] = useState<{ id: number; name: string } | null>(null);
+  const [selectedStarRating, setSelectedStarRating] = useState("");
+
+  // Dropdown open state
+  const [openDropdown, setOpenDropdown] = useState<"destination" | "type" | null>(null);
+
+  // Destination search
+  const [citySearch, setCitySearch] = useState("");
+  const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadHotels() {
@@ -39,6 +58,49 @@ export default function DreamHotelsPage() {
 
     loadHotels();
   }, []);
+
+  // Load cities when destination dropdown opens
+  useEffect(() => {
+    if (openDropdown === "destination" && cities.length === 0) {
+      setCitiesLoading(true);
+      apiClient.getCities('en')
+        .then(setCities)
+        .catch(() => {})
+        .finally(() => setCitiesLoading(false));
+    }
+  }, [openDropdown, cities.length]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Filtered hotels
+  const filteredHotels = useMemo(() => {
+    return hotels.filter((hotel) => {
+      if (selectedCity && hotel.city_id !== selectedCity.id) return false;
+      if (selectedStarRating && hotel.star_rating !== selectedStarRating) return false;
+      return true;
+    });
+  }, [hotels, selectedCity, selectedStarRating]);
+
+  const filteredCities = cities.filter((c) =>
+    c.name.toLowerCase().includes(citySearch.toLowerCase())
+  );
+
+  const hasActiveFilters = selectedCity || selectedStarRating;
+
+  function clearFilters() {
+    setSelectedCity(null);
+    setSelectedStarRating("");
+    setOpenDropdown(null);
+  }
 
   return (
     <main className="min-h-screen bg-gray-light">
@@ -98,28 +160,133 @@ export default function DreamHotelsPage() {
             </div>
           </div>
         ) : (
-          <HotelMap hotels={hotels} />
+          <HotelMap hotels={filteredHotels} />
         )}
 
         {/* Search filters */}
-        <div className="px-20 py-10">
+        <div className="px-20 py-10" ref={dropdownRef}>
           <div className="flex items-center gap-4">
-            <div className="flex-1 rounded-lg border border-gray-border bg-white px-5 py-4">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">DESTINATION</p>
-              <p className="text-[14px] font-medium text-green-dark">All destinations</p>
+            {/* Destination filter */}
+            <div className="relative flex-1">
+              <button
+                onClick={() => {
+                  setOpenDropdown(openDropdown === "destination" ? null : "destination");
+                  setCitySearch("");
+                }}
+                className={`w-full rounded-lg border bg-white px-5 py-4 text-left transition-colors ${
+                  openDropdown === "destination" ? "border-gold" : "border-gray-border hover:border-gray-400"
+                }`}
+              >
+                <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">DESTINATION</p>
+                <p className="text-[14px] font-medium text-green-dark">
+                  {selectedCity ? selectedCity.name : "All destinations"}
+                </p>
+              </button>
+              {openDropdown === "destination" && (
+                <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white shadow-xl">
+                  <div className="border-b border-gray-100 p-4">
+                    <input
+                      type="text"
+                      placeholder="Search destinations..."
+                      value={citySearch}
+                      onChange={(e) => setCitySearch(e.target.value)}
+                      className="w-full rounded-lg bg-gray-50 px-4 py-3 text-[14px] text-green-dark outline-none placeholder:text-gray-400"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="max-h-[280px] overflow-auto p-2">
+                    {citiesLoading ? (
+                      <div className="flex items-center justify-center py-6">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => { setSelectedCity(null); setOpenDropdown(null); }}
+                          className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
+                            !selectedCity ? "font-semibold text-gold" : "text-green-dark"
+                          }`}
+                        >
+                          All destinations
+                        </button>
+                        {filteredCities.map((city) => (
+                          <button
+                            key={city.id}
+                            onClick={() => { setSelectedCity(city); setOpenDropdown(null); }}
+                            className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
+                              selectedCity?.id === city.id ? "font-semibold text-gold" : "text-green-dark"
+                            }`}
+                          >
+                            {city.name}
+                          </button>
+                        ))}
+                        {filteredCities.length === 0 && !citiesLoading && (
+                          <p className="px-3 py-4 text-center text-[13px] text-gray-500">No destinations found</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex-1 rounded-lg border border-gray-border bg-white px-5 py-4">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">HOTEL TYPE</p>
-              <p className="text-[14px] font-medium text-green-dark">All types</p>
+
+            {/* Hotel Type filter */}
+            <div className="relative flex-1">
+              <button
+                onClick={() => setOpenDropdown(openDropdown === "type" ? null : "type")}
+                className={`w-full rounded-lg border bg-white px-5 py-4 text-left transition-colors ${
+                  openDropdown === "type" ? "border-gold" : "border-gray-border hover:border-gray-400"
+                }`}
+              >
+                <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">HOTEL TYPE</p>
+                <p className="text-[14px] font-medium text-green-dark">
+                  {STAR_RATING_OPTIONS.find((o) => o.value === selectedStarRating)?.label || "All types"}
+                </p>
+              </button>
+              {openDropdown === "type" && (
+                <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white p-2 shadow-xl">
+                  {STAR_RATING_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => { setSelectedStarRating(option.value); setOpenDropdown(null); }}
+                      className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
+                        selectedStarRating === option.value ? "font-semibold text-gold" : "text-green-dark"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* Price Range — static placeholder */}
             <div className="flex-1 rounded-lg border border-gray-border bg-white px-5 py-4">
               <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">PRICE RANGE</p>
               <p className="text-[14px] font-medium text-green-dark">Any price</p>
             </div>
-            <button className="rounded-lg bg-green-dark px-8 py-4 text-[13px] font-semibold text-white">
-              Search
-            </button>
+
+            {/* Clear / Search button */}
+            {hasActiveFilters ? (
+              <button
+                onClick={clearFilters}
+                className="rounded-lg border border-green-dark px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-green-dark hover:text-white"
+              >
+                Clear
+              </button>
+            ) : (
+              <button className="rounded-lg bg-green-dark px-8 py-4 text-[13px] font-semibold text-white">
+                Search
+              </button>
+            )}
           </div>
+
+          {/* Active filter count */}
+          {hasActiveFilters && (
+            <p className="mt-3 text-[13px] text-gray-text">
+              Showing {filteredHotels.length} of {hotels.length} hotels
+            </p>
+          )}
         </div>
       </section>
 
@@ -138,13 +305,23 @@ export default function DreamHotelsPage() {
           <div className="flex items-center justify-center py-20">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
           </div>
-        ) : hotels.length === 0 ? (
+        ) : filteredHotels.length === 0 ? (
           <div className="py-20 text-center">
-            <p className="text-gray-text">No hotels available at the moment.</p>
+            <p className="text-gray-text">
+              {hasActiveFilters ? "No hotels match your filters." : "No hotels available at the moment."}
+            </p>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="mt-4 text-[14px] font-medium text-gold underline hover:no-underline"
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-4 gap-6">
-            {hotels.map((hotel) => (
+            {filteredHotels.map((hotel) => (
               <Link
                 key={hotel.id}
                 href={`/hotel/${hotel.id}`}

@@ -37,6 +37,7 @@ export default function HotelMap({ hotels }: HotelMapProps) {
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const isInitialFit = useRef(true);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
@@ -117,6 +118,44 @@ export default function HotelMap({ hotels }: HotelMapProps) {
 
       markersRef.current.push(marker);
     });
+
+    // Fit map bounds to show filtered hotels
+    if (hotelsWithCoordinates.length > 0) {
+      const bounds = new window.google.maps.LatLngBounds();
+      hotelsWithCoordinates.forEach((hotel) => {
+        bounds.extend({ lat: hotel.latitude!, lng: hotel.longitude! });
+      });
+
+      if (isInitialFit.current) {
+        // First load: snap instantly
+        map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
+        const listener = map.addListener('idle', () => {
+          if (map.getZoom()! > 14) map.setZoom(14);
+          google.maps.event.removeListener(listener);
+        });
+        isInitialFit.current = false;
+      } else {
+        // Filter change: animate smoothly
+        // panTo animates to center, then we zoom after the pan settles
+        const center = bounds.getCenter();
+        map.panTo(center);
+
+        const listener = map.addListener('idle', () => {
+          google.maps.event.removeListener(listener);
+          // Now fit bounds after pan, capping zoom for single hotels
+          map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
+          const zoomListener = map.addListener('idle', () => {
+            if (map.getZoom()! > 14) map.setZoom(14);
+            google.maps.event.removeListener(zoomListener);
+          });
+        });
+      }
+    }
+
+    // Close InfoWindow if selected hotel is no longer in the filtered set
+    if (selectedHotel && !hotels.some((h) => h.id === selectedHotel.id)) {
+      setSelectedHotel(null);
+    }
 
     return () => {
       // Cleanup on unmount
