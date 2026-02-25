@@ -8,7 +8,7 @@ import SubNav from "@/components/SubNav";
 import Footer from "@/components/Footer";
 import BirthDatePicker from "@/components/BirthDatePicker";
 import { apiClient } from "@/lib/api-client";
-import type { ProfileData } from "@/types/auth";
+import type { ProfileData, Country } from "@/types/auth";
 
 // Convert backend birth format (M/D/YYYY) to display format (YYYY-MM-DD)
 function birthToDisplay(birth?: string): string {
@@ -55,6 +55,10 @@ export default function MyProfile() {
   const [lastName, setLastName] = useState("");
   const [gender, setGender] = useState("");
   const [birth, setBirth] = useState("");
+  const [countryId, setCountryId] = useState<number | undefined>(undefined);
+
+  // Countries list
+  const [countries, setCountries] = useState<Country[]>([]);
 
   // Track if form is dirty
   const [isDirty, setIsDirty] = useState(false);
@@ -66,8 +70,18 @@ export default function MyProfile() {
     }
     if (sessionStatus === "authenticated") {
       loadProfile();
+      loadCountries();
     }
   }, [sessionStatus]);
+
+  async function loadCountries() {
+    try {
+      const data = await apiClient.getCountries();
+      setCountries(data);
+    } catch (err) {
+      console.error("Countries load error:", err);
+    }
+  }
 
   async function loadProfile() {
     try {
@@ -79,6 +93,7 @@ export default function MyProfile() {
       setLastName(data.last_name || "");
       setGender(data.gender || "");
       setBirth(birthToDisplay(data.birth));
+      setCountryId(data.country_id ?? undefined);
     } catch (err) {
       setError("Failed to load profile. Please try again.");
       console.error("Profile load error:", err);
@@ -105,7 +120,7 @@ export default function MyProfile() {
         last_name: lastName,
         gender: gender || undefined,
         birth: birth ? displayToBirth(birth) : undefined,
-        country_id: profile?.country_id ?? undefined,
+        country_id: countryId,
       });
       setSuccess("Profile updated successfully.");
       setIsDirty(false);
@@ -125,6 +140,7 @@ export default function MyProfile() {
       setLastName(profile.last_name || "");
       setGender(profile.gender || "");
       setBirth(birthToDisplay(profile.birth));
+      setCountryId(profile.country_id ?? undefined);
       setIsDirty(false);
       setError("");
       setSuccess("");
@@ -248,6 +264,25 @@ export default function MyProfile() {
                       setSuccess("");
                     }}
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Country</label>
+                  <select
+                    value={countryId ?? ""}
+                    onChange={(e) => {
+                      setCountryId(e.target.value ? Number(e.target.value) : undefined);
+                      setIsDirty(true);
+                      setSuccess("");
+                    }}
+                    className={inputClass}
+                  >
+                    <option value="">Select country</option>
+                    {countries.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Membership</label>

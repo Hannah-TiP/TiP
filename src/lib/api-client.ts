@@ -1,4 +1,4 @@
-import type { User, ProfileData, UpdateProfileData } from '@/types/auth';
+import type { User, ProfileData, UpdateProfileData, Country } from '@/types/auth';
 import type { Hotel, City } from '@/types/hotel';
 import type {
   CreateSessionResponse,
@@ -105,6 +105,12 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  }
+
+  // Country methods
+  async getCountries(): Promise<Country[]> {
+    const response = await this.request<{ data: Country[] }>('/countries');
+    return response.data;
   }
 
   // Hotel methods

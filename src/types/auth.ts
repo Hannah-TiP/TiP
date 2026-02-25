@@ -48,6 +48,12 @@ export interface UpdateProfileData {
   birth?: string;
 }
 
+export interface Country {
+  id: number;
+  name: string;
+  code: string;
+}
+
 export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
