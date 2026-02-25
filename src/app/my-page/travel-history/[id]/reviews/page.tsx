@@ -106,7 +106,7 @@ function ReviewCard({ item }: { item: TravelPlanItem }) {
     setError(null);
     try {
       const payload: ReviewPayload = {
-        score,
+        rating: score,
         review_content: content.trim(),
       };
       await apiClient.createReview(item.id, payload);
@@ -205,7 +205,7 @@ export default function ReviewsPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <TopBar activeLink="My Page" />
-        <SubNav activeTab="Upcoming Travels" />
+        <SubNav activeTab="Travel History" />
         <div className="max-w-4xl mx-auto px-6 mt-8 space-y-4 animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3" />
           {[1, 2, 3].map((i) => (
@@ -220,7 +220,7 @@ export default function ReviewsPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <TopBar activeLink="My Page" />
-        <SubNav activeTab="Upcoming Travels" />
+        <SubNav activeTab="Travel History" />
         <div className="max-w-4xl mx-auto px-6 mt-8 text-center py-20 text-gray-500">
           <p>{error ?? "Trip not found."}</p>
           <Link href="/my-page" className="mt-4 inline-block text-[#1E3D2F] hover:underline text-sm">
@@ -237,12 +237,12 @@ export default function ReviewsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <TopBar activeLink="My Page" />
-      <SubNav activeTab="Upcoming Travels" />
+      <SubNav activeTab="Travel History" />
 
       <div className="max-w-4xl mx-auto px-6 mt-8 mb-16">
         {/* Back */}
         <Link
-          href={`/my-page/trip/${trip.id}`}
+          href={`/my-page/travel-history/${trip.id}`}
           className="text-sm text-gray-500 hover:text-gray-900 mb-6 inline-block"
         >
           ← Back to Trip

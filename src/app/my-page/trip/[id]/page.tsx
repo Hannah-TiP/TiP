@@ -766,7 +766,7 @@ export default function TripDetailPage() {
             {/* Review CTA for completed trips */}
             {isCompleted && (
               <Link
-                href={`/my-page/trip/${trip.id}/reviews`}
+                href={`/my-page/travel-history/${trip.id}/reviews`}
                 className="block w-full py-3 bg-[#C4956A] text-white text-sm font-semibold rounded-xl hover:bg-[#b3845c] transition-colors text-center"
               >
                 Write Reviews

@@ -146,7 +146,7 @@ export interface PayPalOrderResponse {
 }
 
 export interface ReviewPayload {
-  score: number;           // 1-5
+  rating: number;          // 1-5
   review_content: string;
   photos?: string[];       // S3 URLs
 }
