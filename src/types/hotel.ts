@@ -19,16 +19,29 @@ export interface ReviewSummary {
 export interface Activity {
   id: number;
   name: string;
+  city_id?: number | null;
+  category?: string;
   description?: string;
   image?: string;
-  review_summary?: ReviewSummary;
+  opening_hours?: string;
+  visit_duration?: string;
+  address?: string;
+  content?: string;
+  city?: City | null;
+  review_summary?: ReviewSummary | null;
 }
 
 export interface Restaurant {
   id: number;
   name: string;
+  city_id?: number | null;
+  star_rating?: string;
   description?: string;
   image?: string;
+  opening_hours?: string;
+  address?: string;
+  content?: string;
+  city?: City | null;
 }
 
 export interface Hotel {

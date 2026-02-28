@@ -1,5 +1,5 @@
 import type { User, ProfileData, UpdateProfileData, Country } from '@/types/auth';
-import type { Hotel, City } from '@/types/hotel';
+import type { Hotel, City, Activity, Restaurant } from '@/types/hotel';
 import type {
   CreateSessionResponse,
   SendMessageResponse,
@@ -143,6 +143,62 @@ class ApiClient {
   async getHotelById(hotelId: number | string): Promise<Hotel> {
     const response = await this.request<{ data: Hotel }>(
       `/hotels/${hotelId}`
+    );
+    return response.data;
+  }
+
+  // Activity methods
+  async getActivities(params?: {
+    page?: number;
+    per_page?: number;
+    city_id?: number;
+    category?: string;
+    language?: string;
+  }): Promise<Activity[]> {
+    const searchParams = new URLSearchParams();
+    if (params?.page !== undefined) searchParams.set('page', params.page.toString());
+    if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
+    if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
+    if (params?.category) searchParams.set('category', params.category);
+    if (params?.language) searchParams.set('language', params.language);
+
+    const query = searchParams.toString();
+    const endpoint = `/activities${query ? `?${query}` : ''}`;
+
+    const response = await this.request<{ data: { items: Activity[] } }>(endpoint);
+    return response.data.items;
+  }
+
+  async getActivityById(activityId: number | string): Promise<Activity> {
+    const response = await this.request<{ data: Activity }>(
+      `/activities/${activityId}`
+    );
+    return response.data;
+  }
+
+  // Restaurant methods
+  async getRestaurants(params?: {
+    page?: number;
+    per_page?: number;
+    city_id?: number;
+    language?: string;
+  }): Promise<Restaurant[]> {
+    const searchParams = new URLSearchParams();
+    if (params?.page !== undefined) searchParams.set('page', params.page.toString());
+    if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
+    if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
+    if (params?.language) searchParams.set('language', params.language);
+
+    const query = searchParams.toString();
+    const endpoint = `/restaurants${query ? `?${query}` : ''}`;
+
+    const response = await this.request<{ data: { items: Restaurant[] } }>(endpoint);
+    return response.data.items;
+  }
+
+  async getRestaurantById(restaurantId: number | string): Promise<Restaurant> {
+    const response = await this.request<{ data: Restaurant }>(
+      `/restaurants/${restaurantId}`
     );
     return response.data;
   }

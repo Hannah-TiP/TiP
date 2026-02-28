@@ -1,137 +1,416 @@
 "use client";
 
-import TopBar from "@/components/TopBar";
+import { useState, useEffect, useRef, useMemo } from "react";
+import Link from "next/link";
 import Footer from "@/components/Footer";
-import Image from "next/image";
-
-const cruises = [
-  {
-    name: "Crystal Esprit",
-    img: "https://images.unsplash.com/photo-1548574505-5e239809ee19?w=600&h=400&fit=crop",
-    desc: "An intimate 62-guest yacht exploring the Adriatic and Caribbean with butler service and open-bar luxury.",
-  },
-  {
-    name: "Regent Seven Seas",
-    img: "https://images.unsplash.com/photo-1599640842225-85d111c60e6b?w=600&h=400&fit=crop",
-    desc: "All-inclusive ultra-luxury with the most spacious suites at sea and world-class dining.",
-  },
-  {
-    name: "Silversea Voyages",
-    img: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=600&h=400&fit=crop",
-    desc: "Expedition meets elegance — from Antarctica to the Galápagos in boutique comfort.",
-  },
-];
-
-const trains = [
-  {
-    name: "Venice Simplon Orient Express",
-    img: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=600&h=400&fit=crop",
-    desc: "Art deco grandeur on the iconic London-to-Venice route through the Alps.",
-  },
-  {
-    name: "Maharajas' Express",
-    img: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&h=400&fit=crop",
-    desc: "India's most luxurious train — palatial suites, royal dining, and curated excursions.",
-  },
-  {
-    name: "Rocky Mountaineer",
-    img: "https://images.unsplash.com/photo-1504233529578-6d46baba6d34?w=600&h=400&fit=crop",
-    desc: "Glass-domed coaches through the Canadian Rockies with gourmet cuisine and breathtaking panoramas.",
-  },
-];
+import { apiClient } from "@/lib/api-client";
+import { getImageUrl, type Activity, type Restaurant } from "@/types/hotel";
 
 export default function MoreDreamsPage() {
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Filter state
+  const [selectedCity, setSelectedCity] = useState<{ id: number; name: string } | null>(null);
+
+  // Dropdown state
+  const [openDropdown, setOpenDropdown] = useState<"destination" | null>(null);
+  const [citySearch, setCitySearch] = useState("");
+  const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setIsLoading(true);
+        const [activityData, restaurantData] = await Promise.all([
+          apiClient.getActivities({ per_page: 100, language: "en" }),
+          apiClient.getRestaurants({ per_page: 100, language: "en" }),
+        ]);
+        setActivities(activityData);
+        setRestaurants(restaurantData);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  // Load cities when dropdown opens
+  useEffect(() => {
+    if (openDropdown === "destination" && cities.length === 0) {
+      setCitiesLoading(true);
+      apiClient
+        .getCities("en")
+        .then(setCities)
+        .catch(() => {})
+        .finally(() => setCitiesLoading(false));
+    }
+  }, [openDropdown, cities.length]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredActivities = useMemo(() => {
+    if (!selectedCity) return activities;
+    return activities.filter((a) => a.city_id === selectedCity.id);
+  }, [activities, selectedCity]);
+
+  const filteredRestaurants = useMemo(() => {
+    if (!selectedCity) return restaurants;
+    return restaurants.filter((r) => r.city_id === selectedCity.id);
+  }, [restaurants, selectedCity]);
+
+  const filteredCities = cities.filter((c) =>
+    c.name.toLowerCase().includes(citySearch.toLowerCase())
+  );
+
+  function getActivityTag(activity: Activity): string {
+    if (!activity.category) return "ACTIVITY";
+    return activity.category.toUpperCase();
+  }
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <TopBar activeLink="More Dreams" />
-
+    <main className="min-h-screen bg-gray-light">
       {/* Hero */}
-      <section className="relative w-full h-[520px]">
-        <Image
-          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&h=520&fit=crop"
+      <section className="relative h-[720px] w-full overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&h=900&fit=crop"
           alt="More Dreams hero"
-          fill
-          className="object-cover"
+          className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 px-16 pb-16">
-          <span className="font-inter text-xs tracking-[3px] uppercase text-white/60 mb-3 block">
-            MORE DREAMS
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1E3D2F]/60 via-[#1E3D2F]/70 to-[#1E3D2F]/90" />
+
+        {/* Nav */}
+        <nav className="relative z-10 flex h-16 items-center justify-between px-[60px]">
+          <Link href="/">
+            <img
+              src="/bible_TIP_profil_400x400px.svg"
+              alt="TiP"
+              className="h-9"
+              style={{ filter: "brightness(0) invert(1)" }}
+            />
+          </Link>
+          <div className="flex items-center gap-8">
+            <Link
+              href="/dream-hotels"
+              className="text-[11px] font-medium tracking-[2px] text-white/70 hover:text-white"
+            >
+              DREAM HOTELS
+            </Link>
+            <Link
+              href="/more-dreams"
+              className="text-[11px] font-semibold tracking-[2px] text-white"
+            >
+              MORE DREAMS
+            </Link>
+            <Link
+              href="/insights"
+              className="text-[11px] font-medium tracking-[2px] text-white/70 hover:text-white"
+            >
+              INSIGHTS
+            </Link>
+            <Link
+              href="/my-page"
+              className="text-[11px] font-medium tracking-[2px] text-white/70 hover:text-white"
+            >
+              MY PAGE
+            </Link>
+          </div>
+        </nav>
+
+        {/* Hero Content */}
+        <div className="relative z-10 flex h-[calc(100%-64px)] flex-col items-center justify-center text-center">
+          <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
+            CURATED COLLECTION
           </span>
-          <h1 className="font-cormorant text-[56px] text-white leading-tight max-w-2xl">
-            Beyond Hotels — Extraordinary Journeys
+          <h1 className="font-primary text-[64px] font-normal italic leading-tight text-white">
+            More Dreams
           </h1>
+          <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-white/60">
+            Discover extraordinary activities and exquisite restaurants,
+            hand-selected across our curated destinations.
+          </p>
         </div>
       </section>
 
-      {/* Cruise Section */}
-      <section className="px-16 py-20">
-        <h2 className="font-cormorant text-[40px] text-[#1E3D2F] mb-3">
-          Sail the World in Unmatched Elegance
-        </h2>
-        <p className="font-inter text-sm text-gray-500 mb-10 max-w-xl">
-          Curated voyages aboard the finest vessels on earth.
-        </p>
-        <div className="grid grid-cols-3 gap-8">
-          {cruises.map((item) => (
-            <div key={item.name} className="group cursor-pointer">
-              <div className="relative w-full h-[280px] rounded-xl overflow-hidden mb-5">
-                <Image
-                  src={item.img}
-                  alt={item.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+      {/* Destination filter */}
+      <section className="bg-white px-20 py-10" ref={dropdownRef}>
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1">
+            <button
+              onClick={() => {
+                setOpenDropdown(openDropdown === "destination" ? null : "destination");
+                setCitySearch("");
+              }}
+              className={`w-full rounded-lg border bg-white px-5 py-4 text-left transition-colors ${
+                openDropdown === "destination"
+                  ? "border-gold"
+                  : "border-gray-border hover:border-gray-400"
+              }`}
+            >
+              <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                DESTINATION
+              </p>
+              <p className="text-[14px] font-medium text-green-dark">
+                {selectedCity ? selectedCity.name : "All destinations"}
+              </p>
+            </button>
+            {openDropdown === "destination" && (
+              <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white shadow-xl">
+                <div className="border-b border-gray-100 p-4">
+                  <input
+                    type="text"
+                    placeholder="Search destinations..."
+                    value={citySearch}
+                    onChange={(e) => setCitySearch(e.target.value)}
+                    className="w-full rounded-lg bg-gray-50 px-4 py-3 text-[14px] text-green-dark outline-none placeholder:text-gray-400"
+                    autoFocus
+                  />
+                </div>
+                <div className="max-h-[280px] overflow-auto p-2">
+                  {citiesLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          setSelectedCity(null);
+                          setOpenDropdown(null);
+                        }}
+                        className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
+                          !selectedCity ? "font-semibold text-gold" : "text-green-dark"
+                        }`}
+                      >
+                        All destinations
+                      </button>
+                      {filteredCities.map((city) => (
+                        <button
+                          key={city.id}
+                          onClick={() => {
+                            setSelectedCity(city);
+                            setOpenDropdown(null);
+                          }}
+                          className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
+                            selectedCity?.id === city.id
+                              ? "font-semibold text-gold"
+                              : "text-green-dark"
+                          }`}
+                        >
+                          {city.name}
+                        </button>
+                      ))}
+                      {filteredCities.length === 0 && !citiesLoading && (
+                        <p className="px-3 py-4 text-center text-[13px] text-gray-500">
+                          No destinations found
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
-              <h3 className="font-cormorant text-2xl text-[#1E3D2F] mb-2">{item.name}</h3>
-              <p className="font-inter text-sm text-gray-500 leading-relaxed">{item.desc}</p>
-            </div>
-          ))}
+            )}
+          </div>
+
+          {selectedCity ? (
+            <button
+              onClick={() => {
+                setSelectedCity(null);
+                setOpenDropdown(null);
+              }}
+              className="rounded-lg border border-green-dark px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-green-dark hover:text-white"
+            >
+              Clear
+            </button>
+          ) : (
+            <button className="rounded-lg bg-green-dark px-8 py-4 text-[13px] font-semibold text-white">
+              Search
+            </button>
+          )}
         </div>
+
+        {selectedCity && (
+          <p className="mt-3 text-[13px] text-gray-text">
+            Showing {filteredActivities.length} activities and{" "}
+            {filteredRestaurants.length} restaurants in {selectedCity.name}
+          </p>
+        )}
       </section>
 
-      {/* Train Section */}
-      <section className="px-16 py-20 bg-[#FAFAF8]">
-        <h2 className="font-cormorant text-[40px] text-[#1E3D2F] mb-3">
-          Legendary Routes, Timeless Elegance
-        </h2>
-        <p className="font-inter text-sm text-gray-500 mb-10 max-w-xl">
-          Iconic rail journeys that redefine the art of slow travel.
-        </p>
-        <div className="grid grid-cols-3 gap-8">
-          {trains.map((item) => (
-            <div key={item.name} className="group cursor-pointer">
-              <div className="relative w-full h-[280px] rounded-xl overflow-hidden mb-5">
-                <Image
-                  src={item.img}
-                  alt={item.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <h3 className="font-cormorant text-2xl text-[#1E3D2F] mb-2">{item.name}</h3>
-              <p className="font-inter text-sm text-gray-500 leading-relaxed">{item.desc}</p>
-            </div>
-          ))}
+      {/* Activities Section */}
+      <section className="bg-gray-light px-20 py-20">
+        <div className="mb-12 text-center">
+          <span className="text-[11px] font-semibold tracking-[4px] text-gold">
+            EXTRAORDINARY EXPERIENCES
+          </span>
+          <h2 className="mt-3 font-primary text-[42px] italic text-green-dark">
+            Activities & Experiences
+          </h2>
         </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
+          </div>
+        ) : filteredActivities.length === 0 ? (
+          <div className="py-20 text-center">
+            <p className="text-gray-text">
+              {selectedCity
+                ? "No activities found for this destination."
+                : "No activities available at the moment."}
+            </p>
+            {selectedCity && (
+              <button
+                onClick={() => setSelectedCity(null)}
+                className="mt-4 text-[14px] font-medium text-gold underline hover:no-underline"
+              >
+                Clear filter
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-6">
+            {filteredActivities.map((activity) => (
+              <Link
+                key={activity.id}
+                href={`/activity/${activity.id}`}
+                className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
+              >
+                <div className="relative h-56 overflow-hidden">
+                  <img
+                    src={getImageUrl(activity.image)}
+                    alt={activity.name}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
+                    {getActivityTag(activity)}
+                  </div>
+                  {activity.review_summary && (
+                    <div className="absolute right-3 top-3 rounded-full bg-green-dark px-2.5 py-1 text-[12px] font-semibold text-white">
+                      {activity.review_summary.average_rating.toFixed(1)}
+                    </div>
+                  )}
+                </div>
+                <div className="p-5">
+                  <h3 className="font-primary text-[18px] font-semibold text-green-dark">
+                    {activity.name}
+                  </h3>
+                  {activity.city?.name && (
+                    <p className="mt-1 text-[13px] text-gray-text">
+                      {activity.city.name}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Restaurants Section */}
+      <section className="bg-white px-20 py-20">
+        <div className="mb-12 text-center">
+          <span className="text-[11px] font-semibold tracking-[4px] text-gold">
+            FINE DINING
+          </span>
+          <h2 className="mt-3 font-primary text-[42px] italic text-green-dark">
+            Curated Restaurants
+          </h2>
+        </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
+          </div>
+        ) : filteredRestaurants.length === 0 ? (
+          <div className="py-20 text-center">
+            <p className="text-gray-text">
+              {selectedCity
+                ? "No restaurants found for this destination."
+                : "No restaurants available at the moment."}
+            </p>
+            {selectedCity && (
+              <button
+                onClick={() => setSelectedCity(null)}
+                className="mt-4 text-[14px] font-medium text-gold underline hover:no-underline"
+              >
+                Clear filter
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-6">
+            {filteredRestaurants.map((restaurant) => (
+              <Link
+                key={restaurant.id}
+                href={`/restaurant/${restaurant.id}`}
+                className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
+              >
+                <div className="relative h-56 overflow-hidden">
+                  <img
+                    src={getImageUrl(restaurant.image)}
+                    alt={restaurant.name}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
+                    RESTAURANT
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-primary text-[18px] font-semibold text-green-dark">
+                    {restaurant.name}
+                  </h3>
+                  {restaurant.city?.name && (
+                    <p className="mt-1 text-[13px] text-gray-text">
+                      {restaurant.city.name}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* CTA Section */}
-      <section className="bg-[#1E3D2F] py-20 px-16">
+      <section className="bg-green-dark px-[100px] py-20">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-cormorant text-[40px] text-white mb-4">
+          <span className="text-[11px] font-semibold tracking-[4px] text-gold">
+            PERSONAL CONCIERGE
+          </span>
+          <h2 className="mt-3 font-primary text-[42px] italic text-[#FAF5EF]">
             Let TiP Curate Your Perfect Voyage
           </h2>
-          <p className="font-inter text-sm text-white/60 mb-8">
-            From ocean liners to luxury rail — tell us your dream and we&apos;ll craft the journey.
+          <p className="mx-auto mt-4 max-w-2xl text-[16px] leading-relaxed text-white/50">
+            From extraordinary experiences to exquisite dining — tell us your dream
+            and we&apos;ll craft the journey.
           </p>
-          <button className="bg-white text-[#1E3D2F] rounded-lg px-8 py-4 font-inter text-sm font-medium hover:bg-white/90 transition-colors">
+          <Link
+            href="/concierge"
+            className="mt-8 inline-block rounded-lg bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-white/90"
+          >
             Start Planning
-          </button>
+          </Link>
         </div>
       </section>
 
       <Footer />
-    </div>
+    </main>
   );
 }
