@@ -31,6 +31,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
+      id: 'credentials',
       credentials: {
         email: {},
         password: {},
@@ -64,6 +65,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             id: String(user.id),
             accessToken: data.access_token,
             refreshToken: data.refresh_token,
+            deviceId: credentials.device_id,
+          };
+        } catch {
+          return null;
+        }
+      },
+    }),
+    Credentials({
+      id: 'social-login',
+      credentials: {
+        access_token: {},
+        refresh_token: {},
+        device_id: {},
+      },
+      async authorize(credentials) {
+        try {
+          const meRes = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+            headers: {
+              'Authorization': `Bearer ${credentials.access_token}`,
+              'Language': 'en',
+            },
+          });
+          if (!meRes.ok) return null;
+          const { data: user } = await meRes.json();
+
+          return {
+            ...user,
+            id: String(user.id),
+            accessToken: credentials.access_token,
+            refreshToken: credentials.refresh_token,
             deviceId: credentials.device_id,
           };
         } catch {
