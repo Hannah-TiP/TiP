@@ -152,6 +152,7 @@ jobs:
           echo "api_base_url=${NEXT_PUBLIC_API_BASE_URL}" >> $GITHUB_OUTPUT
           echo "gmaps_key=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}" >> $GITHUB_OUTPUT
           echo "gmaps_map_id=${NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}" >> $GITHUB_OUTPUT
+          echo "google_client_id=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}" >> $GITHUB_OUTPUT
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
@@ -172,6 +173,7 @@ jobs:
             NEXT_PUBLIC_API_BASE_URL=${{ steps.build-env.outputs.api_base_url }}
             NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ steps.build-env.outputs.gmaps_key }}
             NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=${{ steps.build-env.outputs.gmaps_map_id }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ steps.build-env.outputs.google_client_id }}
 
   deploy-preview:
     runs-on: ubuntu-latest
