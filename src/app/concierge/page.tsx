@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TopBar from "@/components/TopBar";
 import MessageList from '@/components/ai-chat/MessageList';
@@ -26,6 +26,21 @@ function isSuccessResponse(response: { success?: boolean; code?: number }): bool
 }
 
 export default function ConciergePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3D2F] mx-auto mb-4" />
+          <p className="font-inter text-sm text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ConciergeContent />
+    </Suspense>
+  );
+}
+
+function ConciergeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
