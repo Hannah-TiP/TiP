@@ -378,7 +378,7 @@ export default function HomePage() {
                     Insights
                   </Link>
                   <Link href="/concierge" className="text-[13px] text-white/40 hover:text-white/70">
-                    AI Chat
+                    Concierge
                   </Link>
                 </div>
               </div>

@@ -33,13 +33,12 @@ npm run lint             # Run ESLint
 - `/dream-hotels` - Curated hotel listings
 - `/more-dreams` - Additional travel inspiration
 - `/insights` - Travel content and articles
-- `/concierge` - AI chat interface for trip planning
+- `/concierge` - Concierge AI chat interface for trip planning
 - `/my-page/*` - User dashboard with nested routes:
   - `/my-page/my-profile` - Profile management
   - `/my-page/membership` - Membership tier management
   - `/my-page/travel-history` - Past bookings
   - `/my-page/hotel-review` - User reviews
-  - `/my-page/my-chat` - Concierge chat history
 - `/sign-in` - Authentication
 - `/hotel/[id]` - Individual hotel detail pages
 

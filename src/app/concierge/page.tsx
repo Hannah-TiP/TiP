@@ -449,7 +449,7 @@ export default function ConciergePage() {
 
   return (
     <div className="h-screen bg-white flex flex-col">
-      <TopBar activeLink="AI Chat" />
+      <TopBar activeLink="Concierge" />
 
       {/* Error banner */}
       {error && (

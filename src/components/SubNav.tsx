@@ -9,7 +9,6 @@ interface SubNavProps {
 const tabs = [
   { label: "Upcoming Travels", href: "/my-page" },
   { label: "Travel History", href: "/my-page/travel-history" },
-  { label: "My Chat", href: "/my-page/my-chat" },
   { label: "Membership", href: "/my-page/membership" },
   { label: "My Profile", href: "/my-page/my-profile" },
 ];

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-const exploreLinks = ["Dream Hotels", "Insights", "Itinerary", "AI Chat"];
+const exploreLinks = ["Dream Hotels", "Insights", "Itinerary", "Concierge"];
 const companyLinks = ["About Us", "Careers", "Press", "Blog"];
 const supportLinks = ["Help Center", "Contact Us", "Privacy Policy", "Terms of Service"];
 

@@ -11,7 +11,7 @@ const navLinks = [
   { label: 'DREAM HOTELS', href: '/dream-hotels' },
   { label: 'MORE DREAMS', href: '/more-dreams' },
   { label: 'INSIGHTS', href: '/insights' },
-  { label: 'AI CHAT', href: '/concierge' },
+  { label: 'CONCIERGE', href: '/concierge' },
 ];
 
 export default function TopBar({ activeLink }: TopBarProps) {
@@ -30,7 +30,7 @@ export default function TopBar({ activeLink }: TopBarProps) {
             (activeLink === 'Dream Hotels' && link.label === 'DREAM HOTELS') ||
             (activeLink === 'More Dreams' && link.label === 'MORE DREAMS') ||
             (activeLink === 'Insights' && link.label === 'INSIGHTS') ||
-            (activeLink === 'AI Chat' && link.label === 'AI CHAT');
+            (activeLink === 'Concierge' && link.label === 'CONCIERGE');
           return (
             <Link
               key={link.label}
