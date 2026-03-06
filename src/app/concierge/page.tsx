@@ -1,38 +1,45 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import TopBar from "@/components/TopBar";
 import MessageList from '@/components/ai-chat/MessageList';
 import ChatInput from '@/components/ai-chat/ChatInput';
+import ConversationSidebar from '@/components/ai-chat/ConversationSidebar';
+import TripDetailPanel from '@/components/ai-chat/TripDetailPanel';
 import { useSession } from 'next-auth/react';
 import { apiClient } from '@/lib/api-client';
 import type {
   AIMessage,
   TripContext,
+  SessionWithTrip,
   ChatHistoryResponse,
   CreateSessionResponse,
+  ListSessionsResponse,
   SendMessageResponse,
   AnalyzeImageResponse,
   TranscribeAudioResponse
 } from '@/types/ai-chat';
 
-// Helper function to check if API response is successful
 function isSuccessResponse(response: { success?: boolean; code?: number }): boolean {
   return response.success === true || response.code === 200;
 }
 
 export default function ConciergePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const isAuthenticated = !!session;
   const authLoading = status === 'loading';
 
-  const [sessionId, setSessionId] = useState<string>('');
+  const [sessions, setSessions] = useState<SessionWithTrip[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string>('');
+  const [activeTripId, setActiveTripId] = useState<number | null>(null);
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tripContext, setTripContext] = useState<TripContext | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Check authentication
   useEffect(() => {
@@ -41,129 +48,193 @@ export default function ConciergePage() {
     }
   }, [isAuthenticated, authLoading, router]);
 
-  // Initialize chat session
+  // Load chat history for a session and set messages + tripContext
+  async function loadSessionHistory(sid: string) {
+    try {
+      const historyResponse = await apiClient.getChatHistory(sid, 1, 50) as ChatHistoryResponse;
+      const isSuccess = isSuccessResponse(historyResponse);
+      const historyData = historyResponse.data;
+
+      if (isSuccess && historyData?.messages && historyData.messages.length > 0) {
+        const chronologicalMessages = [...historyData.messages].reverse();
+        setMessages(chronologicalMessages);
+
+        const latestMessage = chronologicalMessages[chronologicalMessages.length - 1];
+        setTripContext(latestMessage.message_metadata?.trip_context ?? null);
+      } else {
+        setMessages([]);
+        setTripContext(null);
+      }
+    } catch (err) {
+      console.error('[Concierge] Failed to load history:', err);
+      setMessages([]);
+      setTripContext(null);
+    }
+  }
+
+  // Select a session: update active state and load its history
+  async function selectSession(sid: string, sessionsList: SessionWithTrip[]) {
+    const found = sessionsList.find(s => s.session_id === sid);
+    setActiveSessionId(sid);
+    setActiveTripId(found?.trip_id ?? null);
+    setTripContext(null);
+    localStorage.setItem('concierge_active_session_id', sid);
+    await loadSessionHistory(sid);
+  }
+
+  // Create a new chat session and select it
+  async function handleNewChat() {
+    try {
+      const response = await apiClient.createChatSession('en') as CreateSessionResponse;
+      const isSuccess = isSuccessResponse(response);
+      const responseData = response.data;
+
+      if (isSuccess && responseData) {
+        const newSession: SessionWithTrip = {
+          session_id: responseData.session_id,
+          trip_id: responseData.trip_id ?? null,
+          trip_title: null,
+          trip_status: 'draft',
+          trip_destinations: null,
+          last_message_at: new Date().toISOString(),
+          message_count: 1,
+        };
+
+        setSessions(prev => [newSession, ...prev]);
+        setActiveSessionId(responseData.session_id);
+        setActiveTripId(responseData.trip_id ?? null);
+        setTripContext(null);
+        localStorage.setItem('concierge_active_session_id', responseData.session_id);
+
+        if (responseData.chat_history && responseData.chat_history.length > 0) {
+          const initialMessages: AIMessage[] = responseData.chat_history.map((msg, index) => ({
+            id: index,
+            session_id: responseData.session_id,
+            role: msg.role,
+            content: msg.content,
+            message_type: 'text' as const,
+            created_at: new Date().toISOString(),
+          }));
+          setMessages(initialMessages);
+        }
+      }
+    } catch (err) {
+      console.error('[Concierge] Failed to create new chat:', err);
+      setError('Failed to create new chat session.');
+    }
+  }
+
+  // Initialize: fetch sessions and handle ?trip_id query param
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const initSession = async () => {
-      console.log('[Concierge] Initializing chat session...');
+    const init = async () => {
       try {
-        // Check for existing session in localStorage
-        const storedSessionId = localStorage.getItem('concierge_session_id');
-        console.log('[Concierge] Stored session ID:', storedSessionId);
+        // Fetch all sessions
+        const sessionsResponse = await apiClient.listChatSessions() as ListSessionsResponse;
+        const isSuccess = isSuccessResponse(sessionsResponse);
+        const sessionsList = (isSuccess && sessionsResponse.data) ? sessionsResponse.data : [];
+        setSessions(sessionsList);
 
-        if (storedSessionId) {
-          // Try to restore existing session
-          console.log('[Concierge] Restoring existing session...');
-          setSessionId(storedSessionId);
-          // Fetch history
+        // Handle ?trip_id query param (from trip detail "Edit in Concierge" button)
+        const tripIdParam = searchParams.get('trip_id');
+        if (tripIdParam) {
+          const tripId = parseInt(tripIdParam, 10);
+          const existingForTrip = sessionsList.find(s => s.trip_id === tripId);
+
+          if (existingForTrip) {
+            await selectSession(existingForTrip.session_id, sessionsList);
+            return;
+          }
+
+          // Create a session for this trip
           try {
-            const historyResponse = await apiClient.getChatHistory(storedSessionId, 1, 50) as ChatHistoryResponse;
-            console.log('[Concierge] History response:', historyResponse);
+            const response = await apiClient.createChatSessionForTrip(tripId) as CreateSessionResponse;
+            const respSuccess = isSuccessResponse(response);
+            const respData = response.data;
 
-            // Backend returns either {success: true, data: {...}} or {code: 200, data: {...}}
-            const isSuccess = isSuccessResponse(historyResponse);
-            const historyData = historyResponse.data;
-
-            if (isSuccess && historyData && historyData.messages && historyData.messages.length > 0) {
-              // Backend returns messages in reverse chronological order (newest first)
-              // Reverse to display chronologically (oldest first)
-              const chronologicalMessages = [...historyData.messages].reverse();
-              setMessages(chronologicalMessages);
-              console.log('[Concierge] Loaded', chronologicalMessages.length, 'messages from history');
-              // Extract trip context from latest message (now at the end after reversing)
-              const latestMessage = chronologicalMessages[chronologicalMessages.length - 1];
-              if (latestMessage.message_metadata?.trip_context) {
-                setTripContext(latestMessage.message_metadata.trip_context);
-              }
+            if (respSuccess && respData) {
+              const newSession: SessionWithTrip = {
+                session_id: respData.session_id,
+                trip_id: tripId,
+                trip_title: null,
+                trip_status: null,
+                trip_destinations: null,
+                last_message_at: new Date().toISOString(),
+                message_count: 1,
+              };
+              const updatedSessions = [newSession, ...sessionsList];
+              setSessions(updatedSessions);
+              await selectSession(respData.session_id, updatedSessions);
               return;
             }
           } catch (err) {
-            console.error('[Concierge] Failed to restore session:', err);
-            localStorage.removeItem('concierge_session_id');
+            console.error('[Concierge] Failed to create session for trip:', err);
           }
         }
 
-        // Create new session
-        console.log('[Concierge] Creating new session...');
-        const response = await apiClient.createChatSession('en') as CreateSessionResponse;
-        console.log('[Concierge] Create session response:', response);
+        // Default: select most recent session or create one
+        if (sessionsList.length > 0) {
+          const storedId = localStorage.getItem('concierge_active_session_id');
+          const storedSession = storedId ? sessionsList.find(s => s.session_id === storedId) : null;
 
-        // Backend returns either {success: true, data: {...}} or {code: 200, data: {...}}
-        const isSuccess = isSuccessResponse(response);
-        const responseData = response.data;
-
-        if (isSuccess && responseData) {
-          setSessionId(responseData.session_id);
-          localStorage.setItem('concierge_session_id', responseData.session_id);
-          console.log('[Concierge] Session created:', responseData.session_id);
-
-          // Convert initial greeting to AIMessage format
-          if (responseData.chat_history && responseData.chat_history.length > 0) {
-            const initialMessages: AIMessage[] = responseData.chat_history.map((msg, index) => ({
-              id: index,
-              session_id: responseData.session_id,
-              role: msg.role,
-              content: msg.content,
-              message_type: 'text',
-              created_at: new Date().toISOString(),
-            }));
-            console.log('[Concierge] Initial messages:', initialMessages);
-            setMessages(initialMessages);
+          if (storedSession) {
+            await selectSession(storedSession.session_id, sessionsList);
+          } else {
+            await selectSession(sessionsList[0].session_id, sessionsList);
           }
+        } else {
+          // No sessions at all — create one
+          await handleNewChat();
         }
       } catch (err) {
-        console.error('[Concierge] Failed to initialize chat:', err);
-        setError('Failed to initialize chat session. Please refresh the page.');
+        console.error('[Concierge] Failed to initialize:', err);
+        setError('Failed to initialize chat. Please refresh the page.');
       }
     };
 
-    initSession();
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  const handleSendMessage = async (content: string) => {
-    console.log('[Concierge] handleSendMessage called with:', content);
-    console.log('[Concierge] Current sessionId:', sessionId);
-    console.log('[Concierge] Current messages count:', messages.length);
-
-    if (!content.trim() || !sessionId) {
-      console.warn('[Concierge] Cannot send message - missing content or sessionId');
-      return;
+  // Refresh sessions list (used after trip_created)
+  async function refreshSessions() {
+    try {
+      const sessionsResponse = await apiClient.listChatSessions() as ListSessionsResponse;
+      const isSuccess = isSuccessResponse(sessionsResponse);
+      if (isSuccess && sessionsResponse.data) {
+        setSessions(sessionsResponse.data);
+      }
+    } catch (err) {
+      console.error('[Concierge] Failed to refresh sessions:', err);
     }
+  }
+
+  const handleSendMessage = async (content: string) => {
+    if (!content.trim() || !activeSessionId) return;
 
     setIsLoading(true);
     setError(null);
 
-    // Add user message to UI immediately (optimistic update)
     const userMessage: AIMessage = {
       id: messages.length,
-      session_id: sessionId,
+      session_id: activeSessionId,
       role: 'user',
       content,
       message_type: 'text',
       created_at: new Date().toISOString(),
     };
-    console.log('[Concierge] Adding user message to UI:', userMessage);
-    setMessages(prev => {
-      const newMessages = [...prev, userMessage];
-      console.log('[Concierge] New messages array length:', newMessages.length);
-      return newMessages;
-    });
+    setMessages(prev => [...prev, userMessage]);
 
     try {
-      console.log('[Concierge] Calling apiClient.sendMessage...');
-      const response = await apiClient.sendMessage(sessionId, content, 'text') as SendMessageResponse;
-      console.log('[Concierge] Send message response:', response);
-
-      // Backend returns either {success: true, data: {...}} or {code: 200, data: {...}}
+      const response = await apiClient.sendMessage(activeSessionId, content, 'text') as SendMessageResponse;
       const isSuccess = isSuccessResponse(response);
       const responseData = response.data;
 
       if (isSuccess && responseData) {
-        // Add assistant response to UI
         const assistantMessage: AIMessage = {
           id: messages.length + 1,
-          session_id: sessionId,
+          session_id: activeSessionId,
           role: 'assistant',
           content: responseData.response,
           message_type: 'text',
@@ -180,19 +251,23 @@ export default function ConciergePage() {
           },
           created_at: new Date().toISOString(),
         };
-        console.log('[Concierge] Adding assistant message to UI:', assistantMessage);
         setMessages(prev => [...prev, assistantMessage]);
 
-        // Update trip context if available
         if (responseData.trip_context) {
-          console.log('[Concierge] Updating trip context:', responseData.trip_context);
           setTripContext(responseData.trip_context);
+        }
+
+        // If trip was created, refresh sessions and trip detail
+        if (responseData.trip_created) {
+          await refreshSessions();
+          if (responseData.trip_id) {
+            setActiveTripId(responseData.trip_id);
+          }
         }
       }
     } catch (err) {
       console.error('[Concierge] Failed to send message:', err);
       setError('Failed to send message. Please try again.');
-      // Remove optimistic user message on error
       setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
@@ -200,50 +275,26 @@ export default function ConciergePage() {
   };
 
   const handleUploadImage = async (file: File) => {
-    if (!sessionId) return;
+    if (!activeSessionId) return;
 
     setIsLoading(true);
     setError(null);
 
-    console.log('[Concierge] Starting image upload - 3 step flow');
-
     try {
-      // Step 1: Get S3 upload credentials
-      console.log('[Concierge] Step 1: Getting S3 credentials...');
       const ext = file.name.split('.').pop() || 'jpg';
-      const credentialsResponse = await apiClient.getS3UploadCredentials(
-        sessionId,
-        'image',
-        ext
-      );
-
-      console.log('[Concierge] Credentials response:', credentialsResponse);
-
-      // Handle both response formats
+      const credentialsResponse = await apiClient.getS3UploadCredentials(activeSessionId, 'image', ext);
       const credentialsData = credentialsResponse.data || credentialsResponse;
       const uploadUrl = credentialsData.upload_url;
       const formData = credentialsData.form_data;
-      const mediaUrl = credentialsData.public_url; // Backend returns 'public_url' not 'media_url'
+      const mediaUrl = credentialsData.public_url;
 
-      if (!uploadUrl || !formData || !mediaUrl) {
-        console.error('[Concierge] Missing required fields in credentials:', {
-          uploadUrl,
-          formData,
-          mediaUrl,
-          fullResponse: credentialsData
-        });
-        throw new Error('Invalid credentials response');
-      }
+      if (!uploadUrl || !formData || !mediaUrl) throw new Error('Invalid credentials response');
 
-      // Step 2: Upload directly to S3
-      console.log('[Concierge] Step 2: Uploading to S3...');
       await apiClient.uploadToS3(uploadUrl, formData, file);
-      console.log('[Concierge] S3 upload successful, media URL:', mediaUrl);
 
-      // Add user image message immediately with S3 URL
       const userImageMessage: AIMessage = {
         id: messages.length,
-        session_id: sessionId,
+        session_id: activeSessionId,
         role: 'user',
         content: '',
         message_type: 'image',
@@ -252,40 +303,24 @@ export default function ConciergePage() {
       };
       setMessages(prev => [...prev, userImageMessage]);
 
-      // Step 3: Send S3 URL to backend for AI analysis
-      console.log('[Concierge] Step 3: Requesting image analysis...');
-      const analysisResponse = await apiClient.analyzeImageUrl(
-        sessionId,
-        mediaUrl,
-        undefined, // width
-        undefined, // height
-        file.name
-      );
-
-      console.log('[Concierge] Analysis response:', analysisResponse);
-
-      // Handle both response formats
+      const analysisResponse = await apiClient.analyzeImageUrl(activeSessionId, mediaUrl, undefined, undefined, file.name);
       const typedAnalysisResponse = analysisResponse as AnalyzeImageResponse;
       const isSuccess = isSuccessResponse(typedAnalysisResponse);
       const responseData = typedAnalysisResponse.data;
 
       if (isSuccess && responseData) {
-        // Parse analysis_result if it's a JSON string
         let parsedAnalysisResult: { landmark?: string; location?: string; description?: string } | undefined;
         if (responseData.analysis_result) {
           try {
             parsedAnalysisResult = typeof responseData.analysis_result === 'string'
               ? JSON.parse(responseData.analysis_result)
               : responseData.analysis_result;
-          } catch (e) {
-            console.error('[Concierge] Failed to parse analysis_result:', e);
-          }
+          } catch { /* ignore */ }
         }
 
-        // Add assistant analysis response
         const assistantMessage: AIMessage = {
           id: messages.length + 1,
-          session_id: sessionId,
+          session_id: activeSessionId,
           role: 'assistant',
           content: responseData.response,
           message_type: 'text',
@@ -297,16 +332,12 @@ export default function ConciergePage() {
           },
           created_at: new Date().toISOString(),
         };
-
         setMessages(prev => [...prev, assistantMessage]);
 
-        // Update trip context if available
         if (responseData.message_metadata?.trip_context) {
           setTripContext(responseData.message_metadata.trip_context);
         }
       }
-
-      console.log('[Concierge] Image upload flow complete');
     } catch (err) {
       console.error('[Concierge] Failed to upload image:', err);
       setError('Failed to upload image. Please try again.');
@@ -316,92 +347,53 @@ export default function ConciergePage() {
   };
 
   const handleUploadAudio = async (file: File) => {
-    if (!sessionId) return;
+    if (!activeSessionId) return;
 
     setIsLoading(true);
     setError(null);
 
-    console.log('[Concierge] Starting audio upload - 3 step flow');
-
     try {
-      // Step 1: Get S3 upload credentials
-      console.log('[Concierge] Step 1: Getting S3 credentials...');
       const ext = file.name.split('.').pop() || 'm4a';
-      const credentialsResponse = await apiClient.getS3UploadCredentials(
-        sessionId,
-        'audio',
-        ext
-      );
-
-      console.log('[Concierge] Credentials response:', credentialsResponse);
-
-      // Handle both response formats
+      const credentialsResponse = await apiClient.getS3UploadCredentials(activeSessionId, 'audio', ext);
       const credentialsData = credentialsResponse.data || credentialsResponse;
       const uploadUrl = credentialsData.upload_url;
       const formData = credentialsData.form_data;
-      const mediaUrl = credentialsData.public_url; // Backend returns 'public_url' not 'media_url'
+      const mediaUrl = credentialsData.public_url;
 
-      if (!uploadUrl || !formData || !mediaUrl) {
-        console.error('[Concierge] Missing required fields in credentials:', {
-          uploadUrl,
-          formData,
-          mediaUrl,
-          fullResponse: credentialsData
-        });
-        throw new Error('Invalid credentials response');
-      }
+      if (!uploadUrl || !formData || !mediaUrl) throw new Error('Invalid credentials response');
 
-      // Step 2: Upload directly to S3
-      console.log('[Concierge] Step 2: Uploading to S3...');
       await apiClient.uploadToS3(uploadUrl, formData, file);
-      console.log('[Concierge] S3 upload successful, media URL:', mediaUrl);
 
-      // Add user audio message immediately with S3 URL (transcription will come from backend)
       const userAudioMessage: AIMessage = {
         id: messages.length,
-        session_id: sessionId,
+        session_id: activeSessionId,
         role: 'user',
-        content: '', // Will be updated with transcription
+        content: '',
         message_type: 'audio',
         media_url: mediaUrl,
         created_at: new Date().toISOString(),
       };
       setMessages(prev => [...prev, userAudioMessage]);
 
-      // Step 3: Send S3 URL to backend for transcription and AI processing
-      console.log('[Concierge] Step 3: Requesting audio transcription...');
-      const transcriptionResponse = await apiClient.transcribeAudioUrl(
-        sessionId,
-        mediaUrl,
-        undefined, // duration
-        file.name
-      );
-
-      console.log('[Concierge] Transcription response:', transcriptionResponse);
-
-      // Handle both response formats
+      const transcriptionResponse = await apiClient.transcribeAudioUrl(activeSessionId, mediaUrl, undefined, file.name);
       const typedTranscriptionResponse = transcriptionResponse as TranscribeAudioResponse;
       const isSuccess = isSuccessResponse(typedTranscriptionResponse);
       const responseData = typedTranscriptionResponse.data;
 
       if (isSuccess && responseData) {
-        // Update user audio message with transcription
         setMessages(prev => {
           const updatedMessages = [...prev];
           const lastMessage = updatedMessages[updatedMessages.length - 1];
           if (lastMessage.message_type === 'audio') {
             lastMessage.content = responseData.transcription;
-            lastMessage.message_metadata = {
-              transcription: responseData.transcription,
-            };
+            lastMessage.message_metadata = { transcription: responseData.transcription };
           }
           return updatedMessages;
         });
 
-        // Add assistant response
         const assistantMessage: AIMessage = {
           id: messages.length + 1,
-          session_id: sessionId,
+          session_id: activeSessionId,
           role: 'assistant',
           content: responseData.response,
           message_type: 'text',
@@ -412,16 +404,12 @@ export default function ConciergePage() {
           },
           created_at: new Date().toISOString(),
         };
-
         setMessages(prev => [...prev, assistantMessage]);
 
-        // Update trip context if available
         if (responseData.message_metadata?.trip_context) {
           setTripContext(responseData.message_metadata.trip_context);
         }
       }
-
-      console.log('[Concierge] Audio upload flow complete');
     } catch (err) {
       console.error('[Concierge] Failed to upload audio:', err);
       setError('Failed to upload audio. Please try again.');
@@ -442,7 +430,6 @@ export default function ConciergePage() {
     );
   }
 
-  // Don't render if not authenticated (will redirect)
   if (!isAuthenticated) {
     return null;
   }
@@ -460,17 +447,7 @@ export default function ConciergePage() {
               onClick={() => setError(null)}
               className="text-red-800 hover:text-red-900"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -480,7 +457,30 @@ export default function ConciergePage() {
       )}
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Chat Side */}
+        {/* Expand button when sidebar collapsed */}
+        {sidebarCollapsed && (
+          <button
+            onClick={() => setSidebarCollapsed(false)}
+            className="flex items-center justify-center w-8 bg-[#FAFAF8] border-r border-gray-100 hover:bg-gray-100 transition-colors"
+            title="Expand sidebar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        )}
+
+        {/* Left sidebar: Conversation list */}
+        <ConversationSidebar
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          onSelectSession={(sid) => selectSession(sid, sessions)}
+          onNewChat={handleNewChat}
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(true)}
+        />
+
+        {/* Chat area (center) */}
         <div className="flex-1 flex flex-col border-r border-gray-100">
           <MessageList messages={messages} isLoading={isLoading} />
           <ChatInput
@@ -491,61 +491,8 @@ export default function ConciergePage() {
           />
         </div>
 
-        {/* Itinerary Sidebar */}
-        <div className="w-[420px] flex flex-col bg-[#FAFAF8] overflow-y-auto">
-          <div className="px-8 py-8 flex-1">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-cormorant text-2xl font-semibold text-[#1E3D2F]">Your Itinerary</h2>
-            </div>
-
-            {tripContext ? (
-              <div className="space-y-3 mb-8">
-                {tripContext.destination && (
-                  <div className="flex justify-between font-inter text-sm">
-                    <span className="text-gray-500">Destination</span>
-                    <span className="text-[#1E3D2F] font-medium">{tripContext.destination}</span>
-                  </div>
-                )}
-                {tripContext.start_date && tripContext.end_date && (
-                  <div className="flex justify-between font-inter text-sm">
-                    <span className="text-gray-500">Dates</span>
-                    <span className="text-[#1E3D2F] font-medium">
-                      {new Date(tripContext.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} –{' '}
-                      {new Date(tripContext.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
-                  </div>
-                )}
-                {tripContext.adults && (
-                  <div className="flex justify-between font-inter text-sm">
-                    <span className="text-gray-500">Travelers</span>
-                    <span className="text-[#1E3D2F] font-medium">
-                      {tripContext.adults} {tripContext.adults === 1 ? 'Adult' : 'Adults'}
-                      {tripContext.kids ? `, ${tripContext.kids} ${tripContext.kids === 1 ? 'Kid' : 'Kids'}` : ''}
-                    </span>
-                  </div>
-                )}
-                {tripContext.purpose && (
-                  <div className="flex justify-between font-inter text-sm">
-                    <span className="text-gray-500">Purpose</span>
-                    <span className="text-[#1E3D2F] font-medium">{tripContext.purpose}</span>
-                  </div>
-                )}
-                {tripContext.budget && (
-                  <div className="flex justify-between font-inter text-sm">
-                    <span className="text-gray-500">Budget</span>
-                    <span className="text-[#1E3D2F] font-medium">${tripContext.budget.toLocaleString()}</span>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="font-inter text-sm text-gray-400">
-                  Start planning your trip by chatting with our AI concierge!
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+        {/* Right pane: Trip detail */}
+        <TripDetailPanel tripId={activeTripId} tripContext={tripContext} />
       </div>
     </div>
   );

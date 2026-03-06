@@ -71,12 +71,29 @@ export interface AISession {
   }>;
   status: string;
   language: string;
+  trip_id?: number;
 }
 
 export interface CreateSessionResponse {
   success?: boolean;
   code?: number;
   data?: AISession;
+}
+
+export interface SessionWithTrip {
+  session_id: string;
+  trip_id: number | null;
+  trip_title: string | null;
+  trip_status: string | null;
+  trip_destinations: string | null;
+  last_message_at: string | null;
+  message_count: number;
+}
+
+export interface ListSessionsResponse {
+  success?: boolean;
+  code?: number;
+  data?: SessionWithTrip[];
 }
 
 export interface SendMessageRequest {

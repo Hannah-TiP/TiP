@@ -4,6 +4,7 @@ import type {
   CreateSessionResponse,
   SendMessageResponse,
   ChatHistoryResponse,
+  ListSessionsResponse,
   MessageType,
   S3UploadCredentialsResponse,
   AnalyzeImageResponse,
@@ -307,6 +308,17 @@ class ApiClient {
     return this.request<CreateSessionResponse>('/ai-chat/create-session', {
       method: 'POST',
       body: JSON.stringify({ language }),
+    });
+  }
+
+  async listChatSessions(): Promise<ListSessionsResponse> {
+    return this.request<ListSessionsResponse>('/ai-chat/sessions');
+  }
+
+  async createChatSessionForTrip(tripId: number, language: string = 'en'): Promise<CreateSessionResponse> {
+    return this.request<CreateSessionResponse>('/ai-chat/create-session-for-trip', {
+      method: 'POST',
+      body: JSON.stringify({ trip_id: tripId, language }),
     });
   }
 
