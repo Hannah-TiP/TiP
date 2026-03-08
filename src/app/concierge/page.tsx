@@ -306,9 +306,27 @@ function ConciergeContent() {
           });
         }
 
-        // If trip was submitted, refresh sessions
-        if (responseData.field_updated?.includes('status')) {
-          await refreshSessions();
+        // Update sidebar session with latest trip data from the response
+        if (responseData.trip && responseData.field_updated?.length) {
+          setSessions(prev =>
+            prev.map(s =>
+              s.session_id === activeSessionId
+                ? {
+                    ...s,
+                    trip_title: s.trip_title,
+                    trip_destinations:
+                      responseData.trip!.preset_destination_cities_names ||
+                      responseData.trip!.custom_destination_cities ||
+                      s.trip_destinations,
+                    trip_start_date: responseData.trip!.start_date ?? s.trip_start_date,
+                    trip_end_date: responseData.trip!.end_date ?? s.trip_end_date,
+                    trip_status: responseData.trip!.status ?? s.trip_status,
+                    message_count: s.message_count + (widgetResponse ? 1 : 2),
+                    last_message_at: new Date().toISOString(),
+                  }
+                : s
+            )
+          );
         }
       }
     } catch (err) {
