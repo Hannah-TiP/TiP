@@ -269,7 +269,7 @@ export default function TripDetailPanel({ tripId, tripContext, refreshKey }: Tri
                 </span>
               </div>
             )}
-            {tripContext.adults > 0 && (
+            {(tripContext.adults ?? 0) > 0 && (
               <div className="flex justify-between font-inter text-sm">
                 <span className="text-gray-500">{t('chat.travelers')}</span>
                 <span className="text-[#1E3D2F] font-medium">

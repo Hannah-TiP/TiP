@@ -116,6 +116,8 @@ function ConciergeContent() {
           trip_title: null,
           trip_status: 'draft',
           trip_destinations: null,
+          trip_start_date: null,
+          trip_end_date: null,
           last_message_at: new Date().toISOString(),
           message_count: 1,
         };
@@ -180,6 +182,8 @@ function ConciergeContent() {
                 trip_title: null,
                 trip_status: null,
                 trip_destinations: null,
+                trip_start_date: null,
+                trip_end_date: null,
                 last_message_at: new Date().toISOString(),
                 message_count: 1,
               };
