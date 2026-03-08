@@ -1,7 +1,7 @@
 // AI Chat types matching backend API response structure
 
-import type { Trip } from '@/types/trip';
-export type { Trip };
+import type { Trip, TripDetail } from '@/types/trip';
+export type { Trip, TripDetail };
 
 export type IntentType = 'query_trips' | 'create_trip' | 'edit_trip' | 'upcoming_trips' | 'general';
 export type MessageRole = 'user' | 'assistant' | 'system';
@@ -49,6 +49,10 @@ export interface MessageMetadata {
   // For audio messages
   duration?: number;
   transcription?: string;
+
+  // For converse endpoint
+  ui_blocks?: UIBlock[];
+  field_updated?: string[];
 }
 
 export interface AIMessage {
@@ -86,6 +90,8 @@ export interface SessionWithTrip {
   trip_title: string | null;
   trip_status: string | null;
   trip_destinations: string | null;
+  trip_start_date: string | null;
+  trip_end_date: string | null;
   last_message_at: string | null;
   message_count: number;
 }
@@ -230,5 +236,48 @@ export interface TranscribeAudioResponse {
     trips?: Trip[];
     has_trips?: boolean;
     message_metadata?: MessageMetadata;
+  };
+}
+
+// ── Enhanced Converse types ──────────────────────────────────────────────
+
+export type WidgetType =
+  | 'date_range_picker'
+  | 'number_stepper'
+  | 'option_selector'
+  | 'hotel_carousel'
+  | 'confirm_summary';
+
+export interface UIBlock {
+  type: WidgetType;
+  id: string;
+  label: string;
+  config: Record<string, unknown>;
+}
+
+export interface WidgetResponsePayload {
+  widget_id: string;
+  widget_type: WidgetType;
+  value: Record<string, unknown>;
+}
+
+export interface ConverseRequest {
+  session_id: string;
+  content: string;
+  message_type?: MessageType;
+  widget_response?: WidgetResponsePayload;
+}
+
+export interface ConverseResponse {
+  success?: boolean;
+  code?: number;
+  data?: {
+    session_id: string;
+    response: string;
+    trip: TripDetail;
+    ui_blocks: UIBlock[];
+    field_updated: string[];
+    user_message_id: number | null;
+    assistant_message_id: number;
   };
 }

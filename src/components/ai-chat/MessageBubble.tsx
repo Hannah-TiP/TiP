@@ -1,14 +1,32 @@
 "use client";
 
-import type { AIMessage } from '@/types/ai-chat';
+import type { AIMessage, UIBlock, WidgetResponsePayload } from '@/types/ai-chat';
+import WidgetRenderer from './widgets/WidgetRenderer';
+
+/** Render simple markdown: **bold** and *italic* */
+function renderMarkdown(text: string) {
+  // Split on **bold** and *italic* markers, preserving delimiters
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
 
 interface MessageBubbleProps {
   message: AIMessage;
   isUser: boolean;
   messageIndex?: number;
+  onWidgetSubmit?: (payload: WidgetResponsePayload) => void;
 }
 
-export default function MessageBubble({ message, isUser, messageIndex }: MessageBubbleProps) {
+export default function MessageBubble({ message, isUser, messageIndex, onWidgetSubmit }: MessageBubbleProps) {
+  const uiBlocks: UIBlock[] = (message.message_metadata?.ui_blocks as UIBlock[]) || [];
   if (isUser) {
     return (
       <div className="flex justify-end">
@@ -75,7 +93,7 @@ export default function MessageBubble({ message, isUser, messageIndex }: Message
       </div>
       <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4 max-w-[600px]">
         {message.message_type === 'text' && (
-          <p className="font-inter text-sm text-gray-800 whitespace-pre-wrap">{message.content}</p>
+          <p className="font-inter text-sm text-gray-800 whitespace-pre-wrap">{renderMarkdown(message.content)}</p>
         )}
         {message.message_type === 'image' && message.media_url && (
           <div className="relative">
@@ -104,6 +122,14 @@ export default function MessageBubble({ message, isUser, messageIndex }: Message
                 &quot;{message.message_metadata.transcription}&quot;
               </div>
             )}
+          </div>
+        )}
+        {/* Render interactive widgets if present */}
+        {uiBlocks.length > 0 && onWidgetSubmit && (
+          <div className="mt-2">
+            {uiBlocks.map((block) => (
+              <WidgetRenderer key={block.id} block={block} onSubmit={onWidgetSubmit} />
+            ))}
           </div>
         )}
       </div>

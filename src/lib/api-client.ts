@@ -347,6 +347,22 @@ class ApiClient {
     );
   }
 
+  async converse(
+    sessionId: string,
+    content: string,
+    widgetResponse?: import('@/types/ai-chat').WidgetResponsePayload,
+  ): Promise<import('@/types/ai-chat').ConverseResponse> {
+    return this.request<import('@/types/ai-chat').ConverseResponse>('/ai-chat/converse', {
+      method: 'POST',
+      body: JSON.stringify({
+        session_id: sessionId,
+        content,
+        message_type: 'text',
+        ...(widgetResponse ? { widget_response: widgetResponse } : {}),
+      }),
+    });
+  }
+
   // S3 Direct Upload Methods
   async getS3UploadCredentials(
     sessionId: string,

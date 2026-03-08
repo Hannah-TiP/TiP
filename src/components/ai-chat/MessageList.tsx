@@ -1,16 +1,19 @@
 "use client";
 
 import { useEffect, useRef } from 'react';
-import type { AIMessage } from '@/types/ai-chat';
+import type { AIMessage, WidgetResponsePayload } from '@/types/ai-chat';
+import { useLanguage } from '@/contexts/LanguageContext';
 import MessageBubble from './MessageBubble';
 import TripCard from './TripCard';
 
 interface MessageListProps {
   messages: AIMessage[];
   isLoading: boolean;
+  onWidgetSubmit?: (payload: WidgetResponsePayload) => void;
 }
 
-export default function MessageList({ messages, isLoading }: MessageListProps) {
+export default function MessageList({ messages, isLoading, onWidgetSubmit }: MessageListProps) {
+  const { t } = useLanguage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isInitialLoad = useRef(true);
 
@@ -29,7 +32,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
     return (
       <div className="flex-1 overflow-y-auto px-[60px] py-[32px] flex items-center justify-center">
         <div className="text-center text-gray-400">
-          <p className="font-inter text-sm">No messages yet. Start a conversation!</p>
+          <p className="font-inter text-sm">{t('chat.no_messages')}</p>
         </div>
       </div>
     );
@@ -47,6 +50,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
               message={message}
               isUser={isUser}
               messageIndex={assistantIndex}
+              onWidgetSubmit={onWidgetSubmit}
             />
 
             {/* Render trip cards if they exist in message metadata */}

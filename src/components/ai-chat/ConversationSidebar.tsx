@@ -1,6 +1,7 @@
 "use client";
 
 import type { SessionWithTrip } from '@/types/ai-chat';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ConversationSidebarProps {
   sessions: SessionWithTrip[];
@@ -18,7 +19,7 @@ function formatTime(isoStr: string | null): string {
   const diffMs = now.getTime() - d.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) {
+  if (diffDays <= 0) {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
   if (diffDays === 1) return 'Yesterday';
@@ -26,14 +27,26 @@ function formatTime(isoStr: string | null): string {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-function getSessionLabel(s: SessionWithTrip): string {
+function getSessionLabel(s: SessionWithTrip): string | null {
   if (s.trip_title) return s.trip_title;
   if (s.trip_destinations) {
-    // trip_destinations might be city IDs or names — show first portion
     const dest = s.trip_destinations;
     return dest.length > 28 ? dest.slice(0, 28) + '...' : dest;
   }
-  return 'New Trip';
+  return null; // will use t('chat.new_trip') in the component
+}
+
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatDateRange(start: string | null, end: string | null): string | null {
+  if (!start || !end) return null;
+  const s = parseLocalDate(start);
+  const e = parseLocalDate(end);
+  const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+  return `${s.toLocaleDateString('en-US', opts)} – ${e.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
 }
 
 function getStatusColor(status: string | null): string {
@@ -63,6 +76,7 @@ export default function ConversationSidebar({
   isCollapsed,
   onToggleCollapse,
 }: ConversationSidebarProps) {
+  const { t } = useLanguage();
   return (
     <div
       className="flex flex-col bg-[#FAFAF8] border-r border-gray-100 transition-all duration-300 overflow-hidden"
@@ -70,12 +84,12 @@ export default function ConversationSidebar({
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-        <h2 className="font-cormorant text-lg font-semibold text-[#1E3D2F]">Trips</h2>
+        <h2 className="font-cormorant text-lg font-semibold text-[#1E3D2F]">{t('chat.trips_title')}</h2>
         <div className="flex items-center gap-2">
           <button
             onClick={onNewChat}
             className="text-[#C4956A] hover:text-[#a87d59] transition-colors"
-            title="New Chat"
+            title={t('chat.new_chat')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19" />
@@ -85,7 +99,7 @@ export default function ConversationSidebar({
           <button
             onClick={onToggleCollapse}
             className="text-gray-400 hover:text-gray-600 transition-colors"
-            title="Collapse sidebar"
+            title={t('chat.collapse_sidebar')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
@@ -110,12 +124,17 @@ export default function ConversationSidebar({
             >
               <div className="flex items-start justify-between gap-2">
                 <span className="font-inter text-sm font-medium text-[#1E3D2F] truncate">
-                  {getSessionLabel(s)}
+                  {getSessionLabel(s) || t('chat.new_trip')}
                 </span>
                 <span className="font-inter text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">
                   {formatTime(s.last_message_at)}
                 </span>
               </div>
+              {formatDateRange(s.trip_start_date, s.trip_end_date) && (
+                <p className="font-inter text-[11px] text-gray-400 mt-0.5 truncate">
+                  {formatDateRange(s.trip_start_date, s.trip_end_date)}
+                </p>
+              )}
               <div className="flex items-center gap-2 mt-1">
                 <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-inter ${getStatusColor(s.trip_status)}`}>
                   {getStatusLabel(s.trip_status)}
@@ -132,7 +151,7 @@ export default function ConversationSidebar({
 
         {sessions.length === 0 && (
           <div className="px-4 py-8 text-center">
-            <p className="font-inter text-xs text-gray-400">No conversations yet</p>
+            <p className="font-inter text-xs text-gray-400">{t('chat.no_conversations')}</p>
           </div>
         )}
       </div>

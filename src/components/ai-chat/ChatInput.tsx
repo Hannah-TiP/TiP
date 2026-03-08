@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, KeyboardEvent } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ChatInputProps {
   onSendMessage: (content: string) => void;
@@ -15,6 +16,7 @@ export default function ChatInput({
   onUploadAudio,
   isLoading,
 }: ChatInputProps) {
+  const { t } = useLanguage();
   const [inputValue, setInputValue] = useState('');
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +39,7 @@ export default function ChatInput({
     if (file && onUploadImage) {
       // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        alert('Image file size must be less than 10MB');
+        alert(t('chat.image_size_error'));
         return;
       }
       onUploadImage(file);
@@ -53,7 +55,7 @@ export default function ChatInput({
     if (file && onUploadAudio) {
       // Validate file size (max 20MB)
       if (file.size > 20 * 1024 * 1024) {
-        alert('Audio file size must be less than 20MB');
+        alert(t('chat.audio_size_error'));
         return;
       }
       onUploadAudio(file);
@@ -82,7 +84,7 @@ export default function ChatInput({
               onClick={() => imageInputRef.current?.click()}
               disabled={isLoading}
               className="text-gray-400 hover:text-[#1E3D2F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Upload image"
+              title={t('chat.upload_image')}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -118,7 +120,7 @@ export default function ChatInput({
               onClick={() => audioInputRef.current?.click()}
               disabled={isLoading}
               className="text-gray-400 hover:text-[#1E3D2F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Upload audio"
+              title={t('chat.upload_audio')}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -145,7 +147,7 @@ export default function ChatInput({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask your concierge anything..."
+          placeholder={t('chat.placeholder')}
           disabled={isLoading}
           className="flex-1 bg-transparent outline-none font-inter text-sm text-gray-800 placeholder:text-gray-400 disabled:opacity-50"
         />
@@ -154,7 +156,7 @@ export default function ChatInput({
           disabled={isLoading || !inputValue.trim()}
           className="bg-[#1E3D2F] text-white rounded-lg px-5 py-2 font-inter text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? 'Sending...' : 'Send'}
+          {isLoading ? t('chat.sending') : t('chat.send')}
         </button>
       </div>
     </div>

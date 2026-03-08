@@ -18,8 +18,11 @@ import type {
   ListSessionsResponse,
   SendMessageResponse,
   AnalyzeImageResponse,
-  TranscribeAudioResponse
+  TranscribeAudioResponse,
+  WidgetResponsePayload,
+  ConverseResponse,
 } from '@/types/ai-chat';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 function isSuccessResponse(response: { success?: boolean; code?: number }): boolean {
   return response.success === true || response.code === 200;
@@ -46,6 +49,7 @@ function ConciergeContent() {
   const { data: session, status } = useSession();
   const isAuthenticated = !!session;
   const authLoading = status === 'loading';
+  const { lang } = useLanguage();
 
   const [sessions, setSessions] = useState<SessionWithTrip[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>('');
@@ -55,6 +59,7 @@ function ConciergeContent() {
   const [error, setError] = useState<string | null>(null);
   const [tripContext, setTripContext] = useState<TripContext | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [tripRefreshKey, setTripRefreshKey] = useState(0);
 
   // Check authentication
   useEffect(() => {
@@ -100,7 +105,7 @@ function ConciergeContent() {
   // Create a new chat session and select it
   async function handleNewChat() {
     try {
-      const response = await apiClient.createChatSession('en') as CreateSessionResponse;
+      const response = await apiClient.createChatSession(lang) as CreateSessionResponse;
       const isSuccess = isSuccessResponse(response);
       const responseData = response.data;
 
@@ -227,66 +232,95 @@ function ConciergeContent() {
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || !activeSessionId) return;
+    await handleConverse(content);
+  };
+
+  // Unified converse handler — used for both text messages and widget responses
+  const handleConverse = async (content: string, widgetResponse?: WidgetResponsePayload) => {
+    if (!activeSessionId) return;
 
     setIsLoading(true);
     setError(null);
 
-    const userMessage: AIMessage = {
-      id: messages.length,
-      session_id: activeSessionId,
-      role: 'user',
-      content,
-      message_type: 'text',
-      created_at: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, userMessage]);
+    // Add optimistic user message (only for text, not widget — widget msg comes from backend)
+    const TEMP_USER_MSG_ID = -1;
+    if (content.trim() && !widgetResponse) {
+      const userMessage: AIMessage = {
+        id: TEMP_USER_MSG_ID,
+        session_id: activeSessionId,
+        role: 'user',
+        content,
+        message_type: 'text',
+        created_at: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, userMessage]);
+    }
 
     try {
-      const response = await apiClient.sendMessage(activeSessionId, content, 'text') as SendMessageResponse;
+      const response = await apiClient.converse(activeSessionId, content, widgetResponse) as ConverseResponse;
       const isSuccess = isSuccessResponse(response);
       const responseData = response.data;
 
       if (isSuccess && responseData) {
+        // Replace temp user message ID with the real DB ID
+        if (responseData.user_message_id) {
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === TEMP_USER_MSG_ID ? { ...m, id: responseData.user_message_id! } : m
+            )
+          );
+        }
+
         const assistantMessage: AIMessage = {
-          id: messages.length + 1,
+          id: responseData.assistant_message_id,
           session_id: activeSessionId,
           role: 'assistant',
           content: responseData.response,
           message_type: 'text',
           message_metadata: {
-            intent: responseData.intent,
-            trips: responseData.trips,
-            has_trips: responseData.has_trips,
-            collection_status: responseData.collection_status,
-            next_field: responseData.next_field,
-            trip_context: responseData.trip_context,
-            trip_created: responseData.trip_created,
-            trip_id: responseData.trip_id,
-            trip: responseData.trip,
+            ui_blocks: responseData.ui_blocks,
+            field_updated: responseData.field_updated,
           },
           created_at: new Date().toISOString(),
         };
         setMessages(prev => [...prev, assistantMessage]);
 
-        if (responseData.trip_context) {
-          setTripContext(responseData.trip_context);
+        // Refresh right pane with updated trip
+        setTripRefreshKey(prev => prev + 1);
+
+        // Update tripContext from the response trip data
+        if (responseData.trip) {
+          setTripContext({
+            destination: responseData.trip.preset_destination_cities_names || responseData.trip.custom_destination_cities || undefined,
+            start_date: responseData.trip.start_date || undefined,
+            end_date: responseData.trip.end_date || undefined,
+            adults: responseData.trip.adults,
+            kids: responseData.trip.kids,
+            purpose: responseData.trip.purpose,
+            budget: responseData.trip.budget || undefined,
+            service_type: responseData.trip.service_type || undefined,
+          });
         }
 
-        // If trip was created, refresh sessions and trip detail
-        if (responseData.trip_created) {
+        // If trip was submitted, refresh sessions
+        if (responseData.field_updated?.includes('status')) {
           await refreshSessions();
-          if (responseData.trip_id) {
-            setActiveTripId(responseData.trip_id);
-          }
         }
       }
     } catch (err) {
-      console.error('[Concierge] Failed to send message:', err);
+      console.error('[Concierge] Failed to converse:', err);
       setError('Failed to send message. Please try again.');
-      setMessages(prev => prev.slice(0, -1));
+      // Remove optimistic user message on error
+      if (content.trim() && !widgetResponse) {
+        setMessages(prev => prev.slice(0, -1));
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleWidgetSubmit = async (payload: WidgetResponsePayload) => {
+    await handleConverse('', payload);
   };
 
   const handleUploadImage = async (file: File) => {
@@ -497,7 +531,7 @@ function ConciergeContent() {
 
         {/* Chat area (center) */}
         <div className="flex-1 flex flex-col border-r border-gray-100">
-          <MessageList messages={messages} isLoading={isLoading} />
+          <MessageList messages={messages} isLoading={isLoading} onWidgetSubmit={handleWidgetSubmit} />
           <ChatInput
             onSendMessage={handleSendMessage}
             onUploadImage={handleUploadImage}
@@ -507,7 +541,7 @@ function ConciergeContent() {
         </div>
 
         {/* Right pane: Trip detail */}
-        <TripDetailPanel tripId={activeTripId} tripContext={tripContext} />
+        <TripDetailPanel tripId={activeTripId} tripContext={tripContext} refreshKey={tripRefreshKey} />
       </div>
     </div>
   );

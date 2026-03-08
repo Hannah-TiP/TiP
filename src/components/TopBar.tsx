@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TopBarProps {
   activeLink: string;
@@ -17,6 +18,7 @@ const navLinks = [
 export default function TopBar({ activeLink }: TopBarProps) {
   const { data: session } = useSession();
   const isAuthenticated = !!session;
+  const { lang, setLang, t } = useLanguage();
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-10">
@@ -45,6 +47,13 @@ export default function TopBar({ activeLink }: TopBarProps) {
             </Link>
           );
         })}
+
+        <button
+          onClick={() => setLang(lang === 'en' ? 'kr' : 'en')}
+          className="text-[11px] font-medium tracking-[2px] text-green-dark/50 hover:text-green-dark transition-colors"
+        >
+          {t('nav.language_toggle')}
+        </button>
 
         {isAuthenticated ? (
           <>
