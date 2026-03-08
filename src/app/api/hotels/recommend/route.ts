@@ -12,15 +12,15 @@ export async function GET(request: NextRequest) {
       {
         headers: {
           'Content-Type': 'application/json',
-          'Language': language,
+          Language: language,
         },
-      }
+      },
     );
 
     if (!response.ok) {
       return NextResponse.json(
         { message: 'Failed to fetch recommended hotels' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -28,9 +28,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Recommended hotels API error:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

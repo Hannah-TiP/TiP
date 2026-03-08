@@ -1,23 +1,20 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import TopBar from "@/components/TopBar";
-import SubNav from "@/components/SubNav";
-import Footer from "@/components/Footer";
-import { apiClient } from "@/lib/api-client";
-import type { TripDetail, TravelPlanItem, ReviewPayload } from "@/types/trip";
-import { getImageUrl } from "@/types/hotel";
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import TopBar from '@/components/TopBar';
+import SubNav from '@/components/SubNav';
+import Footer from '@/components/Footer';
+import { apiClient } from '@/lib/api-client';
+import type { TripDetail, TravelPlanItem, ReviewPayload } from '@/types/trip';
+import Image from 'next/image';
+import { getImageUrl } from '@/types/hotel';
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 
 function getDestination(trip: TripDetail): string {
-  return (
-    trip.preset_destination_cities_names ||
-    trip.custom_destination_cities ||
-    "Your Trip"
-  );
+  return trip.preset_destination_cities_names || trip.custom_destination_cities || 'Your Trip';
 }
 
 function getReviewableItems(trip: TripDetail): TravelPlanItem[] {
@@ -27,32 +24,32 @@ function getReviewableItems(trip: TripDetail): TravelPlanItem[] {
 
   return allItems.filter(
     (item) =>
-      (item.category_type === "staying" && item.system_hotel_id) ||
-      (item.category_type === "activities" && item.system_activity_id)
+      (item.category_type === 'staying' && item.system_hotel_id) ||
+      (item.category_type === 'activities' && item.system_activity_id),
   );
 }
 
 const categoryLabel: Record<string, string> = {
-  staying: "Hotel",
-  activities: "Activity",
+  staying: 'Hotel',
+  activities: 'Activity',
 };
 
 const categoryColor: Record<string, string> = {
-  staying: "bg-purple-100 text-purple-700",
-  activities: "bg-green-100 text-green-700",
+  staying: 'bg-purple-100 text-purple-700',
+  activities: 'bg-green-100 text-green-700',
 };
 
 const reviewStatusLabel: Record<string, string> = {
-  "none": "",
-  "pending-review": "Pending Review",
-  "published": "Published",
-  "rejected": "Rejected",
+  none: '',
+  'pending-review': 'Pending Review',
+  published: 'Published',
+  rejected: 'Rejected',
 };
 
 const reviewStatusColor: Record<string, string> = {
-  "pending-review": "bg-yellow-100 text-yellow-700",
-  "published": "bg-green-100 text-green-700",
-  "rejected": "bg-red-100 text-red-700",
+  'pending-review': 'bg-yellow-100 text-yellow-700',
+  published: 'bg-green-100 text-green-700',
+  rejected: 'bg-red-100 text-red-700',
 };
 
 // ─── Star Rating ─────────────────────────────────────────────────────────────
@@ -71,9 +68,7 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
           onMouseLeave={() => setHover(0)}
           className="text-2xl transition-colors focus:outline-none"
         >
-          <span className={star <= (hover || value) ? "text-yellow-400" : "text-gray-300"}>
-            ★
-          </span>
+          <span className={star <= (hover || value) ? 'text-yellow-400' : 'text-gray-300'}>★</span>
         </button>
       ))}
     </div>
@@ -84,21 +79,20 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
 
 function ReviewCard({ item }: { item: TravelPlanItem }) {
   const [score, setScore] = useState(0);
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const alreadyReviewed =
-    item.user_review_status && item.user_review_status !== "none";
+  const alreadyReviewed = item.user_review_status && item.user_review_status !== 'none';
 
   const handleSubmit = async () => {
     if (score === 0) {
-      setError("Please select a rating.");
+      setError('Please select a rating.');
       return;
     }
     if (!content.trim()) {
-      setError("Please write a review.");
+      setError('Please write a review.');
       return;
     }
 
@@ -112,7 +106,7 @@ function ReviewCard({ item }: { item: TravelPlanItem }) {
       await apiClient.createReview(item.id, payload);
       setSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to submit review");
+      setError(err instanceof Error ? err.message : 'Failed to submit review');
     } finally {
       setSubmitting(false);
     }
@@ -123,17 +117,17 @@ function ReviewCard({ item }: { item: TravelPlanItem }) {
       <div className="flex items-center gap-3 mb-4">
         <span
           className={`text-xs px-2 py-0.5 rounded font-medium ${
-            categoryColor[item.category_type ?? ""] ?? "bg-gray-100 text-gray-600"
+            categoryColor[item.category_type ?? ''] ?? 'bg-gray-100 text-gray-600'
           }`}
         >
-          {categoryLabel[item.category_type ?? ""] ?? "Other"}
+          {categoryLabel[item.category_type ?? ''] ?? 'Other'}
         </span>
         <h3 className="font-semibold text-gray-900">{item.category_name}</h3>
         {item.city && <span className="text-xs text-gray-400">{item.city}</span>}
         {alreadyReviewed && (
           <span
             className={`ml-auto text-xs font-medium px-2 py-0.5 rounded ${
-              reviewStatusColor[item.user_review_status!] ?? "bg-gray-100 text-gray-600"
+              reviewStatusColor[item.user_review_status!] ?? 'bg-gray-100 text-gray-600'
             }`}
           >
             {reviewStatusLabel[item.user_review_status!] ?? item.user_review_status}
@@ -148,11 +142,7 @@ function ReviewCard({ item }: { item: TravelPlanItem }) {
       ) : alreadyReviewed ? (
         <div className="text-sm text-gray-500">
           You&apos;ve already reviewed this item.
-          {item.user_rating && (
-            <span className="ml-2">
-              Your rating: {item.user_rating}/5 ★
-            </span>
-          )}
+          {item.user_rating && <span className="ml-2">Your rating: {item.user_rating}/5 ★</span>}
         </div>
       ) : (
         <div className="space-y-4">
@@ -176,7 +166,7 @@ function ReviewCard({ item }: { item: TravelPlanItem }) {
             disabled={submitting}
             className="px-6 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-lg hover:bg-[#2a5240] transition-colors disabled:opacity-50"
           >
-            {submitting ? "Submitting..." : "Submit Review"}
+            {submitting ? 'Submitting...' : 'Submit Review'}
           </button>
         </div>
       )}
@@ -197,7 +187,7 @@ export default function ReviewsPage() {
     apiClient
       .getTripById(Number(id))
       .then(setTrip)
-      .catch(() => setError("Failed to load trip details."))
+      .catch(() => setError('Failed to load trip details.'))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -222,8 +212,11 @@ export default function ReviewsPage() {
         <TopBar activeLink="My Page" />
         <SubNav activeTab="Travel History" />
         <div className="max-w-4xl mx-auto px-6 mt-8 text-center py-20 text-gray-500">
-          <p>{error ?? "Trip not found."}</p>
-          <Link href="/my-page" className="mt-4 inline-block text-[#1E3D2F] hover:underline text-sm">
+          <p>{error ?? 'Trip not found.'}</p>
+          <Link
+            href="/my-page"
+            className="mt-4 inline-block text-[#1E3D2F] hover:underline text-sm"
+          >
             ← Back to My Trips
           </Link>
         </div>
@@ -252,10 +245,12 @@ export default function ReviewsPage() {
         <div className="mb-8">
           <div className="flex items-center gap-4">
             {trip.cover_image && (
-              <img
+              <Image
                 src={getImageUrl(trip.cover_image)}
                 alt={destination}
                 className="w-16 h-16 rounded-xl object-cover"
+                width={64}
+                height={64}
               />
             )}
             <div>

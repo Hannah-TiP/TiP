@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import DatePickerDropdown from "./DatePickerDropdown";
-import GuestsDropdown from "./GuestsDropdown";
-import DestinationDropdown from "./DestinationDropdown";
-import TripTypeDropdown from "./TripTypeDropdown";
-import TravelStyleDropdown from "./TravelStyleDropdown";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import DatePickerDropdown from './DatePickerDropdown';
+import GuestsDropdown from './GuestsDropdown';
+import DestinationDropdown from './DestinationDropdown';
+import TripTypeDropdown from './TripTypeDropdown';
+import TravelStyleDropdown from './TravelStyleDropdown';
 
 export default function SearchBar() {
   const router = useRouter();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [destination, setDestination] = useState<{ id: number; name: string } | null>(null);
-  const [dates, setDates] = useState({ checkIn: "", checkOut: "" });
+  const [dates, setDates] = useState({ checkIn: '', checkOut: '' });
   const [guests, setGuests] = useState({ adults: 2, children: 0 });
-  const [tripType, setTripType] = useState("Leisure");
-  const [travelStyle, setTravelStyle] = useState("");
+  const [tripType, setTripType] = useState('Leisure');
+  const [travelStyle, setTravelStyle] = useState('');
 
   const toggleDropdown = (name: string) => {
     setActiveDropdown(activeDropdown === name ? null : name);
@@ -24,7 +24,7 @@ export default function SearchBar() {
   const handleSearch = () => {
     // Validate that destination is selected
     if (!destination) {
-      alert("Please select a destination");
+      alert('Please select a destination');
       return;
     }
 
@@ -52,20 +52,20 @@ export default function SearchBar() {
         className="flex items-center rounded-lg bg-white/95"
         style={{
           height: 70,
-          border: "1px solid rgba(0,0,0,0.06)",
+          border: '1px solid rgba(0,0,0,0.06)',
         }}
       >
         {/* Destination */}
         <div
           className="relative flex h-full cursor-pointer flex-col justify-center px-6"
           style={{ minWidth: 180 }}
-          onClick={() => toggleDropdown("destination")}
+          onClick={() => toggleDropdown('destination')}
         >
           <span className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
             DESTINATION
           </span>
           <span className="text-[14px] font-medium text-green-dark">
-            {destination?.name || "Where to?"}
+            {destination?.name || 'Where to?'}
           </span>
         </div>
 
@@ -75,13 +75,13 @@ export default function SearchBar() {
         <div
           className="relative flex h-full cursor-pointer flex-col justify-center px-6"
           style={{ minWidth: 140 }}
-          onClick={() => toggleDropdown("dates")}
+          onClick={() => toggleDropdown('dates')}
         >
           <span className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
             CHECK-IN
           </span>
           <span className="text-[14px] font-medium text-green-dark">
-            {dates.checkIn || "Add date"}
+            {dates.checkIn || 'Add date'}
           </span>
         </div>
 
@@ -91,13 +91,13 @@ export default function SearchBar() {
         <div
           className="relative flex h-full cursor-pointer flex-col justify-center px-6"
           style={{ minWidth: 140 }}
-          onClick={() => toggleDropdown("dates")}
+          onClick={() => toggleDropdown('dates')}
         >
           <span className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
             CHECK-OUT
           </span>
           <span className="text-[14px] font-medium text-green-dark">
-            {dates.checkOut || "Add date"}
+            {dates.checkOut || 'Add date'}
           </span>
         </div>
 
@@ -107,13 +107,14 @@ export default function SearchBar() {
         <div
           className="relative flex h-full cursor-pointer flex-col justify-center px-6"
           style={{ minWidth: 120 }}
-          onClick={() => toggleDropdown("guests")}
+          onClick={() => toggleDropdown('guests')}
         >
           <span className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
             GUESTS
           </span>
           <span className="text-[14px] font-medium text-green-dark">
-            {guests.adults + guests.children} Guest{guests.adults + guests.children !== 1 ? "s" : ""}
+            {guests.adults + guests.children} Guest
+            {guests.adults + guests.children !== 1 ? 's' : ''}
           </span>
         </div>
 
@@ -123,14 +124,12 @@ export default function SearchBar() {
         <div
           className="relative flex h-full cursor-pointer flex-col justify-center px-6"
           style={{ minWidth: 120 }}
-          onClick={() => toggleDropdown("tripType")}
+          onClick={() => toggleDropdown('tripType')}
         >
           <span className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
             TRIP TYPE
           </span>
-          <span className="text-[14px] font-medium text-green-dark">
-            {tripType}
-          </span>
+          <span className="text-[14px] font-medium text-green-dark">{tripType}</span>
         </div>
 
         <div className="h-8 w-px bg-gray-200" />
@@ -139,13 +138,13 @@ export default function SearchBar() {
         <div
           className="relative flex h-full cursor-pointer flex-col justify-center px-6"
           style={{ minWidth: 140 }}
-          onClick={() => toggleDropdown("travelStyle")}
+          onClick={() => toggleDropdown('travelStyle')}
         >
           <span className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
             TRAVEL STYLE
           </span>
           <span className="text-[14px] font-medium text-green-dark">
-            {travelStyle || "Any Style"}
+            {travelStyle || 'Any Style'}
           </span>
         </div>
 
@@ -160,9 +159,9 @@ export default function SearchBar() {
       </div>
 
       {/* Dropdowns */}
-      {activeDropdown === "destination" && (
+      {activeDropdown === 'destination' && (
         <DestinationDropdown
-          value={destination?.name || ""}
+          value={destination?.name || ''}
           onChange={(cityData) => {
             setDestination(cityData);
             setActiveDropdown(null);
@@ -171,7 +170,7 @@ export default function SearchBar() {
         />
       )}
 
-      {activeDropdown === "dates" && (
+      {activeDropdown === 'dates' && (
         <DatePickerDropdown
           checkIn={dates.checkIn}
           checkOut={dates.checkOut}
@@ -180,7 +179,7 @@ export default function SearchBar() {
         />
       )}
 
-      {activeDropdown === "guests" && (
+      {activeDropdown === 'guests' && (
         <GuestsDropdown
           adults={guests.adults}
           kids={guests.children}
@@ -189,7 +188,7 @@ export default function SearchBar() {
         />
       )}
 
-      {activeDropdown === "tripType" && (
+      {activeDropdown === 'tripType' && (
         <TripTypeDropdown
           value={tripType}
           onChange={(val) => {
@@ -200,7 +199,7 @@ export default function SearchBar() {
         />
       )}
 
-      {activeDropdown === "travelStyle" && (
+      {activeDropdown === 'travelStyle' && (
         <TravelStyleDropdown
           value={travelStyle}
           onChange={(val) => {

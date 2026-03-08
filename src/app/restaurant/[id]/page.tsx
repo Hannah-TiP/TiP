@@ -1,12 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import TopBar from "@/components/TopBar";
-import Footer from "@/components/Footer";
-import { apiClient } from "@/lib/api-client";
-import { getImageUrl, type Restaurant } from "@/types/hotel";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import TopBar from '@/components/TopBar';
+import Footer from '@/components/Footer';
+import Image from 'next/image';
+import { apiClient } from '@/lib/api-client';
+import { getImageUrl, type Restaurant } from '@/types/hotel';
 
 export default function RestaurantDetailPage() {
   const params = useParams();
@@ -23,8 +24,8 @@ export default function RestaurantDetailPage() {
         const data = await apiClient.getRestaurantById(restaurantId);
         setRestaurant(data);
       } catch (err) {
-        console.error("Failed to load restaurant:", err);
-        setError("Restaurant not found");
+        console.error('Failed to load restaurant:', err);
+        setError('Restaurant not found');
       } finally {
         setIsLoading(false);
       }
@@ -52,9 +53,7 @@ export default function RestaurantDetailPage() {
       <main className="min-h-screen bg-background">
         <TopBar activeLink="More Dreams" />
         <div className="flex flex-col items-center justify-center py-40">
-          <h1 className="font-primary text-[42px] italic text-green-dark">
-            Restaurant Not Found
-          </h1>
+          <h1 className="font-primary text-[42px] italic text-green-dark">Restaurant Not Found</h1>
           <p className="mt-4 text-gray-text">
             The restaurant you&apos;re looking for doesn&apos;t exist.
           </p>
@@ -70,9 +69,7 @@ export default function RestaurantDetailPage() {
     );
   }
 
-  const badge = restaurant.star_rating
-    ? `${restaurant.star_rating} STAR`
-    : "RESTAURANT";
+  const badge = restaurant.star_rating ? `${restaurant.star_rating} STAR` : 'RESTAURANT';
 
   return (
     <main className="min-h-screen bg-background">
@@ -80,10 +77,13 @@ export default function RestaurantDetailPage() {
 
       {/* Hero */}
       <section className="relative h-[560px] w-full overflow-hidden">
-        <img
+        <Image
           src={getImageUrl(restaurant.image)}
           alt={restaurant.name}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 object-cover"
+          fill
+          sizes="100vw"
+          priority
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         <div className="relative z-10 flex h-full flex-col justify-end px-20 pb-16">
@@ -123,9 +123,7 @@ export default function RestaurantDetailPage() {
           </div>
           {restaurant.content && (
             <div className="w-[400px] rounded-lg bg-gray-light p-8">
-              <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-                DETAILS
-              </span>
+              <span className="text-[11px] font-semibold tracking-[4px] text-gold">DETAILS</span>
               <div
                 className="mt-4 text-[14px] leading-[1.8] text-gray-text [&_h1]:mb-2 [&_h1]:text-[18px] [&_h1]:font-semibold [&_h1]:text-green-dark [&_h2]:mb-2 [&_h2]:text-[16px] [&_h2]:font-semibold [&_h2]:text-green-dark [&_h3]:mb-2 [&_h3]:text-[15px] [&_h3]:font-semibold [&_h3]:text-green-dark [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-3 [&_ul]:mb-3"
                 dangerouslySetInnerHTML={{ __html: restaurant.content }}
@@ -149,9 +147,7 @@ export default function RestaurantDetailPage() {
           <div className="grid grid-cols-2 gap-6">
             {restaurant.address && (
               <div className="rounded-xl bg-white p-8 shadow-sm">
-                <span className="text-[11px] font-semibold tracking-[2px] text-gold">
-                  ADDRESS
-                </span>
+                <span className="text-[11px] font-semibold tracking-[2px] text-gold">ADDRESS</span>
                 <p className="mt-3 text-[15px] leading-relaxed text-green-dark">
                   {restaurant.address}
                 </p>
@@ -181,8 +177,8 @@ export default function RestaurantDetailPage() {
             Your Concierge Awaits
           </h2>
           <p className="mt-4 text-[16px] leading-relaxed text-white/60">
-            Want to reserve a table or include this restaurant in your
-            itinerary? Our dedicated travel specialists can arrange everything.
+            Want to reserve a table or include this restaurant in your itinerary? Our dedicated
+            travel specialists can arrange everything.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Link

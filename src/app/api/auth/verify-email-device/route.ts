@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Language': 'en',
+        Language: 'en',
       },
       body: JSON.stringify({
         email,
@@ -25,15 +25,12 @@ export async function POST(request: NextRequest) {
       const error = await response.json();
       return NextResponse.json(
         { message: error.detail || 'Verification failed' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

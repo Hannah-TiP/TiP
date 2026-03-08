@@ -9,10 +9,7 @@ export async function POST(request: NextRequest) {
     const accessToken = session?.accessToken;
 
     if (!accessToken) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse request body
@@ -22,7 +19,7 @@ export async function POST(request: NextRequest) {
     if (!session_id || !content) {
       return NextResponse.json(
         { success: false, message: 'Missing required fields: session_id and content' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -30,7 +27,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch(`${API_BASE_URL}/api/v1/ai-chat/message`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -45,16 +42,13 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to send message' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     return NextResponse.json(data);
   } catch (error) {
     console.error('Send message error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

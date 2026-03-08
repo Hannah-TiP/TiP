@@ -9,16 +9,13 @@ export async function GET() {
     const accessToken = session?.accessToken;
 
     if (!accessToken) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
     const response = await fetch(`${API_BASE_URL}/api/v1/ai-chat/sessions`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
     });
@@ -28,16 +25,13 @@ export async function GET() {
     if (!response.ok) {
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to list sessions' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     return NextResponse.json(data);
   } catch (error) {
     console.error('List sessions error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

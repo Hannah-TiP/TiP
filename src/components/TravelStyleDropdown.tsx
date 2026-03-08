@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 interface TravelStyleDropdownProps {
   value: string;
@@ -9,12 +9,12 @@ interface TravelStyleDropdownProps {
 }
 
 const travelStyles = [
-  { value: "Solo Retreat", icon: "🧘", description: "Peaceful, personal time" },
-  { value: "Family Memories", icon: "👨‍👩‍👧‍👦", description: "Kid-friendly adventures" },
-  { value: "Romantic Escape", icon: "💕", description: "Intimate experiences" },
-  { value: "Adventure Seeker", icon: "🏔️", description: "Thrill and excitement" },
-  { value: "Cultural Explorer", icon: "🏛️", description: "Heritage and history" },
-  { value: "Wellness Focus", icon: "🌿", description: "Health and rejuvenation" },
+  { value: 'Solo Retreat', icon: '🧘', description: 'Peaceful, personal time' },
+  { value: 'Family Memories', icon: '👨‍👩‍👧‍👦', description: 'Kid-friendly adventures' },
+  { value: 'Romantic Escape', icon: '💕', description: 'Intimate experiences' },
+  { value: 'Adventure Seeker', icon: '🏔️', description: 'Thrill and excitement' },
+  { value: 'Cultural Explorer', icon: '🏛️', description: 'Heritage and history' },
+  { value: 'Wellness Focus', icon: '🌿', description: 'Health and rejuvenation' },
 ];
 
 export default function TravelStyleDropdown({
@@ -30,8 +30,8 @@ export default function TravelStyleDropdown({
         onClose();
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
   return (
@@ -49,11 +49,13 @@ export default function TravelStyleDropdown({
             key={style.value}
             onClick={() => onChange(style.value)}
             className={`flex flex-col items-center rounded-lg p-4 text-center transition-colors hover:bg-gray-50 ${
-              value === style.value ? "bg-green-dark/5 ring-1 ring-green-dark" : "bg-gray-50/50"
+              value === style.value ? 'bg-green-dark/5 ring-1 ring-green-dark' : 'bg-gray-50/50'
             }`}
           >
             <span className="mb-2 text-2xl">{style.icon}</span>
-            <p className={`text-[13px] font-medium ${value === style.value ? "text-green-dark" : "text-gray-700"}`}>
+            <p
+              className={`text-[13px] font-medium ${value === style.value ? 'text-green-dark' : 'text-gray-700'}`}
+            >
               {style.value}
             </p>
             <p className="mt-1 text-[10px] text-gray-500">{style.description}</p>
@@ -61,7 +63,7 @@ export default function TravelStyleDropdown({
         ))}
       </div>
       <button
-        onClick={() => onChange("")}
+        onClick={() => onChange('')}
         className="mt-3 w-full text-center text-[12px] text-gray-500 hover:text-gray-700"
       >
         Clear selection

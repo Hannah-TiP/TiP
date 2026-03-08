@@ -2,12 +2,11 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { getDeviceId } from '@/lib/device';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const [step, setStep] = useState<'email' | 'reset'>('email');
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -88,27 +87,27 @@ export default function ForgotPasswordPage() {
     <main className="flex min-h-screen flex-col bg-gray-light">
       <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-10">
         <Link href="/">
-          <img src="/bible_TIP_profil_400x400px.svg" alt="TiP" className="h-9" />
+          <Image
+            src="/bible_TIP_profil_400x400px.svg"
+            alt="TiP"
+            width={36}
+            height={36}
+            className="h-9"
+          />
         </Link>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center px-10">
         <div className="text-center">
-          <h1 className="font-primary text-[48px] italic text-green-dark">
-            Reset your password
-          </h1>
-          <p className="mt-2 text-gray-text">
-            We&apos;ll send you a verification code
-          </p>
+          <h1 className="font-primary text-[48px] italic text-green-dark">Reset your password</h1>
+          <p className="mt-2 text-gray-text">We&apos;ll send you a verification code</p>
         </div>
 
         <div className="mt-8 w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
           {step === 'email' ? (
             <form onSubmit={handleSendCode} className="flex flex-col gap-6 p-8">
               {error && (
-                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                  {error}
-                </div>
+                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
               )}
 
               <input
@@ -132,9 +131,7 @@ export default function ForgotPasswordPage() {
           ) : (
             <form onSubmit={handleResetPassword} className="flex flex-col gap-6 p-8">
               {error && (
-                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                  {error}
-                </div>
+                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
               )}
 
               <input

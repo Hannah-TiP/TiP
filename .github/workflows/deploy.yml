@@ -39,20 +39,31 @@ jobs:
         run: |
           npm ci
 
+      - name: Check Formatting
+        run: npx prettier --check "src/**/*.{ts,tsx}" "e2e/**/*.ts" "*.{ts,mjs}"
+
       - name: Run Linting
-        run: |
-          echo "🔍 Running ESLint..."
-          npm run lint || {
-            echo "⚠️ ESLint found some issues (not failing build)"
-            echo "ℹ️ Please review and fix linting issues in future commits"
-            exit 0
-          }
+        run: npm run lint
+
+      - name: Type Check
+        run: npx tsc --noEmit
+
+      - name: Run Tests
+        run: npm test
+
+      - name: Cache Next.js Build
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-
 
       - name: Build Application
-        run: |
-          echo "🔨 Building Next.js application..."
-          npm run build
-          echo "✅ Build completed successfully"
+        run: npm run build
+
+      - name: Check Bundle Size
+        run: npm run bundle-check
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -61,6 +72,39 @@ jobs:
           path: |
             .next/
             public/
+          retention-days: 7
+
+  lighthouse:
+    runs-on: ubuntu-latest
+    needs: [test-and-build]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-${{ github.sha }}
+
+      - name: Run Lighthouse CI
+        run: npx lhci autorun
+
+      - name: Upload Lighthouse Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report-${{ github.sha }}
+          path: .lighthouseci/
           retention-days: 7
 
   build-and-push-docker:
@@ -178,7 +222,6 @@ jobs:
   deploy-preview:
     runs-on: ubuntu-latest
     needs: [build-and-push-docker]
-    # Only auto-deploy preview
     if: needs.build-and-push-docker.outputs.environment == 'preview'
     environment: preview
     steps:
@@ -192,7 +235,7 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Upload preview env to server
+      - name: Upload env to server
         run: |
           gpg --quiet --batch --yes \
             --decrypt \
@@ -201,7 +244,14 @@ jobs:
           ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
             "cat > ~/.env.tip.preview && chmod 600 ~/.env.tip.preview"
 
-      - name: Deploy preview container
+      - name: Get current image
+        id: prev-image
+        run: |
+          PREV_TAG=$(ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "docker ps --filter name=tip-customer-preview --format '{{.Image}}'" 2>/dev/null || echo "")
+          echo "tag=${PREV_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Deploy container
         run: |
           TAG="${{ needs.build-and-push-docker.outputs.tag_latest }}"
           GHCR_TOKEN="${{ secrets.GITHUB_TOKEN }}"
@@ -215,14 +265,54 @@ jobs:
             docker run -d --name tip-customer-preview --restart unless-stopped \
               -p 9200:3000 --env-file ~/.env.tip.preview ${TAG}
             docker image prune -f
-            echo "✅ Preview deployed successfully"
-            echo "🌐 Available at: https://www.tip.zetos.io"
           ENDSSH
+
+      - name: Health check (12 x 10s = 2min)
+        run: |
+          PREV_TAG="${{ steps.prev-image.outputs.tag }}"
+          for i in $(seq 1 12); do
+            if ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+              "curl -sf http://localhost:9200/api/health"; then
+              echo "Health check passed"
+              exit 0
+            fi
+            echo "Attempt $i/12 - waiting 10s..."
+            sleep 10
+          done
+          echo "Health check failed - rolling back to ${PREV_TAG:-previous image}"
+          if [ -n "$PREV_TAG" ]; then
+            ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << ENDSSH
+              docker stop tip-customer-preview || true
+              docker rm tip-customer-preview || true
+              docker run -d --name tip-customer-preview --restart unless-stopped \
+                -p 9200:3000 --env-file ~/.env.tip.preview $PREV_TAG
+              echo "Rolled back to $PREV_TAG"
+            ENDSSH
+          fi
+          exit 1
+
+      - name: Smoke test pages
+        run: |
+          BASE="https://staging.travelinyourpocket.com"
+          FAILED=0
+          for path in "/" "/dream-hotels" "/sign-in" "/api/health"; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${BASE}${path}")
+            if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+              echo "OK  ${path} (${STATUS})"
+            else
+              echo "FAIL ${path} (${STATUS})"
+              FAILED=1
+            fi
+          done
+          if [ "$FAILED" -eq 1 ]; then
+            echo "Smoke test failed - some pages returned errors"
+            exit 1
+          fi
+          echo "All preview pages responding"
 
   deploy-production:
     runs-on: ubuntu-latest
     needs: [build-and-push-docker]
-    # Auto-deploy to production
     if: needs.build-and-push-docker.outputs.environment == 'production'
     environment: production
     steps:
@@ -236,7 +326,7 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Upload production env to server
+      - name: Upload env to server
         run: |
           gpg --quiet --batch --yes \
             --decrypt \
@@ -245,14 +335,14 @@ jobs:
           ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
             "cat > ~/.env.tip.production && chmod 600 ~/.env.tip.production"
 
-      - name: Get current production image
+      - name: Get current image
         id: prev-image
         run: |
           PREV_TAG=$(ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
             "docker ps --filter name=tip-customer-production --format '{{.Image}}'" 2>/dev/null || echo "")
           echo "tag=${PREV_TAG}" >> $GITHUB_OUTPUT
 
-      - name: Deploy production container
+      - name: Deploy container
         run: |
           TAG="${{ needs.build-and-push-docker.outputs.tag_latest }}"
           GHCR_TOKEN="${{ secrets.GITHUB_TOKEN }}"
@@ -268,51 +358,154 @@ jobs:
             docker image prune -f
           ENDSSH
 
-      - name: Health check (12 × 10s = 2min)
+      - name: Health check (12 x 10s = 2min)
         run: |
           PREV_TAG="${{ steps.prev-image.outputs.tag }}"
           for i in $(seq 1 12); do
             if ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
               "curl -sf http://localhost:9201/api/health"; then
-              echo "✅ Health check passed"
+              echo "Health check passed"
               exit 0
             fi
-            echo "⏳ Attempt $i/12 — waiting 10s..."
+            echo "Attempt $i/12 - waiting 10s..."
             sleep 10
           done
-          echo "❌ Health check failed — rolling back to ${PREV_TAG:-previous image}"
+          echo "Health check failed - rolling back to ${PREV_TAG:-previous image}"
           if [ -n "$PREV_TAG" ]; then
             ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << ENDSSH
               docker stop tip-customer-production || true
               docker rm tip-customer-production || true
               docker run -d --name tip-customer-production --restart unless-stopped \
                 -p 9201:3000 --env-file ~/.env.tip.production $PREV_TAG
-              echo "⏮️  Rolled back to $PREV_TAG"
+              echo "Rolled back to $PREV_TAG"
             ENDSSH
           fi
           exit 1
 
-  notification:
+      - name: Smoke test pages
+        run: |
+          BASE="https://www.travelinyourpocket.com"
+          FAILED=0
+          for path in "/" "/dream-hotels" "/sign-in" "/api/health"; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${BASE}${path}")
+            if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+              echo "OK  ${path} (${STATUS})"
+            else
+              echo "FAIL ${path} (${STATUS})"
+              FAILED=1
+            fi
+          done
+          if [ "$FAILED" -eq 1 ]; then
+            echo "Smoke test failed - some pages returned errors"
+            exit 1
+          fi
+          echo "All production pages responding"
+
+  e2e-tests:
     runs-on: ubuntu-latest
     needs: [build-and-push-docker, deploy-preview, deploy-production]
-    if: always()
+    if: |
+      always() &&
+      (needs.deploy-preview.result == 'success' || needs.deploy-production.result == 'success')
     steps:
-      - name: Send Deployment Notification
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Determine E2E target URL
+        id: e2e-url
         run: |
           ENV="${{ needs.build-and-push-docker.outputs.environment }}"
+          if [ "$ENV" == "production" ]; then
+            echo "url=https://www.travelinyourpocket.com" >> $GITHUB_OUTPUT
+          else
+            echo "url=https://staging.travelinyourpocket.com" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run E2E Tests
+        env:
+          E2E_BASE_URL: ${{ steps.e2e-url.outputs.url }}
+        run: npx playwright test
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.sha }}
+          path: test-results/
+          retention-days: 7
+
+  notification:
+    runs-on: ubuntu-latest
+    needs: [build-and-push-docker, deploy-preview, deploy-production, e2e-tests]
+    if: always()
+    steps:
+      - name: Determine deployment result
+        id: result
+        run: |
+          ENV="${{ needs.build-and-push-docker.outputs.environment }}"
+          echo "environment=${ENV}" >> $GITHUB_OUTPUT
 
           if [ "$ENV" == "preview" ]; then
-            if [ "${{ needs.deploy-preview.result }}" == "success" ]; then
-              echo "✅ TIP Customer Frontend preview deployment successful"
-              echo "🌐 Live at: https://www.tip.zetos.io"
-            else
-              echo "❌ TIP Customer Frontend preview deployment failed"
-            fi
+            echo "status=${{ needs.deploy-preview.result }}" >> $GITHUB_OUTPUT
+            echo "url=https://staging.travelinyourpocket.com" >> $GITHUB_OUTPUT
           elif [ "$ENV" == "production" ]; then
-            if [ "${{ needs.deploy-production.result }}" == "success" ]; then
-              echo "✅ TIP Customer Frontend production deployment successful"
-              echo "🌐 Live at: https://www.travelinyourpocket.com"
-            else
-              echo "❌ TIP Customer Frontend production deployment failed"
-            fi
+            echo "status=${{ needs.deploy-production.result }}" >> $GITHUB_OUTPUT
+            echo "url=https://www.travelinyourpocket.com" >> $GITHUB_OUTPUT
           fi
+
+      - name: Print deployment status
+        run: |
+          if [ "${{ steps.result.outputs.status }}" == "success" ]; then
+            echo "TIP Customer Frontend ${{ steps.result.outputs.environment }} deployment successful"
+            echo "Live at: ${{ steps.result.outputs.url }}"
+          else
+            echo "TIP Customer Frontend ${{ steps.result.outputs.environment }} deployment failed"
+          fi
+
+      - name: Send Slack notification
+        if: vars.SLACK_WEBHOOK_URL != ''
+        run: |
+          ENV="${{ steps.result.outputs.environment }}"
+          STATUS="${{ steps.result.outputs.status }}"
+          URL="${{ steps.result.outputs.url }}"
+          SHA="${{ github.sha }}"
+          SHORT_SHA="${SHA:0:8}"
+          ACTOR="${{ github.actor }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          if [ "$STATUS" == "success" ]; then
+            COLOR="#36a64f"
+            EMOJI="white_check_mark"
+            TEXT="deployed successfully"
+          else
+            COLOR="#dc3545"
+            EMOJI="x"
+            TEXT="deployment failed"
+          fi
+
+          curl -sf -X POST "${{ vars.SLACK_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"attachments\": [{
+                \"color\": \"${COLOR}\",
+                \"blocks\": [{
+                  \"type\": \"section\",
+                  \"text\": {
+                    \"type\": \"mrkdwn\",
+                    \"text\": \":${EMOJI}: *TiP Customer* ${ENV} ${TEXT}\n*Commit:* ${SHORT_SHA} by ${ACTOR}\n*URL:* ${URL}\n<${RUN_URL}|View workflow>\"
+                  }
+                }]
+              }]
+            }"

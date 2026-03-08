@@ -1,53 +1,57 @@
-"use client";
+'use client';
 
-import TopBar from "@/components/TopBar";
-import Footer from "@/components/Footer";
-import Image from "next/image";
+import TopBar from '@/components/TopBar';
+import Footer from '@/components/Footer';
+import Image from 'next/image';
 
-const filters = ["All", "Destination Tips", "Hotel Reviews", "Cruise & Train", "Lifestyle"];
+const filters = ['All', 'Destination Tips', 'Hotel Reviews', 'Cruise & Train', 'Lifestyle'];
 
 const articles = [
   {
-    img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&h=400&fit=crop",
-    category: "Destination Tips",
-    title: "Hidden Gems of the Amalfi Coast",
-    excerpt: "Beyond Positano — discover the quiet villages and secret beaches that make southern Italy unforgettable.",
-    readTime: "5 min read",
+    img: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&h=400&fit=crop',
+    category: 'Destination Tips',
+    title: 'Hidden Gems of the Amalfi Coast',
+    excerpt:
+      'Beyond Positano — discover the quiet villages and secret beaches that make southern Italy unforgettable.',
+    readTime: '5 min read',
   },
   {
-    img: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&h=400&fit=crop",
-    category: "Hotel Reviews",
-    title: "Inside Aman Tokyo: A Review",
-    excerpt: "Minimalist luxury meets Japanese tradition in one of the most refined urban retreats.",
-    readTime: "7 min read",
+    img: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&h=400&fit=crop',
+    category: 'Hotel Reviews',
+    title: 'Inside Aman Tokyo: A Review',
+    excerpt:
+      'Minimalist luxury meets Japanese tradition in one of the most refined urban retreats.',
+    readTime: '7 min read',
   },
   {
-    img: "https://images.unsplash.com/photo-1548574505-5e239809ee19?w=600&h=400&fit=crop",
-    category: "Cruise & Train",
-    title: "Orient Express: Is It Worth the Hype?",
-    excerpt: "We rode the legendary Venice Simplon route to find out if the romance lives up to the legend.",
-    readTime: "6 min read",
+    img: 'https://images.unsplash.com/photo-1548574505-5e239809ee19?w=600&h=400&fit=crop',
+    category: 'Cruise & Train',
+    title: 'Orient Express: Is It Worth the Hype?',
+    excerpt:
+      'We rode the legendary Venice Simplon route to find out if the romance lives up to the legend.',
+    readTime: '6 min read',
   },
   {
-    img: "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=600&h=400&fit=crop",
-    category: "Lifestyle",
-    title: "Packing Like a Luxury Traveler",
-    excerpt: "A curated capsule wardrobe approach to traveling light without sacrificing style.",
-    readTime: "4 min read",
+    img: 'https://images.unsplash.com/photo-1540541338287-41700207dee6?w=600&h=400&fit=crop',
+    category: 'Lifestyle',
+    title: 'Packing Like a Luxury Traveler',
+    excerpt: 'A curated capsule wardrobe approach to traveling light without sacrificing style.',
+    readTime: '4 min read',
   },
   {
-    img: "https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=600&h=400&fit=crop",
-    category: "Destination Tips",
-    title: "Maldives: Choosing the Right Atoll",
-    excerpt: "Not all Maldivian islands are created equal. Here is how to pick the perfect one for your trip.",
-    readTime: "5 min read",
+    img: 'https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=600&h=400&fit=crop',
+    category: 'Destination Tips',
+    title: 'Maldives: Choosing the Right Atoll',
+    excerpt:
+      'Not all Maldivian islands are created equal. Here is how to pick the perfect one for your trip.',
+    readTime: '5 min read',
   },
   {
-    img: "https://images.unsplash.com/photo-1549294413-26f195200c16?w=600&h=400&fit=crop",
-    category: "Hotel Reviews",
-    title: "The New Raffles London Reviewed",
-    excerpt: "Historic grandeur meets contemporary cool in this much-anticipated London opening.",
-    readTime: "8 min read",
+    img: 'https://images.unsplash.com/photo-1549294413-26f195200c16?w=600&h=400&fit=crop',
+    category: 'Hotel Reviews',
+    title: 'The New Raffles London Reviewed',
+    excerpt: 'Historic grandeur meets contemporary cool in this much-anticipated London opening.',
+    readTime: '8 min read',
   },
 ];
 
@@ -84,7 +88,8 @@ export default function InsightsPage() {
               The Future of Luxury Travel in 2026
             </h2>
             <p className="font-inter text-sm text-white/80 max-w-lg">
-              From AI-powered concierges to sustainable ultra-luxury — the trends redefining how discerning travelers explore.
+              From AI-powered concierges to sustainable ultra-luxury — the trends redefining how
+              discerning travelers explore.
             </p>
           </div>
         </div>
@@ -97,9 +102,7 @@ export default function InsightsPage() {
             <button
               key={filter}
               className={`px-5 py-2 rounded-full font-inter text-sm transition-colors ${
-                i === 0
-                  ? "bg-[#1E3D2F] text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                i === 0 ? 'bg-[#1E3D2F] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               {filter}

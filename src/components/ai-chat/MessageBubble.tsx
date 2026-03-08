@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import type { AIMessage, UIBlock, WidgetResponsePayload } from '@/types/ai-chat';
 import WidgetRenderer from './widgets/WidgetRenderer';
@@ -25,7 +25,12 @@ interface MessageBubbleProps {
   onWidgetSubmit?: (payload: WidgetResponsePayload) => void;
 }
 
-export default function MessageBubble({ message, isUser, messageIndex, onWidgetSubmit }: MessageBubbleProps) {
+export default function MessageBubble({
+  message,
+  isUser,
+  messageIndex,
+  onWidgetSubmit,
+}: MessageBubbleProps) {
   const uiBlocks: UIBlock[] = (message.message_metadata?.ui_blocks as UIBlock[]) || [];
   if (isUser) {
     return (
@@ -69,9 +74,7 @@ export default function MessageBubble({ message, isUser, messageIndex, onWidgetS
               </div>
               {/* Transcribed text */}
               {message.content && (
-                <p className="font-inter text-sm whitespace-pre-wrap">
-                  {message.content}
-                </p>
+                <p className="font-inter text-sm whitespace-pre-wrap">{message.content}</p>
               )}
               {/* Audio player (optional, can be hidden if transcription is shown) */}
               <audio controls className="w-full mt-2">
@@ -93,7 +96,9 @@ export default function MessageBubble({ message, isUser, messageIndex, onWidgetS
       </div>
       <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4 max-w-[600px]">
         {message.message_type === 'text' && (
-          <p className="font-inter text-sm text-gray-800 whitespace-pre-wrap">{renderMarkdown(message.content)}</p>
+          <p className="font-inter text-sm text-gray-800 whitespace-pre-wrap">
+            {renderMarkdown(message.content)}
+          </p>
         )}
         {message.message_type === 'image' && message.media_url && (
           <div className="relative">

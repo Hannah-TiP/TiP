@@ -6,7 +6,11 @@ export type { Trip, TripDetail };
 export type IntentType = 'query_trips' | 'create_trip' | 'edit_trip' | 'upcoming_trips' | 'general';
 export type MessageRole = 'user' | 'assistant' | 'system';
 export type MessageType = 'text' | 'image' | 'audio';
-export type CollectionStatus = 'collecting' | 'collecting_optional' | 'awaiting_confirmation' | 'completed';
+export type CollectionStatus =
+  | 'collecting'
+  | 'collecting_optional'
+  | 'awaiting_confirmation'
+  | 'completed';
 
 export interface TripContext {
   destination?: string;

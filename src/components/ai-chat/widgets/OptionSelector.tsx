@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import type { UIBlock, WidgetResponsePayload } from '@/types/ai-chat';
@@ -33,17 +33,18 @@ export default function OptionSelector({ block, onSubmit, disabled }: Props) {
 
   return (
     <div className="mt-3 flex flex-wrap gap-2">
-      {options.map(opt => (
+      {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => handleSelect(opt.value)}
           disabled={submitted || disabled}
           className={`rounded-full px-4 py-2 text-[13px] font-medium transition-colors border
-            ${selected === opt.value
-              ? 'bg-[#1E3D2F] text-white border-[#1E3D2F]'
-              : submitted
-                ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
-                : 'bg-white text-[#1E3D2F] border-gray-200 hover:border-[#1E3D2F] hover:bg-[#1E3D2F]/5'
+            ${
+              selected === opt.value
+                ? 'bg-[#1E3D2F] text-white border-[#1E3D2F]'
+                : submitted
+                  ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-[#1E3D2F] border-gray-200 hover:border-[#1E3D2F] hover:bg-[#1E3D2F]/5'
             }
           `}
         >

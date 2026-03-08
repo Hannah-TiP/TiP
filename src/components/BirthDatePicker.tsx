@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from 'react';
 
 interface BirthDatePickerProps {
   value: string; // YYYY-MM-DD
@@ -8,37 +8,47 @@ interface BirthDatePickerProps {
 }
 
 const months = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
-const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // Convert YYYY-MM-DD to MM/DD/YYYY for display/typing
 function toDisplayFormat(isoDate: string): string {
-  if (!isoDate) return "";
-  const [year, month, day] = isoDate.split("-");
+  if (!isoDate) return '';
+  const [year, month, day] = isoDate.split('-');
   return `${month}/${day}/${year}`;
 }
 
 // Parse typed input (MM/DD/YYYY) to YYYY-MM-DD, returns "" if invalid
 function parseTypedDate(input: string): string {
   const match = input.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (!match) return "";
+  if (!match) return '';
   const [, m, d, y] = match;
   const month = parseInt(m);
   const day = parseInt(d);
   const year = parseInt(y);
-  if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900) return "";
+  if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900) return '';
   // Validate day is valid for the month
   const daysInMonth = new Date(year, month, 0).getDate();
-  if (day > daysInMonth) return "";
+  if (day > daysInMonth) return '';
   // Must not be in the future
   const date = new Date(year, month - 1, day);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (date > today) return "";
-  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  if (date > today) return '';
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
 export default function BirthDatePicker({ value, onChange }: BirthDatePickerProps) {
@@ -48,15 +58,15 @@ export default function BirthDatePicker({ value, onChange }: BirthDatePickerProp
   const [inputValue, setInputValue] = useState(toDisplayFormat(value));
 
   // Initialize calendar view to the selected date, or a reasonable default
-  const initialDate = value ? new Date(value + "T00:00:00") : new Date(2000, 0, 1);
+  const initialDate = value ? new Date(value + 'T00:00:00') : new Date(2000, 0, 1);
   const [viewMonth, setViewMonth] = useState(initialDate.getMonth());
   const [viewYear, setViewYear] = useState(initialDate.getFullYear());
 
   // Sync calendar view and input text when value changes externally
   useEffect(() => {
-    setInputValue(toDisplayFormat(value));
+    setInputValue(toDisplayFormat(value)); // eslint-disable-line react-hooks/set-state-in-effect
     if (value) {
-      const d = new Date(value + "T00:00:00");
+      const d = new Date(value + 'T00:00:00');
       setViewMonth(d.getMonth());
       setViewYear(d.getFullYear());
     }
@@ -68,24 +78,16 @@ export default function BirthDatePicker({ value, onChange }: BirthDatePickerProp
         setOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const getDaysInMonth = (month: number, year: number) =>
-    new Date(year, month + 1, 0).getDate();
+  const getDaysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate();
 
-  const getFirstDayOfMonth = (month: number, year: number) =>
-    new Date(year, month, 1).getDay();
+  const getFirstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay();
 
   const formatDate = (day: number, month: number, year: number) =>
-    `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-  const formatDisplayDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    const [year, month, day] = dateStr.split("-");
-    return `${months[parseInt(month) - 1].slice(0, 3)} ${parseInt(day)}, ${year}`;
-  };
+    `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
   const isFuture = (day: number) => {
     const today = new Date();
@@ -96,9 +98,7 @@ export default function BirthDatePicker({ value, onChange }: BirthDatePickerProp
   const isToday = (day: number) => {
     const today = new Date();
     return (
-      day === today.getDate() &&
-      viewMonth === today.getMonth() &&
-      viewYear === today.getFullYear()
+      day === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear()
     );
   };
 
@@ -162,7 +162,7 @@ export default function BirthDatePicker({ value, onChange }: BirthDatePickerProp
           onBlur={() => {
             // On blur, if the typed value isn't valid, revert to last good value
             const parsed = parseTypedDate(inputValue);
-            if (!parsed && inputValue !== "") {
+            if (!parsed && inputValue !== '') {
               setInputValue(toDisplayFormat(value));
             }
           }}
@@ -174,7 +174,17 @@ export default function BirthDatePicker({ value, onChange }: BirthDatePickerProp
           onClick={() => setOpen(!open)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-green-dark transition"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
             <line x1="16" y1="2" x2="16" y2="6" />
             <line x1="8" y1="2" x2="8" y2="6" />
@@ -185,7 +195,10 @@ export default function BirthDatePicker({ value, onChange }: BirthDatePickerProp
 
       {/* Dropdown Calendar */}
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 rounded-xl bg-white p-5 shadow-xl border border-gray-100" style={{ width: 320 }}>
+        <div
+          className="absolute left-0 top-full z-50 mt-2 rounded-xl bg-white p-5 shadow-xl border border-gray-100"
+          style={{ width: 320 }}
+        >
           {/* Year navigation */}
           <div className="mb-2 flex items-center justify-center gap-3">
             <button
@@ -202,8 +215,8 @@ export default function BirthDatePicker({ value, onChange }: BirthDatePickerProp
               disabled={viewYear >= new Date().getFullYear()}
               className={`rounded-full p-1 text-[13px] font-bold ${
                 viewYear >= new Date().getFullYear()
-                  ? "opacity-30 cursor-not-allowed text-gray-400"
-                  : "text-green-dark hover:bg-gray-100"
+                  ? 'opacity-30 cursor-not-allowed text-gray-400'
+                  : 'text-green-dark hover:bg-gray-100'
               }`}
             >
               ››
@@ -218,16 +231,14 @@ export default function BirthDatePicker({ value, onChange }: BirthDatePickerProp
             >
               ←
             </button>
-            <span className="text-[14px] font-semibold text-green-dark">
-              {months[viewMonth]}
-            </span>
+            <span className="text-[14px] font-semibold text-green-dark">{months[viewMonth]}</span>
             <button
               onClick={nextMonth}
               disabled={!canGoNext()}
               className={`rounded-full p-2 text-[18px] font-bold ${
                 canGoNext()
-                  ? "text-green-dark hover:bg-gray-100"
-                  : "opacity-30 cursor-not-allowed text-gray-400"
+                  ? 'text-green-dark hover:bg-gray-100'
+                  : 'opacity-30 cursor-not-allowed text-gray-400'
               }`}
             >
               →
@@ -264,9 +275,9 @@ export default function BirthDatePicker({ value, onChange }: BirthDatePickerProp
                   onClick={() => !future && handleDayClick(day)}
                   disabled={future}
                   className={`flex h-9 w-9 items-center justify-center rounded-full text-[13px] transition-colors
-                    ${selected ? "bg-green-dark text-white" : ""}
-                    ${future ? "cursor-not-allowed text-gray-300" : "hover:bg-gray-100"}
-                    ${todayHighlight && !selected ? "ring-1 ring-green-dark" : ""}
+                    ${selected ? 'bg-green-dark text-white' : ''}
+                    ${future ? 'cursor-not-allowed text-gray-300' : 'hover:bg-gray-100'}
+                    ${todayHighlight && !selected ? 'ring-1 ring-green-dark' : ''}
                   `}
                 >
                   {day}
@@ -279,7 +290,7 @@ export default function BirthDatePicker({ value, onChange }: BirthDatePickerProp
           <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
             <button
               onClick={() => {
-                onChange("");
+                onChange('');
                 setOpen(false);
               }}
               className="text-[13px] font-medium text-gray-500 hover:text-gray-700"

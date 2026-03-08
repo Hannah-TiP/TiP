@@ -1,12 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import TopBar from "@/components/TopBar";
-import Footer from "@/components/Footer";
-import { apiClient } from "@/lib/api-client";
-import { getImageUrl, type Activity } from "@/types/hotel";
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import TopBar from '@/components/TopBar';
+import Footer from '@/components/Footer';
+import { apiClient } from '@/lib/api-client';
+import { getImageUrl, type Activity } from '@/types/hotel';
 
 export default function ActivityDetailPage() {
   const params = useParams();
@@ -23,8 +24,8 @@ export default function ActivityDetailPage() {
         const data = await apiClient.getActivityById(activityId);
         setActivity(data);
       } catch (err) {
-        console.error("Failed to load activity:", err);
-        setError("Activity not found");
+        console.error('Failed to load activity:', err);
+        setError('Activity not found');
       } finally {
         setIsLoading(false);
       }
@@ -52,9 +53,7 @@ export default function ActivityDetailPage() {
       <main className="min-h-screen bg-background">
         <TopBar activeLink="More Dreams" />
         <div className="flex flex-col items-center justify-center py-40">
-          <h1 className="font-primary text-[42px] italic text-green-dark">
-            Activity Not Found
-          </h1>
+          <h1 className="font-primary text-[42px] italic text-green-dark">Activity Not Found</h1>
           <p className="mt-4 text-gray-text">
             The activity you&apos;re looking for doesn&apos;t exist.
           </p>
@@ -70,9 +69,7 @@ export default function ActivityDetailPage() {
     );
   }
 
-  const badge = activity.category
-    ? activity.category.toUpperCase()
-    : "ACTIVITY";
+  const badge = activity.category ? activity.category.toUpperCase() : 'ACTIVITY';
 
   return (
     <main className="min-h-screen bg-background">
@@ -80,9 +77,11 @@ export default function ActivityDetailPage() {
 
       {/* Hero */}
       <section className="relative h-[560px] w-full overflow-hidden">
-        <img
+        <Image
           src={getImageUrl(activity.image)}
           alt={activity.name}
+          fill
+          sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -109,18 +108,14 @@ export default function ActivityDetailPage() {
             <h2 className="mt-3 font-primary text-[38px] italic leading-snug text-green-dark">
               {activity.name}
             </h2>
-            <p className="mt-5 text-[15px] leading-[1.8] text-gray-text">
-              {activity.description}
-            </p>
+            <p className="mt-5 text-[15px] leading-[1.8] text-gray-text">{activity.description}</p>
             <div className="mt-8 flex gap-12">
               {activity.review_summary && (
                 <div>
                   <p className="font-primary text-[32px] font-semibold text-green-dark">
                     {activity.review_summary.average_rating.toFixed(1)}
                   </p>
-                  <p className="text-[12px] text-gray-text">
-                    Rating (out of 5)
-                  </p>
+                  <p className="text-[12px] text-gray-text">Rating (out of 5)</p>
                 </div>
               )}
               {activity.review_summary && (
@@ -143,9 +138,7 @@ export default function ActivityDetailPage() {
           </div>
           {activity.content && (
             <div className="w-[400px] rounded-lg bg-gray-light p-8">
-              <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-                DETAILS
-              </span>
+              <span className="text-[11px] font-semibold tracking-[4px] text-gold">DETAILS</span>
               <div
                 className="mt-4 text-[14px] leading-[1.8] text-gray-text [&_h1]:mb-2 [&_h1]:text-[18px] [&_h1]:font-semibold [&_h1]:text-green-dark [&_h2]:mb-2 [&_h2]:text-[16px] [&_h2]:font-semibold [&_h2]:text-green-dark [&_h3]:mb-2 [&_h3]:text-[15px] [&_h3]:font-semibold [&_h3]:text-green-dark [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-3 [&_ul]:mb-3"
                 dangerouslySetInnerHTML={{ __html: activity.content }}
@@ -169,9 +162,7 @@ export default function ActivityDetailPage() {
           <div className="grid grid-cols-3 gap-6">
             {activity.address && (
               <div className="rounded-xl bg-white p-8 shadow-sm">
-                <span className="text-[11px] font-semibold tracking-[2px] text-gold">
-                  ADDRESS
-                </span>
+                <span className="text-[11px] font-semibold tracking-[2px] text-gold">ADDRESS</span>
                 <p className="mt-3 text-[15px] leading-relaxed text-green-dark">
                   {activity.address}
                 </p>
@@ -211,8 +202,8 @@ export default function ActivityDetailPage() {
             Your Concierge Awaits
           </h2>
           <p className="mt-4 text-[16px] leading-relaxed text-white/60">
-            Want to include this experience in your itinerary? Our dedicated
-            travel specialists can arrange everything for you.
+            Want to include this experience in your itinerary? Our dedicated travel specialists can
+            arrange everything for you.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Link

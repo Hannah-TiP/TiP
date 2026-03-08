@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import type { UIBlock, WidgetResponsePayload } from '@/types/ai-chat';
@@ -18,7 +18,7 @@ interface Props {
   disabled?: boolean;
 }
 
-export default function NumberStepper({ block, onSubmit, disabled }: Props) {
+export default function NumberStepper({ block, onSubmit }: Props) {
   const { t } = useLanguage();
   const config = block.config as { fields: StepperField[] };
   const fields = config.fields || [];
@@ -32,7 +32,7 @@ export default function NumberStepper({ block, onSubmit, disabled }: Props) {
 
   const update = (key: string, delta: number) => {
     if (submitted) return;
-    const field = fields.find(f => f.key === key);
+    const field = fields.find((f) => f.key === key);
     if (!field) return;
     const next = Math.max(field.min, Math.min(field.max, (values[key] || 0) + delta));
     setValues({ ...values, [key]: next });
@@ -58,7 +58,7 @@ export default function NumberStepper({ block, onSubmit, disabled }: Props) {
   return (
     <div className="mt-3 rounded-xl bg-white border border-gray-100 p-4 shadow-sm max-w-[320px]">
       <div className="space-y-3">
-        {fields.map(field => (
+        {fields.map((field) => (
           <div key={field.key} className="flex items-center justify-between">
             <span className="font-inter text-sm text-[#1E3D2F] font-medium">
               {getLabel(field.key, field.label)}

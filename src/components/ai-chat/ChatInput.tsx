@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useRef, KeyboardEvent } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';

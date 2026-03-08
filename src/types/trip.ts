@@ -14,7 +14,7 @@ export interface Coupon {
   code: string;
   amount: number;
   membership: string;
-  end_date: number;      // unix timestamp
+  end_date: number; // unix timestamp
   is_active: boolean;
 }
 
@@ -22,7 +22,7 @@ export interface TravelPlanItem {
   id: number;
   trip_id: number;
   travel_plan_id: number;
-  category_type?: string;          // "flight" | "staying" | "activities" | "others"
+  category_type?: string; // "flight" | "staying" | "activities" | "others"
   category_name?: string;
   estimated_cost?: number;
   city?: string;
@@ -30,13 +30,13 @@ export interface TravelPlanItem {
   lat?: number;
   lng?: number;
   timezone?: string;
-  start_time?: string;             // display time string
-  start_time_timestamp?: number;   // unix timestamp
+  start_time?: string; // display time string
+  start_time_timestamp?: number; // unix timestamp
   description?: string;
   system_hotel_id?: number;
   system_activity_id?: number;
   review_summary?: { total_reviews: number; average_rating: number };
-  user_review_status?: string;     // "none" | "pending-review" | "published" | "rejected"
+  user_review_status?: string; // "none" | "pending-review" | "published" | "rejected"
   user_rating?: number;
   total_reviewers?: number;
 }
@@ -45,8 +45,8 @@ export interface TravelPlan {
   id: number;
   trip_id: number;
   proposal_id: number;
-  sort: number;           // day order (1, 2, 3…)
-  date: number;           // unix timestamp for that day
+  sort: number; // day order (1, 2, 3…)
+  date: number; // unix timestamp for that day
   day_topic?: string;
   cover?: string;
   items: TravelPlanItem[];
@@ -93,16 +93,16 @@ export interface ProposalComment {
 export interface Trip {
   id: number;
   user_id: number;
-  destination?: string;                     // AI chat context convenience field only
+  destination?: string; // AI chat context convenience field only
   cover_image?: string;
-  preset_destination_cities?: string;       // comma-separated city IDs
+  preset_destination_cities?: string; // comma-separated city IDs
   preset_destination_cities_names?: string; // comma-separated city names e.g. "Paris, Lyon"
   custom_destination_cities?: string;
-  start_time?: number;                      // unix timestamp (legacy)
-  end_time?: number;                        // unix timestamp (legacy)
-  start_date?: string;                      // YYYY-MM-DD (prefer this)
-  end_date?: string;                        // YYYY-MM-DD
-  timezone?: string;                        // UTC offset e.g. "+08:00"
+  start_time?: number; // unix timestamp (legacy)
+  end_time?: number; // unix timestamp (legacy)
+  start_date?: string; // YYYY-MM-DD (prefer this)
+  end_date?: string; // YYYY-MM-DD
+  timezone?: string; // UTC offset e.g. "+08:00"
   adults: number;
   kids: number;
   purpose: string;
@@ -146,9 +146,9 @@ export interface PayPalOrderResponse {
 }
 
 export interface ReviewPayload {
-  rating: number;          // 1-5
+  rating: number; // 1-5
   review_content: string;
-  photos?: string[];       // S3 URLs
+  photos?: string[]; // S3 URLs
 }
 
 export interface Review {
@@ -182,6 +182,6 @@ export interface TripDetail extends Trip {
   paid_amount?: number;
   pending_amount?: number;
   proposal?: Proposal;
-  travel_plans?: TravelPlan[];    // one per day; at trip level, NOT inside proposal
+  travel_plans?: TravelPlan[]; // one per day; at trip level, NOT inside proposal
   comments?: ProposalComment;
 }

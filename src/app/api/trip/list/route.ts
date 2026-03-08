@@ -9,10 +9,7 @@ export async function GET(request: NextRequest) {
     const accessToken = session?.accessToken;
 
     if (!accessToken) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -20,9 +17,9 @@ export async function GET(request: NextRequest) {
 
     const response = await fetch(backendUrl, {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        'Language': 'en',
+        Language: 'en',
       },
     });
 
@@ -31,16 +28,13 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to fetch trips' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     return NextResponse.json(data);
   } catch (error) {
     console.error('Trip list API error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

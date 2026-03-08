@@ -5,27 +5,21 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ session_id: string }> }
+  { params }: { params: Promise<{ session_id: string }> },
 ) {
   try {
     const session = await auth();
     const accessToken = session?.accessToken;
 
     if (!accessToken) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
     // Get session_id from params
     const { session_id } = await params;
 
     if (!session_id) {
-      return NextResponse.json(
-        { success: false, message: 'Missing session_id' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'Missing session_id' }, { status: 400 });
     }
 
     // Get query parameters
@@ -39,9 +33,9 @@ export async function GET(
       {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
-      }
+      },
     );
 
     const data = await response.json();
@@ -49,16 +43,13 @@ export async function GET(
     if (!response.ok) {
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to fetch history' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     return NextResponse.json(data);
   } catch (error) {
     console.error('Get history error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

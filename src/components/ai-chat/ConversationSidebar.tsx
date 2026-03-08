@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import type { SessionWithTrip } from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -51,21 +51,32 @@ function formatDateRange(start: string | null, end: string | null): string | nul
 
 function getStatusColor(status: string | null): string {
   switch (status) {
-    case 'draft': return 'bg-gray-200 text-gray-600';
-    case 'waiting-for-proposal': return 'bg-amber-100 text-amber-700';
-    case 'in-progress': return 'bg-blue-100 text-blue-700';
+    case 'draft':
+      return 'bg-gray-200 text-gray-600';
+    case 'waiting-for-proposal':
+      return 'bg-amber-100 text-amber-700';
+    case 'in-progress':
+      return 'bg-blue-100 text-blue-700';
     case 'paid':
-    case 'ready-to-travel': return 'bg-green-100 text-green-700';
-    case 'traveling-now': return 'bg-purple-100 text-purple-700';
-    case 'travel-completed': return 'bg-gray-100 text-gray-500';
-    case 'canceled': return 'bg-red-100 text-red-600';
-    default: return 'bg-gray-200 text-gray-600';
+    case 'ready-to-travel':
+      return 'bg-green-100 text-green-700';
+    case 'traveling-now':
+      return 'bg-purple-100 text-purple-700';
+    case 'travel-completed':
+      return 'bg-gray-100 text-gray-500';
+    case 'canceled':
+      return 'bg-red-100 text-red-600';
+    default:
+      return 'bg-gray-200 text-gray-600';
   }
 }
 
 function getStatusLabel(status: string | null): string {
   if (!status) return 'Draft';
-  return status.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  return status
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }
 
 export default function ConversationSidebar({
@@ -84,14 +95,26 @@ export default function ConversationSidebar({
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-        <h2 className="font-cormorant text-lg font-semibold text-[#1E3D2F]">{t('chat.trips_title')}</h2>
+        <h2 className="font-cormorant text-lg font-semibold text-[#1E3D2F]">
+          {t('chat.trips_title')}
+        </h2>
         <div className="flex items-center gap-2">
           <button
             onClick={onNewChat}
             className="text-[#C4956A] hover:text-[#a87d59] transition-colors"
             title={t('chat.new_chat')}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
@@ -101,7 +124,17 @@ export default function ConversationSidebar({
             className="text-gray-400 hover:text-gray-600 transition-colors"
             title={t('chat.collapse_sidebar')}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
@@ -136,7 +169,9 @@ export default function ConversationSidebar({
                 </p>
               )}
               <div className="flex items-center gap-2 mt-1">
-                <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-inter ${getStatusColor(s.trip_status)}`}>
+                <span
+                  className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-inter ${getStatusColor(s.trip_status)}`}
+                >
                   {getStatusLabel(s.trip_status)}
                 </span>
                 {s.message_count > 0 && (

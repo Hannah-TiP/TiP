@@ -1,13 +1,14 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import TopBar from "@/components/TopBar";
-import SubNav from "@/components/SubNav";
-import Footer from "@/components/Footer";
-import { apiClient } from "@/lib/api-client";
-import type { Trip } from "@/types/trip";
-import { getImageUrl } from "@/types/hotel";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import TopBar from '@/components/TopBar';
+import SubNav from '@/components/SubNav';
+import Footer from '@/components/Footer';
+import { apiClient } from '@/lib/api-client';
+import type { Trip } from '@/types/trip';
+import Image from 'next/image';
+import { getImageUrl } from '@/types/hotel';
 
 function getNights(startDate?: string, endDate?: string): number | null {
   if (!startDate || !endDate) return null;
@@ -16,19 +17,15 @@ function getNights(startDate?: string, endDate?: string): number | null {
 }
 
 function formatDateRange(startDate?: string, endDate?: string): string {
-  if (!startDate && !endDate) return "—";
+  if (!startDate && !endDate) return '—';
   const fmt = (d: string) =>
-    new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   if (startDate && endDate) return `${fmt(startDate)} – ${fmt(endDate)}`;
   return fmt((startDate ?? endDate)!);
 }
 
 function getDestination(trip: Trip): string {
-  return (
-    trip.preset_destination_cities_names ||
-    trip.custom_destination_cities ||
-    "Trip"
-  );
+  return trip.preset_destination_cities_names || trip.custom_destination_cities || 'Trip';
 }
 
 export default function TravelHistory() {
@@ -38,9 +35,9 @@ export default function TravelHistory() {
 
   useEffect(() => {
     apiClient
-      .getTrips({ status: "travel-completed" })
+      .getTrips({ status: 'travel-completed' })
       .then(setTrips)
-      .catch(() => setError("Failed to load travel history."))
+      .catch(() => setError('Failed to load travel history.'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -55,7 +52,7 @@ export default function TravelHistory() {
             <h1 className="text-3xl font-bold text-gray-900">Past Journeys</h1>
             {!loading && !error && (
               <p className="text-gray-500 mt-1">
-                {trips.length} {trips.length === 1 ? "trip" : "trips"} completed
+                {trips.length} {trips.length === 1 ? 'trip' : 'trips'} completed
               </p>
             )}
           </div>
@@ -81,9 +78,7 @@ export default function TravelHistory() {
         )}
 
         {/* Error */}
-        {error && (
-          <div className="text-center py-20 text-gray-500">{error}</div>
-        )}
+        {error && <div className="text-center py-20 text-gray-500">{error}</div>}
 
         {/* Empty */}
         {!loading && !error && trips.length === 0 && (
@@ -110,12 +105,14 @@ export default function TravelHistory() {
                   key={trip.id}
                   className="bg-white rounded-xl border border-gray-200 overflow-hidden flex"
                 >
-                  <div className="w-64 flex-shrink-0 bg-gray-100">
+                  <div className="w-64 flex-shrink-0 bg-gray-100 relative">
                     {trip.cover_image ? (
-                      <img
+                      <Image
                         src={getImageUrl(trip.cover_image)}
                         alt={destination}
-                        className="w-full h-full object-cover rounded-l-xl"
+                        className="object-cover rounded-l-xl"
+                        fill
+                        sizes="256px"
                       />
                     ) : (
                       <div className="w-full h-full min-h-[176px] bg-gradient-to-br from-[#1E3D2F] to-[#C4956A] rounded-l-xl flex items-center justify-center">
@@ -137,11 +134,13 @@ export default function TravelHistory() {
                       <div className="flex gap-6 mt-3 text-sm text-gray-500">
                         <span>{formatDateRange(trip.start_date, trip.end_date)}</span>
                         {nights !== null && (
-                          <span>{nights} {nights === 1 ? "Night" : "Nights"}</span>
+                          <span>
+                            {nights} {nights === 1 ? 'Night' : 'Nights'}
+                          </span>
                         )}
                         <span>
-                          {trip.adults} {trip.adults === 1 ? "Adult" : "Adults"}
-                          {trip.kids ? `, ${trip.kids} ${trip.kids === 1 ? "Kid" : "Kids"}` : ""}
+                          {trip.adults} {trip.adults === 1 ? 'Adult' : 'Adults'}
+                          {trip.kids ? `, ${trip.kids} ${trip.kids === 1 ? 'Kid' : 'Kids'}` : ''}
                         </span>
                       </div>
                     </div>

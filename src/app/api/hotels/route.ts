@@ -12,17 +12,17 @@ export async function GET(request: NextRequest) {
     const response = await fetch(backendUrl, {
       headers: {
         'Content-Type': 'application/json',
-        'Language': searchParams.get('language') || 'en',
+        Language: searchParams.get('language') || 'en',
       },
     });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({
-        message: 'Failed to fetch hotels'
+        message: 'Failed to fetch hotels',
       }));
       return NextResponse.json(
         { message: error.message || 'Failed to fetch hotels' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -30,9 +30,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Hotels API error:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

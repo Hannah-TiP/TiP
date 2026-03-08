@@ -1,28 +1,34 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef, useMemo } from "react";
-import Link from "next/link";
-import TopBar from "@/components/TopBar";
-import Footer from "@/components/Footer";
-import HotelMap from "@/components/HotelMap";
-import { apiClient } from "@/lib/api-client";
-import { formatLocation, getImageUrl, type Hotel } from "@/types/hotel";
+import { useState, useEffect, useRef, useMemo } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import Footer from '@/components/Footer';
+import HotelMap from '@/components/HotelMap';
+import { apiClient } from '@/lib/api-client';
+import { formatLocation, getImageUrl, type Hotel } from '@/types/hotel';
 
 const partners = [
-  "VIRTUOSO", "FOUR SEASONS", "ĀMAN", "PENINSULA",
-  "PARK HYATT", "EDITION", "MANDARIN ORIENTAL", "ROSEWOOD"
+  'VIRTUOSO',
+  'FOUR SEASONS',
+  'ĀMAN',
+  'PENINSULA',
+  'PARK HYATT',
+  'EDITION',
+  'MANDARIN ORIENTAL',
+  'ROSEWOOD',
 ];
 
 // Helper function to derive tag from hotel data
 function getHotelTag(hotel: Hotel): string {
-  if (!hotel.star_rating) return "HOTEL";
+  if (!hotel.star_rating) return 'HOTEL';
   return hotel.star_rating.toUpperCase();
 }
 
 const STAR_RATING_OPTIONS = [
-  { value: "", label: "All types" },
-  { value: "5-star", label: "5 Star" },
-  { value: "4-star", label: "4 Star" },
+  { value: '', label: 'All types' },
+  { value: '5-star', label: '5 Star' },
+  { value: '4-star', label: '4 Star' },
 ];
 
 export default function DreamHotelsPage() {
@@ -31,13 +37,13 @@ export default function DreamHotelsPage() {
 
   // Filter state
   const [selectedCity, setSelectedCity] = useState<{ id: number; name: string } | null>(null);
-  const [selectedStarRating, setSelectedStarRating] = useState("");
+  const [selectedStarRating, setSelectedStarRating] = useState('');
 
   // Dropdown open state
-  const [openDropdown, setOpenDropdown] = useState<"destination" | "type" | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<'destination' | 'type' | null>(null);
 
   // Destination search
-  const [citySearch, setCitySearch] = useState("");
+  const [citySearch, setCitySearch] = useState('');
   const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
 
@@ -61,9 +67,10 @@ export default function DreamHotelsPage() {
 
   // Load cities when destination dropdown opens
   useEffect(() => {
-    if (openDropdown === "destination" && cities.length === 0) {
+    if (openDropdown === 'destination' && cities.length === 0) {
       setCitiesLoading(true);
-      apiClient.getCities('en')
+      apiClient
+        .getCities('en')
         .then(setCities)
         .catch(() => {})
         .finally(() => setCitiesLoading(false));
@@ -77,8 +84,8 @@ export default function DreamHotelsPage() {
         setOpenDropdown(null);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Filtered hotels
@@ -91,14 +98,14 @@ export default function DreamHotelsPage() {
   }, [hotels, selectedCity, selectedStarRating]);
 
   const filteredCities = cities.filter((c) =>
-    c.name.toLowerCase().includes(citySearch.toLowerCase())
+    c.name.toLowerCase().includes(citySearch.toLowerCase()),
   );
 
   const hasActiveFilters = selectedCity || selectedStarRating;
 
   function clearFilters() {
     setSelectedCity(null);
-    setSelectedStarRating("");
+    setSelectedStarRating('');
     setOpenDropdown(null);
   }
 
@@ -106,9 +113,11 @@ export default function DreamHotelsPage() {
     <main className="min-h-screen bg-gray-light">
       {/* Hero */}
       <section className="relative h-[720px] w-full overflow-hidden">
-        <img
+        <Image
           src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1920&h=900&fit=crop"
           alt="Luxury hotel"
+          fill
+          sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#1E3D2F]/60 via-[#1E3D2F]/70 to-[#1E3D2F]/90" />
@@ -116,19 +125,38 @@ export default function DreamHotelsPage() {
         {/* Nav */}
         <nav className="relative z-10 flex h-16 items-center justify-between px-[60px]">
           <Link href="/">
-            <img src="/bible_TIP_profil_400x400px.svg" alt="TiP" className="h-9" style={{ filter: "brightness(0) invert(1)" }} />
+            <Image
+              src="/bible_TIP_profil_400x400px.svg"
+              alt="TiP"
+              width={36}
+              height={36}
+              className="h-9"
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
           </Link>
           <div className="flex items-center gap-8">
-            <Link href="/dream-hotels" className="text-[11px] font-semibold tracking-[2px] text-white">
+            <Link
+              href="/dream-hotels"
+              className="text-[11px] font-semibold tracking-[2px] text-white"
+            >
               DREAM HOTELS
             </Link>
-            <Link href="/more-dreams" className="text-[11px] font-medium tracking-[2px] text-white/70 hover:text-white">
+            <Link
+              href="/more-dreams"
+              className="text-[11px] font-medium tracking-[2px] text-white/70 hover:text-white"
+            >
               MORE DREAMS
             </Link>
-            <Link href="/insights" className="text-[11px] font-medium tracking-[2px] text-white/70 hover:text-white">
+            <Link
+              href="/insights"
+              className="text-[11px] font-medium tracking-[2px] text-white/70 hover:text-white"
+            >
               INSIGHTS
             </Link>
-            <Link href="/my-page" className="text-[11px] font-medium tracking-[2px] text-white/70 hover:text-white">
+            <Link
+              href="/my-page"
+              className="text-[11px] font-medium tracking-[2px] text-white/70 hover:text-white"
+            >
               MY PAGE
             </Link>
           </div>
@@ -143,8 +171,8 @@ export default function DreamHotelsPage() {
             Dream Hotels
           </h1>
           <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-white/60">
-            Discover the world&apos;s most extraordinary hotels, hand-selected for
-            unparalleled luxury and unforgettable experiences.
+            Discover the world&apos;s most extraordinary hotels, hand-selected for unparalleled
+            luxury and unforgettable experiences.
           </p>
         </div>
       </section>
@@ -170,19 +198,23 @@ export default function DreamHotelsPage() {
             <div className="relative flex-1">
               <button
                 onClick={() => {
-                  setOpenDropdown(openDropdown === "destination" ? null : "destination");
-                  setCitySearch("");
+                  setOpenDropdown(openDropdown === 'destination' ? null : 'destination');
+                  setCitySearch('');
                 }}
                 className={`w-full rounded-lg border bg-white px-5 py-4 text-left transition-colors ${
-                  openDropdown === "destination" ? "border-gold" : "border-gray-border hover:border-gray-400"
+                  openDropdown === 'destination'
+                    ? 'border-gold'
+                    : 'border-gray-border hover:border-gray-400'
                 }`}
               >
-                <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">DESTINATION</p>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                  DESTINATION
+                </p>
                 <p className="text-[14px] font-medium text-green-dark">
-                  {selectedCity ? selectedCity.name : "All destinations"}
+                  {selectedCity ? selectedCity.name : 'All destinations'}
                 </p>
               </button>
-              {openDropdown === "destination" && (
+              {openDropdown === 'destination' && (
                 <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white shadow-xl">
                   <div className="border-b border-gray-100 p-4">
                     <input
@@ -202,9 +234,12 @@ export default function DreamHotelsPage() {
                     ) : (
                       <>
                         <button
-                          onClick={() => { setSelectedCity(null); setOpenDropdown(null); }}
+                          onClick={() => {
+                            setSelectedCity(null);
+                            setOpenDropdown(null);
+                          }}
                           className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
-                            !selectedCity ? "font-semibold text-gold" : "text-green-dark"
+                            !selectedCity ? 'font-semibold text-gold' : 'text-green-dark'
                           }`}
                         >
                           All destinations
@@ -212,16 +247,23 @@ export default function DreamHotelsPage() {
                         {filteredCities.map((city) => (
                           <button
                             key={city.id}
-                            onClick={() => { setSelectedCity(city); setOpenDropdown(null); }}
+                            onClick={() => {
+                              setSelectedCity(city);
+                              setOpenDropdown(null);
+                            }}
                             className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
-                              selectedCity?.id === city.id ? "font-semibold text-gold" : "text-green-dark"
+                              selectedCity?.id === city.id
+                                ? 'font-semibold text-gold'
+                                : 'text-green-dark'
                             }`}
                           >
                             {city.name}
                           </button>
                         ))}
                         {filteredCities.length === 0 && !citiesLoading && (
-                          <p className="px-3 py-4 text-center text-[13px] text-gray-500">No destinations found</p>
+                          <p className="px-3 py-4 text-center text-[13px] text-gray-500">
+                            No destinations found
+                          </p>
                         )}
                       </>
                     )}
@@ -233,24 +275,34 @@ export default function DreamHotelsPage() {
             {/* Hotel Type filter */}
             <div className="relative flex-1">
               <button
-                onClick={() => setOpenDropdown(openDropdown === "type" ? null : "type")}
+                onClick={() => setOpenDropdown(openDropdown === 'type' ? null : 'type')}
                 className={`w-full rounded-lg border bg-white px-5 py-4 text-left transition-colors ${
-                  openDropdown === "type" ? "border-gold" : "border-gray-border hover:border-gray-400"
+                  openDropdown === 'type'
+                    ? 'border-gold'
+                    : 'border-gray-border hover:border-gray-400'
                 }`}
               >
-                <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">HOTEL TYPE</p>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                  HOTEL TYPE
+                </p>
                 <p className="text-[14px] font-medium text-green-dark">
-                  {STAR_RATING_OPTIONS.find((o) => o.value === selectedStarRating)?.label || "All types"}
+                  {STAR_RATING_OPTIONS.find((o) => o.value === selectedStarRating)?.label ||
+                    'All types'}
                 </p>
               </button>
-              {openDropdown === "type" && (
+              {openDropdown === 'type' && (
                 <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white p-2 shadow-xl">
                   {STAR_RATING_OPTIONS.map((option) => (
                     <button
                       key={option.value}
-                      onClick={() => { setSelectedStarRating(option.value); setOpenDropdown(null); }}
+                      onClick={() => {
+                        setSelectedStarRating(option.value);
+                        setOpenDropdown(null);
+                      }}
                       className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
-                        selectedStarRating === option.value ? "font-semibold text-gold" : "text-green-dark"
+                        selectedStarRating === option.value
+                          ? 'font-semibold text-gold'
+                          : 'text-green-dark'
                       }`}
                     >
                       {option.label}
@@ -262,7 +314,9 @@ export default function DreamHotelsPage() {
 
             {/* Price Range — static placeholder */}
             <div className="flex-1 rounded-lg border border-gray-border bg-white px-5 py-4">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">PRICE RANGE</p>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                PRICE RANGE
+              </p>
               <p className="text-[14px] font-medium text-green-dark">Any price</p>
             </div>
 
@@ -308,7 +362,9 @@ export default function DreamHotelsPage() {
         ) : filteredHotels.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-gray-text">
-              {hasActiveFilters ? "No hotels match your filters." : "No hotels available at the moment."}
+              {hasActiveFilters
+                ? 'No hotels match your filters.'
+                : 'No hotels available at the moment.'}
             </p>
             {hasActiveFilters && (
               <button
@@ -328,9 +384,11 @@ export default function DreamHotelsPage() {
                 className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
               >
                 <div className="relative h-56 overflow-hidden">
-                  <img
+                  <Image
                     src={getImageUrl(hotel.image?.[0])}
                     alt={hotel.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 25vw"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
@@ -364,25 +422,22 @@ export default function DreamHotelsPage() {
             Our Global Luxury Hotel Network
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[16px] leading-relaxed text-white/50">
-            Book through TiP / Paris Class and enjoy preferred rates, exclusive privileges,
-            and benefits you won&apos;t find elsewhere.
+            Book through TiP / Paris Class and enjoy preferred rates, exclusive privileges, and
+            benefits you won&apos;t find elsewhere.
           </p>
         </div>
 
         <div className="mx-auto mt-12 flex flex-wrap items-center justify-center gap-x-16 gap-y-6">
           {partners.map((partner) => (
-            <span
-              key={partner}
-              className="text-[14px] font-semibold tracking-[3px] text-white/30"
-            >
+            <span key={partner} className="text-[14px] font-semibold tracking-[3px] text-white/30">
               {partner}
             </span>
           ))}
         </div>
 
         <p className="mt-12 text-center text-[14px] leading-relaxed text-white/40">
-          Reserve with us to unlock the maximum benefits, preferred access, and exclusive
-          savings — at the same price or better.
+          Reserve with us to unlock the maximum benefits, preferred access, and exclusive savings —
+          at the same price or better.
         </p>
       </section>
 

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from 'react';
 
 interface DatePickerDropdownProps {
   checkIn: string;
@@ -10,11 +10,21 @@ interface DatePickerDropdownProps {
 }
 
 const months = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
-const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function DatePickerDropdown({
   checkIn,
@@ -35,8 +45,8 @@ export default function DatePickerDropdown({
         onClose();
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
   const getDaysInMonth = (month: number, year: number) => {
@@ -48,12 +58,12 @@ export default function DatePickerDropdown({
   };
 
   const formatDate = (day: number, month: number, year: number) => {
-    return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   };
 
   const formatDisplayDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    const [year, month, day] = dateStr.split("-");
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-');
     return `${months[parseInt(month) - 1].slice(0, 3)} ${parseInt(day)}, ${year}`;
   };
 
@@ -61,7 +71,7 @@ export default function DatePickerDropdown({
     const date = formatDate(day, month, year);
     if (selectingCheckIn) {
       setTempCheckIn(date);
-      setTempCheckOut("");
+      setTempCheckOut('');
       setSelectingCheckIn(false);
     } else {
       if (date > tempCheckIn) {
@@ -69,35 +79,14 @@ export default function DatePickerDropdown({
         onChange(tempCheckIn, date);
       } else {
         setTempCheckIn(date);
-        setTempCheckOut("");
+        setTempCheckOut('');
       }
     }
   };
 
-  const isInRange = (day: number) => {
-    const date = formatDate(day, currentMonth, currentYear);
-    return tempCheckIn && tempCheckOut && date > tempCheckIn && date < tempCheckOut;
-  };
-
-  const isSelected = (day: number) => {
-    const date = formatDate(day, currentMonth, currentYear);
-    return date === tempCheckIn || date === tempCheckOut;
-  };
-
   const isToday = (day: number, month: number, year: number) => {
     const today = new Date();
-    return (
-      day === today.getDate() &&
-      month === today.getMonth() &&
-      year === today.getFullYear()
-    );
-  };
-
-  const isPast = (day: number) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const date = new Date(currentYear, currentMonth, day);
-    return date < today;
+    return day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
   };
 
   const canGoPrevMonth = () => {
@@ -133,7 +122,12 @@ export default function DatePickerDropdown({
   const daysInNextMonth = getDaysInMonth(nextMonthNum, nextMonthYear);
   const firstDayNextMonth = getFirstDayOfMonth(nextMonthNum, nextMonthYear);
 
-  const renderCalendar = (month: number, year: number, daysCount: number, firstDayOffset: number) => {
+  const renderCalendar = (
+    month: number,
+    year: number,
+    daysCount: number,
+    firstDayOffset: number,
+  ) => {
     const days = [];
     for (let i = 0; i < firstDayOffset; i++) {
       days.push(<div key={`empty-${i}`} className="h-9 w-9" />);
@@ -154,14 +148,14 @@ export default function DatePickerDropdown({
           onClick={() => !past && handleDayClick(day, month, year)}
           disabled={past}
           className={`flex h-9 w-9 items-center justify-center rounded-full text-[13px] transition-colors
-            ${selected ? "bg-green-dark text-white" : ""}
-            ${inRange ? "bg-green-dark/10" : ""}
-            ${past ? "cursor-not-allowed text-gray-300" : "hover:bg-gray-100"}
-            ${today_highlight && !selected ? "ring-1 ring-green-dark" : ""}
+            ${selected ? 'bg-green-dark text-white' : ''}
+            ${inRange ? 'bg-green-dark/10' : ''}
+            ${past ? 'cursor-not-allowed text-gray-300' : 'hover:bg-gray-100'}
+            ${today_highlight && !selected ? 'ring-1 ring-green-dark' : ''}
           `}
         >
           {day}
-        </button>
+        </button>,
       );
     }
     return days;
@@ -176,22 +170,24 @@ export default function DatePickerDropdown({
       {/* Selected dates display */}
       <div className="mb-6 flex items-center gap-4">
         <div
-          className={`flex-1 rounded-lg border p-3 ${selectingCheckIn ? "border-green-dark" : "border-gray-200"}`}
+          className={`flex-1 rounded-lg border p-3 ${selectingCheckIn ? 'border-green-dark' : 'border-gray-200'}`}
           onClick={() => setSelectingCheckIn(true)}
         >
           <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">CHECK-IN</p>
           <p className="text-[14px] font-medium text-green-dark">
-            {tempCheckIn ? formatDisplayDate(tempCheckIn) : "Select date"}
+            {tempCheckIn ? formatDisplayDate(tempCheckIn) : 'Select date'}
           </p>
         </div>
         <span className="text-gray-300">→</span>
         <div
-          className={`flex-1 rounded-lg border p-3 ${!selectingCheckIn ? "border-green-dark" : "border-gray-200"}`}
+          className={`flex-1 rounded-lg border p-3 ${!selectingCheckIn ? 'border-green-dark' : 'border-gray-200'}`}
           onClick={() => setSelectingCheckIn(false)}
         >
-          <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">CHECK-OUT</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+            CHECK-OUT
+          </p>
           <p className="text-[14px] font-medium text-green-dark">
-            {tempCheckOut ? formatDisplayDate(tempCheckOut) : "Select date"}
+            {tempCheckOut ? formatDisplayDate(tempCheckOut) : 'Select date'}
           </p>
         </div>
       </div>
@@ -215,7 +211,10 @@ export default function DatePickerDropdown({
           </div>
           <div className="mb-2 grid grid-cols-7 gap-1">
             {daysOfWeek.map((day) => (
-              <div key={day} className="flex h-9 w-9 items-center justify-center text-[11px] font-medium text-gray-400">
+              <div
+                key={day}
+                className="flex h-9 w-9 items-center justify-center text-[11px] font-medium text-gray-400"
+              >
                 {day}
               </div>
             ))}
@@ -232,13 +231,19 @@ export default function DatePickerDropdown({
             <span className="text-[14px] font-semibold text-green-dark">
               {months[nextMonthNum]} {nextMonthYear}
             </span>
-            <button onClick={nextMonth} className="rounded-full p-2 text-[18px] font-bold text-green-dark hover:bg-gray-100">
+            <button
+              onClick={nextMonth}
+              className="rounded-full p-2 text-[18px] font-bold text-green-dark hover:bg-gray-100"
+            >
               →
             </button>
           </div>
           <div className="mb-2 grid grid-cols-7 gap-1">
             {daysOfWeek.map((day) => (
-              <div key={day} className="flex h-9 w-9 items-center justify-center text-[11px] font-medium text-gray-400">
+              <div
+                key={day}
+                className="flex h-9 w-9 items-center justify-center text-[11px] font-medium text-gray-400"
+              >
                 {day}
               </div>
             ))}
@@ -253,8 +258,8 @@ export default function DatePickerDropdown({
       <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
         <button
           onClick={() => {
-            setTempCheckIn("");
-            setTempCheckOut("");
+            setTempCheckIn('');
+            setTempCheckOut('');
             setSelectingCheckIn(true);
           }}
           className="text-[13px] font-medium text-gray-500 hover:text-gray-700"

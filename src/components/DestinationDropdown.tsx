@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { apiClient } from "@/lib/api-client";
-import type { City } from "@/types/hotel";
+import { useState, useEffect, useRef } from 'react';
+import { apiClient } from '@/lib/api-client';
+import type { City } from '@/types/hotel';
 
 interface DestinationDropdownProps {
   value: string;
@@ -45,12 +45,12 @@ export default function DestinationDropdown({
         onClose();
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
   const filteredDestinations = cities.filter((city) =>
-    city.name.toLowerCase().includes(searchQuery.toLowerCase())
+    city.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (

@@ -1,19 +1,20 @@
-"use client";
+'use client';
 
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import TopBar from "@/components/TopBar";
-import Footer from "@/components/Footer";
-import SearchBar from "@/components/SearchBar";
-import { apiClient } from "@/lib/api-client";
-import { formatLocation, getImageUrl, type Hotel } from "@/types/hotel";
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import TopBar from '@/components/TopBar';
+import Footer from '@/components/Footer';
+import SearchBar from '@/components/SearchBar';
+import Image from 'next/image';
+import { apiClient } from '@/lib/api-client';
+import { formatLocation, getImageUrl, type Hotel } from '@/types/hotel';
 
 // Helper function to derive tag from hotel data
 function getHotelTag(hotel: Hotel): string {
-  if (hotel.star_rating === "5") return "PALACE";
+  if (hotel.star_rating === '5') return 'PALACE';
   if (hotel.star_rating) return `${hotel.star_rating} STAR`;
-  return "LUXURY";
+  return 'LUXURY';
 }
 
 function SearchResultsContent() {
@@ -29,11 +30,8 @@ function SearchResultsContent() {
   const checkOut = searchParams.get('checkOut');
   const adults = searchParams.get('adults');
   const children = searchParams.get('children');
-  const tripType = searchParams.get('tripType');
-  const travelStyle = searchParams.get('travelStyle');
-
   // Calculate total guests
-  const totalGuests = (parseInt(adults || '2') + parseInt(children || '0'));
+  const totalGuests = parseInt(adults || '2') + parseInt(children || '0');
 
   useEffect(() => {
     async function loadHotels() {
@@ -98,7 +96,9 @@ function SearchResultsContent() {
                 {totalGuests > 0 && (
                   <>
                     <span>•</span>
-                    <span>{totalGuests} guest{totalGuests !== 1 ? 's' : ''}</span>
+                    <span>
+                      {totalGuests} guest{totalGuests !== 1 ? 's' : ''}
+                    </span>
                   </>
                 )}
               </>
@@ -176,10 +176,12 @@ function SearchResultsContent() {
                     className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
                   >
                     <div className="relative h-56 overflow-hidden">
-                      <img
+                      <Image
                         src={getImageUrl(hotel.image?.[0])}
                         alt={hotel.name}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 25vw"
                       />
                       <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
                         {getHotelTag(hotel)}
@@ -211,17 +213,19 @@ function SearchResultsContent() {
 
 export default function SearchResultsPage() {
   return (
-    <Suspense fallback={
-      <main className="min-h-screen bg-gray-light">
-        <TopBar activeLink="DREAM HOTELS" />
-        <section className="bg-white px-[100px] py-8">
-          <div className="mx-auto max-w-7xl">
-            <p className="text-center text-gray-text">Loading search results...</p>
-          </div>
-        </section>
-        <Footer />
-      </main>
-    }>
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-gray-light">
+          <TopBar activeLink="DREAM HOTELS" />
+          <section className="bg-white px-[100px] py-8">
+            <div className="mx-auto max-w-7xl">
+              <p className="text-center text-gray-text">Loading search results...</p>
+            </div>
+          </section>
+          <Footer />
+        </main>
+      }
+    >
       <SearchResultsContent />
     </Suspense>
   );

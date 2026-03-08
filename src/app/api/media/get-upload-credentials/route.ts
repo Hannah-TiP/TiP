@@ -9,10 +9,7 @@ export async function POST(request: NextRequest) {
     const accessToken = session?.accessToken;
 
     if (!accessToken) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -21,41 +18,35 @@ export async function POST(request: NextRequest) {
     if (!session_id || !media_type || !file_extension) {
       return NextResponse.json(
         { success: false, message: 'Missing required fields' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/media/get-upload-credentials`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          session_id,
-          media_type,
-          file_extension,
-        }),
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/v1/media/get-upload-credentials`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        session_id,
+        media_type,
+        file_extension,
+      }),
+    });
 
     const data = await response.json();
 
     if (!response.ok) {
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to get upload credentials' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error getting upload credentials:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

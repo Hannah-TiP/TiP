@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import type { UIBlock, WidgetResponsePayload } from '@/types/ai-chat';
@@ -11,14 +11,28 @@ interface Props {
 }
 
 const months = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
-const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function DateRangePicker({ block, onSubmit, disabled }: Props) {
   const { t } = useLanguage();
-  const config = block.config as { min_date?: string; suggested_start?: string; suggested_end?: string };
+  const config = block.config as {
+    min_date?: string;
+    suggested_start?: string;
+    suggested_end?: string;
+  };
 
   const [currentMonth, setCurrentMonth] = useState(() => {
     const d = config.min_date ? new Date(config.min_date + 'T00:00:00') : new Date();
@@ -76,12 +90,16 @@ export default function DateRangePicker({ block, onSubmit, disabled }: Props) {
   };
 
   const prevMonth = () => {
-    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(currentYear - 1); }
-    else setCurrentMonth(currentMonth - 1);
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else setCurrentMonth(currentMonth - 1);
   };
   const nextMonth = () => {
-    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(currentYear + 1); }
-    else setCurrentMonth(currentMonth + 1);
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else setCurrentMonth(currentMonth + 1);
   };
 
   const nextMonthNum = currentMonth === 11 ? 0 : currentMonth + 1;
@@ -109,7 +127,7 @@ export default function DateRangePicker({ block, onSubmit, disabled }: Props) {
           `}
         >
           {day}
-        </button>
+        </button>,
       );
     }
     return days;
@@ -123,7 +141,9 @@ export default function DateRangePicker({ block, onSubmit, disabled }: Props) {
           className={`flex-1 rounded-lg border p-2.5 cursor-pointer ${selectingCheckIn && !submitted ? 'border-[#1E3D2F]' : 'border-gray-200'}`}
           onClick={() => !submitted && setSelectingCheckIn(true)}
         >
-          <p className="text-[9px] font-medium uppercase tracking-wider text-gray-400">{t('widget.date_checkin')}</p>
+          <p className="text-[9px] font-medium uppercase tracking-wider text-gray-400">
+            {t('widget.date_checkin')}
+          </p>
           <p className="text-[13px] font-medium text-[#1E3D2F]">{formatDisplay(checkIn)}</p>
         </div>
         <span className="text-gray-300">→</span>
@@ -131,7 +151,9 @@ export default function DateRangePicker({ block, onSubmit, disabled }: Props) {
           className={`flex-1 rounded-lg border p-2.5 cursor-pointer ${!selectingCheckIn && !submitted ? 'border-[#1E3D2F]' : 'border-gray-200'}`}
           onClick={() => !submitted && setSelectingCheckIn(false)}
         >
-          <p className="text-[9px] font-medium uppercase tracking-wider text-gray-400">{t('widget.date_checkout')}</p>
+          <p className="text-[9px] font-medium uppercase tracking-wider text-gray-400">
+            {t('widget.date_checkout')}
+          </p>
           <p className="text-[13px] font-medium text-[#1E3D2F]">{formatDisplay(checkOut)}</p>
         </div>
       </div>
@@ -142,32 +164,68 @@ export default function DateRangePicker({ block, onSubmit, disabled }: Props) {
           <div className="flex gap-6">
             <div className="flex-1">
               <div className="mb-3 flex items-center justify-between">
-                <button onClick={prevMonth} className="rounded-full p-1 text-sm font-bold text-[#1E3D2F] hover:bg-gray-100">←</button>
-                <span className="text-[13px] font-semibold text-[#1E3D2F]">{months[currentMonth]} {currentYear}</span>
+                <button
+                  onClick={prevMonth}
+                  className="rounded-full p-1 text-sm font-bold text-[#1E3D2F] hover:bg-gray-100"
+                >
+                  ←
+                </button>
+                <span className="text-[13px] font-semibold text-[#1E3D2F]">
+                  {months[currentMonth]} {currentYear}
+                </span>
                 <div className="w-5" />
               </div>
               <div className="mb-1 grid grid-cols-7 gap-0.5">
-                {daysOfWeek.map(d => <div key={d} className="flex h-8 w-8 items-center justify-center text-[10px] font-medium text-gray-400">{d}</div>)}
+                {daysOfWeek.map((d) => (
+                  <div
+                    key={d}
+                    className="flex h-8 w-8 items-center justify-center text-[10px] font-medium text-gray-400"
+                  >
+                    {d}
+                  </div>
+                ))}
               </div>
-              <div className="grid grid-cols-7 gap-0.5">{renderCalendar(currentMonth, currentYear)}</div>
+              <div className="grid grid-cols-7 gap-0.5">
+                {renderCalendar(currentMonth, currentYear)}
+              </div>
             </div>
             <div className="flex-1">
               <div className="mb-3 flex items-center justify-between">
                 <div className="w-5" />
-                <span className="text-[13px] font-semibold text-[#1E3D2F]">{months[nextMonthNum]} {nextMonthYear}</span>
-                <button onClick={nextMonth} className="rounded-full p-1 text-sm font-bold text-[#1E3D2F] hover:bg-gray-100">→</button>
+                <span className="text-[13px] font-semibold text-[#1E3D2F]">
+                  {months[nextMonthNum]} {nextMonthYear}
+                </span>
+                <button
+                  onClick={nextMonth}
+                  className="rounded-full p-1 text-sm font-bold text-[#1E3D2F] hover:bg-gray-100"
+                >
+                  →
+                </button>
               </div>
               <div className="mb-1 grid grid-cols-7 gap-0.5">
-                {daysOfWeek.map(d => <div key={d} className="flex h-8 w-8 items-center justify-center text-[10px] font-medium text-gray-400">{d}</div>)}
+                {daysOfWeek.map((d) => (
+                  <div
+                    key={d}
+                    className="flex h-8 w-8 items-center justify-center text-[10px] font-medium text-gray-400"
+                  >
+                    {d}
+                  </div>
+                ))}
               </div>
-              <div className="grid grid-cols-7 gap-0.5">{renderCalendar(nextMonthNum, nextMonthYear)}</div>
+              <div className="grid grid-cols-7 gap-0.5">
+                {renderCalendar(nextMonthNum, nextMonthYear)}
+              </div>
             </div>
           </div>
 
           {/* Actions */}
           <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
             <button
-              onClick={() => { setCheckIn(''); setCheckOut(''); setSelectingCheckIn(true); }}
+              onClick={() => {
+                setCheckIn('');
+                setCheckOut('');
+                setSelectingCheckIn(true);
+              }}
               className="text-[12px] font-medium text-gray-500 hover:text-gray-700"
             >
               {t('widget.date_clear')}

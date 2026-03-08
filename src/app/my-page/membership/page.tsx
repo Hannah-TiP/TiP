@@ -1,49 +1,48 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import TopBar from "@/components/TopBar";
-import SubNav from "@/components/SubNav";
-import Footer from "@/components/Footer";
+import TopBar from '@/components/TopBar';
+import SubNav from '@/components/SubNav';
+import Footer from '@/components/Footer';
 
 export default function Membership() {
   const tiers = [
     {
-      name: "Silver",
-      price: "Free",
+      name: 'Silver',
+      price: 'Free',
       highlight: false,
       goldBg: false,
       benefits: [
-        "Basic trip planning",
-        "Email support",
-        "Access to travel guides",
-        "Community forum access",
+        'Basic trip planning',
+        'Email support',
+        'Access to travel guides',
+        'Community forum access',
       ],
     },
     {
-      name: "Gold",
-      price: "$29/month",
+      name: 'Gold',
+      price: '$29/month',
       highlight: true,
       goldBg: false,
       benefits: [
-        "Priority trip planning",
-        "24/7 chat support",
-        "Exclusive hotel deals",
-        "Personalized itineraries",
-        "Airport lounge access",
+        'Priority trip planning',
+        '24/7 chat support',
+        'Exclusive hotel deals',
+        'Personalized itineraries',
+        'Airport lounge access',
       ],
     },
     {
-      name: "Platinum",
-      price: "$79/month",
+      name: 'Platinum',
+      price: '$79/month',
       highlight: false,
       goldBg: true,
       benefits: [
-        "Dedicated travel concierge",
-        "VIP support hotline",
-        "Best rate guarantee",
-        "Complimentary upgrades",
-        "Private transfers",
-        "Exclusive event access",
+        'Dedicated travel concierge',
+        'VIP support hotline',
+        'Best rate guarantee',
+        'Complimentary upgrades',
+        'Private transfers',
+        'Exclusive event access',
       ],
     },
   ];
@@ -107,10 +106,10 @@ export default function Membership() {
               key={tier.name}
               className={`rounded-xl p-6 border ${
                 tier.goldBg
-                  ? "bg-amber-50 border-amber-200"
+                  ? 'bg-amber-50 border-amber-200'
                   : tier.highlight
-                  ? "bg-white border-[#1E3D2F] border-2 ring-1 ring-[#1E3D2F]/10"
-                  : "bg-white border-gray-200"
+                    ? 'bg-white border-[#1E3D2F] border-2 ring-1 ring-[#1E3D2F]/10'
+                    : 'bg-white border-gray-200'
               }`}
             >
               {tier.highlight && (

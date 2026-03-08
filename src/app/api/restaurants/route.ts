@@ -11,17 +11,17 @@ export async function GET(request: NextRequest) {
     const response = await fetch(backendUrl, {
       headers: {
         'Content-Type': 'application/json',
-        'Language': searchParams.get('language') || 'en',
+        Language: searchParams.get('language') || 'en',
       },
     });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({
-        message: 'Failed to fetch restaurants'
+        message: 'Failed to fetch restaurants',
       }));
       return NextResponse.json(
         { message: error.message || 'Failed to fetch restaurants' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -29,9 +29,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Restaurants API error:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

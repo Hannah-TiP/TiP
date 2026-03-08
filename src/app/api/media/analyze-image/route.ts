@@ -9,10 +9,7 @@ export async function POST(request: NextRequest) {
     const accessToken = session?.accessToken;
 
     if (!accessToken) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -21,46 +18,40 @@ export async function POST(request: NextRequest) {
     if (!session_id || !media_url) {
       return NextResponse.json(
         { success: false, message: 'Missing required fields' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const language = request.headers.get('language') || 'en';
 
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/media/analyze-image`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'language': language,
-        },
-        body: JSON.stringify({
-          session_id,
-          media_url,
-          width,
-          height,
-          filename,
-        }),
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/v1/media/analyze-image`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        language: language,
+      },
+      body: JSON.stringify({
+        session_id,
+        media_url,
+        width,
+        height,
+        filename,
+      }),
+    });
 
     const data = await response.json();
 
     if (!response.ok) {
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to analyze image' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error analyzing image:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
 interface SubscribePopupProps {
   isOpen: boolean;
@@ -8,8 +8,8 @@ interface SubscribePopupProps {
 }
 
 export default function SubscribePopup({ isOpen, onClose }: SubscribePopupProps) {
-  const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
 
   if (!isOpen) return null;
 
@@ -35,7 +35,8 @@ export default function SubscribePopup({ isOpen, onClose }: SubscribePopupProps)
               Stay Inspired
             </h2>
             <p className="mt-2 text-[14px] leading-relaxed text-gray-500">
-              Get exclusive travel insights, curated hotel picks, and member-only offers delivered to your inbox.
+              Get exclusive travel insights, curated hotel picks, and member-only offers delivered
+              to your inbox.
             </p>
           </div>
 

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import en from '@/translations/en.json';
 import kr from '@/translations/kr.json';
 
@@ -18,15 +18,11 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>('en');
-
-  // Load from localStorage on mount
-  useEffect(() => {
+  const [lang, setLangState] = useState<Lang>(() => {
+    if (typeof window === 'undefined') return 'en';
     const saved = localStorage.getItem('tip-lang') as Lang | null;
-    if (saved && (saved === 'en' || saved === 'kr')) {
-      setLangState(saved);
-    }
-  }, []);
+    return saved && (saved === 'en' || saved === 'kr') ? saved : 'en';
+  });
 
   const setLang = (newLang: Lang) => {
     setLangState(newLang);
@@ -38,9 +34,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <LanguageContext.Provider value={{ lang, setLang, t }}>
-      {children}
-    </LanguageContext.Provider>
+    <LanguageContext.Provider value={{ lang, setLang, t }}>{children}</LanguageContext.Provider>
   );
 }
 

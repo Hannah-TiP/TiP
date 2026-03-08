@@ -1,0 +1,8 @@
+.next
+node_modules
+build
+out
+coverage
+test-results
+playwright-report
+*.gpg

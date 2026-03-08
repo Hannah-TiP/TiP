@@ -60,7 +60,7 @@ class ApiClient {
         password,
         device_id: deviceId,
         verification_code: code,
-        code_type: 'register'
+        code_type: 'register',
       }),
     });
   }
@@ -70,7 +70,7 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({
         email,
-        code_type: type === 'register' ? 'register' : 'forgot-password'
+        code_type: type === 'register' ? 'register' : 'forgot-password',
       }),
     });
   }
@@ -82,7 +82,7 @@ class ApiClient {
         email,
         verification_code: code,
         password,
-        device_id: deviceId
+        device_id: deviceId,
       }),
     });
   }
@@ -136,15 +136,13 @@ class ApiClient {
 
   async getRecommendedHotels(language: string = 'en'): Promise<Hotel[]> {
     const response = await this.request<{ data: Hotel[] }>(
-      `/hotels/recommend?language=${language}`
+      `/hotels/recommend?language=${language}`,
     );
     return response.data;
   }
 
   async getHotelById(hotelId: number | string): Promise<Hotel> {
-    const response = await this.request<{ data: Hotel }>(
-      `/hotels/${hotelId}`
-    );
+    const response = await this.request<{ data: Hotel }>(`/hotels/${hotelId}`);
     return response.data;
   }
 
@@ -171,9 +169,7 @@ class ApiClient {
   }
 
   async getActivityById(activityId: number | string): Promise<Activity> {
-    const response = await this.request<{ data: Activity }>(
-      `/activities/${activityId}`
-    );
+    const response = await this.request<{ data: Activity }>(`/activities/${activityId}`);
     return response.data;
   }
 
@@ -198,17 +194,13 @@ class ApiClient {
   }
 
   async getRestaurantById(restaurantId: number | string): Promise<Restaurant> {
-    const response = await this.request<{ data: Restaurant }>(
-      `/restaurants/${restaurantId}`
-    );
+    const response = await this.request<{ data: Restaurant }>(`/restaurants/${restaurantId}`);
     return response.data;
   }
 
   // City methods
   async getCities(language: string = 'en'): Promise<City[]> {
-    const response = await this.request<{ data: City[] }>(
-      `/cities?language=${language}`
-    );
+    const response = await this.request<{ data: City[] }>(`/cities?language=${language}`);
     return response.data;
   }
 
@@ -223,7 +215,8 @@ class ApiClient {
     if (params?.status) searchParams.set('status', params.status);
     if (params?.page !== undefined) searchParams.set('page', params.page.toString());
     if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
-    if (params?.exclude_canceled !== undefined) searchParams.set('exclude_canceled', params.exclude_canceled.toString());
+    if (params?.exclude_canceled !== undefined)
+      searchParams.set('exclude_canceled', params.exclude_canceled.toString());
 
     const query = searchParams.toString();
     const endpoint = `/trip/list${query ? `?${query}` : ''}`;
@@ -315,7 +308,10 @@ class ApiClient {
     return this.request<ListSessionsResponse>('/ai-chat/sessions');
   }
 
-  async createChatSessionForTrip(tripId: number, language: string = 'en'): Promise<CreateSessionResponse> {
+  async createChatSessionForTrip(
+    tripId: number,
+    language: string = 'en',
+  ): Promise<CreateSessionResponse> {
     return this.request<CreateSessionResponse>('/ai-chat/create-session-for-trip', {
       method: 'POST',
       body: JSON.stringify({ trip_id: tripId, language }),
@@ -325,7 +321,7 @@ class ApiClient {
   async sendMessage(
     sessionId: string,
     content: string,
-    messageType: MessageType = 'text'
+    messageType: MessageType = 'text',
   ): Promise<SendMessageResponse> {
     return this.request<SendMessageResponse>('/ai-chat/message', {
       method: 'POST',
@@ -340,10 +336,10 @@ class ApiClient {
   async getChatHistory(
     sessionId: string,
     page: number = 1,
-    perPage: number = 50
+    perPage: number = 50,
   ): Promise<ChatHistoryResponse> {
     return this.request<ChatHistoryResponse>(
-      `/ai-chat/history/${sessionId}?page=${page}&per_page=${perPage}`
+      `/ai-chat/history/${sessionId}?page=${page}&per_page=${perPage}`,
     );
   }
 
@@ -367,7 +363,7 @@ class ApiClient {
   async getS3UploadCredentials(
     sessionId: string,
     mediaType: 'image' | 'audio',
-    fileExtension: string
+    fileExtension: string,
   ): Promise<S3UploadCredentialsResponse> {
     return this.request<S3UploadCredentialsResponse>('/media/get-upload-credentials', {
       method: 'POST',
@@ -382,7 +378,7 @@ class ApiClient {
   async uploadToS3(
     uploadUrl: string,
     formData: Record<string, string>,
-    file: File
+    file: File,
   ): Promise<string> {
     const form = new FormData();
 
@@ -403,7 +399,7 @@ class ApiClient {
       fileName: file.name,
       fileType: file.type,
       fileSize: file.size,
-      formFields: Object.keys(formData)
+      formFields: Object.keys(formData),
     });
 
     const response = await fetch(uploadUrl, {
@@ -417,7 +413,7 @@ class ApiClient {
       console.error('[ApiClient] S3 upload failed:', {
         status: response.status,
         statusText: response.statusText,
-        responseBody: text
+        responseBody: text,
       });
       throw new Error(`S3 upload failed: ${text}`);
     }
@@ -441,7 +437,7 @@ class ApiClient {
     mediaUrl: string,
     width?: number,
     height?: number,
-    filename?: string
+    filename?: string,
   ): Promise<AnalyzeImageResponse> {
     return this.request<AnalyzeImageResponse>('/media/analyze-image', {
       method: 'POST',
@@ -459,7 +455,7 @@ class ApiClient {
     sessionId: string,
     mediaUrl: string,
     duration?: number,
-    filename?: string
+    filename?: string,
   ): Promise<TranscribeAudioResponse> {
     return this.request<TranscribeAudioResponse>('/media/transcribe-audio', {
       method: 'POST',

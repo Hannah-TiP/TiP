@@ -1,17 +1,18 @@
-"use client";
+'use client';
 
-import { useCallback, useState, useEffect, useRef } from "react";
-import { GoogleMap, useJsApiLoader, InfoWindow } from "@react-google-maps/api";
-import Link from "next/link";
-import { Hotel, formatLocation, getImageUrl } from "@/types/hotel";
+import { useCallback, useState, useEffect, useRef } from 'react';
+import { GoogleMap, useJsApiLoader, InfoWindow } from '@react-google-maps/api';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Hotel, formatLocation, getImageUrl } from '@/types/hotel';
 
 interface HotelMapProps {
   hotels: Hotel[];
 }
 
 const mapContainerStyle = {
-  width: "100%",
-  height: "520px",
+  width: '100%',
+  height: '520px',
 };
 
 const defaultCenter = {
@@ -20,7 +21,7 @@ const defaultCenter = {
 };
 
 // Libraries array must be static to prevent unnecessary reloads
-const libraries: ("marker")[] = ["marker"];
+const libraries: 'marker'[] = ['marker'];
 
 const mapOptions = {
   disableDefaultUI: false,
@@ -28,7 +29,7 @@ const mapOptions = {
   streetViewControl: false,
   mapTypeControl: false,
   fullscreenControl: true,
-  mapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID", // Required for Advanced Markers
+  mapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID', // Required for Advanced Markers
   // Note: styles property is not supported when mapId is present
   // Configure map styling in Google Cloud Console instead
 };
@@ -40,29 +41,32 @@ export default function HotelMap({ hotels }: HotelMapProps) {
   const isInitialFit = useRef(true);
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     libraries,
   });
 
-  const onLoad = useCallback((map: google.maps.Map) => {
-    // Fit map bounds to show all hotels
-    const bounds = new window.google.maps.LatLngBounds();
-    hotels.forEach((hotel) => {
-      if (hotel.latitude && hotel.longitude) {
-        bounds.extend({ lat: hotel.latitude, lng: hotel.longitude });
+  const onLoad = useCallback(
+    (map: google.maps.Map) => {
+      // Fit map bounds to show all hotels
+      const bounds = new window.google.maps.LatLngBounds();
+      hotels.forEach((hotel) => {
+        if (hotel.latitude && hotel.longitude) {
+          bounds.extend({ lat: hotel.latitude, lng: hotel.longitude });
+        }
+      });
+
+      if (hotels.length > 0) {
+        map.fitBounds(bounds);
       }
-    });
 
-    if (hotels.length > 0) {
-      map.fitBounds(bounds);
-    }
-
-    setMap(map);
-  }, [hotels]);
+      setMap(map);
+    },
+    [hotels],
+  );
 
   const onUnmount = useCallback(() => {
     // Clean up markers
-    markersRef.current.forEach(marker => {
+    markersRef.current.forEach((marker) => {
       marker.map = null;
     });
     markersRef.current = [];
@@ -74,15 +78,13 @@ export default function HotelMap({ hotels }: HotelMapProps) {
     if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement) return;
 
     // Clean up existing markers
-    markersRef.current.forEach(marker => {
+    markersRef.current.forEach((marker) => {
       marker.map = null;
     });
     markersRef.current = [];
 
     // Create new markers
-    const hotelsWithCoordinates = hotels.filter(
-      (hotel) => hotel.latitude && hotel.longitude
-    );
+    const hotelsWithCoordinates = hotels.filter((hotel) => hotel.latitude && hotel.longitude);
 
     hotelsWithCoordinates.forEach((hotel) => {
       // Create custom marker element
@@ -154,17 +156,17 @@ export default function HotelMap({ hotels }: HotelMapProps) {
 
     // Close InfoWindow if selected hotel is no longer in the filtered set
     if (selectedHotel && !hotels.some((h) => h.id === selectedHotel.id)) {
-      setSelectedHotel(null);
+      setSelectedHotel(null); // eslint-disable-line react-hooks/set-state-in-effect
     }
 
     return () => {
       // Cleanup on unmount
-      markersRef.current.forEach(marker => {
+      markersRef.current.forEach((marker) => {
         marker.map = null;
       });
       markersRef.current = [];
     };
-  }, [map, hotels]);
+  }, [map, hotels, selectedHotel]);
 
   if (loadError) {
     return (
@@ -210,26 +212,26 @@ export default function HotelMap({ hotels }: HotelMapProps) {
           <div className="max-w-[280px] p-2">
             <Link href={`/hotel/${selectedHotel.id}`} className="group">
               <div className="relative mb-2 h-40 w-full overflow-hidden rounded-lg">
-                <img
+                <Image
                   src={getImageUrl(selectedHotel.image?.[0])}
                   alt={selectedHotel.name}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  fill
+                  sizes="280px"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
               <h3 className="font-semibold text-green-dark group-hover:text-gold">
                 {selectedHotel.name}
               </h3>
-              <p className="mt-1 text-[13px] text-gray-text">
-                {formatLocation(selectedHotel)}
-              </p>
+              <p className="mt-1 text-[13px] text-gray-text">{formatLocation(selectedHotel)}</p>
               {selectedHotel.star_rating && (
                 <p className="mt-1 text-[11px] font-medium text-gold">
-                  {"★".repeat(parseInt(selectedHotel.star_rating))}
+                  {'★'.repeat(parseInt(selectedHotel.star_rating))}
                 </p>
               )}
               {selectedHotel.review_summary && (
                 <p className="mt-1 text-[12px] text-gray-600">
-                  {selectedHotel.review_summary.average_rating.toFixed(1)} / 5.0 •{" "}
+                  {selectedHotel.review_summary.average_rating.toFixed(1)} / 5.0 •{' '}
                   {selectedHotel.review_summary.total_reviews} reviews
                 </p>
               )}

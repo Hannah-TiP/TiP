@@ -1,52 +1,53 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useRef } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import TopBar from "@/components/TopBar";
-import SubNav from "@/components/SubNav";
-import Footer from "@/components/Footer";
-import { apiClient } from "@/lib/api-client";
-import type { TripDetail, TravelPlanItem, CommentContent } from "@/types/trip";
-import { getImageUrl } from "@/types/hotel";
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import { useEffect, useState, useRef } from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import TopBar from '@/components/TopBar';
+import SubNav from '@/components/SubNav';
+import Footer from '@/components/Footer';
+import { apiClient } from '@/lib/api-client';
+import type { TripDetail, TravelPlanItem, CommentContent } from '@/types/trip';
+import Image from 'next/image';
+import { getImageUrl } from '@/types/hotel';
+import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<string, string> = {
-  "draft": "Planning",
-  "waiting-for-proposal": "Awaiting Proposal",
-  "in-progress": "In Progress",
-  "waiting-for-payment": "Awaiting Payment",
-  "paid": "Payment Confirmed",
-  "ready-to-travel": "Ready to Travel",
-  "traveling-now": "Traveling Now",
-  "travel-completed": "Completed",
+  draft: 'Planning',
+  'waiting-for-proposal': 'Awaiting Proposal',
+  'in-progress': 'In Progress',
+  'waiting-for-payment': 'Awaiting Payment',
+  paid: 'Payment Confirmed',
+  'ready-to-travel': 'Ready to Travel',
+  'traveling-now': 'Traveling Now',
+  'travel-completed': 'Completed',
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  "draft": "bg-gray-100 text-gray-600",
-  "waiting-for-proposal": "bg-yellow-100 text-yellow-700",
-  "in-progress": "bg-blue-100 text-blue-700",
-  "waiting-for-payment": "bg-orange-100 text-orange-700",
-  "paid": "bg-teal-100 text-teal-700",
-  "ready-to-travel": "bg-green-100 text-green-700",
-  "traveling-now": "bg-emerald-100 text-emerald-700",
-  "travel-completed": "bg-gray-100 text-gray-700",
+  draft: 'bg-gray-100 text-gray-600',
+  'waiting-for-proposal': 'bg-yellow-100 text-yellow-700',
+  'in-progress': 'bg-blue-100 text-blue-700',
+  'waiting-for-payment': 'bg-orange-100 text-orange-700',
+  paid: 'bg-teal-100 text-teal-700',
+  'ready-to-travel': 'bg-green-100 text-green-700',
+  'traveling-now': 'bg-emerald-100 text-emerald-700',
+  'travel-completed': 'bg-gray-100 text-gray-700',
 };
 
 const categoryColor: Record<string, string> = {
-  flight: "bg-blue-100 text-blue-700",
-  staying: "bg-purple-100 text-purple-700",
-  activities: "bg-green-100 text-green-700",
-  others: "bg-gray-100 text-gray-600",
+  flight: 'bg-blue-100 text-blue-700',
+  staying: 'bg-purple-100 text-purple-700',
+  activities: 'bg-green-100 text-green-700',
+  others: 'bg-gray-100 text-gray-600',
 };
 
 const categoryLabel: Record<string, string> = {
-  flight: "Flight",
-  staying: "Hotel",
-  activities: "Activity",
-  others: "Other",
+  flight: 'Flight',
+  staying: 'Hotel',
+  activities: 'Activity',
+  others: 'Other',
 };
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
@@ -58,28 +59,24 @@ function getNights(startDate?: string, endDate?: string): number | null {
 }
 
 function formatDate(dateStr?: string): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+  if (!dateStr) return '\u2014';
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   });
 }
 
 function formatDayDate(timestamp: number): string {
-  return new Date(timestamp * 1000).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
   });
 }
 
 function getDestination(trip: TripDetail): string {
-  return (
-    trip.preset_destination_cities_names ||
-    trip.custom_destination_cities ||
-    "Your Trip"
-  );
+  return trip.preset_destination_cities_names || trip.custom_destination_cities || 'Your Trip';
 }
 
 // ─── Cost Row ────────────────────────────────────────────────────────────────
@@ -100,22 +97,22 @@ function HeroCard({ trip }: { trip: TripDetail }) {
   const destination = getDestination(trip);
   const nights = getNights(trip.start_date, trip.end_date);
   const statusLabel = STATUS_LABELS[trip.status] ?? trip.status;
-  const statusColor = STATUS_COLORS[trip.status] ?? "bg-gray-100 text-gray-600";
+  const statusColor = STATUS_COLORS[trip.status] ?? 'bg-gray-100 text-gray-600';
 
   return (
     <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex">
-      <div className="w-[480px] flex-shrink-0">
+      <div className="w-[480px] flex-shrink-0 relative">
         {trip.cover_image ? (
-          <img
+          <Image
             src={getImageUrl(trip.cover_image)}
             alt={destination}
-            className="w-full h-full object-cover"
+            className="object-cover"
+            fill
+            sizes="480px"
           />
         ) : (
           <div className="w-full h-full min-h-[240px] bg-gradient-to-br from-[#2a5240] to-[#C4956A] flex items-center justify-center">
-            <span className="text-white text-2xl font-bold px-6 text-center">
-              {destination}
-            </span>
+            <span className="text-white text-2xl font-bold px-6 text-center">{destination}</span>
           </div>
         )}
       </div>
@@ -138,15 +135,15 @@ function HeroCard({ trip }: { trip: TripDetail }) {
             <div>
               <p className="text-white/50">Duration</p>
               <p className="font-semibold">
-                {nights} {nights === 1 ? "Night" : "Nights"}
+                {nights} {nights === 1 ? 'Night' : 'Nights'}
               </p>
             </div>
           )}
           <div>
             <p className="text-white/50">Travelers</p>
             <p className="font-semibold">
-              {trip.adults} {trip.adults === 1 ? "Adult" : "Adults"}
-              {trip.kids ? `, ${trip.kids} ${trip.kids === 1 ? "Kid" : "Kids"}` : ""}
+              {trip.adults} {trip.adults === 1 ? 'Adult' : 'Adults'}
+              {trip.kids ? `, ${trip.kids} ${trip.kids === 1 ? 'Kid' : 'Kids'}` : ''}
             </p>
           </div>
           {trip.purpose && (
@@ -165,9 +162,9 @@ function HeroCard({ trip }: { trip: TripDetail }) {
 
 function InfoCards({ trip, allItems }: { trip: TripDetail; allItems: TravelPlanItem[] }) {
   const statusLabel = STATUS_LABELS[trip.status] ?? trip.status;
-  const firstFlight = allItems.find((i) => i.category_type === "flight");
-  const firstHotel = allItems.find((i) => i.category_type === "staying");
-  const activitiesCount = allItems.filter((i) => i.category_type === "activities").length;
+  const firstFlight = allItems.find((i) => i.category_type === 'flight');
+  const firstHotel = allItems.find((i) => i.category_type === 'staying');
+  const activitiesCount = allItems.filter((i) => i.category_type === 'activities').length;
 
   return (
     <div className="grid grid-cols-4 gap-5">
@@ -199,7 +196,7 @@ function InfoCards({ trip, allItems }: { trip: TripDetail; allItems: TravelPlanI
         <div className="text-2xl mb-3">🎯</div>
         <h3 className="font-semibold text-gray-900">Activities</h3>
         <p className="text-sm text-gray-600 mt-1">
-          {activitiesCount} {activitiesCount === 1 ? "Activity" : "Activities"} Planned
+          {activitiesCount} {activitiesCount === 1 ? 'Activity' : 'Activities'} Planned
         </p>
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -246,7 +243,9 @@ function ProposalSection({ trip }: { trip: TripDetail }) {
       {trip.pending_amount != null && trip.pending_amount > 0 && (
         <div className="flex justify-between text-sm pt-2">
           <span className="text-gray-500">Remaining</span>
-          <span className="font-medium text-orange-600">${trip.pending_amount.toLocaleString()}</span>
+          <span className="font-medium text-orange-600">
+            ${trip.pending_amount.toLocaleString()}
+          </span>
         </div>
       )}
       {trip.proposal.note && (
@@ -284,13 +283,9 @@ function ItineraryTimeline({ trip }: { trip: TripDetail }) {
                 <span className="text-xs font-semibold text-[#1E3D2F] bg-green-50 px-2 py-0.5 rounded">
                   Day {plan.sort ?? i + 1}
                 </span>
-                <span className="text-xs text-gray-400">
-                  {formatDayDate(plan.date)}
-                </span>
+                <span className="text-xs text-gray-400">{formatDayDate(plan.date)}</span>
                 {plan.day_topic && (
-                  <span className="text-xs font-medium text-gray-700">
-                    {plan.day_topic}
-                  </span>
+                  <span className="text-xs font-medium text-gray-700">{plan.day_topic}</span>
                 )}
               </div>
               {plan.items.length > 0 ? (
@@ -299,19 +294,17 @@ function ItineraryTimeline({ trip }: { trip: TripDetail }) {
                     <div key={item.id} className="flex items-start gap-3">
                       <span
                         className={`text-xs px-2 py-0.5 rounded font-medium flex-shrink-0 mt-0.5 ${
-                          categoryColor[item.category_type ?? "others"] ??
-                          "bg-gray-100 text-gray-600"
+                          categoryColor[item.category_type ?? 'others'] ??
+                          'bg-gray-100 text-gray-600'
                         }`}
                       >
-                        {categoryLabel[item.category_type ?? "others"] ?? "Other"}
+                        {categoryLabel[item.category_type ?? 'others'] ?? 'Other'}
                       </span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {item.category_name}
                         </p>
-                        {item.city && (
-                          <p className="text-xs text-gray-400">{item.city}</p>
-                        )}
+                        {item.city && <p className="text-xs text-gray-400">{item.city}</p>}
                       </div>
                       {item.estimated_cost != null && (
                         <span className="ml-auto text-xs text-gray-500 flex-shrink-0">
@@ -335,7 +328,7 @@ function ItineraryTimeline({ trip }: { trip: TripDetail }) {
 // ─── Comments Section ────────────────────────────────────────────────────────
 
 function CommentsSection({ trip, onRefresh }: { trip: TripDetail; onRefresh: () => void }) {
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -348,7 +341,7 @@ function CommentsSection({ trip, onRefresh }: { trip: TripDetail; onRefresh: () 
   }, [trip.id, trip.comments]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [comments.length]);
 
   const handleSend = async () => {
@@ -357,11 +350,9 @@ function CommentsSection({ trip, onRefresh }: { trip: TripDetail; onRefresh: () 
 
     setSending(true);
     try {
-      const content: CommentContent[] = [
-        { role: "user", type: "text", message: text },
-      ];
+      const content: CommentContent[] = [{ role: 'user', type: 'text', message: text }];
       await apiClient.addComment(trip.id, content);
-      setMessage("");
+      setMessage('');
       onRefresh();
     } catch {
       // keep message in input on error
@@ -382,25 +373,20 @@ function CommentsSection({ trip, onRefresh }: { trip: TripDetail; onRefresh: () 
           </p>
         )}
         {comments.map((c, i) => (
-          <div
-            key={i}
-            className={`flex ${c.role === "user" ? "justify-end" : "justify-start"}`}
-          >
+          <div key={i} className={`flex ${c.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
               className={`max-w-[75%] rounded-xl px-4 py-2.5 text-sm ${
-                c.role === "user"
-                  ? "bg-[#1E3D2F] text-white"
-                  : "bg-gray-100 text-gray-900"
+                c.role === 'user' ? 'bg-[#1E3D2F] text-white' : 'bg-gray-100 text-gray-900'
               }`}
             >
-              {c.type === "file" && c.filePath ? (
+              {c.type === 'file' && c.filePath ? (
                 <a
                   href={c.filePath}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline"
                 >
-                  {c.message || "Attachment"}
+                  {c.message || 'Attachment'}
                 </a>
               ) : (
                 <p className="whitespace-pre-wrap">{c.message}</p>
@@ -417,7 +403,7 @@ function CommentsSection({ trip, onRefresh }: { trip: TripDetail; onRefresh: () 
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
           placeholder="Type a message..."
           className="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3D2F]/20 focus:border-[#1E3D2F]"
         />
@@ -426,7 +412,7 @@ function CommentsSection({ trip, onRefresh }: { trip: TripDetail; onRefresh: () 
           disabled={!message.trim() || sending}
           className="px-5 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-lg hover:bg-[#2a5240] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {sending ? "Sending..." : "Send"}
+          {sending ? 'Sending...' : 'Send'}
         </button>
       </div>
     </div>
@@ -448,7 +434,7 @@ function AgreeButton({ tripId, onRefresh }: { tripId: number; onRefresh: () => v
       setConfirming(false);
       onRefresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to accept proposal");
+      setError(err instanceof Error ? err.message : 'Failed to accept proposal');
     } finally {
       setLoading(false);
     }
@@ -469,21 +455,23 @@ function AgreeButton({ tripId, onRefresh }: { tripId: number; onRefresh: () => v
     <div className="bg-white rounded-xl border-2 border-[#1E3D2F] p-6">
       <h3 className="font-semibold text-gray-900 mb-2">Confirm Acceptance</h3>
       <p className="text-sm text-gray-500 mb-4">
-        By accepting this proposal, you agree to the itinerary and pricing. You&apos;ll proceed to payment next.
+        By accepting this proposal, you agree to the itinerary and pricing. You&apos;ll proceed to
+        payment next.
       </p>
-      {error && (
-        <p className="text-sm text-red-600 mb-3">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
       <div className="flex gap-3">
         <button
           onClick={handleAgree}
           disabled={loading}
           className="flex-1 py-2.5 bg-[#1E3D2F] text-white text-sm font-semibold rounded-lg hover:bg-[#2a5240] transition-colors disabled:opacity-50"
         >
-          {loading ? "Processing..." : "Yes, Accept"}
+          {loading ? 'Processing...' : 'Yes, Accept'}
         </button>
         <button
-          onClick={() => { setConfirming(false); setError(null); }}
+          onClick={() => {
+            setConfirming(false);
+            setError(null);
+          }}
           disabled={loading}
           className="flex-1 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
         >
@@ -496,15 +484,16 @@ function AgreeButton({ tripId, onRefresh }: { tripId: number; onRefresh: () => v
 
 // ─── Payment Section ─────────────────────────────────────────────────────────
 
-const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb";
+const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'sb';
 
 function PaymentSection({ trip, onRefresh }: { trip: TripDetail; onRefresh: () => void }) {
   const [payError, setPayError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  const amount = (trip.pending_amount && trip.pending_amount > 0)
-    ? trip.pending_amount
-    : trip.proposal?.total_cost ?? 0;
+  const amount =
+    trip.pending_amount && trip.pending_amount > 0
+      ? trip.pending_amount
+      : (trip.proposal?.total_cost ?? 0);
 
   return (
     <div className="bg-orange-50 rounded-xl border border-orange-200 p-6">
@@ -518,29 +507,23 @@ function PaymentSection({ trip, onRefresh }: { trip: TripDetail; onRefresh: () =
         </p>
       )}
       {amount > 0 && (
-        <p className="text-2xl font-bold text-orange-800 mb-4">
-          ${amount.toLocaleString()}
-        </p>
+        <p className="text-2xl font-bold text-orange-800 mb-4">${amount.toLocaleString()}</p>
       )}
 
-      {payError && (
-        <p className="text-sm text-red-600 mb-3">{payError}</p>
-      )}
+      {payError && <p className="text-sm text-red-600 mb-3">{payError}</p>}
 
-      {processing && (
-        <p className="text-sm text-orange-700 mb-3">Verifying payment...</p>
-      )}
+      {processing && <p className="text-sm text-orange-700 mb-3">Verifying payment...</p>}
 
-      <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID, currency: "USD" }}>
+      <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID, currency: 'USD' }}>
         <PayPalButtons
-          style={{ layout: "vertical", shape: "rect", label: "pay" }}
+          style={{ layout: 'vertical', shape: 'rect', label: 'pay' }}
           createOrder={async () => {
             setPayError(null);
             try {
               const res = await apiClient.createPayment(trip.id, amount);
               return res.paypal_order_id;
             } catch (err) {
-              setPayError(err instanceof Error ? err.message : "Failed to create payment");
+              setPayError(err instanceof Error ? err.message : 'Failed to create payment');
               throw err;
             }
           }}
@@ -551,16 +534,16 @@ function PaymentSection({ trip, onRefresh }: { trip: TripDetail; onRefresh: () =
               await apiClient.verifyPayment(trip.id, data.orderID);
               onRefresh();
             } catch (err) {
-              setPayError(err instanceof Error ? err.message : "Payment verification failed");
+              setPayError(err instanceof Error ? err.message : 'Payment verification failed');
             } finally {
               setProcessing(false);
             }
           }}
           onError={(err) => {
-            setPayError(typeof err === "string" ? err : "Payment failed. Please try again.");
+            setPayError(typeof err === 'string' ? err : 'Payment failed. Please try again.');
           }}
           onCancel={() => {
-            setPayError("Payment was cancelled.");
+            setPayError('Payment was cancelled.');
           }}
         />
       </PayPalScriptProvider>
@@ -607,7 +590,7 @@ function PendingInfoCard({ trip, onRefresh }: { trip: TripDetail; onRefresh: () 
       await apiClient.submitTrip(trip.id);
       onRefresh();
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to submit trip");
+      setSubmitError(err instanceof Error ? err.message : 'Failed to submit trip');
     } finally {
       setSubmitting(false);
     }
@@ -619,12 +602,12 @@ function PendingInfoCard({ trip, onRefresh }: { trip: TripDetail; onRefresh: () 
         <div>
           <h3 className="font-semibold text-gray-900 mb-2">What happens next?</h3>
           <p className="text-sm text-gray-500">
-            {trip.status === "draft"
-              ? "Your trip details are ready. Submit it to our concierge team, or continue refining with the AI concierge."
+            {trip.status === 'draft'
+              ? 'Your trip details are ready. Submit it to our concierge team, or continue refining with the AI concierge.'
               : "Our concierge team is crafting your personalized travel proposal. You'll receive a notification once your proposal is ready to review."}
           </p>
         </div>
-        {trip.status === "draft" && (
+        {trip.status === 'draft' && (
           <div className="flex flex-shrink-0 gap-3">
             <Link
               href={`/concierge?trip_id=${trip.id}`}
@@ -637,14 +620,12 @@ function PendingInfoCard({ trip, onRefresh }: { trip: TripDetail; onRefresh: () 
               disabled={submitting}
               className="px-6 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-full hover:bg-[#2a5240] transition-colors disabled:opacity-50"
             >
-              {submitting ? "Submitting..." : "Submit Trip"}
+              {submitting ? 'Submitting...' : 'Submit Trip'}
             </button>
           </div>
         )}
       </div>
-      {submitError && (
-        <p className="text-sm text-red-600 mt-3">{submitError}</p>
-      )}
+      {submitError && <p className="text-sm text-red-600 mt-3">{submitError}</p>}
     </div>
   );
 }
@@ -662,7 +643,7 @@ export default function TripDetailPage() {
     apiClient
       .getTripById(Number(id))
       .then(setTrip)
-      .catch(() => setError("Failed to load trip details."))
+      .catch(() => setError('Failed to load trip details.'))
       .finally(() => setLoading(false));
   };
 
@@ -695,8 +676,11 @@ export default function TripDetailPage() {
         <TopBar activeLink="My Page" />
         <SubNav activeTab="Upcoming Travels" />
         <div className="max-w-7xl mx-auto px-6 mt-8 text-center py-20 text-gray-500">
-          <p>{error ?? "Trip not found."}</p>
-          <Link href="/my-page" className="mt-4 inline-block text-[#1E3D2F] hover:underline text-sm">
+          <p>{error ?? 'Trip not found.'}</p>
+          <Link
+            href="/my-page"
+            className="mt-4 inline-block text-[#1E3D2F] hover:underline text-sm"
+          >
             ← Back to My Trips
           </Link>
         </div>
@@ -704,15 +688,15 @@ export default function TripDetailPage() {
     );
   }
 
-  const isPending = trip.status === "draft" || trip.status === "waiting-for-proposal";
+  const isPending = trip.status === 'draft' || trip.status === 'waiting-for-proposal';
   const hasProposal = !!trip.proposal;
   const hasItinerary = (trip.travel_plans ?? []).length > 0;
   const allItems: TravelPlanItem[] = [...(trip.travel_plans ?? [])]
     .sort((a, b) => a.sort - b.sort)
     .flatMap((p) => p.items);
-  const isCompleted = trip.status === "travel-completed";
-  const showAcceptButton = trip.status === "in-progress" && hasProposal;
-  const showPayment = trip.status === "waiting-for-payment";
+  const isCompleted = trip.status === 'travel-completed';
+  const showAcceptButton = trip.status === 'in-progress' && hasProposal;
+  const showPayment = trip.status === 'waiting-for-payment';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -748,14 +732,10 @@ export default function TripDetailPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Accept proposal */}
-            {showAcceptButton && (
-              <AgreeButton tripId={trip.id} onRefresh={handleRefresh} />
-            )}
+            {showAcceptButton && <AgreeButton tripId={trip.id} onRefresh={handleRefresh} />}
 
             {/* Payment */}
-            {showPayment && (
-              <PaymentSection trip={trip} onRefresh={handleRefresh} />
-            )}
+            {showPayment && <PaymentSection trip={trip} onRefresh={handleRefresh} />}
 
             {/* Cost breakdown */}
             {hasProposal && <ProposalSection trip={trip} />}
@@ -794,7 +774,7 @@ export default function TripDetailPage() {
                   </div>
                   <div className="text-center bg-gray-50 rounded-lg p-3">
                     <p className="text-2xl font-bold text-[#1E3D2F]">
-                      {allItems.filter((i) => i.category_type === "activities").length}
+                      {allItems.filter((i) => i.category_type === 'activities').length}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">Activities</p>
                   </div>

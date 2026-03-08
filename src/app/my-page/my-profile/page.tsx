@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import TopBar from "@/components/TopBar";
-import SubNav from "@/components/SubNav";
-import Footer from "@/components/Footer";
-import BirthDatePicker from "@/components/BirthDatePicker";
-import { apiClient } from "@/lib/api-client";
-import type { ProfileData, Country } from "@/types/auth";
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import TopBar from '@/components/TopBar';
+import SubNav from '@/components/SubNav';
+import Footer from '@/components/Footer';
+import BirthDatePicker from '@/components/BirthDatePicker';
+import { apiClient } from '@/lib/api-client';
+import type { ProfileData, Country } from '@/types/auth';
 
 // Convert backend birth format (M/D/YYYY) to display format (YYYY-MM-DD)
 function birthToDisplay(birth?: string): string {
-  if (!birth) return "";
+  if (!birth) return '';
   try {
-    const parts = birth.split("/");
+    const parts = birth.split('/');
     if (parts.length === 3) {
       const [month, day, year] = parts;
-      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     }
   } catch {}
   return birth;
@@ -25,19 +25,19 @@ function birthToDisplay(birth?: string): string {
 
 // Convert display format (YYYY-MM-DD) to backend format (M/D/YYYY)
 function displayToBirth(display: string): string {
-  if (!display) return "";
+  if (!display) return '';
   try {
-    const [year, month, day] = display.split("-");
+    const [year, month, day] = display.split('-');
     return `${parseInt(month)}/${parseInt(day)}/${year}`;
   } catch {}
   return display;
 }
 
 const GENDER_OPTIONS = [
-  { value: "", label: "Select gender" },
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" },
-  { value: "other", label: "Other" },
+  { value: '', label: 'Select gender' },
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
 ];
 
 export default function MyProfile() {
@@ -47,14 +47,14 @@ export default function MyProfile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   // Form state
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [gender, setGender] = useState("");
-  const [birth, setBirth] = useState("");
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [gender, setGender] = useState('');
+  const [birth, setBirth] = useState('');
   const [countryId, setCountryId] = useState<number | undefined>(undefined);
 
   // Countries list
@@ -64,39 +64,39 @@ export default function MyProfile() {
   const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    if (sessionStatus === "unauthenticated") {
-      router.push("/sign-in");
+    if (sessionStatus === 'unauthenticated') {
+      router.push('/sign-in');
       return;
     }
-    if (sessionStatus === "authenticated") {
+    if (sessionStatus === 'authenticated') {
       loadProfile();
       loadCountries();
     }
-  }, [sessionStatus]);
+  }, [sessionStatus, router]);
 
   async function loadCountries() {
     try {
       const data = await apiClient.getCountries();
       setCountries(data);
     } catch (err) {
-      console.error("Countries load error:", err);
+      console.error('Countries load error:', err);
     }
   }
 
   async function loadProfile() {
     try {
       setLoading(true);
-      setError("");
+      setError('');
       const data = await apiClient.getProfile();
       setProfile(data);
-      setFirstName(data.first_name || "");
-      setLastName(data.last_name || "");
-      setGender(data.gender || "");
+      setFirstName(data.first_name || '');
+      setLastName(data.last_name || '');
+      setGender(data.gender || '');
       setBirth(birthToDisplay(data.birth));
       setCountryId(data.country_id ?? undefined);
     } catch (err) {
-      setError("Failed to load profile. Please try again.");
-      console.error("Profile load error:", err);
+      setError('Failed to load profile. Please try again.');
+      console.error('Profile load error:', err);
     } finally {
       setLoading(false);
     }
@@ -106,15 +106,15 @@ export default function MyProfile() {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       setter(e.target.value);
       setIsDirty(true);
-      setSuccess("");
+      setSuccess('');
     };
   }
 
   async function handleSave() {
     try {
       setSaving(true);
-      setError("");
-      setSuccess("");
+      setError('');
+      setSuccess('');
       await apiClient.updateProfile({
         first_name: firstName,
         last_name: lastName,
@@ -122,13 +122,13 @@ export default function MyProfile() {
         birth: birth ? displayToBirth(birth) : undefined,
         country_id: countryId,
       });
-      setSuccess("Profile updated successfully.");
+      setSuccess('Profile updated successfully.');
       setIsDirty(false);
       // Reload profile to get fresh data
       await loadProfile();
     } catch (err) {
-      setError("Failed to save changes. Please try again.");
-      console.error("Profile save error:", err);
+      setError('Failed to save changes. Please try again.');
+      console.error('Profile save error:', err);
     } finally {
       setSaving(false);
     }
@@ -136,14 +136,14 @@ export default function MyProfile() {
 
   function handleCancel() {
     if (profile) {
-      setFirstName(profile.first_name || "");
-      setLastName(profile.last_name || "");
-      setGender(profile.gender || "");
+      setFirstName(profile.first_name || '');
+      setLastName(profile.last_name || '');
+      setGender(profile.gender || '');
       setBirth(birthToDisplay(profile.birth));
       setCountryId(profile.country_id ?? undefined);
       setIsDirty(false);
-      setError("");
-      setSuccess("");
+      setError('');
+      setSuccess('');
     }
   }
 
@@ -153,18 +153,18 @@ export default function MyProfile() {
     const prefs = profile.preferences;
     // Common preference fields that contain displayable values
     for (const [, value] of Object.entries(prefs)) {
-      if (typeof value === "string" && value.trim()) {
+      if (typeof value === 'string' && value.trim()) {
         preferenceTags.push(value);
       } else if (Array.isArray(value)) {
         value.forEach((v) => {
-          if (typeof v === "string" && v.trim()) preferenceTags.push(v);
+          if (typeof v === 'string' && v.trim()) preferenceTags.push(v);
         });
       }
     }
   }
 
   const inputClass =
-    "w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3D2F]/20 focus:border-[#1E3D2F]";
+    'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3D2F]/20 focus:border-[#1E3D2F]';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -214,7 +214,9 @@ export default function MyProfile() {
               <h2 className="text-lg font-bold text-gray-900 mb-5">Personal Information</h2>
               <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">First Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    First Name
+                  </label>
                   <input
                     type="text"
                     value={firstName}
@@ -223,7 +225,9 @@ export default function MyProfile() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Last Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Last Name
+                  </label>
                   <input
                     type="text"
                     value={lastName}
@@ -235,7 +239,7 @@ export default function MyProfile() {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
                   <input
                     type="email"
-                    value={session?.user?.email || ""}
+                    value={session?.user?.email || ''}
                     disabled
                     className={`${inputClass} bg-gray-50 text-gray-500 cursor-not-allowed`}
                   />
@@ -255,24 +259,26 @@ export default function MyProfile() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Date of Birth</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Date of Birth
+                  </label>
                   <BirthDatePicker
                     value={birth}
                     onChange={(v) => {
                       setBirth(v);
                       setIsDirty(true);
-                      setSuccess("");
+                      setSuccess('');
                     }}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Country</label>
                   <select
-                    value={countryId ?? ""}
+                    value={countryId ?? ''}
                     onChange={(e) => {
                       setCountryId(e.target.value ? Number(e.target.value) : undefined);
                       setIsDirty(true);
-                      setSuccess("");
+                      setSuccess('');
                     }}
                     className={inputClass}
                   >
@@ -285,10 +291,16 @@ export default function MyProfile() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Membership</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Membership
+                  </label>
                   <input
                     type="text"
-                    value={profile.membership ? profile.membership.charAt(0).toUpperCase() + profile.membership.slice(1) : "White"}
+                    value={
+                      profile.membership
+                        ? profile.membership.charAt(0).toUpperCase() + profile.membership.slice(1)
+                        : 'White'
+                    }
                     disabled
                     className={`${inputClass} bg-gray-50 text-gray-500 cursor-not-allowed`}
                   />
@@ -326,7 +338,8 @@ export default function MyProfile() {
                 </div>
               ) : (
                 <p className="text-sm text-gray-400">
-                  No travel preferences set yet. Chat with our AI concierge to set up your preferences.
+                  No travel preferences set yet. Chat with our AI concierge to set up your
+                  preferences.
                 </p>
               )}
             </div>
@@ -345,7 +358,7 @@ export default function MyProfile() {
                 disabled={!isDirty || saving}
                 className="px-6 py-2.5 text-sm font-medium text-white bg-[#1E3D2F] rounded-lg hover:bg-[#163024] transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? "Saving..." : "Save Changes"}
+                {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </>

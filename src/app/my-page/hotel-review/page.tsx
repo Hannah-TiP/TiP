@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import TopBar from "@/components/TopBar";
-import SubNav from "@/components/SubNav";
-import Footer from "@/components/Footer";
+import { useState } from 'react';
+import Link from 'next/link';
+import TopBar from '@/components/TopBar';
+import SubNav from '@/components/SubNav';
+import Footer from '@/components/Footer';
 
 export default function HotelReview() {
   const [pendingRating, setPendingRating] = useState(0);
-  const [pendingText, setPendingText] = useState("");
+  const [pendingText, setPendingText] = useState('');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -41,7 +41,10 @@ export default function HotelReview() {
           </div>
           <div className="flex items-center gap-1 mb-3">
             {[1, 2, 3, 4, 5].map((star) => (
-              <span key={star} className={`text-xl ${star <= 5 ? "text-yellow-500" : "text-gray-300"}`}>
+              <span
+                key={star}
+                className={`text-xl ${star <= 5 ? 'text-yellow-500' : 'text-gray-300'}`}
+              >
                 &#9733;
               </span>
             ))}
@@ -72,7 +75,7 @@ export default function HotelReview() {
                   key={star}
                   onClick={() => setPendingRating(star)}
                   className={`text-2xl transition ${
-                    star <= pendingRating ? "text-yellow-500" : "text-gray-300"
+                    star <= pendingRating ? 'text-yellow-500' : 'text-gray-300'
                   } hover:text-yellow-400`}
                 >
                   &#9733;

@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Language': 'en',
+        Language: 'en',
       },
       body: JSON.stringify({ provider, id_token, device_id }),
     });
@@ -21,15 +21,12 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       return NextResponse.json(
         { message: data.detail || 'Social login failed' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     return NextResponse.json(data);
   } catch {
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

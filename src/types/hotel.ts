@@ -123,5 +123,5 @@ export function getHotelImages(hotel: Hotel): string[] {
   if (!hotel.image || hotel.image.length === 0) {
     return ['/placeholder.jpg'];
   }
-  return hotel.image.map(img => getImageUrl(img));
+  return hotel.image.map((img) => getImageUrl(img));
 }

@@ -9,7 +9,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Language': 'en' },
+      headers: { 'Content-Type': 'application/json', Language: 'en' },
       body: JSON.stringify({
         refresh_token: token.refreshToken,
         device_id: token.deviceId,
@@ -41,7 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const loginRes = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Language': 'en' },
+            headers: { 'Content-Type': 'application/json', Language: 'en' },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password,
@@ -53,8 +53,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           const meRes = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
             headers: {
-              'Authorization': `Bearer ${data.access_token}`,
-              'Language': 'en',
+              Authorization: `Bearer ${data.access_token}`,
+              Language: 'en',
             },
           });
           if (!meRes.ok) return null;
@@ -83,8 +83,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const meRes = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
             headers: {
-              'Authorization': `Bearer ${credentials.access_token}`,
-              'Language': 'en',
+              Authorization: `Bearer ${credentials.access_token}`,
+              Language: 'en',
             },
           });
           if (!meRes.ok) return null;

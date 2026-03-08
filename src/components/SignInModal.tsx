@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
 interface SignInModalProps {
   isOpen: boolean;
@@ -8,7 +8,7 @@ interface SignInModalProps {
 }
 
 export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
 
   if (!isOpen) return null;
 

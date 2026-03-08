@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef, useMemo } from "react";
-import Link from "next/link";
-import Footer from "@/components/Footer";
-import { apiClient } from "@/lib/api-client";
-import { getImageUrl, type Activity, type Restaurant } from "@/types/hotel";
+import { useState, useEffect, useRef, useMemo } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import Footer from '@/components/Footer';
+import { apiClient } from '@/lib/api-client';
+import { getImageUrl, type Activity, type Restaurant } from '@/types/hotel';
 
 export default function MoreDreamsPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -15,8 +16,8 @@ export default function MoreDreamsPage() {
   const [selectedCity, setSelectedCity] = useState<{ id: number; name: string } | null>(null);
 
   // Dropdown state
-  const [openDropdown, setOpenDropdown] = useState<"destination" | null>(null);
-  const [citySearch, setCitySearch] = useState("");
+  const [openDropdown, setOpenDropdown] = useState<'destination' | null>(null);
+  const [citySearch, setCitySearch] = useState('');
   const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
 
@@ -27,13 +28,13 @@ export default function MoreDreamsPage() {
       try {
         setIsLoading(true);
         const [activityData, restaurantData] = await Promise.all([
-          apiClient.getActivities({ per_page: 100, language: "en" }),
-          apiClient.getRestaurants({ per_page: 100, language: "en" }),
+          apiClient.getActivities({ per_page: 100, language: 'en' }),
+          apiClient.getRestaurants({ per_page: 100, language: 'en' }),
         ]);
         setActivities(activityData);
         setRestaurants(restaurantData);
       } catch (error) {
-        console.error("Failed to load data:", error);
+        console.error('Failed to load data:', error);
       } finally {
         setIsLoading(false);
       }
@@ -44,10 +45,10 @@ export default function MoreDreamsPage() {
 
   // Load cities when dropdown opens
   useEffect(() => {
-    if (openDropdown === "destination" && cities.length === 0) {
+    if (openDropdown === 'destination' && cities.length === 0) {
       setCitiesLoading(true);
       apiClient
-        .getCities("en")
+        .getCities('en')
         .then(setCities)
         .catch(() => {})
         .finally(() => setCitiesLoading(false));
@@ -61,8 +62,8 @@ export default function MoreDreamsPage() {
         setOpenDropdown(null);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const filteredActivities = useMemo(() => {
@@ -76,11 +77,11 @@ export default function MoreDreamsPage() {
   }, [restaurants, selectedCity]);
 
   const filteredCities = cities.filter((c) =>
-    c.name.toLowerCase().includes(citySearch.toLowerCase())
+    c.name.toLowerCase().includes(citySearch.toLowerCase()),
   );
 
   function getActivityTag(activity: Activity): string {
-    if (!activity.category) return "ACTIVITY";
+    if (!activity.category) return 'ACTIVITY';
     return activity.category.toUpperCase();
   }
 
@@ -88,9 +89,11 @@ export default function MoreDreamsPage() {
     <main className="min-h-screen bg-gray-light">
       {/* Hero */}
       <section className="relative h-[720px] w-full overflow-hidden">
-        <img
+        <Image
           src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&h=900&fit=crop"
           alt="More Dreams hero"
+          fill
+          sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#1E3D2F]/60 via-[#1E3D2F]/70 to-[#1E3D2F]/90" />
@@ -98,11 +101,13 @@ export default function MoreDreamsPage() {
         {/* Nav */}
         <nav className="relative z-10 flex h-16 items-center justify-between px-[60px]">
           <Link href="/">
-            <img
+            <Image
               src="/bible_TIP_profil_400x400px.svg"
               alt="TiP"
+              width={36}
+              height={36}
               className="h-9"
-              style={{ filter: "brightness(0) invert(1)" }}
+              style={{ filter: 'brightness(0) invert(1)' }}
             />
           </Link>
           <div className="flex items-center gap-8">
@@ -142,8 +147,8 @@ export default function MoreDreamsPage() {
             More Dreams
           </h1>
           <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-white/60">
-            Discover extraordinary activities and exquisite restaurants,
-            hand-selected across our curated destinations.
+            Discover extraordinary activities and exquisite restaurants, hand-selected across our
+            curated destinations.
           </p>
         </div>
       </section>
@@ -154,23 +159,23 @@ export default function MoreDreamsPage() {
           <div className="relative flex-1">
             <button
               onClick={() => {
-                setOpenDropdown(openDropdown === "destination" ? null : "destination");
-                setCitySearch("");
+                setOpenDropdown(openDropdown === 'destination' ? null : 'destination');
+                setCitySearch('');
               }}
               className={`w-full rounded-lg border bg-white px-5 py-4 text-left transition-colors ${
-                openDropdown === "destination"
-                  ? "border-gold"
-                  : "border-gray-border hover:border-gray-400"
+                openDropdown === 'destination'
+                  ? 'border-gold'
+                  : 'border-gray-border hover:border-gray-400'
               }`}
             >
               <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
                 DESTINATION
               </p>
               <p className="text-[14px] font-medium text-green-dark">
-                {selectedCity ? selectedCity.name : "All destinations"}
+                {selectedCity ? selectedCity.name : 'All destinations'}
               </p>
             </button>
-            {openDropdown === "destination" && (
+            {openDropdown === 'destination' && (
               <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white shadow-xl">
                 <div className="border-b border-gray-100 p-4">
                   <input
@@ -195,7 +200,7 @@ export default function MoreDreamsPage() {
                           setOpenDropdown(null);
                         }}
                         className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
-                          !selectedCity ? "font-semibold text-gold" : "text-green-dark"
+                          !selectedCity ? 'font-semibold text-gold' : 'text-green-dark'
                         }`}
                       >
                         All destinations
@@ -209,8 +214,8 @@ export default function MoreDreamsPage() {
                           }}
                           className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
                             selectedCity?.id === city.id
-                              ? "font-semibold text-gold"
-                              : "text-green-dark"
+                              ? 'font-semibold text-gold'
+                              : 'text-green-dark'
                           }`}
                         >
                           {city.name}
@@ -247,8 +252,8 @@ export default function MoreDreamsPage() {
 
         {selectedCity && (
           <p className="mt-3 text-[13px] text-gray-text">
-            Showing {filteredActivities.length} activities and{" "}
-            {filteredRestaurants.length} restaurants in {selectedCity.name}
+            Showing {filteredActivities.length} activities and {filteredRestaurants.length}{' '}
+            restaurants in {selectedCity.name}
           </p>
         )}
       </section>
@@ -272,8 +277,8 @@ export default function MoreDreamsPage() {
           <div className="py-20 text-center">
             <p className="text-gray-text">
               {selectedCity
-                ? "No activities found for this destination."
-                : "No activities available at the moment."}
+                ? 'No activities found for this destination.'
+                : 'No activities available at the moment.'}
             </p>
             {selectedCity && (
               <button
@@ -293,9 +298,11 @@ export default function MoreDreamsPage() {
                 className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
               >
                 <div className="relative h-56 overflow-hidden">
-                  <img
+                  <Image
                     src={getImageUrl(activity.image)}
                     alt={activity.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 25vw"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
@@ -312,9 +319,7 @@ export default function MoreDreamsPage() {
                     {activity.name}
                   </h3>
                   {activity.city?.name && (
-                    <p className="mt-1 text-[13px] text-gray-text">
-                      {activity.city.name}
-                    </p>
+                    <p className="mt-1 text-[13px] text-gray-text">{activity.city.name}</p>
                   )}
                 </div>
               </Link>
@@ -326,9 +331,7 @@ export default function MoreDreamsPage() {
       {/* Restaurants Section */}
       <section className="bg-white px-20 py-20">
         <div className="mb-12 text-center">
-          <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-            FINE DINING
-          </span>
+          <span className="text-[11px] font-semibold tracking-[4px] text-gold">FINE DINING</span>
           <h2 className="mt-3 font-primary text-[42px] italic text-green-dark">
             Curated Restaurants
           </h2>
@@ -342,8 +345,8 @@ export default function MoreDreamsPage() {
           <div className="py-20 text-center">
             <p className="text-gray-text">
               {selectedCity
-                ? "No restaurants found for this destination."
-                : "No restaurants available at the moment."}
+                ? 'No restaurants found for this destination.'
+                : 'No restaurants available at the moment.'}
             </p>
             {selectedCity && (
               <button
@@ -363,9 +366,11 @@ export default function MoreDreamsPage() {
                 className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
               >
                 <div className="relative h-56 overflow-hidden">
-                  <img
+                  <Image
                     src={getImageUrl(restaurant.image)}
                     alt={restaurant.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 25vw"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
@@ -377,9 +382,7 @@ export default function MoreDreamsPage() {
                     {restaurant.name}
                   </h3>
                   {restaurant.city?.name && (
-                    <p className="mt-1 text-[13px] text-gray-text">
-                      {restaurant.city.name}
-                    </p>
+                    <p className="mt-1 text-[13px] text-gray-text">{restaurant.city.name}</p>
                   )}
                 </div>
               </Link>
@@ -398,8 +401,8 @@ export default function MoreDreamsPage() {
             Let TiP Curate Your Perfect Voyage
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[16px] leading-relaxed text-white/50">
-            From extraordinary experiences to exquisite dining — tell us your dream
-            and we&apos;ll craft the journey.
+            From extraordinary experiences to exquisite dining — tell us your dream and we&apos;ll
+            craft the journey.
           </p>
           <Link
             href="/concierge"

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 interface GuestsDropdownProps {
   adults: number;
@@ -9,12 +9,7 @@ interface GuestsDropdownProps {
   onClose: () => void;
 }
 
-export default function GuestsDropdown({
-  adults,
-  kids,
-  onChange,
-  onClose,
-}: GuestsDropdownProps) {
+export default function GuestsDropdown({ adults, kids, onChange, onClose }: GuestsDropdownProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -23,8 +18,8 @@ export default function GuestsDropdown({
         onClose();
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
   return (
@@ -76,9 +71,7 @@ export default function GuestsDropdown({
           >
             −
           </button>
-          <span className="w-6 text-center text-[15px] font-semibold text-green-dark">
-            {kids}
-          </span>
+          <span className="w-6 text-center text-[15px] font-semibold text-green-dark">{kids}</span>
           <button
             onClick={() => onChange(adults, Math.min(6, kids + 1))}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-500 hover:border-green-dark hover:text-green-dark disabled:cursor-not-allowed disabled:opacity-50"

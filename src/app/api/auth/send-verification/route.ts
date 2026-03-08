@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Language': 'en',
+        Language: 'en',
       },
       body: JSON.stringify({ email, code_type }),
     });
@@ -20,15 +20,12 @@ export async function POST(request: NextRequest) {
       const error = await response.json();
       return NextResponse.json(
         { message: error.detail || 'Failed to send verification code' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

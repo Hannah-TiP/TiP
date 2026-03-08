@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { getDeviceId } from '@/lib/device';
+import Image from 'next/image';
 import Link from 'next/link';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
@@ -91,15 +92,9 @@ function SignInForm() {
   return (
     <div className="mt-8 w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
       <div className="flex flex-col gap-6 p-8">
-        <h2 className="text-center text-[20px] font-semibold text-green-dark">
-          Welcome back
-        </h2>
+        <h2 className="text-center text-[20px] font-semibold text-green-dark">Welcome back</h2>
 
-        {error && (
-          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-            {error}
-          </div>
-        )}
+        {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
         {GOOGLE_CLIENT_ID && (
           <>
@@ -142,10 +137,7 @@ function SignInForm() {
             className="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-green-dark"
           />
 
-          <Link
-            href="/forgot-password"
-            className="text-sm text-green-dark hover:underline"
-          >
+          <Link href="/forgot-password" className="text-sm text-green-dark hover:underline">
             Forgot password?
           </Link>
 
@@ -176,7 +168,13 @@ export default function SignInPage() {
         {/* Top Bar */}
         <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-10">
           <Link href="/">
-            <img src="/bible_TIP_profil_400x400px.svg" alt="TiP" className="h-9" />
+            <Image
+              src="/bible_TIP_profil_400x400px.svg"
+              alt="TiP"
+              className="h-9"
+              width={36}
+              height={36}
+            />
           </Link>
         </div>
 
@@ -185,12 +183,12 @@ export default function SignInPage() {
             <h1 className="font-primary text-[48px] italic text-green-dark">
               Sign in to start planning
             </h1>
-            <p className="mt-2 text-gray-text">
-              Access your personalized travel recommendations
-            </p>
+            <p className="mt-2 text-gray-text">Access your personalized travel recommendations</p>
           </div>
 
-          <Suspense fallback={<div className="mt-8 h-64 w-[420px] animate-pulse rounded-xl bg-white" />}>
+          <Suspense
+            fallback={<div className="mt-8 h-64 w-[420px] animate-pulse rounded-xl bg-white" />}
+          >
             <SignInForm />
           </Suspense>
         </div>

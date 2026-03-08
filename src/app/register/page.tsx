@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { getDeviceId } from '@/lib/device';
+import Image from 'next/image';
 import Link from 'next/link';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
@@ -104,7 +105,12 @@ function RegisterForm() {
       const verifyRes = await fetch('/api/auth/verify-email-device', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, device_id, verification_code: verificationCode, code_type: 'register' }),
+        body: JSON.stringify({
+          email,
+          device_id,
+          verification_code: verificationCode,
+          code_type: 'register',
+        }),
       });
       if (!verifyRes.ok) {
         const data = await verifyRes.json();
@@ -142,15 +148,9 @@ function RegisterForm() {
     <div className="mt-8 w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
       {step === 'email' ? (
         <div className="flex flex-col gap-6 p-8">
-          <h2 className="text-center text-[20px] font-semibold text-green-dark">
-            Sign up
-          </h2>
+          <h2 className="text-center text-[20px] font-semibold text-green-dark">Sign up</h2>
 
-          {error && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-              {error}
-            </div>
-          )}
+          {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
           {GOOGLE_CLIENT_ID && (
             <>
@@ -222,11 +222,7 @@ function RegisterForm() {
             We sent a 6-digit code to <strong>{email}</strong>
           </p>
 
-          {error && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-              {error}
-            </div>
-          )}
+          {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
           <input
             type="text"
@@ -273,15 +269,19 @@ export default function RegisterPage() {
       <main className="flex min-h-screen flex-col bg-gray-light">
         <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-10">
           <Link href="/">
-            <img src="/bible_TIP_profil_400x400px.svg" alt="TiP" className="h-9" />
+            <Image
+              src="/bible_TIP_profil_400x400px.svg"
+              alt="TiP"
+              className="h-9"
+              width={36}
+              height={36}
+            />
           </Link>
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center px-10">
           <div className="text-center">
-            <h1 className="font-primary text-[48px] italic text-green-dark">
-              Create your account
-            </h1>
+            <h1 className="font-primary text-[48px] italic text-green-dark">Create your account</h1>
             <p className="mt-2 text-gray-text">
               Start your journey with personalized travel planning
             </p>

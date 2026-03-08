@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import type { UIBlock, WidgetResponsePayload } from '@/types/ai-chat';
 import DateRangePicker from './DateRangePicker';
@@ -13,7 +13,14 @@ interface WidgetRendererProps {
   disabled?: boolean;
 }
 
-const WIDGET_MAP: Record<string, React.ComponentType<{ block: UIBlock; onSubmit: (payload: WidgetResponsePayload) => void; disabled?: boolean }>> = {
+const WIDGET_MAP: Record<
+  string,
+  React.ComponentType<{
+    block: UIBlock;
+    onSubmit: (payload: WidgetResponsePayload) => void;
+    disabled?: boolean;
+  }>
+> = {
   date_range_picker: DateRangePicker,
   number_stepper: NumberStepper,
   option_selector: OptionSelector,

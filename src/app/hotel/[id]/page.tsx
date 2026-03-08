@@ -1,18 +1,36 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import TopBar from "@/components/TopBar";
-import Footer from "@/components/Footer";
-import { apiClient } from "@/lib/api-client";
-import { formatLocation, getImageUrl, type Hotel } from "@/types/hotel";
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import TopBar from '@/components/TopBar';
+import Footer from '@/components/Footer';
+import { apiClient } from '@/lib/api-client';
+import { formatLocation, getImageUrl, type Hotel } from '@/types/hotel';
 
 const benefits = [
-  { icon: "✦", title: "Room Upgrade", description: "Complimentary upgrade to the next room category, subject to availability at check-in." },
-  { icon: "◈", title: "Daily Breakfast", description: "Full breakfast for two guests daily at the hotel's signature restaurant." },
-  { icon: "◇", title: "Hotel Credit", description: "$100 USD equivalent property credit to use during your stay on dining or spa." },
-  { icon: "○", title: "Early Check-in & Late Checkout", description: "Check in as early as 12pm and check out as late as 4pm, subject to availability." },
+  {
+    icon: '✦',
+    title: 'Room Upgrade',
+    description:
+      'Complimentary upgrade to the next room category, subject to availability at check-in.',
+  },
+  {
+    icon: '◈',
+    title: 'Daily Breakfast',
+    description: "Full breakfast for two guests daily at the hotel's signature restaurant.",
+  },
+  {
+    icon: '◇',
+    title: 'Hotel Credit',
+    description: '$100 USD equivalent property credit to use during your stay on dining or spa.',
+  },
+  {
+    icon: '○',
+    title: 'Early Check-in & Late Checkout',
+    description: 'Check in as early as 12pm and check out as late as 4pm, subject to availability.',
+  },
 ];
 
 // TODO: Replace with backend room details API once available
@@ -20,28 +38,28 @@ const benefits = [
 // Hard-coded room details below include pricing, sizes, features
 const HARDCODED_ROOMS = [
   {
-    name: "Superior Room",
-    size: "35 m²",
-    price: "€850",
-    perNight: "per night",
-    image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500&h=350&fit=crop",
-    features: ["King Bed", "City View", "Marble Bathroom"],
+    name: 'Superior Room',
+    size: '35 m²',
+    price: '€850',
+    perNight: 'per night',
+    image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500&h=350&fit=crop',
+    features: ['King Bed', 'City View', 'Marble Bathroom'],
   },
   {
-    name: "Deluxe Suite",
-    size: "55 m²",
-    price: "€1,450",
-    perNight: "per night",
-    image: "https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=500&h=350&fit=crop",
-    features: ["King Bed", "Garden View", "Separate Living Area"],
+    name: 'Deluxe Suite',
+    size: '55 m²',
+    price: '€1,450',
+    perNight: 'per night',
+    image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=500&h=350&fit=crop',
+    features: ['King Bed', 'Garden View', 'Separate Living Area'],
   },
   {
-    name: "Royal Suite",
-    size: "95 m²",
-    price: "€3,200",
-    perNight: "per night",
-    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=500&h=350&fit=crop",
-    features: ["King Bed", "Panoramic View", "Butler Service"],
+    name: 'Royal Suite',
+    size: '95 m²',
+    price: '€3,200',
+    perNight: 'per night',
+    image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=500&h=350&fit=crop',
+    features: ['King Bed', 'Panoramic View', 'Butler Service'],
   },
 ];
 
@@ -91,7 +109,9 @@ export default function HotelDetailPage() {
         <TopBar activeLink="Dream Hotels" />
         <div className="flex flex-col items-center justify-center py-40">
           <h1 className="font-primary text-[42px] italic text-green-dark">Hotel Not Found</h1>
-          <p className="mt-4 text-gray-text">The hotel you&apos;re looking for doesn&apos;t exist.</p>
+          <p className="mt-4 text-gray-text">
+            The hotel you&apos;re looking for doesn&apos;t exist.
+          </p>
           <Link
             href="/dream-hotels"
             className="mt-8 rounded-full bg-green-dark px-8 py-3 text-[13px] font-semibold text-white hover:bg-green-dark/90"
@@ -106,9 +126,9 @@ export default function HotelDetailPage() {
 
   // Helper function to derive tagline from hotel data
   const getTagline = () => {
-    if (hotel.star_rating === "5") return "PALACE HOTEL";
+    if (hotel.star_rating === '5') return 'PALACE HOTEL';
     if (hotel.star_rating) return `${hotel.star_rating} STAR HOTEL`;
-    return "LUXURY HOTEL";
+    return 'LUXURY HOTEL';
   };
 
   return (
@@ -117,9 +137,11 @@ export default function HotelDetailPage() {
 
       {/* Hero */}
       <section className="relative h-[560px] w-full overflow-hidden">
-        <img
+        <Image
           src={getImageUrl(hotel.image?.[0])}
           alt={hotel.name}
+          fill
+          sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -147,14 +169,14 @@ export default function HotelDetailPage() {
               {formatLocation(hotel)}
             </h2>
             <p className="mt-5 text-[15px] leading-[1.8] text-gray-text">
-              {hotel.name} is one of those rare hotels where everything feels both
-              impossibly grand and genuinely warm. The staff remember your name,
-              your preferences, and exactly how you take your morning café crème.
+              {hotel.name} is one of those rare hotels where everything feels both impossibly grand
+              and genuinely warm. The staff remember your name, your preferences, and exactly how
+              you take your morning café crème.
             </p>
             <p className="mt-4 text-[15px] leading-[1.8] text-gray-text">
-              Every detail has been considered, from the impeccable service to the
-              carefully curated art collection. This is hospitality at its finest,
-              where tradition meets modern luxury.
+              Every detail has been considered, from the impeccable service to the carefully curated
+              art collection. This is hospitality at its finest, where tradition meets modern
+              luxury.
             </p>
             <div className="mt-8 flex gap-12">
               {hotel.review_summary && (
@@ -184,9 +206,11 @@ export default function HotelDetailPage() {
             </div>
           </div>
           <div className="w-[400px] overflow-hidden rounded-lg">
-            <img
+            <Image
               src={getImageUrl(hotel.image?.[1] || hotel.image?.[0])}
               alt={`${hotel.name} interior`}
+              width={400}
+              height={480}
               className="h-[480px] w-full object-cover"
             />
           </div>
@@ -215,9 +239,7 @@ export default function HotelDetailPage() {
               >
                 <span className="text-2xl text-gold">{b.icon}</span>
                 <h3 className="mt-4 text-[15px] font-semibold text-white">{b.title}</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-white/50">
-                  {b.description}
-                </p>
+                <p className="mt-2 text-[13px] leading-relaxed text-white/50">{b.description}</p>
               </div>
             ))}
           </div>
@@ -242,9 +264,11 @@ export default function HotelDetailPage() {
                 className="group overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-lg"
               >
                 <div className="relative h-52 overflow-hidden">
-                  <img
+                  <Image
                     src={room.image}
                     alt={room.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
@@ -307,11 +331,11 @@ export default function HotelDetailPage() {
             <div className="rounded-lg bg-white p-6">
               <h3 className="mb-4 text-[16px] font-semibold text-green-dark">Nearby Attractions</h3>
               {[
-                { name: "Local Museum", type: "Culture", distance: "1.2 km" },
-                { name: "Shopping District", type: "Shopping", distance: "0.3 km" },
-                { name: "Historic Landmark", type: "Landmark", distance: "1.0 km" },
-                { name: "Fine Dining", type: "Restaurant", distance: "0.5 km" },
-                { name: "Art Gallery", type: "Culture", distance: "0.8 km" },
+                { name: 'Local Museum', type: 'Culture', distance: '1.2 km' },
+                { name: 'Shopping District', type: 'Shopping', distance: '0.3 km' },
+                { name: 'Historic Landmark', type: 'Landmark', distance: '1.0 km' },
+                { name: 'Fine Dining', type: 'Restaurant', distance: '0.5 km' },
+                { name: 'Art Gallery', type: 'Culture', distance: '0.8 km' },
               ].map((exp) => (
                 <div
                   key={exp.name}
@@ -339,8 +363,8 @@ export default function HotelDetailPage() {
             Your Concierge Awaits
           </h2>
           <p className="mt-4 text-[16px] leading-relaxed text-white/60">
-            Have questions about your journey or wish to customize any aspect of your
-            itinerary? Our dedicated travel specialists are available around the clock.
+            Have questions about your journey or wish to customize any aspect of your itinerary? Our
+            dedicated travel specialists are available around the clock.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Link

@@ -1,42 +1,41 @@
-"use client";
+'use client';
 
 import type { Trip } from '@/types/trip';
 import { getImageUrl } from '@/types/hotel';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 
 interface TripCardProps {
   trip: Trip;
 }
 
 const statusColors: Record<string, string> = {
-  'draft': 'bg-gray-200 text-gray-700',
+  draft: 'bg-gray-200 text-gray-700',
   'waiting-for-proposal': 'bg-yellow-100 text-yellow-800',
   'in-progress': 'bg-blue-100 text-blue-800',
   'waiting-for-payment': 'bg-orange-100 text-orange-800',
   'ready-to-travel': 'bg-green-100 text-green-800',
   'traveling-now': 'bg-green-200 text-green-900',
   'travel-completed': 'bg-gray-100 text-gray-700',
-  'canceled': 'bg-red-100 text-red-700',
+  canceled: 'bg-red-100 text-red-700',
 };
 
 const statusLabels: Record<string, string> = {
-  'draft': 'Draft',
+  draft: 'Draft',
   'waiting-for-proposal': 'Pending',
   'in-progress': 'Proposal Ready',
   'waiting-for-payment': 'Awaiting Payment',
   'ready-to-travel': 'Ready',
   'traveling-now': 'Traveling',
   'travel-completed': 'Completed',
-  'canceled': 'Canceled',
+  canceled: 'Canceled',
 };
 
 export default function TripCard({ trip }: TripCardProps) {
-  const router = useRouter();
-  const displayName = trip.destination
-    ?? trip.preset_destination_cities_names
-    ?? trip.custom_destination_cities
-    ?? 'Trip';
+  const displayName =
+    trip.destination ??
+    trip.preset_destination_cities_names ??
+    trip.custom_destination_cities ??
+    'Trip';
 
   const handleClick = () => {
     // Navigate to trip details page if it exists
@@ -73,7 +72,9 @@ export default function TripCard({ trip }: TripCardProps) {
 
         {/* Status Badge */}
         <div className="absolute top-3 right-3">
-          <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${statusColors[trip.status] ?? 'bg-gray-100 text-gray-600'}`}>
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${statusColors[trip.status] ?? 'bg-gray-100 text-gray-600'}`}
+          >
             {statusLabels[trip.status] ?? trip.status}
           </span>
         </div>
@@ -81,9 +82,7 @@ export default function TripCard({ trip }: TripCardProps) {
 
       {/* Trip Info */}
       <div className="p-4">
-        <h4 className="font-inter text-base font-semibold text-[#1E3D2F] mb-2">
-          {displayName}
-        </h4>
+        <h4 className="font-inter text-base font-semibold text-[#1E3D2F] mb-2">{displayName}</h4>
 
         <div className="space-y-1 text-sm font-inter text-gray-600">
           <div className="flex items-center gap-2">

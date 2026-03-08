@@ -9,10 +9,7 @@ export async function POST(request: NextRequest) {
     const accessToken = session?.accessToken;
 
     if (!accessToken) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -20,9 +17,9 @@ export async function POST(request: NextRequest) {
     const response = await fetch(`${API_BASE_URL}/api/v1/onboarding/update-profile`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        'Language': 'en',
+        Language: 'en',
       },
       body: JSON.stringify(body),
     });
@@ -33,16 +30,13 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to update profile' },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     return NextResponse.json({ success: true, ...data });
   } catch (error) {
     console.error('Profile update API error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

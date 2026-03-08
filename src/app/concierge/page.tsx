@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import TopBar from "@/components/TopBar";
+import TopBar from '@/components/TopBar';
 import MessageList from '@/components/ai-chat/MessageList';
 import ChatInput from '@/components/ai-chat/ChatInput';
 import ConversationSidebar from '@/components/ai-chat/ConversationSidebar';
@@ -29,14 +29,16 @@ function isSuccessResponse(response: { success?: boolean; code?: number }): bool
 
 export default function ConciergePage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3D2F] mx-auto mb-4" />
-          <p className="font-inter text-sm text-gray-600">Loading...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3D2F] mx-auto mb-4" />
+            <p className="font-inter text-sm text-gray-600">Loading...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <ConciergeContent />
     </Suspense>
   );
@@ -68,7 +70,7 @@ function ConciergeContent() {
   // Load chat history for a session
   async function loadSessionHistory(sid: string) {
     try {
-      const historyResponse = await apiClient.getChatHistory(sid, 1, 50) as ChatHistoryResponse;
+      const historyResponse = (await apiClient.getChatHistory(sid, 1, 50)) as ChatHistoryResponse;
       const isSuccess = isSuccessResponse(historyResponse);
       const historyData = historyResponse.data;
 
@@ -99,7 +101,7 @@ function ConciergeContent() {
 
   // Select a session: update active state and load its history
   async function selectSession(sid: string, sessionsList: SessionWithTrip[]) {
-    const found = sessionsList.find(s => s.session_id === sid);
+    const found = sessionsList.find((s) => s.session_id === sid);
     setActiveSessionId(sid);
     setTripDetail(null);
     localStorage.setItem('concierge_active_session_id', sid);
@@ -112,7 +114,7 @@ function ConciergeContent() {
   // Create a new chat session and select it
   async function handleNewChat() {
     try {
-      const response = await apiClient.createChatSession(lang) as CreateSessionResponse;
+      const response = (await apiClient.createChatSession(lang)) as CreateSessionResponse;
       const isSuccess = isSuccessResponse(response);
       const responseData = response.data;
 
@@ -129,7 +131,7 @@ function ConciergeContent() {
           message_count: 1,
         };
 
-        setSessions(prev => [newSession, ...prev]);
+        setSessions((prev) => [newSession, ...prev]);
         setActiveSessionId(responseData.session_id);
         setTripDetail(null);
         localStorage.setItem('concierge_active_session_id', responseData.session_id);
@@ -159,16 +161,16 @@ function ConciergeContent() {
     const init = async () => {
       try {
         // Fetch all sessions
-        const sessionsResponse = await apiClient.listChatSessions() as ListSessionsResponse;
+        const sessionsResponse = (await apiClient.listChatSessions()) as ListSessionsResponse;
         const isSuccess = isSuccessResponse(sessionsResponse);
-        const sessionsList = (isSuccess && sessionsResponse.data) ? sessionsResponse.data : [];
+        const sessionsList = isSuccess && sessionsResponse.data ? sessionsResponse.data : [];
         setSessions(sessionsList);
 
         // Handle ?trip_id query param (from trip detail "Edit in Concierge" button)
         const tripIdParam = searchParams.get('trip_id');
         if (tripIdParam) {
           const tripId = parseInt(tripIdParam, 10);
-          const existingForTrip = sessionsList.find(s => s.trip_id === tripId);
+          const existingForTrip = sessionsList.find((s) => s.trip_id === tripId);
 
           if (existingForTrip) {
             await selectSession(existingForTrip.session_id, sessionsList);
@@ -177,7 +179,9 @@ function ConciergeContent() {
 
           // Create a session for this trip
           try {
-            const response = await apiClient.createChatSessionForTrip(tripId) as CreateSessionResponse;
+            const response = (await apiClient.createChatSessionForTrip(
+              tripId,
+            )) as CreateSessionResponse;
             const respSuccess = isSuccessResponse(response);
             const respData = response.data;
 
@@ -206,7 +210,9 @@ function ConciergeContent() {
         // Default: select most recent session or create one
         if (sessionsList.length > 0) {
           const storedId = localStorage.getItem('concierge_active_session_id');
-          const storedSession = storedId ? sessionsList.find(s => s.session_id === storedId) : null;
+          const storedSession = storedId
+            ? sessionsList.find((s) => s.session_id === storedId)
+            : null;
 
           if (storedSession) {
             await selectSession(storedSession.session_id, sessionsList);
@@ -250,21 +256,25 @@ function ConciergeContent() {
         message_type: 'text',
         created_at: new Date().toISOString(),
       };
-      setMessages(prev => [...prev, userMessage]);
+      setMessages((prev) => [...prev, userMessage]);
     }
 
     try {
-      const response = await apiClient.converse(activeSessionId, content, widgetResponse) as ConverseResponse;
+      const response = (await apiClient.converse(
+        activeSessionId,
+        content,
+        widgetResponse,
+      )) as ConverseResponse;
       const isSuccess = isSuccessResponse(response);
       const responseData = response.data;
 
       if (isSuccess && responseData) {
         // Replace temp user message ID with the real DB ID
         if (responseData.user_message_id) {
-          setMessages(prev =>
-            prev.map(m =>
-              m.id === TEMP_USER_MSG_ID ? { ...m, id: responseData.user_message_id! } : m
-            )
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === TEMP_USER_MSG_ID ? { ...m, id: responseData.user_message_id! } : m,
+            ),
           );
         }
 
@@ -280,7 +290,7 @@ function ConciergeContent() {
           },
           created_at: new Date().toISOString(),
         };
-        setMessages(prev => [...prev, assistantMessage]);
+        setMessages((prev) => [...prev, assistantMessage]);
 
         // Pass TripDetail directly from the converse response
         if (responseData.trip) {
@@ -289,8 +299,8 @@ function ConciergeContent() {
 
         // Update sidebar session with latest trip data from the response
         if (responseData.trip && responseData.field_updated?.length) {
-          setSessions(prev =>
-            prev.map(s =>
+          setSessions((prev) =>
+            prev.map((s) =>
               s.session_id === activeSessionId
                 ? {
                     ...s,
@@ -305,8 +315,8 @@ function ConciergeContent() {
                     message_count: s.message_count + (widgetResponse ? 1 : 2),
                     last_message_at: new Date().toISOString(),
                   }
-                : s
-            )
+                : s,
+            ),
           );
         }
       }
@@ -315,7 +325,7 @@ function ConciergeContent() {
       setError('Failed to send message. Please try again.');
       // Remove optimistic user message on error
       if (content.trim() && !widgetResponse) {
-        setMessages(prev => prev.slice(0, -1));
+        setMessages((prev) => prev.slice(0, -1));
       }
     } finally {
       setIsLoading(false);
@@ -334,7 +344,11 @@ function ConciergeContent() {
 
     try {
       const ext = file.name.split('.').pop() || 'jpg';
-      const credentialsResponse = await apiClient.getS3UploadCredentials(activeSessionId, 'image', ext);
+      const credentialsResponse = await apiClient.getS3UploadCredentials(
+        activeSessionId,
+        'image',
+        ext,
+      );
       const credentialsData = credentialsResponse.data || credentialsResponse;
       const uploadUrl = credentialsData.upload_url;
       const formData = credentialsData.form_data;
@@ -353,21 +367,32 @@ function ConciergeContent() {
         media_url: mediaUrl,
         created_at: new Date().toISOString(),
       };
-      setMessages(prev => [...prev, userImageMessage]);
+      setMessages((prev) => [...prev, userImageMessage]);
 
-      const analysisResponse = await apiClient.analyzeImageUrl(activeSessionId, mediaUrl, undefined, undefined, file.name);
+      const analysisResponse = await apiClient.analyzeImageUrl(
+        activeSessionId,
+        mediaUrl,
+        undefined,
+        undefined,
+        file.name,
+      );
       const typedAnalysisResponse = analysisResponse as AnalyzeImageResponse;
       const isSuccess = isSuccessResponse(typedAnalysisResponse);
       const responseData = typedAnalysisResponse.data;
 
       if (isSuccess && responseData) {
-        let parsedAnalysisResult: { landmark?: string; location?: string; description?: string } | undefined;
+        let parsedAnalysisResult:
+          | { landmark?: string; location?: string; description?: string }
+          | undefined;
         if (responseData.analysis_result) {
           try {
-            parsedAnalysisResult = typeof responseData.analysis_result === 'string'
-              ? JSON.parse(responseData.analysis_result)
-              : responseData.analysis_result;
-          } catch { /* ignore */ }
+            parsedAnalysisResult =
+              typeof responseData.analysis_result === 'string'
+                ? JSON.parse(responseData.analysis_result)
+                : responseData.analysis_result;
+          } catch {
+            /* ignore */
+          }
         }
 
         const assistantMessage: AIMessage = {
@@ -384,8 +409,7 @@ function ConciergeContent() {
           },
           created_at: new Date().toISOString(),
         };
-        setMessages(prev => [...prev, assistantMessage]);
-
+        setMessages((prev) => [...prev, assistantMessage]);
       }
     } catch (err) {
       console.error('[Concierge] Failed to upload image:', err);
@@ -403,7 +427,11 @@ function ConciergeContent() {
 
     try {
       const ext = file.name.split('.').pop() || 'm4a';
-      const credentialsResponse = await apiClient.getS3UploadCredentials(activeSessionId, 'audio', ext);
+      const credentialsResponse = await apiClient.getS3UploadCredentials(
+        activeSessionId,
+        'audio',
+        ext,
+      );
       const credentialsData = credentialsResponse.data || credentialsResponse;
       const uploadUrl = credentialsData.upload_url;
       const formData = credentialsData.form_data;
@@ -422,15 +450,20 @@ function ConciergeContent() {
         media_url: mediaUrl,
         created_at: new Date().toISOString(),
       };
-      setMessages(prev => [...prev, userAudioMessage]);
+      setMessages((prev) => [...prev, userAudioMessage]);
 
-      const transcriptionResponse = await apiClient.transcribeAudioUrl(activeSessionId, mediaUrl, undefined, file.name);
+      const transcriptionResponse = await apiClient.transcribeAudioUrl(
+        activeSessionId,
+        mediaUrl,
+        undefined,
+        file.name,
+      );
       const typedTranscriptionResponse = transcriptionResponse as TranscribeAudioResponse;
       const isSuccess = isSuccessResponse(typedTranscriptionResponse);
       const responseData = typedTranscriptionResponse.data;
 
       if (isSuccess && responseData) {
-        setMessages(prev => {
+        setMessages((prev) => {
           const updatedMessages = [...prev];
           const lastMessage = updatedMessages[updatedMessages.length - 1];
           if (lastMessage.message_type === 'audio') {
@@ -453,8 +486,7 @@ function ConciergeContent() {
           },
           created_at: new Date().toISOString(),
         };
-        setMessages(prev => [...prev, assistantMessage]);
-
+        setMessages((prev) => [...prev, assistantMessage]);
       }
     } catch (err) {
       console.error('[Concierge] Failed to upload audio:', err);
@@ -489,11 +521,18 @@ function ConciergeContent() {
         <div className="bg-red-50 border-b border-red-200 px-[60px] py-3">
           <div className="flex items-center justify-between">
             <p className="font-inter text-sm text-red-800">{error}</p>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-800 hover:text-red-900"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <button onClick={() => setError(null)} className="text-red-800 hover:text-red-900">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -510,7 +549,18 @@ function ConciergeContent() {
             className="flex items-center justify-center w-8 bg-[#FAFAF8] border-r border-gray-100 hover:bg-gray-100 transition-colors"
             title="Expand sidebar"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-gray-400"
+            >
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </button>
@@ -528,7 +578,11 @@ function ConciergeContent() {
 
         {/* Chat area (center) */}
         <div className="flex-1 flex flex-col border-r border-gray-100">
-          <MessageList messages={messages} isLoading={isLoading} onWidgetSubmit={handleWidgetSubmit} />
+          <MessageList
+            messages={messages}
+            isLoading={isLoading}
+            onWidgetSubmit={handleWidgetSubmit}
+          />
           <ChatInput
             onSendMessage={handleSendMessage}
             onUploadImage={handleUploadImage}

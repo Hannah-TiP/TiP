@@ -1,28 +1,31 @@
-"use client";
+'use client';
 
-import Link from "next/link";
+import Image from 'next/image';
+import Link from 'next/link';
 
-const exploreLinks = ["Dream Hotels", "Insights", "Itinerary", "Concierge"];
-const companyLinks = ["About Us", "Careers", "Press", "Blog"];
-const supportLinks = ["Help Center", "Contact Us", "Privacy Policy", "Terms of Service"];
+const exploreLinks = ['Dream Hotels', 'Insights', 'Itinerary', 'Concierge'];
+const companyLinks = ['About Us', 'Careers', 'Press', 'Blog'];
+const supportLinks = ['Help Center', 'Contact Us', 'Privacy Policy', 'Terms of Service'];
 
 export default function Footer() {
   return (
     <footer
       style={{
-        backgroundColor: "#214032",
-        padding: "48px 100px",
-        display: "flex",
-        flexDirection: "column",
+        backgroundColor: '#214032',
+        padding: '48px 100px',
+        display: 'flex',
+        flexDirection: 'column',
         gap: 40,
       }}
     >
       {/* Top row */}
       <div className="flex justify-between items-start">
-        <img
+        <Image
           src="/bible_TIP_logo_noir.svg"
           alt="TiP"
-          style={{ height: 40, filter: "brightness(0) invert(1)" }}
+          width={120}
+          height={40}
+          style={{ height: 40, filter: 'brightness(0) invert(1)' }}
         />
 
         <div className="flex" style={{ gap: 80 }}>
@@ -37,9 +40,9 @@ export default function Footer() {
         style={{
           fontFamily: "'Inter', sans-serif",
           fontSize: 12,
-          color: "rgba(255,255,255,0.4)",
+          color: 'rgba(255,255,255,0.4)',
           lineHeight: 1.8,
-          borderTop: "1px solid rgba(255,255,255,0.1)",
+          borderTop: '1px solid rgba(255,255,255,0.1)',
           paddingTop: 24,
         }}
       >
@@ -49,9 +52,7 @@ export default function Footer() {
         <p style={{ margin: 0 }}>
           주소: 서울특별시 강남구 테헤란로 123, 4층 | 통신판매업신고: 제2026-서울강남-00001호
         </p>
-        <p style={{ margin: 0 }}>
-          고객센터: support@tip-ai.com | 전화: 02-1234-5678
-        </p>
+        <p style={{ margin: 0 }}>고객센터: support@tip-ai.com | 전화: 02-1234-5678</p>
       </div>
 
       {/* Copyright */}
@@ -59,8 +60,8 @@ export default function Footer() {
         style={{
           fontFamily: "'Inter', sans-serif",
           fontSize: 12,
-          color: "rgba(255,255,255,0.3)",
-          borderTop: "1px solid rgba(255,255,255,0.1)",
+          color: 'rgba(255,255,255,0.3)',
+          borderTop: '1px solid rgba(255,255,255,0.1)',
           paddingTop: 24,
         }}
       >
@@ -78,7 +79,7 @@ function FooterColumn({ title, items }: { title: string; items: string[] }) {
           fontFamily: "'Inter', sans-serif",
           fontSize: 13,
           fontWeight: 600,
-          color: "rgba(255,255,255,0.66)",
+          color: 'rgba(255,255,255,0.66)',
         }}
       >
         {title}
@@ -91,8 +92,8 @@ function FooterColumn({ title, items }: { title: string; items: string[] }) {
             fontFamily: "'Inter', sans-serif",
             fontSize: 13,
             fontWeight: 400,
-            color: "rgba(255,255,255,0.4)",
-            textDecoration: "none",
+            color: 'rgba(255,255,255,0.4)',
+            textDecoration: 'none',
           }}
         >
           {item}

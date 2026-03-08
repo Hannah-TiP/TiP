@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -23,12 +24,19 @@ export default function TopBar({ activeLink }: TopBarProps) {
   return (
     <header className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-10">
       <Link href="/">
-        <img src="/bible_TIP_profil_400x400px.svg" alt="TiP" className="h-9" />
+        <Image
+          src="/bible_TIP_profil_400x400px.svg"
+          alt="TiP"
+          width={36}
+          height={36}
+          className="h-9"
+        />
       </Link>
 
       <nav className="flex items-center gap-8">
         {navLinks.map((link) => {
-          const isActive = activeLink === link.label ||
+          const isActive =
+            activeLink === link.label ||
             (activeLink === 'Dream Hotels' && link.label === 'DREAM HOTELS') ||
             (activeLink === 'More Dreams' && link.label === 'MORE DREAMS') ||
             (activeLink === 'Insights' && link.label === 'INSIGHTS') ||
@@ -38,9 +46,7 @@ export default function TopBar({ activeLink }: TopBarProps) {
               key={link.label}
               href={link.href}
               className={`text-[11px] font-medium tracking-[2px] transition-colors ${
-                isActive
-                  ? 'text-green-dark'
-                  : 'text-green-dark/50 hover:text-green-dark'
+                isActive ? 'text-green-dark' : 'text-green-dark/50 hover:text-green-dark'
               }`}
             >
               {link.label}
