@@ -1,9 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api-client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { TripContext } from '@/types/ai-chat';
 import type { TripDetail } from '@/types/trip';
 
 /** Parse "YYYY-MM-DD" as local date (avoids UTC midnight → previous day in western timezones) */
@@ -120,39 +117,11 @@ function JourneyStepper({ status }: { status: string | null }) {
 }
 
 interface TripDetailPanelProps {
-  tripId: number | null;
-  tripContext: TripContext | null;
-  refreshKey?: number;
+  tripDetail: TripDetail | null;
 }
 
-export default function TripDetailPanel({ tripId, tripContext, refreshKey }: TripDetailPanelProps) {
+export default function TripDetailPanel({ tripDetail }: TripDetailPanelProps) {
   const { t } = useLanguage();
-  const [tripDetail, setTripDetail] = useState<TripDetail | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!tripId) {
-      setTripDetail(null);
-      return;
-    }
-
-    let cancelled = false;
-    const fetchTrip = async () => {
-      setLoading(true);
-      try {
-        const detail = await apiClient.getTripById(tripId);
-        if (!cancelled) setTripDetail(detail);
-      } catch (err) {
-        console.error('[TripDetailPanel] Failed to fetch trip:', err);
-        if (!cancelled) setTripDetail(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    fetchTrip();
-    return () => { cancelled = true; };
-  }, [tripId, refreshKey]);
 
   return (
     <div className="w-[420px] flex flex-col bg-[#FAFAF8] overflow-y-auto">
@@ -161,14 +130,7 @@ export default function TripDetailPanel({ tripId, tripContext, refreshKey }: Tri
           <h2 className="font-cormorant text-2xl font-semibold text-[#1E3D2F]">{t('chat.itinerary_title')}</h2>
         </div>
 
-        {loading && (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1E3D2F] mx-auto mb-4" />
-            <p className="font-inter text-sm text-gray-400">{t('chat.loading')}</p>
-          </div>
-        )}
-
-        {!loading && tripDetail && (
+        {tripDetail && (
           <div className="space-y-3 mb-8">
             {tripDetail.status && (
               <div className="mb-2">
@@ -251,50 +213,8 @@ export default function TripDetailPanel({ tripId, tripContext, refreshKey }: Tri
           </div>
         )}
 
-        {/* Show trip context from active chat when no trip is saved yet */}
-        {!loading && !tripDetail && tripContext && (
-          <div className="space-y-3 mb-8">
-            {tripContext.destination && (
-              <div className="flex justify-between font-inter text-sm">
-                <span className="text-gray-500">{t('chat.destination')}</span>
-                <span className="text-[#1E3D2F] font-medium">{tripContext.destination}</span>
-              </div>
-            )}
-            {tripContext.start_date && tripContext.end_date && (
-              <div className="flex justify-between font-inter text-sm">
-                <span className="text-gray-500">{t('chat.dates')}</span>
-                <span className="text-[#1E3D2F] font-medium">
-                  {parseLocalDate(tripContext.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} –{' '}
-                  {parseLocalDate(tripContext.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </span>
-              </div>
-            )}
-            {(tripContext.adults ?? 0) > 0 && (
-              <div className="flex justify-between font-inter text-sm">
-                <span className="text-gray-500">{t('chat.travelers')}</span>
-                <span className="text-[#1E3D2F] font-medium">
-                  {tripContext.adults} {tripContext.adults === 1 ? t('common.adult') : t('common.adults')}
-                  {tripContext.kids ? `, ${tripContext.kids} ${tripContext.kids === 1 ? t('common.kid') : t('common.kids')}` : ''}
-                </span>
-              </div>
-            )}
-            {tripContext.purpose && (
-              <div className="flex justify-between font-inter text-sm">
-                <span className="text-gray-500">{t('chat.purpose')}</span>
-                <span className="text-[#1E3D2F] font-medium">{tripContext.purpose}</span>
-              </div>
-            )}
-            {tripContext.budget && (
-              <div className="flex justify-between font-inter text-sm">
-                <span className="text-gray-500">{t('chat.budget')}</span>
-                <span className="text-[#1E3D2F] font-medium">${tripContext.budget.toLocaleString()}</span>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Empty state */}
-        {!loading && !tripDetail && !tripContext && (
+        {!tripDetail && (
           <div className="text-center py-12">
             <p className="font-inter text-sm text-gray-400">
               {t('chat.empty_state')}

@@ -11,12 +11,11 @@ import { useSession } from 'next-auth/react';
 import { apiClient } from '@/lib/api-client';
 import type {
   AIMessage,
-  TripContext,
+  TripDetail,
   SessionWithTrip,
   ChatHistoryResponse,
   CreateSessionResponse,
   ListSessionsResponse,
-  SendMessageResponse,
   AnalyzeImageResponse,
   TranscribeAudioResponse,
   WidgetResponsePayload,
@@ -53,13 +52,11 @@ function ConciergeContent() {
 
   const [sessions, setSessions] = useState<SessionWithTrip[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>('');
-  const [activeTripId, setActiveTripId] = useState<number | null>(null);
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tripContext, setTripContext] = useState<TripContext | null>(null);
+  const [tripDetail, setTripDetail] = useState<TripDetail | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [tripRefreshKey, setTripRefreshKey] = useState(0);
 
   // Check authentication
   useEffect(() => {
@@ -68,7 +65,7 @@ function ConciergeContent() {
     }
   }, [isAuthenticated, authLoading, router]);
 
-  // Load chat history for a session and set messages + tripContext
+  // Load chat history for a session
   async function loadSessionHistory(sid: string) {
     try {
       const historyResponse = await apiClient.getChatHistory(sid, 1, 50) as ChatHistoryResponse;
@@ -78,17 +75,25 @@ function ConciergeContent() {
       if (isSuccess && historyData?.messages && historyData.messages.length > 0) {
         const chronologicalMessages = [...historyData.messages].reverse();
         setMessages(chronologicalMessages);
-
-        const latestMessage = chronologicalMessages[chronologicalMessages.length - 1];
-        setTripContext(latestMessage.message_metadata?.trip_context ?? null);
       } else {
         setMessages([]);
-        setTripContext(null);
+        setTripDetail(null);
       }
     } catch (err) {
       console.error('[Concierge] Failed to load history:', err);
       setMessages([]);
-      setTripContext(null);
+      setTripDetail(null);
+    }
+  }
+
+  // Fetch trip detail by ID
+  async function fetchTripDetail(tripId: number) {
+    try {
+      const detail = await apiClient.getTripById(tripId);
+      setTripDetail(detail);
+    } catch (err) {
+      console.error('[Concierge] Failed to fetch trip:', err);
+      setTripDetail(null);
     }
   }
 
@@ -96,10 +101,12 @@ function ConciergeContent() {
   async function selectSession(sid: string, sessionsList: SessionWithTrip[]) {
     const found = sessionsList.find(s => s.session_id === sid);
     setActiveSessionId(sid);
-    setActiveTripId(found?.trip_id ?? null);
-    setTripContext(null);
+    setTripDetail(null);
     localStorage.setItem('concierge_active_session_id', sid);
     await loadSessionHistory(sid);
+    if (found?.trip_id) {
+      fetchTripDetail(found.trip_id);
+    }
   }
 
   // Create a new chat session and select it
@@ -124,8 +131,7 @@ function ConciergeContent() {
 
         setSessions(prev => [newSession, ...prev]);
         setActiveSessionId(responseData.session_id);
-        setActiveTripId(responseData.trip_id ?? null);
-        setTripContext(null);
+        setTripDetail(null);
         localStorage.setItem('concierge_active_session_id', responseData.session_id);
 
         if (responseData.chat_history && responseData.chat_history.length > 0) {
@@ -221,19 +227,6 @@ function ConciergeContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  // Refresh sessions list (used after trip_created)
-  async function refreshSessions() {
-    try {
-      const sessionsResponse = await apiClient.listChatSessions() as ListSessionsResponse;
-      const isSuccess = isSuccessResponse(sessionsResponse);
-      if (isSuccess && sessionsResponse.data) {
-        setSessions(sessionsResponse.data);
-      }
-    } catch (err) {
-      console.error('[Concierge] Failed to refresh sessions:', err);
-    }
-  }
-
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || !activeSessionId) return;
     await handleConverse(content);
@@ -289,21 +282,9 @@ function ConciergeContent() {
         };
         setMessages(prev => [...prev, assistantMessage]);
 
-        // Refresh right pane with updated trip
-        setTripRefreshKey(prev => prev + 1);
-
-        // Update tripContext from the response trip data
+        // Pass TripDetail directly from the converse response
         if (responseData.trip) {
-          setTripContext({
-            destination: responseData.trip.preset_destination_cities_names || responseData.trip.custom_destination_cities || undefined,
-            start_date: responseData.trip.start_date || undefined,
-            end_date: responseData.trip.end_date || undefined,
-            adults: responseData.trip.adults,
-            kids: responseData.trip.kids,
-            purpose: responseData.trip.purpose,
-            budget: responseData.trip.budget || undefined,
-            service_type: responseData.trip.service_type || undefined,
-          });
+          setTripDetail(responseData.trip);
         }
 
         // Update sidebar session with latest trip data from the response
@@ -405,9 +386,6 @@ function ConciergeContent() {
         };
         setMessages(prev => [...prev, assistantMessage]);
 
-        if (responseData.message_metadata?.trip_context) {
-          setTripContext(responseData.message_metadata.trip_context);
-        }
       }
     } catch (err) {
       console.error('[Concierge] Failed to upload image:', err);
@@ -477,9 +455,6 @@ function ConciergeContent() {
         };
         setMessages(prev => [...prev, assistantMessage]);
 
-        if (responseData.message_metadata?.trip_context) {
-          setTripContext(responseData.message_metadata.trip_context);
-        }
       }
     } catch (err) {
       console.error('[Concierge] Failed to upload audio:', err);
@@ -563,7 +538,7 @@ function ConciergeContent() {
         </div>
 
         {/* Right pane: Trip detail */}
-        <TripDetailPanel tripId={activeTripId} tripContext={tripContext} refreshKey={tripRefreshKey} />
+        <TripDetailPanel tripDetail={tripDetail} />
       </div>
     </div>
   );
