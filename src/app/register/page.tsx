@@ -54,7 +54,7 @@ function RegisterForm() {
         throw new Error('Failed to establish session');
       }
 
-      window.location.href = '/my-page';
+      window.location.href = '/onboarding';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google sign-up failed');
       setIsLoading(false);
@@ -137,7 +137,7 @@ function RegisterForm() {
       });
       if (result?.error) throw new Error('Failed to sign in after registration');
 
-      window.location.href = '/my-page';
+      window.location.href = '/onboarding';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
       setIsLoading(false);

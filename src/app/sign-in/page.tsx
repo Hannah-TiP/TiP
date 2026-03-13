@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { getDeviceId } from '@/lib/device';
 import Image from 'next/image';
@@ -57,7 +57,9 @@ function SignInForm() {
         throw new Error('Failed to establish session');
       }
 
-      window.location.href = redirectTo;
+      const session = await getSession();
+      const needsOnboarding = session?.user && !session.user.onboarding_completed;
+      window.location.href = needsOnboarding ? '/onboarding' : redirectTo;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google sign-in failed');
       setIsLoading(false);
@@ -80,7 +82,9 @@ function SignInForm() {
       if (result?.error) {
         setError('Invalid email or password');
       } else {
-        window.location.href = redirectTo;
+        const session = await getSession();
+        const needsOnboarding = session?.user && !session.user.onboarding_completed;
+        window.location.href = needsOnboarding ? '/onboarding' : redirectTo;
       }
     } catch {
       setError('Login failed');

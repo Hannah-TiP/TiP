@@ -16,7 +16,8 @@ export async function middleware(request: NextRequest) {
     }));
 
   const isLoggedIn = !!token && !token.error;
-  const isProtectedRoute = pathname.startsWith('/my-page') || pathname === '/concierge';
+  const isProtectedRoute =
+    pathname.startsWith('/my-page') || pathname === '/concierge' || pathname === '/onboarding';
   const isAuthRoute = pathname === '/sign-in';
 
   if (isProtectedRoute && !isLoggedIn) {
@@ -32,5 +33,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/my-page/:path*', '/sign-in', '/concierge'],
+  matcher: ['/my-page/:path*', '/sign-in', '/concierge', '/onboarding'],
 };

@@ -25,6 +25,7 @@ export interface User {
   avatar?: string;
   membership?: string;
   is_verified: boolean;
+  onboarding_completed?: boolean;
 }
 
 export interface ProfileData {
@@ -33,10 +34,13 @@ export interface ProfileData {
   last_name?: string;
   avatar?: string;
   country_id?: number;
+  city?: string;
   gender?: string;
   birth?: string;
   membership?: string;
   total_spent?: number;
+  travel_styles?: string[];
+  onboarding_completed?: boolean;
   preferences?: Record<string, unknown>;
 }
 
@@ -44,8 +48,12 @@ export interface UpdateProfileData {
   first_name?: string;
   last_name?: string;
   country_id?: number;
+  city?: string;
   gender?: string;
   birth?: string;
+  travel_styles?: string[];
+  onboarding_completed?: boolean;
+  in_onboarding?: boolean;
 }
 
 export interface Country {

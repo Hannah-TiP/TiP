@@ -121,6 +121,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             avatar: user.avatar as string | undefined,
             membership: user.membership as string | undefined,
             is_verified: user.is_verified as boolean,
+            onboarding_completed: user.onboarding_completed as boolean | undefined,
           } satisfies User,
         } satisfies JWT;
       }
