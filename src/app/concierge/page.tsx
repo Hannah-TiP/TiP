@@ -50,7 +50,7 @@ function ConciergeContent() {
   const { data: session, status } = useSession();
   const isAuthenticated = !!session;
   const authLoading = status === 'loading';
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
 
   const [sessions, setSessions] = useState<SessionWithTrip[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>('');
@@ -59,6 +59,8 @@ function ConciergeContent() {
   const [error, setError] = useState<string | null>(null);
   const [tripDetail, setTripDetail] = useState<TripDetail | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+
 
   // Check authentication
   useEffect(() => {
@@ -158,22 +160,31 @@ function ConciergeContent() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
+    let cancelled = false;
+
     const init = async () => {
       try {
         // Fetch all sessions
         const sessionsResponse = (await apiClient.listChatSessions()) as ListSessionsResponse;
+        if (cancelled) return;
         const isSuccess = isSuccessResponse(sessionsResponse);
         const sessionsList = isSuccess && sessionsResponse.data ? sessionsResponse.data : [];
         setSessions(sessionsList);
 
         // Handle ?trip_id query param (from trip detail "Edit in Concierge" button)
         const tripIdParam = searchParams.get('trip_id');
+        const actionParam = searchParams.get('action');
         if (tripIdParam) {
           const tripId = parseInt(tripIdParam, 10);
           const existingForTrip = sessionsList.find((s) => s.trip_id === tripId);
 
           if (existingForTrip) {
             await selectSession(existingForTrip.session_id, sessionsList);
+            if (cancelled) return;
+            if (actionParam === 'submit') {
+              router.replace(`/concierge?trip_id=${tripId}`, { scroll: false });
+              handleConverse(existingForTrip.session_id, t('chat.submit_trip_message'));
+            }
             return;
           }
 
@@ -182,6 +193,7 @@ function ConciergeContent() {
             const response = (await apiClient.createChatSessionForTrip(
               tripId,
             )) as CreateSessionResponse;
+            if (cancelled) return;
             const respSuccess = isSuccessResponse(response);
             const respData = response.data;
 
@@ -200,12 +212,19 @@ function ConciergeContent() {
               const updatedSessions = [newSession, ...sessionsList];
               setSessions(updatedSessions);
               await selectSession(respData.session_id, updatedSessions);
+              if (cancelled) return;
+              if (actionParam === 'submit') {
+                router.replace(`/concierge?trip_id=${tripId}`, { scroll: false });
+                handleConverse(respData.session_id, t('chat.submit_trip_message'));
+              }
               return;
             }
           } catch (err) {
             console.error('[Concierge] Failed to create session for trip:', err);
           }
         }
+
+        if (cancelled) return;
 
         // Default: select most recent session or create one
         if (sessionsList.length > 0) {
@@ -225,22 +244,24 @@ function ConciergeContent() {
         }
       } catch (err) {
         console.error('[Concierge] Failed to initialize:', err);
-        setError('Failed to initialize chat. Please refresh the page.');
+        if (!cancelled) setError('Failed to initialize chat. Please refresh the page.');
       }
     };
 
     init();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
+
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || !activeSessionId) return;
-    await handleConverse(content);
+    await handleConverse(activeSessionId, content);
   };
 
   // Unified converse handler — used for both text messages and widget responses
-  const handleConverse = async (content: string, widgetResponse?: WidgetResponsePayload) => {
-    if (!activeSessionId) return;
+  const handleConverse = async (sessionId: string, content: string, widgetResponse?: WidgetResponsePayload) => {
+    if (!sessionId) return;
 
     setIsLoading(true);
     setError(null);
@@ -250,7 +271,7 @@ function ConciergeContent() {
     if (content.trim() && !widgetResponse) {
       const userMessage: AIMessage = {
         id: TEMP_USER_MSG_ID,
-        session_id: activeSessionId,
+        session_id: sessionId,
         role: 'user',
         content,
         message_type: 'text',
@@ -261,7 +282,7 @@ function ConciergeContent() {
 
     try {
       const response = (await apiClient.converse(
-        activeSessionId,
+        sessionId,
         content,
         widgetResponse,
       )) as ConverseResponse;
@@ -280,7 +301,7 @@ function ConciergeContent() {
 
         const assistantMessage: AIMessage = {
           id: responseData.assistant_message_id,
-          session_id: activeSessionId,
+          session_id: sessionId,
           role: 'assistant',
           content: responseData.response,
           message_type: 'text',
@@ -301,7 +322,7 @@ function ConciergeContent() {
         if (responseData.trip && responseData.field_updated?.length) {
           setSessions((prev) =>
             prev.map((s) =>
-              s.session_id === activeSessionId
+              s.session_id === sessionId
                 ? {
                     ...s,
                     trip_title: s.trip_title,
@@ -333,7 +354,7 @@ function ConciergeContent() {
   };
 
   const handleWidgetSubmit = async (payload: WidgetResponsePayload) => {
-    await handleConverse('', payload);
+    await handleConverse(activeSessionId, '', payload);
   };
 
   const handleUploadImage = async (file: File) => {
@@ -592,7 +613,11 @@ function ConciergeContent() {
         </div>
 
         {/* Right pane: Trip detail */}
-        <TripDetailPanel tripDetail={tripDetail} />
+        <TripDetailPanel
+          tripDetail={tripDetail}
+          onSubmitTrip={() => handleConverse(activeSessionId, t('chat.submit_trip_message'))}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );

@@ -579,23 +579,7 @@ function BookingDocuments({ trip }: { trip: TripDetail }) {
 
 // ─── Pending Info Card ───────────────────────────────────────────────────────
 
-function PendingInfoCard({ trip, onRefresh }: { trip: TripDetail; onRefresh: () => void }) {
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    setSubmitError(null);
-    try {
-      await apiClient.submitTrip(trip.id);
-      onRefresh();
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to submit trip');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
+function PendingInfoCard({ trip }: { trip: TripDetail; onRefresh: () => void }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
       <div className="flex items-center justify-between gap-6">
@@ -615,17 +599,15 @@ function PendingInfoCard({ trip, onRefresh }: { trip: TripDetail; onRefresh: () 
             >
               Edit in Concierge
             </Link>
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="px-6 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-full hover:bg-[#2a5240] transition-colors disabled:opacity-50"
+            <Link
+              href={`/concierge?trip_id=${trip.id}&action=submit`}
+              className="px-6 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-full hover:bg-[#2a5240] transition-colors"
             >
-              {submitting ? 'Submitting...' : 'Submit Trip'}
-            </button>
+              Submit Trip
+            </Link>
           </div>
         )}
       </div>
-      {submitError && <p className="text-sm text-red-600 mt-3">{submitError}</p>}
     </div>
   );
 }

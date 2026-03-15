@@ -138,9 +138,11 @@ function JourneyStepper({ status }: { status: string | null }) {
 
 interface TripDetailPanelProps {
   tripDetail: TripDetail | null;
+  onSubmitTrip?: () => void;
+  isLoading?: boolean;
 }
 
-export default function TripDetailPanel({ tripDetail }: TripDetailPanelProps) {
+export default function TripDetailPanel({ tripDetail, onSubmitTrip, isLoading }: TripDetailPanelProps) {
   const { t } = useLanguage();
 
   return (
@@ -256,6 +258,22 @@ export default function TripDetailPanel({ tripDetail }: TripDetailPanelProps) {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Submit Trip Button — only for drafts */}
+            {tripDetail.status === 'draft' && onSubmitTrip && (
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <p className="font-inter text-xs text-gray-500 mb-3">
+                  {t('chat.submit_trip_hint')}
+                </p>
+                <button
+                  onClick={onSubmitTrip}
+                  disabled={isLoading}
+                  className="w-full py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-full hover:bg-[#2a5240] transition-colors disabled:opacity-50"
+                >
+                  {t('chat.submit_trip')}
+                </button>
               </div>
             )}
           </div>

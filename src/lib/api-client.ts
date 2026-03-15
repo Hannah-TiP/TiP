@@ -230,12 +230,6 @@ class ApiClient {
     return response.data;
   }
 
-  async submitTrip(tripId: number): Promise<void> {
-    await this.request(`/trip/${tripId}/submit`, {
-      method: 'POST',
-    });
-  }
-
   // Trip comments
   async addComment(tripId: number, content: CommentContent[]): Promise<void> {
     await this.request(`/trip/${tripId}/add-comment`, {
