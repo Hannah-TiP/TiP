@@ -60,8 +60,6 @@ function ConciergeContent() {
   const [tripDetail, setTripDetail] = useState<TripDetail | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-
-
   // Check authentication
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -249,10 +247,11 @@ function ConciergeContent() {
     };
 
     init();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
-
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || !activeSessionId) return;
@@ -260,7 +259,11 @@ function ConciergeContent() {
   };
 
   // Unified converse handler — used for both text messages and widget responses
-  const handleConverse = async (sessionId: string, content: string, widgetResponse?: WidgetResponsePayload) => {
+  const handleConverse = async (
+    sessionId: string,
+    content: string,
+    widgetResponse?: WidgetResponsePayload,
+  ) => {
     if (!sessionId) return;
 
     setIsLoading(true);

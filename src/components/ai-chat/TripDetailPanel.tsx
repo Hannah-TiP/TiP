@@ -142,7 +142,11 @@ interface TripDetailPanelProps {
   isLoading?: boolean;
 }
 
-export default function TripDetailPanel({ tripDetail, onSubmitTrip, isLoading }: TripDetailPanelProps) {
+export default function TripDetailPanel({
+  tripDetail,
+  onSubmitTrip,
+  isLoading,
+}: TripDetailPanelProps) {
   const { t } = useLanguage();
 
   return (
