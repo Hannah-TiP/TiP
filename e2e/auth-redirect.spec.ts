@@ -11,6 +11,11 @@ test.describe('Auth redirects (logged out)', () => {
     await expect(page).toHaveURL(/sign-in.*redirect/);
   });
 
+  test('/onboarding redirects to sign-in', async ({ page }) => {
+    await page.goto('/onboarding');
+    await expect(page).toHaveURL(/sign-in.*redirect/);
+  });
+
   test('redirect param preserves original path', async ({ page }) => {
     await page.goto('/my-page/my-profile');
     const url = new URL(page.url());
