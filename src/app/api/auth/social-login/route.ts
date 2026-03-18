@@ -5,15 +5,15 @@ const API_BASE_URL = process.env.API_BASE_URL;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { provider, id_token, device_id } = body;
+    const { provider, id_token } = body;
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/social-login`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/auth/social-login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Language: 'en',
       },
-      body: JSON.stringify({ provider, id_token, device_id }),
+      body: JSON.stringify({ provider, id_token }),
     });
 
     const data = await response.json();

@@ -45,20 +45,19 @@ class ApiClient {
     return response.json();
   }
 
-  async login(email: string, password: string, deviceId: string) {
+  async login(email: string, password: string) {
     return this.request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password, device_id: deviceId }),
+      body: JSON.stringify({ email, password }),
     });
   }
 
-  async register(email: string, password: string, deviceId: string, code: string) {
+  async register(email: string, password: string, code: string) {
     return this.request('/auth/register', {
       method: 'POST',
       body: JSON.stringify({
         email,
         password,
-        device_id: deviceId,
         verification_code: code,
         code_type: 'register',
       }),
@@ -75,14 +74,13 @@ class ApiClient {
     });
   }
 
-  async resetPassword(email: string, code: string, password: string, deviceId: string) {
+  async resetPassword(email: string, code: string, password: string) {
     return this.request('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify({
         email,
         verification_code: code,
         password,
-        device_id: deviceId,
       }),
     });
   }

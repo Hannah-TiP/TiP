@@ -1,13 +1,11 @@
 export interface LoginCredentials {
   email: string;
   password: string;
-  device_id: string;
 }
 
 export interface RegisterData {
   email: string;
   password: string;
-  device_id: string;
   verification_code: string;
 }
 

@@ -5,9 +5,9 @@ const API_BASE_URL = process.env.API_BASE_URL;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, device_id, verification_code } = body;
+    const { email, password, verification_code, first_name, last_name } = body;
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -16,9 +16,9 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         email,
         password,
-        device_id,
         verification_code,
-        code_type: 'register',
+        first_name,
+        last_name,
       }),
     });
 

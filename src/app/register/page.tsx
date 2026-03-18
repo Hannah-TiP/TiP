@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { getDeviceId } from '@/lib/device';
 import Image from 'next/image';
 import Link from 'next/link';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
@@ -24,15 +23,12 @@ function RegisterForm() {
     setIsLoading(true);
 
     try {
-      const device_id = await getDeviceId();
-
       const res = await fetch('/api/auth/social-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           provider: 'google',
           id_token: response.credential,
-          device_id,
         }),
       });
 
@@ -46,7 +42,6 @@ function RegisterForm() {
       const result = await signIn('social-login', {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
-        device_id,
         redirect: false,
       });
 
@@ -99,15 +94,12 @@ function RegisterForm() {
     setIsLoading(true);
 
     try {
-      const device_id = await getDeviceId();
-
-      // Step 1: Verify email-device binding
-      const verifyRes = await fetch('/api/auth/verify-email-device', {
+      // Step 1: Verify email code
+      const verifyRes = await fetch('/api/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
-          device_id,
           verification_code: verificationCode,
           code_type: 'register',
         }),
@@ -121,7 +113,7 @@ function RegisterForm() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, device_id, verification_code: verificationCode }),
+        body: JSON.stringify({ email, password, verification_code: verificationCode }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -132,7 +124,6 @@ function RegisterForm() {
       const result = await signIn('credentials', {
         email,
         password,
-        device_id,
         redirect: false,
       });
       if (result?.error) throw new Error('Failed to sign in after registration');

@@ -12,7 +12,6 @@ declare module '@auth/core/jwt' {
   interface JWT {
     accessToken: string;
     refreshToken: string;
-    deviceId: string;
     accessTokenExpires: number;
     user: User;
     error?: string;

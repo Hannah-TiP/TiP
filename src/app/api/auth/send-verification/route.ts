@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, code_type } = body;
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/send-verification`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/auth/send-verification`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

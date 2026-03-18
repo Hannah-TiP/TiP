@@ -53,14 +53,13 @@ describe('ApiClient.request (via public methods)', () => {
 describe('login', () => {
   it('sends correct payload', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ token: 'abc' }));
-    await apiClient.login('a@b.com', 'pass', 'device-1');
+    await apiClient.login('a@b.com', 'pass');
 
     const [, opts] = mockFetch.mock.calls[0];
     expect(opts.method).toBe('POST');
     expect(JSON.parse(opts.body)).toEqual({
       email: 'a@b.com',
       password: 'pass',
-      device_id: 'device-1',
     });
   });
 });
@@ -68,7 +67,7 @@ describe('login', () => {
 describe('register', () => {
   it('includes verification code and code_type', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ success: true }));
-    await apiClient.register('a@b.com', 'pass', 'dev-1', '123456');
+    await apiClient.register('a@b.com', 'pass', '123456');
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body.verification_code).toBe('123456');

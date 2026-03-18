@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { getDeviceId } from '@/lib/device';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -49,8 +48,6 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      const device_id = await getDeviceId();
-
       // Step 1: Reset password via backend
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
@@ -59,7 +56,6 @@ export default function ForgotPasswordPage() {
           email,
           verification_code: verificationCode,
           password: newPassword,
-          device_id,
         }),
       });
       if (!res.ok) {
@@ -71,7 +67,6 @@ export default function ForgotPasswordPage() {
       const result = await signIn('credentials', {
         email,
         password: newPassword,
-        device_id,
         redirect: false,
       });
       if (result?.error) throw new Error('Failed to sign in after password reset');

@@ -3,7 +3,6 @@
 import { Suspense, useState } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { getDeviceId } from '@/lib/device';
 import Image from 'next/image';
 import Link from 'next/link';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
@@ -25,8 +24,6 @@ function SignInForm() {
     setIsLoading(true);
 
     try {
-      const device_id = await getDeviceId();
-
       // Send Google token to backend via proxy
       const res = await fetch('/api/auth/social-login', {
         method: 'POST',
@@ -34,7 +31,6 @@ function SignInForm() {
         body: JSON.stringify({
           provider: 'google',
           id_token: response.credential,
-          device_id,
         }),
       });
 
@@ -49,7 +45,6 @@ function SignInForm() {
       const result = await signIn('social-login', {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
-        device_id,
         redirect: false,
       });
 
@@ -72,11 +67,9 @@ function SignInForm() {
     setIsLoading(true);
 
     try {
-      const device_id = await getDeviceId();
       const result = await signIn('credentials', {
         email,
         password,
-        device_id,
         redirect: false,
       });
       if (result?.error) {

@@ -14,7 +14,7 @@ export default defineConfig({
   // Uses production build (npm start) if .next/ exists, otherwise dev server
   ...(!process.env.E2E_BASE_URL && {
     webServer: {
-      command: process.env.CI_MODE ? 'node .next/standalone/server.js' : 'npm run dev',
+      command: process.env.CI_MODE ? 'node scripts/start-standalone.mjs' : 'npm run dev',
       port: 3000,
       reuseExistingServer: true,
       timeout: 60_000,

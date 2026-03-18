@@ -7,12 +7,11 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
 async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+    const res = await fetch(`${API_BASE_URL}/api/v2/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Language: 'en' },
       body: JSON.stringify({
         refresh_token: token.refreshToken,
-        device_id: token.deviceId,
       }),
     });
     if (!res.ok) throw new Error('Refresh failed');
@@ -35,23 +34,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: {},
         password: {},
-        device_id: {},
       },
       async authorize(credentials) {
         try {
-          const loginRes = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+          const loginRes = await fetch(`${API_BASE_URL}/api/v2/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Language: 'en' },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password,
-              device_id: credentials.device_id,
             }),
           });
           if (!loginRes.ok) return null;
           const { data } = await loginRes.json();
 
-          const meRes = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+          const meRes = await fetch(`${API_BASE_URL}/api/v2/auth/me`, {
             headers: {
               Authorization: `Bearer ${data.access_token}`,
               Language: 'en',
@@ -65,7 +62,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             id: String(user.id),
             accessToken: data.access_token,
             refreshToken: data.refresh_token,
-            deviceId: credentials.device_id,
           };
         } catch {
           return null;
@@ -77,11 +73,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         access_token: {},
         refresh_token: {},
-        device_id: {},
       },
       async authorize(credentials) {
         try {
-          const meRes = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+          const meRes = await fetch(`${API_BASE_URL}/api/v2/auth/me`, {
             headers: {
               Authorization: `Bearer ${credentials.access_token}`,
               Language: 'en',
@@ -95,7 +90,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             id: String(user.id),
             accessToken: credentials.access_token,
             refreshToken: credentials.refresh_token,
-            deviceId: credentials.device_id,
           };
         } catch {
           return null;
@@ -111,7 +105,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           ...token,
           accessToken: user.accessToken as string,
           refreshToken: user.refreshToken as string,
-          deviceId: user.deviceId as string,
           accessTokenExpires: Date.now() + 29 * 60 * 1000,
           user: {
             id: user.id as number,
