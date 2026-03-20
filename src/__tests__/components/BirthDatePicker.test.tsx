@@ -10,7 +10,9 @@ describe('BirthDatePicker', () => {
   it('displays an ISO birthday in MM/DD/YYYY format', () => {
     render(<BirthDatePicker value="1990-05-10" onChange={() => {}} />);
 
-    expect((screen.getByPlaceholderText('MM/DD/YYYY') as HTMLInputElement).value).toBe('05/10/1990');
+    expect((screen.getByPlaceholderText('MM/DD/YYYY') as HTMLInputElement).value).toBe(
+      '05/10/1990',
+    );
   });
 
   it('parses typed display input back to ISO format', () => {
