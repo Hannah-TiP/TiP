@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
-import type { Country, ProfileData } from '@/types/auth';
+import type { User } from '@/types/auth';
+import type { City } from '@/types/location';
 
 const TRAVEL_STYLES = [
   { value: 'Solo Retreat', icon: '\u{1F9D8}', description: 'Peaceful, personal time' },
@@ -22,24 +23,23 @@ const TRAVEL_STYLES = [
 
 const TOTAL_STEPS = 4;
 
-// Parse backend birth format (M/D/YYYY) into parts
-function parseBirth(birth?: string): { month: string; day: string; year: string } {
-  if (!birth) return { month: '', day: '', year: '' };
+function parseBirthday(birthday?: string): { month: string; day: string; year: string } {
+  if (!birthday) return { month: '', day: '', year: '' };
   try {
-    const parts = birth.split('/');
-    if (parts.length === 3) return { month: parts[0], day: parts[1], year: parts[2] };
+    const parts = birthday.split('-');
+    if (parts.length === 3) return { year: parts[0], month: parts[1], day: parts[2] };
   } catch {}
   return { month: '', day: '', year: '' };
 }
 
 // Determine the first incomplete onboarding step from profile data
 // Steps 1-2 are required, steps 3-4 are optional (skippable)
-function getStartStep(profile: ProfileData): number {
+function getStartStep(profile: User): number {
   if (!profile.first_name || !profile.last_name) return 1;
-  if (!profile.country_id) return 2;
+  if (!profile.city_id) return 2;
   // Steps 3 and 4 are optional — once required steps are done,
   // resume at the first optional step that's still empty, or step 4
-  if (!profile.birth) return 3;
+  if (!profile.birthday) return 3;
   return 4;
 }
 
@@ -55,9 +55,8 @@ export default function OnboardingPage() {
   const [lastName, setLastName] = useState('');
 
   // Step 2: Location
-  const [countryId, setCountryId] = useState<number | undefined>(undefined);
-  const [city, setCity] = useState('');
-  const [countries, setCountries] = useState<Country[]>([]);
+  const [cityId, setCityId] = useState<number | undefined>(undefined);
+  const [cities, setCities] = useState<City[]>([]);
 
   // Step 3: Birthday
   const [birthYear, setBirthYear] = useState('');
@@ -71,21 +70,20 @@ export default function OnboardingPage() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([apiClient.getProfile(), apiClient.getCountries()])
-      .then(([profile, countryList]) => {
+    Promise.all([apiClient.getProfile(), apiClient.getCities('en')])
+      .then(([profile, cityList]) => {
         if (cancelled) return;
 
         // Populate form from existing profile data
         setFirstName(profile.first_name || '');
         setLastName(profile.last_name || '');
-        setCountryId(profile.country_id ?? undefined);
-        setCity(profile.city || '');
-        const birth = parseBirth(profile.birth);
+        setCityId(profile.city_id ?? undefined);
+        const birth = parseBirthday(profile.birthday);
         setBirthMonth(birth.month);
         setBirthDay(birth.day);
         setBirthYear(birth.year);
         setSelectedStyles(profile.travel_styles || []);
-        setCountries(countryList);
+        setCities(cityList);
 
         // Jump to first incomplete step
         setStep(getStartStep(profile));
@@ -107,7 +105,7 @@ export default function OnboardingPage() {
 
   function formatBirth(): string | undefined {
     if (!birthMonth || !birthDay || !birthYear) return undefined;
-    return `${parseInt(birthMonth)}/${parseInt(birthDay)}/${birthYear}`;
+    return `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`;
   }
 
   // Save current step's data to backend
@@ -117,9 +115,9 @@ export default function OnboardingPage() {
       if (currentStep === 1) {
         await apiClient.updateProfile({ first_name: firstName, last_name: lastName });
       } else if (currentStep === 2) {
-        await apiClient.updateProfile({ country_id: countryId, city: city || undefined });
+        await apiClient.updateProfile({ city_id: cityId });
       } else if (currentStep === 3) {
-        await apiClient.updateProfile({ birth: formatBirth() });
+        await apiClient.updateProfile({ birthday: formatBirth() });
       }
       // Step 4 is saved in handleComplete
       return true;
@@ -139,7 +137,6 @@ export default function OnboardingPage() {
       await apiClient.updateProfile({
         travel_styles: selectedStyles.length > 0 ? selectedStyles : undefined,
         onboarding_completed: true,
-        in_onboarding: true,
       });
       router.push('/my-page');
     } catch (err) {
@@ -153,8 +150,8 @@ export default function OnboardingPage() {
       setError('Please enter your first and last name');
       return;
     }
-    if (step === 2 && !countryId) {
-      setError('Please select your country');
+    if (step === 2 && !cityId) {
+      setError('Please select your city');
       return;
     }
     setError('');
@@ -288,41 +285,27 @@ export default function OnboardingPage() {
                   Where do you call home?
                 </h1>
                 <p className="mt-2 text-gray-text">
-                  This helps us find the best flights and travel routes for you.
+                  This helps us personalize recommendations around the city you know best.
                 </p>
               </div>
 
               <div className="mt-4 rounded-xl bg-white p-8 shadow-lg">
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                      Country
-                    </label>
-                    <select
-                      value={countryId ?? ''}
-                      onChange={(e) =>
-                        setCountryId(e.target.value ? Number(e.target.value) : undefined)
-                      }
-                      className={selectClass}
-                    >
-                      <option value="">Select your country</option>
-                      {countries.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700">City</label>
-                    <input
-                      type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="Enter your city"
-                      className={inputClass}
-                    />
-                  </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                    Home City
+                  </label>
+                  <select
+                    value={cityId ?? ''}
+                    onChange={(e) => setCityId(e.target.value ? Number(e.target.value) : undefined)}
+                    className={selectClass}
+                  >
+                    <option value="">Select your city</option>
+                    {cities.map((city) => (
+                      <option key={city.id} value={city.id}>
+                        {city.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

@@ -8,30 +8,8 @@ import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import { apiClient } from '@/lib/api-client';
-import type { ProfileData, Country } from '@/types/auth';
-
-// Convert backend birth format (M/D/YYYY) to display format (YYYY-MM-DD)
-function birthToDisplay(birth?: string): string {
-  if (!birth) return '';
-  try {
-    const parts = birth.split('/');
-    if (parts.length === 3) {
-      const [month, day, year] = parts;
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    }
-  } catch {}
-  return birth;
-}
-
-// Convert display format (YYYY-MM-DD) to backend format (M/D/YYYY)
-function displayToBirth(display: string): string {
-  if (!display) return '';
-  try {
-    const [year, month, day] = display.split('-');
-    return `${parseInt(month)}/${parseInt(day)}/${year}`;
-  } catch {}
-  return display;
-}
+import type { User } from '@/types/auth';
+import type { City } from '@/types/location';
 
 const GENDER_OPTIONS = [
   { value: '', label: 'Select gender' },
@@ -44,7 +22,7 @@ export default function MyProfile() {
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
 
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -54,11 +32,10 @@ export default function MyProfile() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [gender, setGender] = useState('');
-  const [birth, setBirth] = useState('');
-  const [countryId, setCountryId] = useState<number | undefined>(undefined);
+  const [birthday, setBirthday] = useState('');
+  const [cityId, setCityId] = useState<number | undefined>(undefined);
 
-  // Countries list
-  const [countries, setCountries] = useState<Country[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
 
   // Track if form is dirty
   const [isDirty, setIsDirty] = useState(false);
@@ -70,16 +47,16 @@ export default function MyProfile() {
     }
     if (sessionStatus === 'authenticated') {
       loadProfile();
-      loadCountries();
+      loadCities();
     }
   }, [sessionStatus, router]);
 
-  async function loadCountries() {
+  async function loadCities() {
     try {
-      const data = await apiClient.getCountries();
-      setCountries(data);
+      const data = await apiClient.getCities('en');
+      setCities(data);
     } catch (err) {
-      console.error('Countries load error:', err);
+      console.error('Cities load error:', err);
     }
   }
 
@@ -92,8 +69,8 @@ export default function MyProfile() {
       setFirstName(data.first_name || '');
       setLastName(data.last_name || '');
       setGender(data.gender || '');
-      setBirth(birthToDisplay(data.birth));
-      setCountryId(data.country_id ?? undefined);
+      setBirthday(data.birthday || '');
+      setCityId(data.city_id ?? undefined);
     } catch (err) {
       setError('Failed to load profile. Please try again.');
       console.error('Profile load error:', err);
@@ -119,8 +96,8 @@ export default function MyProfile() {
         first_name: firstName,
         last_name: lastName,
         gender: gender || undefined,
-        birth: birth ? displayToBirth(birth) : undefined,
-        country_id: countryId,
+        birthday: birthday || undefined,
+        city_id: cityId,
       });
       setSuccess('Profile updated successfully.');
       setIsDirty(false);
@@ -139,27 +116,11 @@ export default function MyProfile() {
       setFirstName(profile.first_name || '');
       setLastName(profile.last_name || '');
       setGender(profile.gender || '');
-      setBirth(birthToDisplay(profile.birth));
-      setCountryId(profile.country_id ?? undefined);
+      setBirthday(profile.birthday || '');
+      setCityId(profile.city_id ?? undefined);
       setIsDirty(false);
       setError('');
       setSuccess('');
-    }
-  }
-
-  // Extract preference tags for display
-  const preferenceTags: string[] = [];
-  if (profile?.preferences) {
-    const prefs = profile.preferences;
-    // Common preference fields that contain displayable values
-    for (const [, value] of Object.entries(prefs)) {
-      if (typeof value === 'string' && value.trim()) {
-        preferenceTags.push(value);
-      } else if (Array.isArray(value)) {
-        value.forEach((v) => {
-          if (typeof v === 'string' && v.trim()) preferenceTags.push(v);
-        });
-      }
     }
   }
 
@@ -263,29 +224,29 @@ export default function MyProfile() {
                     Date of Birth
                   </label>
                   <BirthDatePicker
-                    value={birth}
+                    value={birthday}
                     onChange={(v) => {
-                      setBirth(v);
+                      setBirthday(v);
                       setIsDirty(true);
                       setSuccess('');
                     }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Country</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">City</label>
                   <select
-                    value={countryId ?? ''}
+                    value={cityId ?? ''}
                     onChange={(e) => {
-                      setCountryId(e.target.value ? Number(e.target.value) : undefined);
+                      setCityId(e.target.value ? Number(e.target.value) : undefined);
                       setIsDirty(true);
                       setSuccess('');
                     }}
                     className={inputClass}
                   >
-                    <option value="">Select country</option>
-                    {countries.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
+                    <option value="">Select city</option>
+                    {cities.map((city) => (
+                      <option key={city.id} value={city.id}>
+                        {city.name}
                       </option>
                     ))}
                   </select>
@@ -322,24 +283,24 @@ export default function MyProfile() {
               </div>
             </div>
 
-            {/* Travel Preferences (read-only) */}
+            {/* Travel Styles */}
             <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-5">Travel Preferences</h2>
-              {preferenceTags.length > 0 ? (
+              <h2 className="text-lg font-bold text-gray-900 mb-5">Travel Styles</h2>
+              {profile.travel_styles && profile.travel_styles.length > 0 ? (
                 <div className="flex flex-wrap gap-3">
-                  {preferenceTags.map((tag) => (
+                  {profile.travel_styles.map((style) => (
                     <span
-                      key={tag}
+                      key={style}
                       className="bg-[#1E3D2F] text-white text-sm px-4 py-2 rounded-full"
                     >
-                      {tag}
+                      {style}
                     </span>
                   ))}
                 </div>
               ) : (
                 <p className="text-sm text-gray-400">
-                  No travel preferences set yet. Chat with our AI concierge to set up your
-                  preferences.
+                  No travel styles set yet. Complete onboarding or update your preferences to
+                  personalize future recommendations.
                 </p>
               )}
             </div>

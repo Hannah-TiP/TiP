@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
-import type { City } from '@/types/hotel';
+import type { City } from '@/types/location';
 
 interface DestinationDropdownProps {
   value: string;

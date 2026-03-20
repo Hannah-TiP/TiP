@@ -1,5 +1,6 @@
-import type { User, ProfileData, UpdateProfileData, Country } from '@/types/auth';
-import type { Hotel, City, Activity, Restaurant } from '@/types/hotel';
+import type { User, UpdateProfileData } from '@/types/auth';
+import type { Hotel, Activity, Restaurant } from '@/types/hotel';
+import type { City, Country } from '@/types/location';
 import type {
   CreateSessionResponse,
   SendMessageResponse,
@@ -94,8 +95,8 @@ class ApiClient {
   }
 
   // Profile methods
-  async getProfile(): Promise<ProfileData> {
-    const response = await this.request<{ data: ProfileData }>('/profile');
+  async getProfile(): Promise<User> {
+    const response = await this.request<{ data: User }>('/profile');
     return response.data;
   }
 

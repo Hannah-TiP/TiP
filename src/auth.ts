@@ -111,9 +111,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email: user.email as string,
             first_name: user.first_name as string | undefined,
             last_name: user.last_name as string | undefined,
-            avatar: user.avatar as string | undefined,
+            gender: user.gender as string | undefined,
+            birthday: user.birthday as string | undefined,
+            city_id: user.city_id as number | undefined,
             membership: user.membership as string | undefined,
             is_verified: user.is_verified as boolean,
+            travel_styles: user.travel_styles as string[] | undefined,
             onboarding_completed: user.onboarding_completed as boolean | undefined,
           } satisfies User,
         } satisfies JWT;

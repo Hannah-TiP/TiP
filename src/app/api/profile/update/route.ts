@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/onboarding/update-profile`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/auth/me`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,

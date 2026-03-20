@@ -1,11 +1,8 @@
+import type { City } from '@/types/location';
+
 // Types matching backend API response structure
 // Backend City schema only includes id and name (no country object)
 // We'll extract country from the address field on the frontend
-
-export interface City {
-  id: number;
-  name: string;
-}
 
 export interface ReviewSummary {
   id: number;
