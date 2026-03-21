@@ -6,7 +6,7 @@ import type { City } from '@/types/location';
 
 interface DestinationDropdownProps {
   value: string;
-  onChange: (cityData: { id: number; name: string }) => void;
+  onChange: (cityData: Pick<City, 'id' | 'name'>) => void;
   onClose: () => void;
 }
 
@@ -50,7 +50,7 @@ export default function DestinationDropdown({
   }, [onClose]);
 
   const filteredDestinations = cities.filter((city) =>
-    city.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    (city.name || '').toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -103,7 +103,7 @@ export default function DestinationDropdown({
               >
                 <span className="icon-lucide text-gray-400">&#xe551;</span>
                 <div>
-                  <p className="text-[14px] font-medium text-green-dark">{city.name}</p>
+                  <p className="text-[14px] font-medium text-green-dark">{city.name || ''}</p>
                 </div>
               </button>
             ))}

@@ -6,6 +6,17 @@ import {
   getHotelImages,
 } from '@/types/hotel';
 import type { Hotel } from '@/types/hotel';
+import type { City } from '@/types/location';
+
+const cityFixture: City = {
+  id: 1,
+  name: 'Paris',
+  region_id: 10,
+  slug: 'paris',
+  status: true,
+  link_services: false,
+  schema_version: 1,
+};
 
 describe('extractCountryFromAddress', () => {
   it('extracts country from full address', () => {
@@ -33,12 +44,12 @@ describe('formatLocation', () => {
   const baseHotel: Hotel = { id: 1, name: 'Test', city_id: 1, language: 'en' };
 
   it('returns "City, Country" when both present', () => {
-    const hotel = { ...baseHotel, city: { id: 1, name: 'Paris' }, address: 'Rue X, France' };
+    const hotel = { ...baseHotel, city: cityFixture, address: 'Rue X, France' };
     expect(formatLocation(hotel)).toBe('Paris, France');
   });
 
   it('returns just city when no address', () => {
-    const hotel = { ...baseHotel, city: { id: 1, name: 'Paris' } };
+    const hotel = { ...baseHotel, city: cityFixture };
     expect(formatLocation(hotel)).toBe('Paris');
   });
 

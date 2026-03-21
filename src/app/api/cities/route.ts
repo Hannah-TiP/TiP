@@ -7,12 +7,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     // Forward all query params to backend
-    const backendUrl = `${API_BASE_URL}/api/v1/city/cities?${searchParams.toString()}`;
+    const backendUrl = `${API_BASE_URL}/api/v2/locations/cities?${searchParams.toString()}`;
 
     const response = await fetch(backendUrl, {
       headers: {
         'Content-Type': 'application/json',
-        Language: searchParams.get('language') || 'en',
+        lang: searchParams.get('language') || 'en',
       },
     });
 

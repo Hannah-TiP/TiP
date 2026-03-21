@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
 import { getImageUrl, type Activity, type Restaurant } from '@/types/hotel';
+import type { City } from '@/types/location';
 
 export default function MoreDreamsPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -13,12 +14,12 @@ export default function MoreDreamsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Filter state
-  const [selectedCity, setSelectedCity] = useState<{ id: number; name: string } | null>(null);
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
 
   // Dropdown state
   const [openDropdown, setOpenDropdown] = useState<'destination' | null>(null);
   const [citySearch, setCitySearch] = useState('');
-  const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -77,7 +78,7 @@ export default function MoreDreamsPage() {
   }, [restaurants, selectedCity]);
 
   const filteredCities = cities.filter((c) =>
-    c.name.toLowerCase().includes(citySearch.toLowerCase()),
+    (c.name || '').toLowerCase().includes(citySearch.toLowerCase()),
   );
 
   function getActivityTag(activity: Activity): string {

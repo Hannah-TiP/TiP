@@ -4,10 +4,10 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
 export async function GET() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/city/countries`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/locations/countries`, {
       headers: {
         'Content-Type': 'application/json',
-        Language: 'en',
+        lang: 'en',
       },
     });
 

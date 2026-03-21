@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import HotelMap from '@/components/HotelMap';
 import { apiClient } from '@/lib/api-client';
 import { formatLocation, getImageUrl, type Hotel } from '@/types/hotel';
+import type { City } from '@/types/location';
 
 const partners = [
   'VIRTUOSO',
@@ -36,7 +37,7 @@ export default function DreamHotelsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Filter state
-  const [selectedCity, setSelectedCity] = useState<{ id: number; name: string } | null>(null);
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [selectedStarRating, setSelectedStarRating] = useState('');
 
   // Dropdown open state
@@ -44,7 +45,7 @@ export default function DreamHotelsPage() {
 
   // Destination search
   const [citySearch, setCitySearch] = useState('');
-  const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -98,7 +99,7 @@ export default function DreamHotelsPage() {
   }, [hotels, selectedCity, selectedStarRating]);
 
   const filteredCities = cities.filter((c) =>
-    c.name.toLowerCase().includes(citySearch.toLowerCase()),
+    (c.name || '').toLowerCase().includes(citySearch.toLowerCase()),
   );
 
   const hasActiveFilters = selectedCity || selectedStarRating;
@@ -211,7 +212,7 @@ export default function DreamHotelsPage() {
                   DESTINATION
                 </p>
                 <p className="text-[14px] font-medium text-green-dark">
-                  {selectedCity ? selectedCity.name : 'All destinations'}
+                  {selectedCity?.name || 'All destinations'}
                 </p>
               </button>
               {openDropdown === 'destination' && (
