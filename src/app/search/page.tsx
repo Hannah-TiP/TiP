@@ -8,7 +8,8 @@ import Footer from '@/components/Footer';
 import SearchBar from '@/components/SearchBar';
 import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
-import { formatLocation, getImageUrl, type Hotel } from '@/types/hotel';
+import { getLocalizedText } from '@/types/common';
+import { getHotelImages, type Hotel } from '@/types/hotel';
 
 // Helper function to derive tag from hotel data
 function getHotelTag(hotel: Hotel): string {
@@ -172,13 +173,13 @@ function SearchResultsContent() {
                 {hotels.map((hotel) => (
                   <Link
                     key={hotel.id}
-                    href={`/hotel/${hotel.id}`}
+                    href={`/hotel/${hotel.slug}`}
                     className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
                   >
                     <div className="relative h-56 overflow-hidden">
                       <Image
-                        src={getImageUrl(hotel.image?.[0])}
-                        alt={hotel.name}
+                        src={getHotelImages(hotel)[0]}
+                        alt={getLocalizedText(hotel.name)}
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                         fill
                         sizes="(max-width: 768px) 100vw, 25vw"
@@ -186,17 +187,14 @@ function SearchResultsContent() {
                       <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
                         {getHotelTag(hotel)}
                       </div>
-                      {hotel.review_summary && (
-                        <div className="absolute right-3 top-3 rounded-full bg-green-dark px-2.5 py-1 text-[12px] font-semibold text-white">
-                          {hotel.review_summary.average_rating.toFixed(1)}
-                        </div>
-                      )}
                     </div>
                     <div className="p-5">
                       <h3 className="font-primary text-[18px] font-semibold text-green-dark">
-                        {hotel.name}
+                        {getLocalizedText(hotel.name)}
                       </h3>
-                      <p className="mt-1 text-[13px] text-gray-text">{formatLocation(hotel)}</p>
+                      <p className="mt-1 text-[13px] text-gray-text">
+                        {getLocalizedText(hotel.address)}
+                      </p>
                     </div>
                   </Link>
                 ))}

@@ -3,8 +3,9 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import type { UIBlock, WidgetResponsePayload } from '@/types/ai-chat';
+import { getLocalizedText } from '@/types/common';
 import type { Hotel } from '@/types/hotel';
-import { getImageUrl } from '@/types/hotel';
+import { getHotelImages } from '@/types/hotel';
 
 interface Props {
   block: UIBlock;
@@ -24,7 +25,7 @@ export default function HotelCarousel({ block, onSubmit, disabled }: Props) {
     onSubmit({
       widget_id: block.id,
       widget_type: 'hotel_carousel',
-      value: { hotel_id: hotel.id, hotel_name: hotel.name },
+      value: { hotel_id: hotel.id, hotel_name: getLocalizedText(hotel.name) },
     });
   };
 
@@ -62,10 +63,7 @@ export default function HotelCarousel({ block, onSubmit, disabled }: Props) {
         style={{ scrollbarWidth: 'none' }}
       >
         {hotels.map((hotel) => {
-          const imageUrl =
-            hotel.image && hotel.image.length > 0
-              ? getImageUrl(hotel.image[0])
-              : '/placeholder.jpg';
+          const imageUrl = getHotelImages(hotel)[0];
 
           return (
             <button
@@ -85,7 +83,7 @@ export default function HotelCarousel({ block, onSubmit, disabled }: Props) {
               <div className="h-[140px] bg-gray-100 relative">
                 <Image
                   src={imageUrl}
-                  alt={hotel.name}
+                  alt={getLocalizedText(hotel.name)}
                   fill
                   sizes="240px"
                   className="object-cover"
@@ -98,25 +96,17 @@ export default function HotelCarousel({ block, onSubmit, disabled }: Props) {
               </div>
               <div className="p-3">
                 <h4 className="font-inter text-[13px] font-semibold text-[#1E3D2F] line-clamp-1">
-                  {hotel.name}
+                  {getLocalizedText(hotel.name)}
                 </h4>
-                {hotel.city?.name && (
-                  <p className="font-inter text-[11px] text-gray-500 mt-0.5">{hotel.city.name}</p>
-                )}
-                {hotel.description && (
-                  <p className="font-inter text-[11px] text-gray-400 mt-1 line-clamp-2">
-                    {hotel.description}
+                {hotel.address && (
+                  <p className="font-inter text-[11px] text-gray-500 mt-0.5">
+                    {getLocalizedText(hotel.address)}
                   </p>
                 )}
-                {hotel.review_summary && hotel.review_summary.total_reviews > 0 && (
-                  <div className="flex items-center gap-1 mt-1.5">
-                    <span className="text-[11px] font-medium text-[#C4956A]">
-                      ★ {hotel.review_summary.average_rating.toFixed(1)}
-                    </span>
-                    <span className="text-[10px] text-gray-400">
-                      ({hotel.review_summary.total_reviews})
-                    </span>
-                  </div>
+                {hotel.overview && (
+                  <p className="font-inter text-[11px] text-gray-400 mt-1 line-clamp-2">
+                    {getLocalizedText(hotel.overview)}
+                  </p>
                 )}
               </div>
             </button>

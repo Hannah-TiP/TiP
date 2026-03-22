@@ -1,12 +1,10 @@
+import { getImageUrl, type GeoPoint, type Image, type MultiLanguageString } from '@/types/common';
 import type { City } from '@/types/location';
-
-// Types matching backend API response structure.
-// Country is still derived from the address field on the frontend.
 
 export interface ReviewSummary {
   id: number;
   total_reviews: number;
-  average_rating: number; // 0-5 scale
+  average_rating: number;
   rating_distribution: {
     [key: string]: number;
   };
@@ -40,84 +38,118 @@ export interface Restaurant {
   city?: City | null;
 }
 
+export type HotelStatus = 'draft' | 'published' | 'archived';
+export type HotelStarRating = '1' | '2' | '3' | '4' | '5';
+export type MembershipTier = 'white' | 'blue' | 'black' | 'silver' | 'gold' | 'diamond';
+
+export interface HotelContact {
+  phone?: string | null;
+  email?: string | null;
+  website_url?: string | null;
+}
+
+export interface HotelHighlightTag {
+  highlight_type: 'tag';
+  text: MultiLanguageString;
+}
+
+export interface HotelHighlightStat {
+  highlight_type: 'stat';
+  label: MultiLanguageString;
+  value: MultiLanguageString;
+}
+
+export type HotelHighlight = HotelHighlightTag | HotelHighlightStat;
+
+export interface HotelRoom {
+  name: MultiLanguageString;
+  size_sqm?: number | null;
+  summary?: MultiLanguageString | null;
+  images?: Image[] | null;
+}
+
+export interface HotelFeature {
+  feature_type: 'facility' | 'amenity';
+  name: MultiLanguageString;
+  description?: MultiLanguageString | null;
+  icon?: string | null;
+  images?: Image[] | null;
+}
+
+export interface HotelBenefitProgram {
+  membership_tier?: MembershipTier | null;
+  program_name?: string | null;
+  valid_from?: string | null;
+  valid_until?: string | null;
+  benefits: MultiLanguageString[];
+}
+
+export interface FaqItem {
+  question: MultiLanguageString;
+  answer: MultiLanguageString;
+}
+
+export interface HotelPolicy {
+  policy_type: 'pet' | 'smoking' | 'child' | 'lounge_child';
+  content: MultiLanguageString;
+}
+
+export interface HotelExternalLink {
+  link_type: 'google_map' | 'official_website';
+  url: string;
+}
+
+export interface HotelSeo {
+  page_title?: MultiLanguageString | null;
+  meta_description?: MultiLanguageString | null;
+  canonical_url?: string | null;
+  og_title?: MultiLanguageString | null;
+  og_description?: MultiLanguageString | null;
+  og_image?: Image | null;
+}
+
 export interface Hotel {
   id: number;
-  name: string;
-  city_id: number;
-  city?: City;
-  star_rating?: string;
-  address?: string;
-  latitude?: number;
-  longitude?: number;
-  description?: string;
-  image?: string[]; // Array of image URLs
-  available_rooms?: string[];
-  content?: string;
-  language: string;
-  review_summary?: ReviewSummary;
-  transfers_available?: boolean;
-  transfer_vehicle_types?: string;
-  transfer_capacity?: number;
-  transfer_description?: string;
-  transfer_photos?: string[];
-  spa_available?: boolean;
-  spa_included_facilities?: string[];
-  spa_treatment_name?: string;
-  spa_treatment_type?: string;
-  spa_duration?: number;
-  spa_description?: string;
-  spa_photos?: string[];
-  special_experience_available?: boolean;
-  special_experience_title?: string;
-  special_experience_type?: string;
-  special_experience_duration?: number;
-  special_experience_description?: string;
-  special_experience_photos?: string[];
-  activities?: Activity[];
-  restaurants?: Restaurant[];
+  city_id?: number | null;
+  brand_id?: number | null;
+  slug: string;
+  status: HotelStatus;
+  star_rating?: HotelStarRating | null;
+  name?: MultiLanguageString | null;
+  address?: MultiLanguageString | null;
+  geo?: GeoPoint | null;
+  overview?: MultiLanguageString | null;
+  check_in_time?: string | null;
+  check_out_time?: string | null;
+  contact?: HotelContact | null;
+  external_links?: HotelExternalLink[] | null;
+  highlights?: HotelHighlight[] | null;
+  images?: Image[] | null;
+  rooms?: HotelRoom[] | null;
+  features?: HotelFeature[] | null;
+  benefits?: HotelBenefitProgram[] | null;
+  faqs?: FaqItem[] | null;
+  policies?: HotelPolicy[] | null;
+  seo?: HotelSeo | null;
+  schema_version: number;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
-// Helper function to extract country from address
-// Example: "112 Rue du Faubourg Saint-Honoré, 75008 Paris, France" -> "France"
-export function extractCountryFromAddress(address?: string): string {
-  if (!address) return '';
-  const parts = address.split(',');
-  return parts[parts.length - 1].trim();
-}
-
-// Helper function to format location as "City, Country"
-export function formatLocation(hotel: Hotel): string {
-  const city = hotel.city?.name || '';
-  const country = extractCountryFromAddress(hotel.address);
-  return country ? `${city}, ${country}` : city;
-}
-
-// Helper function to convert S3 path to full URL
-// Example: "tip/hotel/image.jpg" -> "https://tip-s3-bucket.s3.us-west-1.amazonaws.com/tip/hotel/image.jpg"
-export function getImageUrl(imagePath?: string): string {
-  if (!imagePath) return '/placeholder.jpg';
-
-  // If it's already a full URL (http/https), return as-is
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath;
-  }
-
-  // Convert S3 path to full URL using environment variable
-  const s3Endpoint = process.env.NEXT_PUBLIC_S3_ENDPOINT;
-  if (!s3Endpoint) {
-    console.warn('NEXT_PUBLIC_S3_ENDPOINT not configured');
-    return '/placeholder.jpg';
-  }
-
-  // Ensure no double slashes
-  const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
-  return `${s3Endpoint}/${cleanPath}`;
-}
-
-// Helper function to convert all hotel images
 export function getHotelImages(hotel: Hotel): string[] {
-  if (!hotel.image || hotel.image.length === 0) {
+  if (!hotel.images || hotel.images.length === 0) {
     return ['/placeholder.jpg'];
   }
-  return hotel.image.map((img) => getImageUrl(img));
+  return hotel.images.map((image) => getImageUrl(image));
+}
+
+export function getHotelCoordinates(hotel: Hotel): GeoPoint | null {
+  return hotel.geo || null;
+}
+
+export function getHotelExternalLink(
+  hotel: Hotel,
+  linkType: HotelExternalLink['link_type'],
+): string | null {
+  return hotel.external_links?.find((link) => link.link_type === linkType)?.url || null;
 }

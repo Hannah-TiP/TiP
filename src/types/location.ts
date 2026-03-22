@@ -1,9 +1,9 @@
-import type { GeoPoint, Image } from '@/types/common';
+import type { GeoPoint, Image, MultiLanguageString } from '@/types/common';
 
 interface LocationBase {
   id: number;
   status: boolean;
-  name: string;
+  name: MultiLanguageString;
   geo?: GeoPoint | null;
   cover_image?: Image | null;
   schema_version: number;

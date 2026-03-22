@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
+import { getLocalizedText } from '@/types/common';
 import type { User } from '@/types/auth';
 import type { City } from '@/types/location';
 
@@ -302,7 +303,7 @@ export default function OnboardingPage() {
                     <option value="">Select your city</option>
                     {cities.map((city) => (
                       <option key={city.id} value={city.id}>
-                        {city.name}
+                        {getLocalizedText(city.name)}
                       </option>
                     ))}
                   </select>

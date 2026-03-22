@@ -114,34 +114,20 @@ class ApiClient {
   }
 
   // Hotel methods
-  async getHotels(params?: {
-    page?: number;
-    per_page?: number;
-    city_id?: number;
-    language?: string;
-  }): Promise<Hotel[]> {
+  async getHotels(params?: { city_id?: number; language?: string }): Promise<Hotel[]> {
     const searchParams = new URLSearchParams();
-    if (params?.page !== undefined) searchParams.set('page', params.page.toString());
-    if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
     if (params?.language) searchParams.set('language', params.language);
 
     const query = searchParams.toString();
     const endpoint = `/hotels${query ? `?${query}` : ''}`;
 
-    const response = await this.request<{ data: { items: Hotel[] } }>(endpoint);
-    return response.data.items;
-  }
-
-  async getRecommendedHotels(language: string = 'en'): Promise<Hotel[]> {
-    const response = await this.request<{ data: Hotel[] }>(
-      `/hotels/recommend?language=${language}`,
-    );
+    const response = await this.request<{ data: Hotel[] }>(endpoint);
     return response.data;
   }
 
-  async getHotelById(hotelId: number | string): Promise<Hotel> {
-    const response = await this.request<{ data: Hotel }>(`/hotels/${hotelId}`);
+  async getHotelBySlug(slug: string): Promise<Hotel> {
+    const response = await this.request<{ data: Hotel }>(`/hotels/${slug}`);
     return response.data;
   }
 

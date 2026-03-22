@@ -9,7 +9,7 @@ import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
 import type { TripDetail, TravelPlanItem, ReviewPayload } from '@/types/trip';
 import Image from 'next/image';
-import { getImageUrl } from '@/types/hotel';
+import { getImageUrl } from '@/types/common';
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 

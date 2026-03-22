@@ -8,6 +8,7 @@ import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import { apiClient } from '@/lib/api-client';
+import { getLocalizedText } from '@/types/common';
 import type { User } from '@/types/auth';
 import type { City } from '@/types/location';
 
@@ -246,7 +247,7 @@ export default function MyProfile() {
                     <option value="">Select city</option>
                     {cities.map((city) => (
                       <option key={city.id} value={city.id}>
-                        {city.name}
+                        {getLocalizedText(city.name)}
                       </option>
                     ))}
                   </select>

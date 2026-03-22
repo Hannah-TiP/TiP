@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { getLocalizedText } from '@/types/common';
 import type { City } from '@/types/location';
 
 interface DestinationDropdownProps {
   value: string;
-  onChange: (cityData: Pick<City, 'id' | 'name'>) => void;
+  onChange: (cityData: { id: number; name: string }) => void;
   onClose: () => void;
 }
 
@@ -50,7 +51,7 @@ export default function DestinationDropdown({
   }, [onClose]);
 
   const filteredDestinations = cities.filter((city) =>
-    (city.name || '').toLowerCase().includes(searchQuery.toLowerCase()),
+    getLocalizedText(city.name).toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -98,12 +99,14 @@ export default function DestinationDropdown({
             {filteredDestinations.map((city) => (
               <button
                 key={city.id}
-                onClick={() => onChange({ id: city.id, name: city.name })}
+                onClick={() => onChange({ id: city.id, name: getLocalizedText(city.name) })}
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-50"
               >
                 <span className="icon-lucide text-gray-400">&#xe551;</span>
                 <div>
-                  <p className="text-[14px] font-medium text-green-dark">{city.name || ''}</p>
+                  <p className="text-[14px] font-medium text-green-dark">
+                    {getLocalizedText(city.name)}
+                  </p>
                 </div>
               </button>
             ))}

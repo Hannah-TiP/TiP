@@ -6,10 +6,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/hotel/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/hotels/by-slug/${id}`, {
       headers: {
         'Content-Type': 'application/json',
-        Language: 'en',
+        lang: 'en',
       },
     });
 

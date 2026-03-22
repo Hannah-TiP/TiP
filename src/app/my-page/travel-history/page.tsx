@@ -8,7 +8,7 @@ import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
 import type { Trip } from '@/types/trip';
 import Image from 'next/image';
-import { getImageUrl } from '@/types/hotel';
+import { getImageUrl } from '@/types/common';
 
 function getNights(startDate?: string, endDate?: string): number | null {
   if (!startDate || !endDate) return null;

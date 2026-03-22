@@ -1,7 +1,7 @@
 'use client';
 
 import type { Trip } from '@/types/trip';
-import { getImageUrl } from '@/types/hotel';
+import { getImageUrl } from '@/types/common';
 import Image from 'next/image';
 
 interface TripCardProps {

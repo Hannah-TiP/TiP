@@ -7,7 +7,8 @@ import { useParams } from 'next/navigation';
 import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
-import { getImageUrl, type Activity } from '@/types/hotel';
+import { getImageUrl } from '@/types/common';
+import type { Activity } from '@/types/hotel';
 
 export default function ActivityDetailPage() {
   const params = useParams();

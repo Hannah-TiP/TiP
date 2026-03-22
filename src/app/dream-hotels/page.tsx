@@ -6,7 +6,8 @@ import Link from 'next/link';
 import Footer from '@/components/Footer';
 import HotelMap from '@/components/HotelMap';
 import { apiClient } from '@/lib/api-client';
-import { formatLocation, getImageUrl, type Hotel } from '@/types/hotel';
+import { getLocalizedText } from '@/types/common';
+import { getHotelImages, type Hotel } from '@/types/hotel';
 import type { City } from '@/types/location';
 
 const partners = [
@@ -23,13 +24,13 @@ const partners = [
 // Helper function to derive tag from hotel data
 function getHotelTag(hotel: Hotel): string {
   if (!hotel.star_rating) return 'HOTEL';
-  return hotel.star_rating.toUpperCase();
+  return `${hotel.star_rating} STAR`;
 }
 
 const STAR_RATING_OPTIONS = [
   { value: '', label: 'All types' },
-  { value: '5-star', label: '5 Star' },
-  { value: '4-star', label: '4 Star' },
+  { value: '5', label: '5 Star' },
+  { value: '4', label: '4 Star' },
 ];
 
 export default function DreamHotelsPage() {
@@ -54,7 +55,7 @@ export default function DreamHotelsPage() {
     async function loadHotels() {
       try {
         setIsLoading(true);
-        const data = await apiClient.getHotels({ per_page: 100, language: 'en' });
+        const data = await apiClient.getHotels({ language: 'en' });
         setHotels(data);
       } catch (error) {
         console.error('Failed to load hotels:', error);
@@ -99,7 +100,7 @@ export default function DreamHotelsPage() {
   }, [hotels, selectedCity, selectedStarRating]);
 
   const filteredCities = cities.filter((c) =>
-    (c.name || '').toLowerCase().includes(citySearch.toLowerCase()),
+    getLocalizedText(c.name).toLowerCase().includes(citySearch.toLowerCase()),
   );
 
   const hasActiveFilters = selectedCity || selectedStarRating;
@@ -212,7 +213,7 @@ export default function DreamHotelsPage() {
                   DESTINATION
                 </p>
                 <p className="text-[14px] font-medium text-green-dark">
-                  {selectedCity?.name || 'All destinations'}
+                  {selectedCity ? getLocalizedText(selectedCity.name) : 'All destinations'}
                 </p>
               </button>
               {openDropdown === 'destination' && (
@@ -258,7 +259,7 @@ export default function DreamHotelsPage() {
                                 : 'text-green-dark'
                             }`}
                           >
-                            {city.name}
+                            {getLocalizedText(city.name)}
                           </button>
                         ))}
                         {filteredCities.length === 0 && !citiesLoading && (
@@ -381,13 +382,13 @@ export default function DreamHotelsPage() {
             {filteredHotels.map((hotel) => (
               <Link
                 key={hotel.id}
-                href={`/hotel/${hotel.id}`}
+                href={`/hotel/${hotel.slug}`}
                 className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
               >
                 <div className="relative h-56 overflow-hidden">
                   <Image
-                    src={getImageUrl(hotel.image?.[0])}
-                    alt={hotel.name}
+                    src={getHotelImages(hotel)[0]}
+                    alt={getLocalizedText(hotel.name)}
                     fill
                     sizes="(max-width: 768px) 100vw, 25vw"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -395,17 +396,14 @@ export default function DreamHotelsPage() {
                   <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
                     {getHotelTag(hotel)}
                   </div>
-                  {hotel.review_summary && (
-                    <div className="absolute right-3 top-3 rounded-full bg-green-dark px-2.5 py-1 text-[12px] font-semibold text-white">
-                      {hotel.review_summary.average_rating.toFixed(1)}
-                    </div>
-                  )}
                 </div>
                 <div className="p-5">
                   <h3 className="font-primary text-[18px] font-semibold text-green-dark">
-                    {hotel.name}
+                    {getLocalizedText(hotel.name)}
                   </h3>
-                  <p className="mt-1 text-[13px] text-gray-text">{formatLocation(hotel)}</p>
+                  <p className="mt-1 text-[13px] text-gray-text">
+                    {getLocalizedText(hotel.address)}
+                  </p>
                 </div>
               </Link>
             ))}

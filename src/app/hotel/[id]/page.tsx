@@ -1,72 +1,40 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
-import { formatLocation, getImageUrl, type Hotel } from '@/types/hotel';
+import { getLocalizedText } from '@/types/common';
+import { getHotelExternalLink, getHotelImages, type Hotel } from '@/types/hotel';
 
-const benefits = [
-  {
-    icon: '✦',
-    title: 'Room Upgrade',
-    description:
-      'Complimentary upgrade to the next room category, subject to availability at check-in.',
-  },
-  {
-    icon: '◈',
-    title: 'Daily Breakfast',
-    description: "Full breakfast for two guests daily at the hotel's signature restaurant.",
-  },
-  {
-    icon: '◇',
-    title: 'Hotel Credit',
-    description: '$100 USD equivalent property credit to use during your stay on dining or spa.',
-  },
-  {
-    icon: '○',
-    title: 'Early Check-in & Late Checkout',
-    description: 'Check in as early as 12pm and check out as late as 4pm, subject to availability.',
-  },
-];
+function getTagline(hotel: Hotel): string {
+  if (hotel.star_rating === '5') return 'PALACE HOTEL';
+  if (hotel.star_rating) return `${hotel.star_rating} STAR HOTEL`;
+  return 'LUXURY HOTEL';
+}
 
-// TODO: Replace with backend room details API once available
-// Backend currently only provides room names in `available_rooms` array
-// Hard-coded room details below include pricing, sizes, features
-const HARDCODED_ROOMS = [
-  {
-    name: 'Superior Room',
-    size: '35 m²',
-    price: '€850',
-    perNight: 'per night',
-    image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500&h=350&fit=crop',
-    features: ['King Bed', 'City View', 'Marble Bathroom'],
-  },
-  {
-    name: 'Deluxe Suite',
-    size: '55 m²',
-    price: '€1,450',
-    perNight: 'per night',
-    image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=500&h=350&fit=crop',
-    features: ['King Bed', 'Garden View', 'Separate Living Area'],
-  },
-  {
-    name: 'Royal Suite',
-    size: '95 m²',
-    price: '€3,200',
-    perNight: 'per night',
-    image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=500&h=350&fit=crop',
-    features: ['King Bed', 'Panoramic View', 'Butler Service'],
-  },
-];
+function getPolicyLabel(policyType: string): string {
+  switch (policyType) {
+    case 'pet':
+      return 'Pet Policy';
+    case 'smoking':
+      return 'Smoking Policy';
+    case 'child':
+      return 'Children';
+    case 'lounge_child':
+      return 'Lounge Access';
+    default:
+      return 'Policy';
+  }
+}
 
 export default function HotelDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const hotelId = params.id as string;
+  const slug = params.id as string;
 
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,7 +44,8 @@ export default function HotelDetailPage() {
     async function loadHotel() {
       try {
         setIsLoading(true);
-        const hotelData = await apiClient.getHotelById(hotelId);
+        setError(null);
+        const hotelData = await apiClient.getHotelBySlug(slug);
         setHotel(hotelData);
       } catch (err) {
         console.error('Failed to load hotel:', err);
@@ -86,10 +55,17 @@ export default function HotelDetailPage() {
       }
     }
 
-    if (hotelId) {
+    if (slug) {
       loadHotel();
     }
-  }, [hotelId]);
+  }, [slug]);
+
+  const hotelImages = useMemo(
+    () => (hotel ? getHotelImages(hotel) : ['/placeholder.jpg']),
+    [hotel],
+  );
+  const googleMapUrl = hotel ? getHotelExternalLink(hotel, 'google_map') : null;
+  const officialWebsiteUrl = hotel ? getHotelExternalLink(hotel, 'official_website') : null;
 
   if (isLoading) {
     return (
@@ -124,22 +100,21 @@ export default function HotelDetailPage() {
     );
   }
 
-  // Helper function to derive tagline from hotel data
-  const getTagline = () => {
-    if (hotel.star_rating === '5') return 'PALACE HOTEL';
-    if (hotel.star_rating) return `${hotel.star_rating} STAR HOTEL`;
-    return 'LUXURY HOTEL';
-  };
+  const benefits = hotel.benefits ?? [];
+  const rooms = hotel.rooms ?? [];
+  const features = hotel.features ?? [];
+  const faqs = hotel.faqs ?? [];
+  const policies = hotel.policies ?? [];
+  const highlights = hotel.highlights ?? [];
 
   return (
     <main className="min-h-screen bg-background">
       <TopBar activeLink="Dream Hotels" />
 
-      {/* Hero */}
       <section className="relative h-[560px] w-full overflow-hidden">
         <Image
-          src={getImageUrl(hotel.image?.[0])}
-          alt={hotel.name}
+          src={hotelImages[0]}
+          alt={getLocalizedText(hotel.name)}
           fill
           sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
@@ -147,18 +122,17 @@ export default function HotelDetailPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         <div className="relative z-10 flex h-full flex-col justify-end px-20 pb-16">
           <span className="mb-3 inline-block w-fit rounded-full bg-gold/90 px-4 py-1.5 text-[11px] font-semibold tracking-[2px] text-white">
-            {getTagline()}
+            {getTagline(hotel)}
           </span>
           <h1 className="font-primary text-[56px] font-normal italic leading-none text-white">
-            {hotel.name}
+            {getLocalizedText(hotel.name)}
           </h1>
           <p className="mt-4 max-w-2xl text-[16px] leading-relaxed text-white/70">
-            {hotel.description}
+            {getLocalizedText(hotel.overview)}
           </p>
         </div>
       </section>
 
-      {/* Why We Love It */}
       <section className="bg-white px-20 py-20">
         <div className="mx-auto flex max-w-7xl items-start gap-16">
           <div className="flex-1">
@@ -166,27 +140,28 @@ export default function HotelDetailPage() {
               WHY WE LOVE IT
             </span>
             <h2 className="mt-3 font-primary text-[38px] italic leading-snug text-green-dark">
-              {formatLocation(hotel)}
+              {getLocalizedText(hotel.address)}
             </h2>
             <p className="mt-5 text-[15px] leading-[1.8] text-gray-text">
-              {hotel.name} is one of those rare hotels where everything feels both impossibly grand
-              and genuinely warm. The staff remember your name, your preferences, and exactly how
-              you take your morning café crème.
+              {getLocalizedText(hotel.overview)}
             </p>
-            <p className="mt-4 text-[15px] leading-[1.8] text-gray-text">
-              Every detail has been considered, from the impeccable service to the carefully curated
-              art collection. This is hospitality at its finest, where tradition meets modern
-              luxury.
-            </p>
-            <div className="mt-8 flex gap-12">
-              {hotel.review_summary && (
-                <div>
-                  <p className="font-primary text-[32px] font-semibold text-green-dark">
-                    {hotel.review_summary.average_rating.toFixed(1)}
-                  </p>
-                  <p className="text-[12px] text-gray-text">Guest Rating (out of 5)</p>
-                </div>
-              )}
+
+            {highlights.length > 0 && (
+              <div className="mt-8 flex flex-wrap gap-3">
+                {highlights.map((highlight, index) => (
+                  <div
+                    key={`${highlight.highlight_type}-${index}`}
+                    className="rounded-full bg-gray-light px-4 py-2 text-[12px] font-medium text-green-dark"
+                  >
+                    {highlight.highlight_type === 'tag'
+                      ? getLocalizedText(highlight.text)
+                      : `${getLocalizedText(highlight.label)}: ${getLocalizedText(highlight.value)}`}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-8 flex flex-wrap gap-8">
               {hotel.star_rating && (
                 <div>
                   <p className="font-primary text-[32px] font-semibold text-green-dark">
@@ -195,20 +170,53 @@ export default function HotelDetailPage() {
                   <p className="text-[12px] text-gray-text">Star Rating</p>
                 </div>
               )}
-              {hotel.review_summary && (
+              {hotel.check_in_time && (
                 <div>
                   <p className="font-primary text-[32px] font-semibold text-green-dark">
-                    {hotel.review_summary.total_reviews}
+                    {hotel.check_in_time}
                   </p>
-                  <p className="text-[12px] text-gray-text">Reviews</p>
+                  <p className="text-[12px] text-gray-text">Check-in</p>
+                </div>
+              )}
+              {hotel.check_out_time && (
+                <div>
+                  <p className="font-primary text-[32px] font-semibold text-green-dark">
+                    {hotel.check_out_time}
+                  </p>
+                  <p className="text-[12px] text-gray-text">Check-out</p>
                 </div>
               )}
             </div>
+
+            {(officialWebsiteUrl || googleMapUrl) && (
+              <div className="mt-8 flex gap-3">
+                {officialWebsiteUrl && (
+                  <a
+                    href={officialWebsiteUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-full bg-green-dark px-5 py-3 text-[13px] font-semibold text-white hover:bg-green-dark/90"
+                  >
+                    Visit Website
+                  </a>
+                )}
+                {googleMapUrl && (
+                  <a
+                    href={googleMapUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-full border border-green-dark px-5 py-3 text-[13px] font-semibold text-green-dark hover:bg-green-dark hover:text-white"
+                  >
+                    View Map
+                  </a>
+                )}
+              </div>
+            )}
           </div>
           <div className="w-[400px] overflow-hidden rounded-lg">
             <Image
-              src={getImageUrl(hotel.image?.[1] || hotel.image?.[0])}
-              alt={`${hotel.name} interior`}
+              src={hotelImages[1] || hotelImages[0]}
+              alt={`${getLocalizedText(hotel.name)} interior`}
               width={400}
               height={480}
               className="h-[480px] w-full object-cover"
@@ -217,7 +225,6 @@ export default function HotelDetailPage() {
         </div>
       </section>
 
-      {/* TiP Exclusive Benefits */}
       <section className="bg-green-dark px-20 py-16">
         <div className="mx-auto max-w-7xl">
           <div className="mb-10 text-center">
@@ -225,28 +232,42 @@ export default function HotelDetailPage() {
               TiP EXCLUSIVE BENEFITS
             </span>
             <h2 className="mt-3 font-primary text-[36px] italic text-white">
-              Your Privileges at {hotel.name}
+              Your Privileges at {getLocalizedText(hotel.name)}
             </h2>
-            <p className="mt-2 text-[14px] text-white/50">
-              As a TiP member, enjoy these complimentary benefits during your stay
+          </div>
+          {benefits.length === 0 ? (
+            <p className="text-center text-[14px] text-white/60">
+              Benefit details will be available soon.
             </p>
-          </div>
-          <div className="grid grid-cols-4 gap-5">
-            {benefits.map((b) => (
-              <div
-                key={b.title}
-                className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm"
-              >
-                <span className="text-2xl text-gold">{b.icon}</span>
-                <h3 className="mt-4 text-[15px] font-semibold text-white">{b.title}</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-white/50">{b.description}</p>
-              </div>
-            ))}
-          </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-5">
+              {benefits.map((program, index) => (
+                <div
+                  key={`${program.program_name || 'program'}-${index}`}
+                  className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm"
+                >
+                  <p className="text-[12px] font-semibold tracking-[2px] text-gold">
+                    {program.program_name || 'Member Benefit'}
+                  </p>
+                  {program.membership_tier && (
+                    <p className="mt-2 text-[11px] uppercase tracking-[2px] text-white/50">
+                      {program.membership_tier}
+                    </p>
+                  )}
+                  <ul className="mt-4 space-y-2">
+                    {program.benefits.map((benefit, benefitIndex) => (
+                      <li key={benefitIndex} className="text-[13px] leading-relaxed text-white/80">
+                        {getLocalizedText(benefit)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Select Your Room */}
       <section className="bg-white px-20 py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mb-10 text-center">
@@ -257,103 +278,125 @@ export default function HotelDetailPage() {
               Select Your Room
             </h2>
           </div>
-          <div className="grid grid-cols-3 gap-6">
-            {HARDCODED_ROOMS.map((room) => (
-              <div
-                key={room.name}
-                className="group overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-lg"
-              >
-                <div className="relative h-52 overflow-hidden">
-                  <Image
-                    src={room.image}
-                    alt={room.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                </div>
-                <div className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-primary text-[20px] font-semibold text-green-dark">
-                        {room.name}
-                      </h3>
-                      <p className="mt-1 text-[13px] text-gray-text">{room.size}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[18px] font-semibold text-green-dark">{room.price}</p>
-                      <p className="text-[11px] text-gray-text">{room.perNight}</p>
-                    </div>
+          {rooms.length === 0 ? (
+            <p className="text-center text-[14px] text-gray-text">
+              Room details will be added soon.
+            </p>
+          ) : (
+            <div className="grid grid-cols-3 gap-6">
+              {rooms.map((room, index) => (
+                <div
+                  key={`${getLocalizedText(room.name)}-${index}`}
+                  className="group overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-lg"
+                >
+                  <div className="relative h-52 overflow-hidden">
+                    <Image
+                      src={
+                        room.images?.[0]
+                          ? getHotelImages({ ...hotel, images: room.images })[0]
+                          : hotelImages[0]
+                      }
+                      alt={getLocalizedText(room.name)}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {room.features.map((f) => (
-                      <span
-                        key={f}
-                        className="rounded-full bg-gray-light px-3 py-1 text-[11px] font-medium text-gray-text"
-                      >
-                        {f}
-                      </span>
-                    ))}
+                  <div className="p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="font-primary text-[20px] font-semibold text-green-dark">
+                          {getLocalizedText(room.name)}
+                        </h3>
+                        {room.size_sqm && (
+                          <p className="mt-1 text-[13px] text-gray-text">{room.size_sqm} m²</p>
+                        )}
+                      </div>
+                    </div>
+                    {room.summary && (
+                      <p className="mt-4 text-[13px] leading-relaxed text-gray-text">
+                        {getLocalizedText(room.summary)}
+                      </p>
+                    )}
+                    <button className="mt-5 w-full rounded-full bg-green-dark py-3 text-[13px] font-semibold text-white transition-opacity hover:opacity-90">
+                      Ask Concierge
+                    </button>
                   </div>
-                  <button className="mt-5 w-full rounded-full bg-green-dark py-3 text-[13px] font-semibold text-white transition-opacity hover:opacity-90">
-                    Select Room
-                  </button>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="bg-gray-light px-20 py-20">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-2 gap-8">
+            <div className="rounded-lg bg-white p-8">
+              <h3 className="font-primary text-[30px] italic text-green-dark">Features</h3>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {features.length === 0 ? (
+                  <p className="text-[14px] text-gray-text">Feature details will be added soon.</p>
+                ) : (
+                  features.map((feature, index) => (
+                    <span
+                      key={`${feature.feature_type}-${index}`}
+                      className="rounded-full bg-gray-light px-4 py-2 text-[12px] font-medium text-green-dark"
+                    >
+                      {getLocalizedText(feature.name)}
+                    </span>
+                  ))
+                )}
               </div>
-            ))}
+            </div>
+            <div className="rounded-lg bg-white p-8">
+              <h3 className="font-primary text-[30px] italic text-green-dark">Policies</h3>
+              {policies.length === 0 ? (
+                <p className="mt-6 text-[14px] text-gray-text">Policies will be added soon.</p>
+              ) : (
+                <div className="mt-6 space-y-4">
+                  {policies.map((policy, index) => (
+                    <div key={`${policy.policy_type}-${index}`}>
+                      <p className="text-[12px] font-semibold tracking-[2px] text-gold">
+                        {getPolicyLabel(policy.policy_type)}
+                      </p>
+                      <p className="mt-1 text-[14px] leading-relaxed text-gray-text">
+                        {getLocalizedText(policy.content)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Experiences Section */}
-      <section className="bg-gray-light px-20 py-20">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-10 text-center">
-            <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-              EXPLORE THE AREA
-            </span>
-            <h2 className="mt-3 font-primary text-[38px] italic text-green-dark">
-              Experiences Nearby
-            </h2>
-          </div>
-          <div className="grid grid-cols-2 gap-8">
-            {/* Map placeholder */}
-            <div className="flex h-[500px] items-center justify-center overflow-hidden rounded-lg bg-[#E8E4D8]">
-              <div className="text-center">
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-dark/10">
-                  <span className="text-lg text-green-dark">📍</span>
-                </div>
-                <p className="text-[14px] font-medium text-green-dark">{formatLocation(hotel)}</p>
-                <p className="mt-1 text-[12px] text-gray-text">Interactive map</p>
-              </div>
+      {faqs.length > 0 && (
+        <section className="bg-white px-20 py-20">
+          <div className="mx-auto max-w-4xl">
+            <div className="mb-10 text-center">
+              <span className="text-[11px] font-semibold tracking-[4px] text-gold">FAQ</span>
+              <h2 className="mt-3 font-primary text-[38px] italic text-green-dark">
+                Helpful Details
+              </h2>
             </div>
-            {/* Experiences list */}
-            <div className="rounded-lg bg-white p-6">
-              <h3 className="mb-4 text-[16px] font-semibold text-green-dark">Nearby Attractions</h3>
-              {[
-                { name: 'Local Museum', type: 'Culture', distance: '1.2 km' },
-                { name: 'Shopping District', type: 'Shopping', distance: '0.3 km' },
-                { name: 'Historic Landmark', type: 'Landmark', distance: '1.0 km' },
-                { name: 'Fine Dining', type: 'Restaurant', distance: '0.5 km' },
-                { name: 'Art Gallery', type: 'Culture', distance: '0.8 km' },
-              ].map((exp) => (
-                <div
-                  key={exp.name}
-                  className="flex items-center justify-between border-b border-gray-100 py-4 last:border-0"
-                >
-                  <div>
-                    <p className="text-[14px] font-medium text-green-dark">{exp.name}</p>
-                    <p className="text-[12px] text-gray-text">{exp.type}</p>
-                  </div>
-                  <p className="text-[13px] font-medium text-green-dark">{exp.distance}</p>
+            <div className="space-y-4">
+              {faqs.map((faq, index) => (
+                <div key={index} className="rounded-xl border border-gray-100 bg-gray-light p-6">
+                  <h3 className="text-[16px] font-semibold text-green-dark">
+                    {getLocalizedText(faq.question)}
+                  </h3>
+                  <p className="mt-2 text-[14px] leading-relaxed text-gray-text">
+                    {getLocalizedText(faq.answer)}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* CTA */}
       <section className="bg-[#3D3530] px-20 py-20">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-[11px] font-semibold tracking-[4px] text-white/50">
@@ -363,8 +406,8 @@ export default function HotelDetailPage() {
             Your Concierge Awaits
           </h2>
           <p className="mt-4 text-[16px] leading-relaxed text-white/60">
-            Have questions about your journey or wish to customize any aspect of your itinerary? Our
-            dedicated travel specialists are available around the clock.
+            Have questions about your stay or want to tailor every detail? Our concierge team is
+            here to help shape the trip around you.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Link

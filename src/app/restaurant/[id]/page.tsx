@@ -7,7 +7,8 @@ import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
-import { getImageUrl, type Restaurant } from '@/types/hotel';
+import { getImageUrl } from '@/types/common';
+import type { Restaurant } from '@/types/hotel';
 
 export default function RestaurantDetailPage() {
   const params = useParams();

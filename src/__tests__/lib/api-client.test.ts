@@ -77,38 +77,49 @@ describe('register', () => {
 
 describe('getHotels', () => {
   it('builds query params correctly', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse({ data: { items: [] } }));
-    await apiClient.getHotels({ page: 2, per_page: 10, city_id: 5 });
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: [] }));
+    await apiClient.getHotels({ city_id: 5, language: 'en' });
 
     const url = mockFetch.mock.calls[0][0] as string;
-    expect(url).toContain('page=2');
-    expect(url).toContain('per_page=10');
     expect(url).toContain('city_id=5');
+    expect(url).toContain('language=en');
   });
 
   it('omits undefined params', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse({ data: { items: [] } }));
-    await apiClient.getHotels({ page: 1 });
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: [] }));
+    await apiClient.getHotels();
 
     const url = mockFetch.mock.calls[0][0] as string;
-    expect(url).toContain('page=1');
     expect(url).not.toContain('city_id');
-    expect(url).not.toContain('per_page');
+    expect(url).not.toContain('language');
   });
 
   it('calls /hotels with no params when none provided', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse({ data: { items: [] } }));
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: [] }));
     await apiClient.getHotels();
 
     expect(mockFetch.mock.calls[0][0]).toBe('/api/hotels');
   });
 
-  it('unwraps response.data.items', async () => {
-    const hotels = [{ id: 1, name: 'Hotel A' }];
-    mockFetch.mockResolvedValueOnce(mockResponse({ data: { items: hotels } }));
+  it('unwraps response.data', async () => {
+    const hotels = [{ id: 1, slug: 'hotel-a', status: 'published', schema_version: 1 }];
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: hotels }));
 
     const result = await apiClient.getHotels();
     expect(result).toEqual(hotels);
+  });
+});
+
+describe('getHotelBySlug', () => {
+  it('fetches the hotel detail by slug', async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ data: { id: 1, slug: 'aman-tokyo', status: 'published', schema_version: 1 } }),
+    );
+
+    const result = await apiClient.getHotelBySlug('aman-tokyo');
+
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/hotels/aman-tokyo');
+    expect(result.slug).toBe('aman-tokyo');
   });
 });
 

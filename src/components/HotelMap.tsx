@@ -4,7 +4,8 @@ import { useCallback, useState, useEffect, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, InfoWindow } from '@react-google-maps/api';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Hotel, formatLocation, getImageUrl } from '@/types/hotel';
+import { getLocalizedText } from '@/types/common';
+import { Hotel, getHotelCoordinates, getHotelImages } from '@/types/hotel';
 
 interface HotelMapProps {
   hotels: Hotel[];
@@ -50,8 +51,9 @@ export default function HotelMap({ hotels }: HotelMapProps) {
       // Fit map bounds to show all hotels
       const bounds = new window.google.maps.LatLngBounds();
       hotels.forEach((hotel) => {
-        if (hotel.latitude && hotel.longitude) {
-          bounds.extend({ lat: hotel.latitude, lng: hotel.longitude });
+        const coordinates = getHotelCoordinates(hotel);
+        if (coordinates) {
+          bounds.extend(coordinates);
         }
       });
 
@@ -84,9 +86,11 @@ export default function HotelMap({ hotels }: HotelMapProps) {
     markersRef.current = [];
 
     // Create new markers
-    const hotelsWithCoordinates = hotels.filter((hotel) => hotel.latitude && hotel.longitude);
+    const hotelsWithCoordinates = hotels
+      .map((hotel) => ({ hotel, coordinates: getHotelCoordinates(hotel) }))
+      .filter((item) => item.coordinates !== null);
 
-    hotelsWithCoordinates.forEach((hotel) => {
+    hotelsWithCoordinates.forEach(({ hotel, coordinates }) => {
       // Create custom marker element
       const markerElement = document.createElement('div');
       markerElement.className = 'custom-marker';
@@ -110,7 +114,7 @@ export default function HotelMap({ hotels }: HotelMapProps) {
 
       const marker = new window.google.maps.marker.AdvancedMarkerElement({
         map,
-        position: { lat: hotel.latitude!, lng: hotel.longitude! },
+        position: coordinates!,
         content: markerElement,
       });
 
@@ -124,8 +128,8 @@ export default function HotelMap({ hotels }: HotelMapProps) {
     // Fit map bounds to show filtered hotels
     if (hotelsWithCoordinates.length > 0) {
       const bounds = new window.google.maps.LatLngBounds();
-      hotelsWithCoordinates.forEach((hotel) => {
-        bounds.extend({ lat: hotel.latitude!, lng: hotel.longitude! });
+      hotelsWithCoordinates.forEach(({ coordinates }) => {
+        bounds.extend(coordinates!);
       });
 
       if (isInitialFit.current) {
@@ -201,38 +205,31 @@ export default function HotelMap({ hotels }: HotelMapProps) {
       onUnmount={onUnmount}
       options={mapOptions}
     >
-      {selectedHotel && selectedHotel.latitude && selectedHotel.longitude && (
+      {selectedHotel && getHotelCoordinates(selectedHotel) && (
         <InfoWindow
-          position={{
-            lat: selectedHotel.latitude,
-            lng: selectedHotel.longitude,
-          }}
+          position={getHotelCoordinates(selectedHotel)!}
           onCloseClick={() => setSelectedHotel(null)}
         >
           <div className="max-w-[280px] p-2">
-            <Link href={`/hotel/${selectedHotel.id}`} className="group">
+            <Link href={`/hotel/${selectedHotel.slug}`} className="group">
               <div className="relative mb-2 h-40 w-full overflow-hidden rounded-lg">
                 <Image
-                  src={getImageUrl(selectedHotel.image?.[0])}
-                  alt={selectedHotel.name}
+                  src={getHotelImages(selectedHotel)[0]}
+                  alt={getLocalizedText(selectedHotel.name)}
                   fill
                   sizes="280px"
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
               <h3 className="font-semibold text-green-dark group-hover:text-gold">
-                {selectedHotel.name}
+                {getLocalizedText(selectedHotel.name)}
               </h3>
-              <p className="mt-1 text-[13px] text-gray-text">{formatLocation(selectedHotel)}</p>
+              <p className="mt-1 text-[13px] text-gray-text">
+                {getLocalizedText(selectedHotel.address)}
+              </p>
               {selectedHotel.star_rating && (
                 <p className="mt-1 text-[11px] font-medium text-gold">
                   {'★'.repeat(parseInt(selectedHotel.star_rating))}
-                </p>
-              )}
-              {selectedHotel.review_summary && (
-                <p className="mt-1 text-[12px] text-gray-600">
-                  {selectedHotel.review_summary.average_rating.toFixed(1)} / 5.0 •{' '}
-                  {selectedHotel.review_summary.total_reviews} reviews
                 </p>
               )}
             </Link>

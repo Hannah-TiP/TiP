@@ -5,7 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
-import { getImageUrl, type Activity, type Restaurant } from '@/types/hotel';
+import { getImageUrl, getLocalizedText } from '@/types/common';
+import type { Activity, Restaurant } from '@/types/hotel';
 import type { City } from '@/types/location';
 
 export default function MoreDreamsPage() {
@@ -78,7 +79,7 @@ export default function MoreDreamsPage() {
   }, [restaurants, selectedCity]);
 
   const filteredCities = cities.filter((c) =>
-    (c.name || '').toLowerCase().includes(citySearch.toLowerCase()),
+    getLocalizedText(c.name).toLowerCase().includes(citySearch.toLowerCase()),
   );
 
   function getActivityTag(activity: Activity): string {
@@ -173,7 +174,7 @@ export default function MoreDreamsPage() {
                 DESTINATION
               </p>
               <p className="text-[14px] font-medium text-green-dark">
-                {selectedCity ? selectedCity.name : 'All destinations'}
+                {selectedCity ? getLocalizedText(selectedCity.name) : 'All destinations'}
               </p>
             </button>
             {openDropdown === 'destination' && (
@@ -219,7 +220,7 @@ export default function MoreDreamsPage() {
                               : 'text-green-dark'
                           }`}
                         >
-                          {city.name}
+                          {getLocalizedText(city.name)}
                         </button>
                       ))}
                       {filteredCities.length === 0 && !citiesLoading && (
@@ -254,7 +255,7 @@ export default function MoreDreamsPage() {
         {selectedCity && (
           <p className="mt-3 text-[13px] text-gray-text">
             Showing {filteredActivities.length} activities and {filteredRestaurants.length}{' '}
-            restaurants in {selectedCity.name}
+            restaurants in {getLocalizedText(selectedCity.name)}
           </p>
         )}
       </section>
@@ -320,7 +321,9 @@ export default function MoreDreamsPage() {
                     {activity.name}
                   </h3>
                   {activity.city?.name && (
-                    <p className="mt-1 text-[13px] text-gray-text">{activity.city.name}</p>
+                    <p className="mt-1 text-[13px] text-gray-text">
+                      {getLocalizedText(activity.city?.name)}
+                    </p>
                   )}
                 </div>
               </Link>
@@ -383,7 +386,9 @@ export default function MoreDreamsPage() {
                     {restaurant.name}
                   </h3>
                   {restaurant.city?.name && (
-                    <p className="mt-1 text-[13px] text-gray-text">{restaurant.city.name}</p>
+                    <p className="mt-1 text-[13px] text-gray-text">
+                      {getLocalizedText(restaurant.city?.name)}
+                    </p>
                   )}
                 </div>
               </Link>
