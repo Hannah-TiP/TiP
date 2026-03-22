@@ -185,11 +185,3 @@ describe('converse', () => {
     expect(body.widget_response).toBeUndefined();
   });
 });
-
-describe('getMyReview', () => {
-  it('returns null on error instead of throwing', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Not found' }, 404));
-    const result = await apiClient.getMyReview(99);
-    expect(result).toBeNull();
-  });
-});

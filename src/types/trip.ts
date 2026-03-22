@@ -1,3 +1,5 @@
+import type { GeoPoint } from '@/types/common';
+
 export type TripStatus =
   | 'draft'
   | 'waiting-for-proposal'
@@ -9,179 +11,106 @@ export type TripStatus =
   | 'travel-completed'
   | 'canceled';
 
-export interface Coupon {
-  id: number;
-  code: string;
-  amount: number;
-  membership: string;
-  end_date: number; // unix timestamp
-  is_active: boolean;
+export type InternalNoteStatus = 'active' | 'archived';
+
+export interface TripDocument {
+  document_type?: string | null;
+  file: string;
+  file_name?: string | null;
+  booking_reference?: string | null;
 }
 
-export interface TravelPlanItem {
+export interface TripInternalNote {
   id: number;
   trip_id: number;
-  travel_plan_id: number;
-  category_type?: string; // "flight" | "staying" | "activities" | "others"
-  category_name?: string;
-  estimated_cost?: number;
-  city?: string;
-  location?: string;
-  lat?: number;
-  lng?: number;
-  timezone?: string;
-  start_time?: string; // display time string
-  start_time_timestamp?: number; // unix timestamp
-  description?: string;
-  system_hotel_id?: number;
-  system_activity_id?: number;
-  review_summary?: { total_reviews: number; average_rating: number };
-  user_review_status?: string; // "none" | "pending-review" | "published" | "rejected"
-  user_rating?: number;
-  total_reviewers?: number;
+  content: string;
+  status: InternalNoteStatus;
+  created_by_admin_id?: number | null;
+  schema_version: number;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
-export interface TravelPlan {
-  id: number;
-  trip_id: number;
-  proposal_id: number;
-  sort: number; // day order (1, 2, 3…)
-  date: number; // unix timestamp for that day
-  day_topic?: string;
-  cover?: string;
-  items: TravelPlanItem[];
+export interface TripPlanItemBase {
+  item_type: 'flight' | 'hotel' | 'restaurant' | 'activity' | 'transfer' | 'note';
+  title?: string | null;
+  description?: string | null;
+  start_at?: string | null;
+  end_at?: string | null;
+  location?: string | null;
+  geo?: GeoPoint | null;
+  documents?: TripDocument[] | null;
 }
 
-export interface Proposal {
-  id: number;
+export interface FlightPlanItem extends TripPlanItemBase {
+  item_type: 'flight';
+  carrier?: string | null;
+  flight_number?: string | null;
+  departure_airport?: string | null;
+  arrival_airport?: string | null;
+}
+
+export interface HotelPlanItem extends TripPlanItemBase {
+  item_type: 'hotel';
+  hotel_id?: number | null;
+}
+
+export interface RestaurantPlanItem extends TripPlanItemBase {
+  item_type: 'restaurant';
+  restaurant_id?: number | null;
+}
+
+export interface ActivityPlanItem extends TripPlanItemBase {
+  item_type: 'activity';
+  activity_id?: number | null;
+}
+
+export interface TransferPlanItem extends TripPlanItemBase {
+  item_type: 'transfer';
+  transport_type?: string | null;
+}
+
+export interface NotePlanItem extends TripPlanItemBase {
+  item_type: 'note';
+}
+
+export type TripPlanItem =
+  | FlightPlanItem
+  | HotelPlanItem
+  | RestaurantPlanItem
+  | ActivityPlanItem
+  | TransferPlanItem
+  | NotePlanItem;
+
+export interface TripDay {
+  date: string;
+  title?: string | null;
+  items: TripPlanItem[];
+}
+
+export interface TripVersion {
+  id?: number | null;
   trip_id: number;
-  language: string;
-  preset_destination_cities?: string;
-  preset_destination_cities_names?: string;
-  custom_destination_cities?: string;
-  start_time?: number;
-  end_time?: number;
+  version_number?: number | null;
+  created_by_admin_id?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  title?: string | null;
+  summary?: string | null;
   adults: number;
   kids: number;
-  purpose: string;
-  flight_cost?: number;
-  staying_cost?: number;
-  activity_cost?: number;
-  other_cost?: number;
-  coupon_cost?: number;
-  total_cost?: number;
-  note?: string;
-  // travel_plans are NOT here — they live at the Trip level
+  plan?: TripDay[] | null;
+  schema_version: number;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
-export interface ProposalComment {
-  id: number;
-  trip_id: number;
-  user_id?: number;
-  admin_id?: number;
-  content?: Array<{
-    role: 'user' | 'admin';
-    type: 'text' | 'file';
-    message: string;
-    filePath?: string;
-  }>;
-  user_unread_count: number;
-  admin_unread_count: number;
-}
-
-// List response — GET /api/v1/trip/list
 export interface Trip {
   id: number;
   user_id: number;
-  destination?: string; // AI chat context convenience field only
-  cover_image?: string;
-  preset_destination_cities?: string; // comma-separated city IDs
-  preset_destination_cities_names?: string; // comma-separated city names e.g. "Paris, Lyon"
-  custom_destination_cities?: string;
-  start_time?: number; // unix timestamp (legacy)
-  end_time?: number; // unix timestamp (legacy)
-  start_date?: string; // YYYY-MM-DD (prefer this)
-  end_date?: string; // YYYY-MM-DD
-  timezone?: string; // UTC offset e.g. "+08:00"
-  adults: number;
-  kids: number;
-  purpose: string;
-  service_type?: string;
-  flight_options?: string[];
-  additional_services?: string[];
-  start_city?: string;
-  accommodation_preferences?: string;
-  specific_hotel_requests?: string;
-  preferences?: string;
-  budget?: number;
-  coupon_id?: number;
-  coupon?: Coupon;
   status: TripStatus | string;
-  proposal_status?: string;
-  has_comments: boolean;
-  is_shared?: boolean;
-  show_cost?: boolean;
-  show_booking_documents?: boolean;
-  has_unread_journal_messages?: boolean;
-}
-
-// ─── Comment / Proposal / Payment / Review payloads ──────────────────────────
-
-export interface CommentContent {
-  role: 'user';
-  type: 'text' | 'file';
-  message: string;
-  filePath?: string;
-}
-
-export interface AgreeProposalResponse {
-  status: string;
-  proposal_status: string;
-  pending_amount?: number;
-}
-
-export interface PayPalOrderResponse {
-  paypal_order_id: string;
-  order_data?: Record<string, unknown>;
-}
-
-export interface ReviewPayload {
-  rating: number; // 1-5
-  review_content: string;
-  photos?: string[]; // S3 URLs
-}
-
-export interface Review {
-  id: number;
-  travel_plan_item_id: number;
-  score: number;
-  review_content: string;
-  photos?: string[];
-  status?: string;
-  created_at?: string;
-}
-
-export interface S3TempCredentials {
-  access_key_id: string;
-  secret_access_key: string;
-  session_token: string;
-  bucket: string;
-  region: string;
-  prefix: string;
-  expiration: string;
-}
-
-// Detail response — GET /api/v1/trip/{id}
-// Extends Trip with proposal, itinerary, payment, and sharing fields
-export interface TripDetail extends Trip {
-  user_email?: string;
-  tickets?: Array<{ file: string; fileName: string }>;
-  share_image_no_cost?: string;
-  share_image_with_cost?: string;
-  share_pdf?: string;
-  paid_amount?: number;
-  pending_amount?: number;
-  proposal?: Proposal;
-  travel_plans?: TravelPlan[]; // one per day; at trip level, NOT inside proposal
-  comments?: ProposalComment;
+  current_trip_version_id?: number | null;
+  schema_version: number;
+  created_at?: string | null;
+  updated_at?: string | null;
 }

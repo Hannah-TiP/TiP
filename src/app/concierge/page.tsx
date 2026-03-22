@@ -9,9 +9,9 @@ import ConversationSidebar from '@/components/ai-chat/ConversationSidebar';
 import TripDetailPanel from '@/components/ai-chat/TripDetailPanel';
 import { useSession } from 'next-auth/react';
 import { apiClient } from '@/lib/api-client';
+import { getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
 import type {
   AIMessage,
-  TripDetail,
   SessionWithTrip,
   ChatHistoryResponse,
   CreateSessionResponse,
@@ -57,7 +57,7 @@ function ConciergeContent() {
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tripDetail, setTripDetail] = useState<TripDetail | null>(null);
+  const [tripDetail, setTripDetail] = useState<TripWithVersion | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Check authentication
@@ -91,7 +91,7 @@ function ConciergeContent() {
   // Fetch trip detail by ID
   async function fetchTripDetail(tripId: number) {
     try {
-      const detail = await apiClient.getTripById(tripId);
+      const detail = await getTripWithVersion(tripId);
       setTripDetail(detail);
     } catch (err) {
       console.error('[Concierge] Failed to fetch trip:', err);
@@ -316,9 +316,9 @@ function ConciergeContent() {
         };
         setMessages((prev) => [...prev, assistantMessage]);
 
-        // Pass TripDetail directly from the converse response
-        if (responseData.trip) {
-          setTripDetail(responseData.trip);
+        // Refresh the panel from the canonical trip endpoints when a trip is involved.
+        if (responseData.trip?.id) {
+          fetchTripDetail(responseData.trip.id);
         }
 
         // Update sidebar session with latest trip data from the response
@@ -328,13 +328,6 @@ function ConciergeContent() {
               s.session_id === sessionId
                 ? {
                     ...s,
-                    trip_title: s.trip_title,
-                    trip_destinations:
-                      responseData.trip!.preset_destination_cities_names ||
-                      responseData.trip!.custom_destination_cities ||
-                      s.trip_destinations,
-                    trip_start_date: responseData.trip!.start_date ?? s.trip_start_date,
-                    trip_end_date: responseData.trip!.end_date ?? s.trip_end_date,
                     trip_status: responseData.trip!.status ?? s.trip_status,
                     message_count: s.message_count + (widgetResponse ? 1 : 2),
                     last_message_at: new Date().toISOString(),

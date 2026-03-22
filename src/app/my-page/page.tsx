@@ -5,10 +5,7 @@ import Link from 'next/link';
 import TopBar from '@/components/TopBar';
 import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
-import { apiClient } from '@/lib/api-client';
-import type { Trip } from '@/types/trip';
-import Image from 'next/image';
-import { getImageUrl } from '@/types/common';
+import { getTripsWithVersions, type TripWithVersion } from '@/lib/trip-utils';
 
 const STATUS_PRIORITY = [
   'draft',
@@ -18,7 +15,7 @@ const STATUS_PRIORITY = [
   'paid',
   'ready-to-travel',
   'traveling-now',
-];
+] as const;
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Planning',
@@ -55,19 +52,14 @@ function formatDate(dateStr?: string): string {
   });
 }
 
-function getDestination(trip: Trip): string {
-  return trip.preset_destination_cities_names || trip.custom_destination_cities || 'Your Trip';
-}
-
-function sortByPriority(trips: Trip[]): Trip[] {
+function sortByPriority(trips: TripWithVersion[]): TripWithVersion[] {
   return [...trips].sort((a, b) => {
-    const ai = STATUS_PRIORITY.indexOf(a.status);
-    const bi = STATUS_PRIORITY.indexOf(b.status);
+    const ai = STATUS_PRIORITY.indexOf(a.trip.status as (typeof STATUS_PRIORITY)[number]);
+    const bi = STATUS_PRIORITY.indexOf(b.trip.status as (typeof STATUS_PRIORITY)[number]);
     return bi - ai;
   });
 }
 
-// ─── Loading Skeleton ─────────────────────────────────────────────────────────
 function LoadingSkeleton() {
   return (
     <div className="max-w-7xl mx-auto px-6 mt-8 mb-16 space-y-8 animate-pulse">
@@ -81,7 +73,6 @@ function LoadingSkeleton() {
   );
 }
 
-// ─── Empty State ──────────────────────────────────────────────────────────────
 function EmptyState() {
   return (
     <div className="max-w-7xl mx-auto px-6 mt-8 mb-16">
@@ -100,30 +91,24 @@ function EmptyState() {
   );
 }
 
-// ─── Hero Card (featured trip) ───────────────────────────────────────────────
-function HeroCard({ trip }: { trip: Trip }) {
-  const destination = getDestination(trip);
-  const nights = getNights(trip.start_date, trip.end_date);
-  const statusLabel = STATUS_LABELS[trip.status] ?? trip.status;
-  const statusColor = STATUS_COLORS[trip.status] ?? 'bg-gray-100 text-gray-600';
+function HeroCard({ item }: { item: TripWithVersion }) {
+  const title = item.currentVersion?.title?.trim() || 'New Trip';
+  const startDate = item.currentVersion?.start_date || undefined;
+  const endDate = item.currentVersion?.end_date || undefined;
+  const nights = getNights(startDate, endDate);
+  const adults = item.currentVersion?.adults ?? 0;
+  const kids = item.currentVersion?.kids ?? 0;
+  const summary = item.currentVersion?.summary || undefined;
+  const statusLabel = STATUS_LABELS[item.trip.status] ?? item.trip.status;
+  const statusColor = STATUS_COLORS[item.trip.status] ?? 'bg-gray-100 text-gray-600';
 
   return (
-    <Link href={`/my-page/trip/${trip.id}`} className="block group">
+    <Link href={`/my-page/trip/${item.trip.id}`} className="block group">
       <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex group-hover:ring-2 group-hover:ring-[#C4956A] transition-all">
         <div className="w-[480px] flex-shrink-0 relative">
-          {trip.cover_image ? (
-            <Image
-              src={getImageUrl(trip.cover_image)}
-              alt={destination}
-              className="object-cover"
-              fill
-              sizes="480px"
-            />
-          ) : (
-            <div className="w-full h-full min-h-[240px] bg-gradient-to-br from-[#2a5240] to-[#C4956A] flex items-center justify-center">
-              <span className="text-white text-2xl font-bold px-6 text-center">{destination}</span>
-            </div>
-          )}
+          <div className="w-full h-full min-h-[240px] bg-gradient-to-br from-[#2a5240] to-[#C4956A] flex items-center justify-center">
+            <span className="text-white text-2xl font-bold px-6 text-center">{title}</span>
+          </div>
         </div>
         <div className="flex-1 p-10 text-white flex flex-col justify-center">
           <div className="flex items-center gap-3 mb-2">
@@ -132,12 +117,12 @@ function HeroCard({ trip }: { trip: Trip }) {
               {statusLabel}
             </span>
           </div>
-          <h1 className="text-4xl font-bold mb-4">{destination}</h1>
+          <h1 className="text-4xl font-bold mb-4">{title}</h1>
           <div className="flex flex-wrap gap-8 text-sm">
             <div>
               <p className="text-white/50">Dates</p>
               <p className="font-semibold">
-                {formatDate(trip.start_date)} – {formatDate(trip.end_date)}
+                {formatDate(startDate)} – {formatDate(endDate)}
               </p>
             </div>
             {nights !== null && (
@@ -151,14 +136,14 @@ function HeroCard({ trip }: { trip: Trip }) {
             <div>
               <p className="text-white/50">Travelers</p>
               <p className="font-semibold">
-                {trip.adults} {trip.adults === 1 ? 'Adult' : 'Adults'}
-                {trip.kids ? `, ${trip.kids} ${trip.kids === 1 ? 'Kid' : 'Kids'}` : ''}
+                {adults} {adults === 1 ? 'Adult' : 'Adults'}
+                {kids ? `, ${kids} ${kids === 1 ? 'Kid' : 'Kids'}` : ''}
               </p>
             </div>
-            {trip.purpose && (
+            {summary && (
               <div>
-                <p className="text-white/50">Purpose</p>
-                <p className="font-semibold capitalize">{trip.purpose}</p>
+                <p className="text-white/50">Summary</p>
+                <p className="font-semibold">{summary}</p>
               </div>
             )}
           </div>
@@ -168,28 +153,22 @@ function HeroCard({ trip }: { trip: Trip }) {
   );
 }
 
-// ─── Trip Card (grid item) ───────────────────────────────────────────────────
-function TripCard({ trip }: { trip: Trip }) {
-  const destination = getDestination(trip);
-  const nights = getNights(trip.start_date, trip.end_date);
-  const statusLabel = STATUS_LABELS[trip.status] ?? trip.status;
-  const statusColor = STATUS_COLORS[trip.status] ?? 'bg-gray-100 text-gray-600';
+function TripCard({ item }: { item: TripWithVersion }) {
+  const title = item.currentVersion?.title?.trim() || 'New Trip';
+  const startDate = item.currentVersion?.start_date || undefined;
+  const endDate = item.currentVersion?.end_date || undefined;
+  const nights = getNights(startDate, endDate);
+  const adults = item.currentVersion?.adults ?? 0;
+  const kids = item.currentVersion?.kids ?? 0;
+  const summary = item.currentVersion?.summary || undefined;
+  const statusLabel = STATUS_LABELS[item.trip.status] ?? item.trip.status;
+  const statusColor = STATUS_COLORS[item.trip.status] ?? 'bg-gray-100 text-gray-600';
 
   return (
-    <Link href={`/my-page/trip/${trip.id}`} className="block group">
+    <Link href={`/my-page/trip/${item.trip.id}`} className="block group">
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-[#C4956A]/40 transition-all">
         <div className="h-36 relative">
-          {trip.cover_image ? (
-            <Image
-              src={getImageUrl(trip.cover_image)}
-              alt={destination}
-              className="object-cover"
-              fill
-              sizes="(max-width: 768px) 100vw, 33vw"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#2a5240] to-[#C4956A]" />
-          )}
+          <div className="w-full h-full bg-gradient-to-br from-[#2a5240] to-[#C4956A]" />
           <span
             className={`absolute top-3 right-3 text-xs font-semibold px-2.5 py-1 rounded-full ${statusColor}`}
           >
@@ -197,15 +176,15 @@ function TripCard({ trip }: { trip: Trip }) {
           </span>
         </div>
         <div className="p-4">
-          <h3 className="font-semibold text-gray-900 mb-1 truncate">{destination}</h3>
+          <h3 className="font-semibold text-gray-900 mb-1 truncate">{title}</h3>
           <p className="text-sm text-gray-500">
-            {formatDate(trip.start_date)} – {formatDate(trip.end_date)}
+            {formatDate(startDate)} – {formatDate(endDate)}
             {nights !== null && <span className="ml-2 text-gray-400">({nights}N)</span>}
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            {trip.adults} {trip.adults === 1 ? 'Adult' : 'Adults'}
-            {trip.kids ? `, ${trip.kids} Kids` : ''}
-            {trip.purpose && <span className="ml-1 capitalize">· {trip.purpose}</span>}
+            {adults} {adults === 1 ? 'Adult' : 'Adults'}
+            {kids ? `, ${kids} Kids` : ''}
+            {summary && <span className="ml-1">· {summary}</span>}
           </p>
         </div>
       </div>
@@ -213,24 +192,24 @@ function TripCard({ trip }: { trip: Trip }) {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function MyPageUpcomingTravels() {
   const [loading, setLoading] = useState(true);
-  const [trips, setTrips] = useState<Trip[]>([]);
+  const [trips, setTrips] = useState<TripWithVersion[]>([]);
 
   useEffect(() => {
-    apiClient
-      .getTrips({ exclude_canceled: true })
-      .then((allTrips) => {
-        const active = allTrips.filter(
-          (t) => t.status !== 'travel-completed' && t.status !== 'canceled',
+    const load = async () => {
+      try {
+        const loaded = await getTripsWithVersions({ exclude_canceled: true });
+        const active = loaded.filter(
+          ({ trip }) => trip.status !== 'travel-completed' && trip.status !== 'canceled',
         );
         setTrips(sortByPriority(active));
-      })
-      .catch(() => {
-        // show empty state on error
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
   }, []);
 
   const featured = trips[0] ?? null;
@@ -242,19 +221,18 @@ export default function MyPageUpcomingTravels() {
       <SubNav activeTab="Upcoming Travels" />
 
       {loading && <LoadingSkeleton />}
-
       {!loading && trips.length === 0 && <EmptyState />}
 
       {!loading && featured && (
         <div className="max-w-7xl mx-auto px-6 mt-8 mb-16 space-y-8">
-          <HeroCard trip={featured} />
+          <HeroCard item={featured} />
 
           {otherTrips.length > 0 && (
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Other Active Trips</h2>
               <div className="grid grid-cols-3 gap-5">
-                {otherTrips.map((trip) => (
-                  <TripCard key={trip.id} trip={trip} />
+                {otherTrips.map((item) => (
+                  <TripCard key={item.trip.id} item={item} />
                 ))}
               </div>
             </div>

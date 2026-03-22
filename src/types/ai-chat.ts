@@ -1,7 +1,7 @@
 // AI Chat types matching backend API response structure
 
-import type { Trip, TripDetail } from '@/types/trip';
-export type { Trip, TripDetail };
+import type { Trip } from '@/types/trip';
+export type { Trip };
 
 export type IntentType = 'query_trips' | 'create_trip' | 'edit_trip' | 'upcoming_trips' | 'general';
 export type MessageRole = 'user' | 'assistant' | 'system';
@@ -278,7 +278,7 @@ export interface ConverseResponse {
   data?: {
     session_id: string;
     response: string;
-    trip: TripDetail;
+    trip: Trip;
     ui_blocks: UIBlock[];
     field_updated: string[];
     user_message_id: number | null;

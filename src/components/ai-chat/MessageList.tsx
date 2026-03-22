@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react';
 import type { AIMessage, WidgetResponsePayload } from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MessageBubble from './MessageBubble';
-import TripCard from './TripCard';
 
 interface MessageListProps {
   messages: AIMessage[];
@@ -54,17 +53,6 @@ export default function MessageList({ messages, isLoading, onWidgetSubmit }: Mes
               messageIndex={assistantIndex}
               onWidgetSubmit={onWidgetSubmit}
             />
-
-            {/* Render trip cards if they exist in message metadata */}
-            {!isUser &&
-              message.message_metadata?.trips &&
-              message.message_metadata.trips.length > 0 && (
-                <div className="ml-11 mt-4 space-y-3">
-                  {message.message_metadata.trips.map((trip) => (
-                    <TripCard key={trip.id} trip={trip} />
-                  ))}
-                </div>
-              )}
           </div>
         );
       })}

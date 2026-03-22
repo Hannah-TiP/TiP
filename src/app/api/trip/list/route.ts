@@ -13,7 +13,11 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const backendUrl = `${API_BASE_URL}/api/v1/trip/list?${searchParams.toString()}`;
+    const excludeCanceled = searchParams.get('exclude_canceled');
+    const backendUrl = new URL(`${API_BASE_URL}/api/v2/trips`);
+    if (excludeCanceled !== null) {
+      backendUrl.searchParams.set('exclude_canceled', excludeCanceled);
+    }
 
     const response = await fetch(backendUrl, {
       headers: {

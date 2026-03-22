@@ -5,10 +5,7 @@ import Link from 'next/link';
 import TopBar from '@/components/TopBar';
 import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
-import { apiClient } from '@/lib/api-client';
-import type { Trip } from '@/types/trip';
-import Image from 'next/image';
-import { getImageUrl } from '@/types/common';
+import { getTripsWithVersions, type TripWithVersion } from '@/lib/trip-utils';
 
 function getNights(startDate?: string, endDate?: string): number | null {
   if (!startDate || !endDate) return null;
@@ -24,21 +21,25 @@ function formatDateRange(startDate?: string, endDate?: string): string {
   return fmt((startDate ?? endDate)!);
 }
 
-function getDestination(trip: Trip): string {
-  return trip.preset_destination_cities_names || trip.custom_destination_cities || 'Trip';
-}
-
 export default function TravelHistory() {
-  const [trips, setTrips] = useState<Trip[]>([]);
+  const [trips, setTrips] = useState<TripWithVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiClient
-      .getTrips({ status: 'travel-completed' })
-      .then(setTrips)
-      .catch(() => setError('Failed to load travel history.'))
-      .finally(() => setLoading(false));
+    const load = async () => {
+      try {
+        const loaded = await getTripsWithVersions();
+        const completed = loaded.filter(({ trip }) => trip.status === 'travel-completed');
+        setTrips(completed);
+      } catch {
+        setError('Failed to load travel history.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
   }, []);
 
   return (
@@ -58,7 +59,6 @@ export default function TravelHistory() {
           </div>
         </div>
 
-        {/* Loading */}
         {loading && (
           <div className="space-y-5">
             {[1, 2, 3].map((i) => (
@@ -77,10 +77,8 @@ export default function TravelHistory() {
           </div>
         )}
 
-        {/* Error */}
         {error && <div className="text-center py-20 text-gray-500">{error}</div>}
 
-        {/* Empty */}
         {!loading && !error && trips.length === 0 && (
           <div className="text-center py-20">
             <p className="text-gray-500 text-lg mb-4">No completed trips yet.</p>
@@ -93,61 +91,54 @@ export default function TravelHistory() {
           </div>
         )}
 
-        {/* Trip list */}
         {!loading && !error && trips.length > 0 && (
           <div className="space-y-5">
-            {trips.map((trip) => {
-              const destination = getDestination(trip);
-              const nights = getNights(trip.start_date, trip.end_date);
+            {trips.map((item) => {
+              const title = item.currentVersion?.title?.trim() || 'New Trip';
+              const startDate = item.currentVersion?.start_date || undefined;
+              const endDate = item.currentVersion?.end_date || undefined;
+              const nights = getNights(startDate, endDate);
+              const adults = item.currentVersion?.adults ?? 0;
+              const kids = item.currentVersion?.kids ?? 0;
 
               return (
                 <div
-                  key={trip.id}
+                  key={item.trip.id}
                   className="bg-white rounded-xl border border-gray-200 overflow-hidden flex"
                 >
                   <div className="w-64 flex-shrink-0 bg-gray-100 relative">
-                    {trip.cover_image ? (
-                      <Image
-                        src={getImageUrl(trip.cover_image)}
-                        alt={destination}
-                        className="object-cover rounded-l-xl"
-                        fill
-                        sizes="256px"
-                      />
-                    ) : (
-                      <div className="w-full h-full min-h-[176px] bg-gradient-to-br from-[#1E3D2F] to-[#C4956A] rounded-l-xl flex items-center justify-center">
-                        <span className="text-white text-lg font-semibold px-4 text-center">
-                          {destination}
-                        </span>
-                      </div>
-                    )}
+                    <div className="w-full h-full min-h-[176px] bg-gradient-to-br from-[#1E3D2F] to-[#C4956A] rounded-l-xl flex items-center justify-center">
+                      <span className="text-white text-lg font-semibold px-4 text-center">
+                        {title}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="flex-1 p-6 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-gray-900">{destination}</h2>
+                        <h2 className="text-xl font-bold text-gray-900">{title}</h2>
                         <span className="text-xs font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full">
                           Completed
                         </span>
                       </div>
                       <div className="flex gap-6 mt-3 text-sm text-gray-500">
-                        <span>{formatDateRange(trip.start_date, trip.end_date)}</span>
+                        <span>{formatDateRange(startDate, endDate)}</span>
                         {nights !== null && (
                           <span>
                             {nights} {nights === 1 ? 'Night' : 'Nights'}
                           </span>
                         )}
                         <span>
-                          {trip.adults} {trip.adults === 1 ? 'Adult' : 'Adults'}
-                          {trip.kids ? `, ${trip.kids} ${trip.kids === 1 ? 'Kid' : 'Kids'}` : ''}
+                          {adults} {adults === 1 ? 'Adult' : 'Adults'}
+                          {kids ? `, ${kids} ${kids === 1 ? 'Kid' : 'Kids'}` : ''}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-end mt-4">
                       <Link
-                        href={`/my-page/travel-history/${trip.id}`}
+                        href={`/my-page/travel-history/${item.trip.id}`}
                         className="text-sm font-medium text-[#1E3D2F] hover:underline"
                       >
                         View Details →

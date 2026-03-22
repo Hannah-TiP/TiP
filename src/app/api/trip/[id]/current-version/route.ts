@@ -14,7 +14,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     const { id } = await params;
 
-    const response = await fetch(`${API_BASE_URL}/api/v2/trips/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/trips/${id}/current-version`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
@@ -26,14 +26,14 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     if (!response.ok) {
       return NextResponse.json(
-        { success: false, message: data.message || 'Trip not found' },
+        { success: false, message: data.message || 'Current trip version not found' },
         { status: response.status },
       );
     }
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Trip detail API error:', error);
+    console.error('Current trip version API error:', error);
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

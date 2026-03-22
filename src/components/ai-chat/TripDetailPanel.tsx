@@ -1,7 +1,7 @@
 'use client';
 
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { TripDetail } from '@/types/trip';
+import type { TripWithVersion } from '@/lib/trip-utils';
 
 /** Parse "YYYY-MM-DD" as local date (avoids UTC midnight → previous day in western timezones) */
 function parseLocalDate(dateStr: string): Date {
@@ -137,7 +137,7 @@ function JourneyStepper({ status }: { status: string | null }) {
 }
 
 interface TripDetailPanelProps {
-  tripDetail: TripDetail | null;
+  tripDetail: TripWithVersion | null;
   onSubmitTrip?: () => void;
   isLoading?: boolean;
 }
@@ -148,6 +148,7 @@ export default function TripDetailPanel({
   isLoading,
 }: TripDetailPanelProps) {
   const { t } = useLanguage();
+  const plan = tripDetail?.currentVersion?.plan ?? [];
 
   return (
     <div className="w-[420px] flex flex-col bg-[#FAFAF8] overflow-y-auto">
@@ -160,37 +161,34 @@ export default function TripDetailPanel({
 
         {tripDetail && (
           <div className="space-y-3 mb-8">
-            {tripDetail.status && (
+            {tripDetail.trip.status && (
               <div className="mb-2">
-                <JourneyStepper status={tripDetail.status} />
+                <JourneyStepper status={tripDetail.trip.status} />
               </div>
             )}
 
-            {(tripDetail.preset_destination_cities_names ||
-              tripDetail.custom_destination_cities) && (
+            {(tripDetail.currentVersion?.title?.trim() || 'New Trip') && (
               <div className="flex justify-between font-inter text-sm">
                 <span className="text-gray-500">{t('chat.destination')}</span>
                 <span className="text-[#1E3D2F] font-medium text-right max-w-[200px]">
-                  {[
-                    tripDetail.preset_destination_cities_names,
-                    tripDetail.custom_destination_cities,
-                  ]
-                    .filter(Boolean)
-                    .join(', ')}
+                  {tripDetail.currentVersion?.title?.trim() || 'New Trip'}
                 </span>
               </div>
             )}
 
-            {tripDetail.start_date && tripDetail.end_date && (
+            {tripDetail.currentVersion?.start_date && tripDetail.currentVersion?.end_date && (
               <div className="flex justify-between font-inter text-sm">
                 <span className="text-gray-500">{t('chat.dates')}</span>
                 <span className="text-[#1E3D2F] font-medium">
-                  {parseLocalDate(tripDetail.start_date).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                  })}{' '}
+                  {parseLocalDate(tripDetail.currentVersion.start_date).toLocaleDateString(
+                    'en-US',
+                    {
+                      month: 'short',
+                      day: 'numeric',
+                    },
+                  )}{' '}
                   –{' '}
-                  {parseLocalDate(tripDetail.end_date).toLocaleDateString('en-US', {
+                  {parseLocalDate(tripDetail.currentVersion.end_date).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',
@@ -199,64 +197,50 @@ export default function TripDetailPanel({
               </div>
             )}
 
-            {tripDetail.adults > 0 && (
+            {(tripDetail.currentVersion?.adults ?? 0) > 0 && (
               <div className="flex justify-between font-inter text-sm">
                 <span className="text-gray-500">{t('chat.travelers')}</span>
                 <span className="text-[#1E3D2F] font-medium">
-                  {tripDetail.adults}{' '}
-                  {tripDetail.adults === 1 ? t('common.adult') : t('common.adults')}
-                  {tripDetail.kids
-                    ? `, ${tripDetail.kids} ${tripDetail.kids === 1 ? t('common.kid') : t('common.kids')}`
+                  {tripDetail.currentVersion?.adults ?? 0}{' '}
+                  {(tripDetail.currentVersion?.adults ?? 0) === 1
+                    ? t('common.adult')
+                    : t('common.adults')}
+                  {(tripDetail.currentVersion?.kids ?? 0)
+                    ? `, ${tripDetail.currentVersion?.kids ?? 0} ${(tripDetail.currentVersion?.kids ?? 0) === 1 ? t('common.kid') : t('common.kids')}`
                     : ''}
                 </span>
               </div>
             )}
 
-            {tripDetail.purpose && (
+            {tripDetail.currentVersion?.summary && (
               <div className="flex justify-between font-inter text-sm">
                 <span className="text-gray-500">{t('chat.purpose')}</span>
-                <span className="text-[#1E3D2F] font-medium">{tripDetail.purpose}</span>
-              </div>
-            )}
-
-            {tripDetail.budget && tripDetail.budget > 0 && (
-              <div className="flex justify-between font-inter text-sm">
-                <span className="text-gray-500">{t('chat.budget')}</span>
                 <span className="text-[#1E3D2F] font-medium">
-                  ${tripDetail.budget.toLocaleString()}
-                </span>
-              </div>
-            )}
-
-            {tripDetail.specific_hotel_requests && (
-              <div className="flex justify-between font-inter text-sm">
-                <span className="text-gray-500">{t('chat.hotel')}</span>
-                <span className="text-[#1E3D2F] font-medium text-right max-w-[200px]">
-                  {tripDetail.specific_hotel_requests}
+                  {tripDetail.currentVersion.summary}
                 </span>
               </div>
             )}
 
             {/* Travel Plans */}
-            {tripDetail.travel_plans && tripDetail.travel_plans.length > 0 && (
+            {plan.length > 0 && (
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <h3 className="font-cormorant text-lg font-semibold text-[#1E3D2F] mb-3">
                   {t('chat.travel_plans')}
                 </h3>
                 <div className="space-y-2">
-                  {tripDetail.travel_plans.map((plan, idx) => (
+                  {plan.map((day, idx) => (
                     <div
-                      key={plan.id || idx}
+                      key={`${day.date}-${idx}`}
                       className="bg-white rounded-lg p-3 border border-gray-100"
                     >
                       <p className="font-inter text-sm font-medium text-[#1E3D2F]">
-                        {plan.day_topic || `${t('chat.day')} ${plan.sort || idx + 1}`}
+                        {day.title || `${t('chat.day')} ${idx + 1}`}
                       </p>
-                      {plan.items && plan.items.length > 0 && (
+                      {day.items && day.items.length > 0 && (
                         <p className="font-inter text-xs text-gray-500 mt-1">
-                          {plan.items.length === 1
+                          {day.items.length === 1
                             ? t('chat.activities_one')
-                            : `${plan.items.length} ${t('chat.activities_other')}`}
+                            : `${day.items.length} ${t('chat.activities_other')}`}
                         </p>
                       )}
                     </div>
@@ -266,7 +250,7 @@ export default function TripDetailPanel({
             )}
 
             {/* Submit Trip Button — only for drafts */}
-            {tripDetail.status === 'draft' && onSubmitTrip && (
+            {tripDetail.trip.status === 'draft' && onSubmitTrip && (
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <p className="font-inter text-xs text-gray-500 mb-3">
                   {t('chat.submit_trip_hint')}
