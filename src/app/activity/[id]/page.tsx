@@ -7,12 +7,12 @@ import { useParams } from 'next/navigation';
 import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
-import { getImageUrl } from '@/types/common';
+import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Activity } from '@/types/hotel';
 
 export default function ActivityDetailPage() {
   const params = useParams();
-  const activityId = params.id as string;
+  const activitySlug = params.id as string;
 
   const [activity, setActivity] = useState<Activity | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,7 +22,7 @@ export default function ActivityDetailPage() {
     async function loadActivity() {
       try {
         setIsLoading(true);
-        const data = await apiClient.getActivityById(activityId);
+        const data = await apiClient.getActivityBySlug(activitySlug);
         setActivity(data);
       } catch (err) {
         console.error('Failed to load activity:', err);
@@ -32,10 +32,10 @@ export default function ActivityDetailPage() {
       }
     }
 
-    if (activityId) {
+    if (activitySlug) {
       loadActivity();
     }
-  }, [activityId]);
+  }, [activitySlug]);
 
   if (isLoading) {
     return (
@@ -71,6 +71,12 @@ export default function ActivityDetailPage() {
   }
 
   const badge = activity.category ? activity.category.toUpperCase() : 'ACTIVITY';
+  const heroImage = getImageUrl(activity.images?.[0]);
+  const name = getLocalizedText(activity.name);
+  const description = activity.description ? getLocalizedText(activity.description) : null;
+  const address = activity.address ? getLocalizedText(activity.address) : null;
+  const openingHours = activity.opening_hours ? getLocalizedText(activity.opening_hours) : null;
+  const visitDuration = activity.visit_duration ? getLocalizedText(activity.visit_duration) : null;
 
   return (
     <main className="min-h-screen bg-background">
@@ -79,8 +85,8 @@ export default function ActivityDetailPage() {
       {/* Hero */}
       <section className="relative h-[560px] w-full overflow-hidden">
         <Image
-          src={getImageUrl(activity.image)}
-          alt={activity.name}
+          src={heroImage}
+          alt={name}
           fill
           sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
@@ -91,11 +97,13 @@ export default function ActivityDetailPage() {
             {badge}
           </span>
           <h1 className="font-primary text-[56px] font-normal italic leading-none text-white">
-            {activity.name}
+            {name}
           </h1>
-          <p className="mt-4 max-w-2xl text-[16px] leading-relaxed text-white/70">
-            {activity.description}
-          </p>
+          {description && (
+            <p className="mt-4 max-w-2xl text-[16px] leading-relaxed text-white/70">
+              {description}
+            </p>
+          )}
         </div>
       </section>
 
@@ -107,45 +115,22 @@ export default function ActivityDetailPage() {
               ABOUT THIS EXPERIENCE
             </span>
             <h2 className="mt-3 font-primary text-[38px] italic leading-snug text-green-dark">
-              {activity.name}
+              {name}
             </h2>
-            <p className="mt-5 text-[15px] leading-[1.8] text-gray-text">{activity.description}</p>
+            {description && (
+              <p className="mt-5 text-[15px] leading-[1.8] text-gray-text">{description}</p>
+            )}
             <div className="mt-8 flex gap-12">
-              {activity.review_summary && (
+              {visitDuration && (
                 <div>
                   <p className="font-primary text-[32px] font-semibold text-green-dark">
-                    {activity.review_summary.average_rating.toFixed(1)}
-                  </p>
-                  <p className="text-[12px] text-gray-text">Rating (out of 5)</p>
-                </div>
-              )}
-              {activity.review_summary && (
-                <div>
-                  <p className="font-primary text-[32px] font-semibold text-green-dark">
-                    {activity.review_summary.total_reviews}
-                  </p>
-                  <p className="text-[12px] text-gray-text">Reviews</p>
-                </div>
-              )}
-              {activity.visit_duration && (
-                <div>
-                  <p className="font-primary text-[32px] font-semibold text-green-dark">
-                    {activity.visit_duration}
+                    {visitDuration}
                   </p>
                   <p className="text-[12px] text-gray-text">Visit Duration</p>
                 </div>
               )}
             </div>
           </div>
-          {activity.content && (
-            <div className="w-[400px] rounded-lg bg-gray-light p-8">
-              <span className="text-[11px] font-semibold tracking-[4px] text-gold">DETAILS</span>
-              <div
-                className="mt-4 text-[14px] leading-[1.8] text-gray-text [&_h1]:mb-2 [&_h1]:text-[18px] [&_h1]:font-semibold [&_h1]:text-green-dark [&_h2]:mb-2 [&_h2]:text-[16px] [&_h2]:font-semibold [&_h2]:text-green-dark [&_h3]:mb-2 [&_h3]:text-[15px] [&_h3]:font-semibold [&_h3]:text-green-dark [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-3 [&_ul]:mb-3"
-                dangerouslySetInnerHTML={{ __html: activity.content }}
-              />
-            </div>
-          )}
         </div>
       </section>
 
@@ -161,32 +146,26 @@ export default function ActivityDetailPage() {
             </h2>
           </div>
           <div className="grid grid-cols-3 gap-6">
-            {activity.address && (
+            {address && (
               <div className="rounded-xl bg-white p-8 shadow-sm">
                 <span className="text-[11px] font-semibold tracking-[2px] text-gold">ADDRESS</span>
-                <p className="mt-3 text-[15px] leading-relaxed text-green-dark">
-                  {activity.address}
-                </p>
+                <p className="mt-3 text-[15px] leading-relaxed text-green-dark">{address}</p>
               </div>
             )}
-            {activity.opening_hours && (
+            {openingHours && (
               <div className="rounded-xl bg-white p-8 shadow-sm">
                 <span className="text-[11px] font-semibold tracking-[2px] text-gold">
                   OPENING HOURS
                 </span>
-                <p className="mt-3 text-[15px] leading-relaxed text-green-dark">
-                  {activity.opening_hours}
-                </p>
+                <p className="mt-3 text-[15px] leading-relaxed text-green-dark">{openingHours}</p>
               </div>
             )}
-            {activity.visit_duration && (
+            {visitDuration && (
               <div className="rounded-xl bg-white p-8 shadow-sm">
                 <span className="text-[11px] font-semibold tracking-[2px] text-gold">
                   VISIT DURATION
                 </span>
-                <p className="mt-3 text-[15px] leading-relaxed text-green-dark">
-                  {activity.visit_duration}
-                </p>
+                <p className="mt-3 text-[15px] leading-relaxed text-green-dark">{visitDuration}</p>
               </div>
             )}
           </div>

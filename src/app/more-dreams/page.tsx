@@ -29,12 +29,14 @@ export default function MoreDreamsPage() {
     async function loadData() {
       try {
         setIsLoading(true);
-        const [activityData, restaurantData] = await Promise.all([
-          apiClient.getActivities({ per_page: 100, language: 'en' }),
+        const [activityData, restaurantData, cityData] = await Promise.all([
+          apiClient.getActivities({ language: 'en' }),
           apiClient.getRestaurants({ per_page: 100, language: 'en' }),
+          apiClient.getCities('en'),
         ]);
         setActivities(activityData);
         setRestaurants(restaurantData);
+        setCities(cityData);
       } catch (error) {
         console.error('Failed to load data:', error);
       } finally {
@@ -81,6 +83,10 @@ export default function MoreDreamsPage() {
   const filteredCities = cities.filter((c) =>
     getLocalizedText(c.name).toLowerCase().includes(citySearch.toLowerCase()),
   );
+
+  const cityNameById = useMemo(() => {
+    return new Map(cities.map((city) => [city.id, getLocalizedText(city.name)]));
+  }, [cities]);
 
   function getActivityTag(activity: Activity): string {
     if (!activity.category) return 'ACTIVITY';
@@ -296,13 +302,13 @@ export default function MoreDreamsPage() {
             {filteredActivities.map((activity) => (
               <Link
                 key={activity.id}
-                href={`/activity/${activity.id}`}
+                href={`/activity/${activity.slug}`}
                 className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
               >
                 <div className="relative h-56 overflow-hidden">
                   <Image
-                    src={getImageUrl(activity.image)}
-                    alt={activity.name}
+                    src={getImageUrl(activity.images?.[0])}
+                    alt={getLocalizedText(activity.name)}
                     fill
                     sizes="(max-width: 768px) 100vw, 25vw"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -310,19 +316,14 @@ export default function MoreDreamsPage() {
                   <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
                     {getActivityTag(activity)}
                   </div>
-                  {activity.review_summary && (
-                    <div className="absolute right-3 top-3 rounded-full bg-green-dark px-2.5 py-1 text-[12px] font-semibold text-white">
-                      {activity.review_summary.average_rating.toFixed(1)}
-                    </div>
-                  )}
                 </div>
                 <div className="p-5">
                   <h3 className="font-primary text-[18px] font-semibold text-green-dark">
-                    {activity.name}
+                    {getLocalizedText(activity.name)}
                   </h3>
-                  {activity.city?.name && (
+                  {activity.city_id && cityNameById.get(activity.city_id) && (
                     <p className="mt-1 text-[13px] text-gray-text">
-                      {getLocalizedText(activity.city?.name)}
+                      {cityNameById.get(activity.city_id)}
                     </p>
                   )}
                 </div>

@@ -133,15 +133,11 @@ class ApiClient {
 
   // Activity methods
   async getActivities(params?: {
-    page?: number;
-    per_page?: number;
     city_id?: number;
     category?: string;
     language?: string;
   }): Promise<Activity[]> {
     const searchParams = new URLSearchParams();
-    if (params?.page !== undefined) searchParams.set('page', params.page.toString());
-    if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
     if (params?.category) searchParams.set('category', params.category);
     if (params?.language) searchParams.set('language', params.language);
@@ -149,12 +145,12 @@ class ApiClient {
     const query = searchParams.toString();
     const endpoint = `/activities${query ? `?${query}` : ''}`;
 
-    const response = await this.request<{ data: { items: Activity[] } }>(endpoint);
-    return response.data.items;
+    const response = await this.request<{ data: Activity[] }>(endpoint);
+    return response.data;
   }
 
-  async getActivityById(activityId: number | string): Promise<Activity> {
-    const response = await this.request<{ data: Activity }>(`/activities/${activityId}`);
+  async getActivityBySlug(slug: string): Promise<Activity> {
+    const response = await this.request<{ data: Activity }>(`/activities/${slug}`);
     return response.data;
   }
 
