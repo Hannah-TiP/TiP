@@ -8,7 +8,7 @@ import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
 import { getImageUrl, getLocalizedText } from '@/types/common';
-import type { Activity } from '@/types/hotel';
+import type { Activity } from '@/types/activity';
 
 export default function ActivityDetailPage() {
   const params = useParams();

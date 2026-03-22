@@ -1,44 +1,4 @@
 import { getImageUrl, type GeoPoint, type Image, type MultiLanguageString } from '@/types/common';
-import type { City } from '@/types/location';
-
-export interface ReviewSummary {
-  id: number;
-  total_reviews: number;
-  average_rating: number;
-  rating_distribution: {
-    [key: string]: number;
-  };
-}
-
-export interface Activity {
-  id: number;
-  slug: string;
-  city_id?: number | null;
-  category?: string | null;
-  status: 'draft' | 'published' | 'archived';
-  name?: MultiLanguageString | null;
-  description?: MultiLanguageString | null;
-  images?: Image[] | null;
-  opening_hours?: MultiLanguageString | null;
-  visit_duration?: MultiLanguageString | null;
-  address?: MultiLanguageString | null;
-  schema_version: number;
-  created_at?: string | null;
-  updated_at?: string | null;
-}
-
-export interface Restaurant {
-  id: number;
-  name: string;
-  city_id?: number | null;
-  star_rating?: string;
-  description?: string;
-  image?: string;
-  opening_hours?: string;
-  address?: string;
-  content?: string;
-  city?: City | null;
-}
 
 export type HotelStatus = 'draft' | 'published' | 'archived';
 export type HotelStarRating = '1' | '2' | '3' | '4' | '5';

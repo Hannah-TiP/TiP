@@ -5,11 +5,12 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const language = new URL(request.url).searchParams.get('language') || 'en';
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/restaurant/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/restaurants/by-slug/${id}`, {
       headers: {
         'Content-Type': 'application/json',
-        Language: 'en',
+        lang: language,
       },
     });
 

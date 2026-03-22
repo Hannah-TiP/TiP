@@ -1,5 +1,7 @@
 import type { User, UpdateProfileData } from '@/types/auth';
-import type { Hotel, Activity, Restaurant } from '@/types/hotel';
+import type { Hotel } from '@/types/hotel';
+import type { Activity } from '@/types/activity';
+import type { Restaurant } from '@/types/restaurant';
 import type { City, Country } from '@/types/location';
 import type {
   CreateSessionResponse,
@@ -155,27 +157,20 @@ class ApiClient {
   }
 
   // Restaurant methods
-  async getRestaurants(params?: {
-    page?: number;
-    per_page?: number;
-    city_id?: number;
-    language?: string;
-  }): Promise<Restaurant[]> {
+  async getRestaurants(params?: { city_id?: number; language?: string }): Promise<Restaurant[]> {
     const searchParams = new URLSearchParams();
-    if (params?.page !== undefined) searchParams.set('page', params.page.toString());
-    if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
     if (params?.language) searchParams.set('language', params.language);
 
     const query = searchParams.toString();
     const endpoint = `/restaurants${query ? `?${query}` : ''}`;
 
-    const response = await this.request<{ data: { items: Restaurant[] } }>(endpoint);
-    return response.data.items;
+    const response = await this.request<{ data: Restaurant[] }>(endpoint);
+    return response.data;
   }
 
-  async getRestaurantById(restaurantId: number | string): Promise<Restaurant> {
-    const response = await this.request<{ data: Restaurant }>(`/restaurants/${restaurantId}`);
+  async getRestaurantBySlug(slug: string): Promise<Restaurant> {
+    const response = await this.request<{ data: Restaurant }>(`/restaurants/${slug}`);
     return response.data;
   }
 

@@ -5,13 +5,18 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const backendSearchParams = new URLSearchParams();
+    const cityId = searchParams.get('city_id');
+    const language = searchParams.get('language') || 'en';
+    if (cityId) backendSearchParams.set('city_id', cityId);
 
-    const backendUrl = `${API_BASE_URL}/api/v1/restaurant?${searchParams.toString()}`;
+    const query = backendSearchParams.toString();
+    const backendUrl = `${API_BASE_URL}/api/v2/restaurants${query ? `?${query}` : ''}`;
 
     const response = await fetch(backendUrl, {
       headers: {
         'Content-Type': 'application/json',
-        Language: searchParams.get('language') || 'en',
+        lang: language,
       },
     });
 

@@ -6,7 +6,8 @@ import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
 import { getImageUrl, getLocalizedText } from '@/types/common';
-import type { Activity, Restaurant } from '@/types/hotel';
+import type { Activity } from '@/types/activity';
+import type { Restaurant } from '@/types/restaurant';
 import type { City } from '@/types/location';
 
 export default function MoreDreamsPage() {
@@ -31,7 +32,7 @@ export default function MoreDreamsPage() {
         setIsLoading(true);
         const [activityData, restaurantData, cityData] = await Promise.all([
           apiClient.getActivities({ language: 'en' }),
-          apiClient.getRestaurants({ per_page: 100, language: 'en' }),
+          apiClient.getRestaurants({ language: 'en' }),
           apiClient.getCities('en'),
         ]);
         setActivities(activityData);
@@ -367,13 +368,13 @@ export default function MoreDreamsPage() {
             {filteredRestaurants.map((restaurant) => (
               <Link
                 key={restaurant.id}
-                href={`/restaurant/${restaurant.id}`}
+                href={`/restaurant/${restaurant.slug}`}
                 className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
               >
                 <div className="relative h-56 overflow-hidden">
                   <Image
-                    src={getImageUrl(restaurant.image)}
-                    alt={restaurant.name}
+                    src={getImageUrl(restaurant.images?.[0])}
+                    alt={getLocalizedText(restaurant.name)}
                     fill
                     sizes="(max-width: 768px) 100vw, 25vw"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -384,11 +385,11 @@ export default function MoreDreamsPage() {
                 </div>
                 <div className="p-5">
                   <h3 className="font-primary text-[18px] font-semibold text-green-dark">
-                    {restaurant.name}
+                    {getLocalizedText(restaurant.name)}
                   </h3>
-                  {restaurant.city?.name && (
+                  {restaurant.city_id && cityNameById.get(restaurant.city_id) && (
                     <p className="mt-1 text-[13px] text-gray-text">
-                      {getLocalizedText(restaurant.city?.name)}
+                      {cityNameById.get(restaurant.city_id)}
                     </p>
                   )}
                 </div>

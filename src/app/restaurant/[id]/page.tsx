@@ -7,8 +7,8 @@ import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
-import { getImageUrl } from '@/types/common';
-import type { Restaurant } from '@/types/hotel';
+import { getImageUrl, getLocalizedText } from '@/types/common';
+import type { Restaurant } from '@/types/restaurant';
 
 export default function RestaurantDetailPage() {
   const params = useParams();
@@ -22,7 +22,7 @@ export default function RestaurantDetailPage() {
     async function loadRestaurant() {
       try {
         setIsLoading(true);
-        const data = await apiClient.getRestaurantById(restaurantId);
+        const data = await apiClient.getRestaurantBySlug(restaurantId);
         setRestaurant(data);
       } catch (err) {
         console.error('Failed to load restaurant:', err);
@@ -70,7 +70,11 @@ export default function RestaurantDetailPage() {
     );
   }
 
-  const badge = restaurant.star_rating ? `${restaurant.star_rating} STAR` : 'RESTAURANT';
+  const primaryRecognition = restaurant.recognitions?.[0];
+  const badge =
+    primaryRecognition?.source_type === 'michelin' && primaryRecognition.tier
+      ? primaryRecognition.tier.replaceAll('_', ' ').toUpperCase()
+      : 'RESTAURANT';
 
   return (
     <main className="min-h-screen bg-background">
@@ -79,8 +83,8 @@ export default function RestaurantDetailPage() {
       {/* Hero */}
       <section className="relative h-[560px] w-full overflow-hidden">
         <Image
-          src={getImageUrl(restaurant.image)}
-          alt={restaurant.name}
+          src={getImageUrl(restaurant.images?.[0])}
+          alt={getLocalizedText(restaurant.name)}
           className="absolute inset-0 object-cover"
           fill
           sizes="100vw"
@@ -92,10 +96,10 @@ export default function RestaurantDetailPage() {
             {badge}
           </span>
           <h1 className="font-primary text-[56px] font-normal italic leading-none text-white">
-            {restaurant.name}
+            {getLocalizedText(restaurant.name)}
           </h1>
           <p className="mt-4 max-w-2xl text-[16px] leading-relaxed text-white/70">
-            {restaurant.description}
+            {getLocalizedText(restaurant.description)}
           </p>
         </div>
       </section>
@@ -108,29 +112,20 @@ export default function RestaurantDetailPage() {
               ABOUT THIS RESTAURANT
             </span>
             <h2 className="mt-3 font-primary text-[38px] italic leading-snug text-green-dark">
-              {restaurant.name}
+              {getLocalizedText(restaurant.name)}
             </h2>
             <p className="mt-5 text-[15px] leading-[1.8] text-gray-text">
-              {restaurant.description}
+              {getLocalizedText(restaurant.description)}
             </p>
-            {restaurant.star_rating && (
+            {primaryRecognition && (
               <div className="mt-8">
                 <p className="font-primary text-[32px] font-semibold text-green-dark">
-                  {restaurant.star_rating}
+                  {primaryRecognition.tier?.replaceAll('_', ' ') || primaryRecognition.source_type}
                 </p>
-                <p className="text-[12px] text-gray-text">Star Rating</p>
+                <p className="text-[12px] text-gray-text">Recognition</p>
               </div>
             )}
           </div>
-          {restaurant.content && (
-            <div className="w-[400px] rounded-lg bg-gray-light p-8">
-              <span className="text-[11px] font-semibold tracking-[4px] text-gold">DETAILS</span>
-              <div
-                className="mt-4 text-[14px] leading-[1.8] text-gray-text [&_h1]:mb-2 [&_h1]:text-[18px] [&_h1]:font-semibold [&_h1]:text-green-dark [&_h2]:mb-2 [&_h2]:text-[16px] [&_h2]:font-semibold [&_h2]:text-green-dark [&_h3]:mb-2 [&_h3]:text-[15px] [&_h3]:font-semibold [&_h3]:text-green-dark [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-3 [&_ul]:mb-3"
-                dangerouslySetInnerHTML={{ __html: restaurant.content }}
-              />
-            </div>
-          )}
         </div>
       </section>
 
@@ -150,7 +145,7 @@ export default function RestaurantDetailPage() {
               <div className="rounded-xl bg-white p-8 shadow-sm">
                 <span className="text-[11px] font-semibold tracking-[2px] text-gold">ADDRESS</span>
                 <p className="mt-3 text-[15px] leading-relaxed text-green-dark">
-                  {restaurant.address}
+                  {getLocalizedText(restaurant.address)}
                 </p>
               </div>
             )}
@@ -160,7 +155,7 @@ export default function RestaurantDetailPage() {
                   OPENING HOURS
                 </span>
                 <p className="mt-3 text-[15px] leading-relaxed text-green-dark">
-                  {restaurant.opening_hours}
+                  {getLocalizedText(restaurant.opening_hours)}
                 </p>
               </div>
             )}

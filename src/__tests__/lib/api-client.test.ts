@@ -123,6 +123,36 @@ describe('getHotelBySlug', () => {
   });
 });
 
+describe('getRestaurants', () => {
+  it('builds only supported query params and unwraps response.data', async () => {
+    const restaurants = [{ id: 1, slug: 'noma', status: 'published', schema_version: 1 }];
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: restaurants }));
+
+    const result = await apiClient.getRestaurants({ city_id: 7, language: 'en' });
+
+    const url = mockFetch.mock.calls[0][0] as string;
+    expect(url).toContain('/api/restaurants');
+    expect(url).toContain('city_id=7');
+    expect(url).toContain('language=en');
+    expect(url).not.toContain('page=');
+    expect(url).not.toContain('per_page=');
+    expect(result).toEqual(restaurants);
+  });
+});
+
+describe('getRestaurantBySlug', () => {
+  it('fetches the restaurant detail by slug', async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ data: { id: 1, slug: 'noma', status: 'published', schema_version: 1 } }),
+    );
+
+    const result = await apiClient.getRestaurantBySlug('noma');
+
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/restaurants/noma');
+    expect(result.slug).toBe('noma');
+  });
+});
+
 describe('getTrips', () => {
   it('includes boolean params', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ data: { items: [] } }));
