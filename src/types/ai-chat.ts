@@ -1,182 +1,163 @@
-// AI Chat types matching backend API response structure
+export type AIChatSessionStatus = 'ai' | 'human';
+export type AIChatMessageRole = 'user' | 'assistant' | 'human_assistant' | 'system';
+export type AIChatMessageType = 'text' | 'audio';
 
-import type { Trip } from '@/types/trip';
-export type { Trip };
-
-export type IntentType = 'query_trips' | 'create_trip' | 'edit_trip' | 'upcoming_trips' | 'general';
-export type MessageRole = 'user' | 'assistant' | 'system';
-export type MessageType = 'text' | 'image' | 'audio';
-export type CollectionStatus =
-  | 'collecting'
-  | 'collecting_optional'
-  | 'awaiting_confirmation'
-  | 'completed';
-
-export interface TripContext {
-  destination?: string;
-  start_date?: string;
-  end_date?: string;
-  adults?: number;
-  kids?: number;
-  purpose?: string;
-  budget?: number;
-  service_type?: string;
-  [key: string]: unknown;
+export interface NumberStepperField {
+  key: string;
+  label: string;
+  min?: number | null;
+  max?: number | null;
+  default?: number | null;
 }
 
-export interface MessageMetadata {
-  // For trip-related messages
-  intent?: IntentType;
-  trips?: Trip[];
-  has_trips?: boolean;
-  has_active_trip_creation?: boolean;
-
-  // For trip creation messages
-  collection_status?: CollectionStatus;
-  next_field?: string;
-  trip_summary?: TripContext;
-  trip_context?: TripContext;
-  trip_created?: boolean;
-  trip_id?: number;
-  trip?: Trip;
-
-  // For image messages
-  width?: number;
-  height?: number;
-  analysis_requested?: boolean;
-  analysis_result?: {
-    landmark?: string;
-    location?: string;
-    description?: string;
-  };
-
-  // For audio messages
-  duration?: number;
-  transcription?: string;
-
-  // For converse endpoint
-  ui_blocks?: UIBlock[];
-  field_updated?: string[];
+export interface OptionSelectorOption {
+  value: string;
+  label: string;
 }
 
-export interface AIMessage {
+export interface DateRangePickerValue {
+  start_date?: string | null;
+  end_date?: string | null;
+}
+
+export interface NumberStepperValue {
+  values: Record<string, number>;
+}
+
+export interface OptionSelectorValue {
+  value: string;
+}
+
+export interface HotelCarouselValue {
+  hotel_id?: number | null;
+}
+
+export interface AIChatDateRangePickerWidget {
+  widget_id: string;
+  widget_type: 'date_range_picker';
+  min_date?: string | null;
+  max_date?: string | null;
+}
+
+export interface AIChatNumberStepperWidget {
+  widget_id: string;
+  widget_type: 'number_stepper';
+  fields: NumberStepperField[];
+}
+
+export interface AIChatOptionSelectorWidget {
+  widget_id: string;
+  widget_type: 'option_selector';
+  label?: string | null;
+  options: OptionSelectorOption[];
+}
+
+export interface AIChatHotelCarouselWidget {
+  widget_id: string;
+  widget_type: 'hotel_carousel';
+  hotel_ids: number[];
+}
+
+export type AIChatWidget =
+  | AIChatDateRangePickerWidget
+  | AIChatNumberStepperWidget
+  | AIChatOptionSelectorWidget
+  | AIChatHotelCarouselWidget;
+
+export interface AIChatDateRangePickerWidgetResponse {
+  widget_id: string;
+  widget_type: 'date_range_picker';
+  value: DateRangePickerValue;
+}
+
+export interface AIChatNumberStepperWidgetResponse {
+  widget_id: string;
+  widget_type: 'number_stepper';
+  value: NumberStepperValue;
+}
+
+export interface AIChatOptionSelectorWidgetResponse {
+  widget_id: string;
+  widget_type: 'option_selector';
+  value: OptionSelectorValue;
+}
+
+export interface AIChatHotelCarouselWidgetResponse {
+  widget_id: string;
+  widget_type: 'hotel_carousel';
+  value: HotelCarouselValue;
+}
+
+export type AIChatWidgetResponse =
+  | AIChatDateRangePickerWidgetResponse
+  | AIChatNumberStepperWidgetResponse
+  | AIChatOptionSelectorWidgetResponse
+  | AIChatHotelCarouselWidgetResponse;
+
+export interface AIChatSessionMetadata {
   id: number;
-  session_id: string;
-  role: MessageRole;
-  content: string;
-  message_type: MessageType;
-  media_url?: string;
-  message_metadata?: MessageMetadata;
-  created_at: string;
-  updated_at?: string;
+  user_id: number;
+  trip_id: number;
+  status: AIChatSessionStatus;
+  last_message_at?: string | null;
+  schema_version: number;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
-export interface AISession {
-  session_id: string;
-  chat_history: Array<{
-    role: MessageRole;
-    content: string;
-  }>;
-  status: string;
-  language: string;
-  trip_id?: number;
+export interface AIChatMessage {
+  id: number;
+  user_id: number;
+  trip_id: number;
+  role: AIChatMessageRole;
+  message_type: AIChatMessageType;
+  content?: string | null;
+  media_url?: string | null;
+  widget_response?: AIChatWidgetResponse | null;
+  widgets?: AIChatWidget[] | null;
+  sent_at?: string | null;
+  schema_version: number;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
-export interface CreateSessionResponse {
+export interface AIChatSessionResponse {
   success?: boolean;
   code?: number;
-  data?: AISession;
+  data?: AIChatSessionMetadata;
 }
 
-export interface SessionWithTrip {
-  session_id: string;
-  trip_id: number | null;
-  trip_title: string | null;
-  trip_status: string | null;
-  trip_destinations: string | null;
-  trip_start_date: string | null;
-  trip_end_date: string | null;
-  last_message_at: string | null;
-  message_count: number;
-}
-
-export interface ListSessionsResponse {
+export interface AIChatSessionsResponse {
   success?: boolean;
   code?: number;
-  data?: SessionWithTrip[];
+  data?: AIChatSessionMetadata[];
 }
 
-export interface SendMessageRequest {
-  session_id: string;
-  content: string;
-  message_type: MessageType;
-}
-
-export interface SendMessageResponse {
+export interface AIChatMessagesResponse {
   success?: boolean;
   code?: number;
-  data?: {
-    session_id: string;
-    response: string;
-    intent?: IntentType;
-    trips?: Trip[];
-    has_trips?: boolean;
-    collection_status?: CollectionStatus;
-    next_field?: string;
-    trip_context?: TripContext;
-    trip_created?: boolean;
-    trip_id?: number;
-    trip?: Trip;
-  };
+  data?: AIChatMessage[];
 }
 
-export interface ChatHistoryResponse {
+export interface SendAIChatMessageRequest {
+  message_type?: AIChatMessageType;
+  content?: string | null;
+  media_url?: string | null;
+  widget_response?: AIChatWidgetResponse | null;
+  sent_at?: string | null;
+}
+
+export interface SendAIChatMessageData {
+  user_message: AIChatMessage;
+  assistant_message: AIChatMessage | null;
+}
+
+export interface SendAIChatMessageResponse {
   success?: boolean;
   code?: number;
-  data?: {
-    messages: AIMessage[];
-    total: number;
-    page: number;
-    per_page: number;
-    has_more: boolean;
-  };
+  data?: SendAIChatMessageData;
 }
 
-export interface UploadImageRequest {
-  session_id: string;
-  image: File;
-}
-
-export interface UploadImageResponse {
-  success: boolean;
-  data: {
-    response: string;
-    session_id: string;
-    media_url: string;
-    analysis_result?: {
-      landmark?: string;
-      location?: string;
-      description?: string;
-    };
-  };
-}
-
-export interface UploadAudioRequest {
-  session_id: string;
-  audio: File;
-}
-
-export interface UploadAudioResponse {
-  success: boolean;
-  data: {
-    response: string;
-    session_id: string;
-    media_url: string;
-    transcription: string;
-  };
-}
-
-// New S3 Direct Upload Types
 export interface S3UploadCredentialsResponse {
   success?: boolean;
   code?: number;
@@ -186,7 +167,7 @@ export interface S3UploadCredentialsResponse {
     upload_key: string;
     bucket: string;
     region: string;
-    public_url: string; // The actual media URL to use
+    public_url: string;
     restrictions: {
       max_file_size: string;
       allowed_types: string[];
@@ -198,90 +179,4 @@ export interface S3UploadCredentialsResponse {
   upload_url?: string;
   form_data?: Record<string, string>;
   public_url?: string;
-}
-
-export interface AnalyzeImageRequest {
-  session_id: string;
-  media_url: string;
-  width?: number;
-  height?: number;
-  filename?: string;
-}
-
-export interface AnalyzeImageResponse {
-  success?: boolean;
-  code?: number;
-  data?: {
-    response: string;
-    analysis_result?: string;
-    session_id: string;
-    intent: IntentType;
-    trips?: Trip[];
-    has_trips?: boolean;
-    message_metadata?: MessageMetadata;
-  };
-}
-
-export interface TranscribeAudioRequest {
-  session_id: string;
-  media_url: string;
-  duration?: number;
-  filename?: string;
-}
-
-export interface TranscribeAudioResponse {
-  success?: boolean;
-  code?: number;
-  data?: {
-    response: string;
-    transcription: string;
-    session_id: string;
-    intent: IntentType;
-    trips?: Trip[];
-    has_trips?: boolean;
-    message_metadata?: MessageMetadata;
-  };
-}
-
-// ── Enhanced Converse types ──────────────────────────────────────────────
-
-export type WidgetType =
-  | 'date_range_picker'
-  | 'number_stepper'
-  | 'option_selector'
-  | 'hotel_carousel'
-  | 'confirm_summary';
-
-export interface UIBlock {
-  type: WidgetType;
-  id: string;
-  label: string;
-  config: Record<string, unknown>;
-}
-
-export interface WidgetResponsePayload {
-  widget_id: string;
-  widget_type: WidgetType;
-  value: Record<string, unknown>;
-}
-
-export interface ConverseRequest {
-  session_id: string;
-  content: string;
-  message_type?: MessageType;
-  widget_response?: WidgetResponsePayload;
-}
-
-export interface ConverseResponse {
-  success?: boolean;
-  code?: number;
-  data?: {
-    session_id: string;
-    response: string;
-    trip: Trip;
-    ui_blocks: UIBlock[];
-    field_updated: string[];
-    user_message_id: number | null;
-    assistant_message_id: number;
-  };
 }

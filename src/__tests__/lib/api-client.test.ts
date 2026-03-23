@@ -164,23 +164,46 @@ describe('getTrips', () => {
   });
 });
 
-describe('converse', () => {
-  it('includes widget_response when provided', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse({ reply: 'ok' }));
-    await apiClient.converse('sess-1', 'hello', {
-      type: 'date_picker',
-      value: '2026-01-01',
-    } as never);
+describe('sendMessage', () => {
+  it('sends trip_id and widget_response when provided', async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({
+        data: {
+          user_message: { id: 1, trip_id: 7, user_id: 3, role: 'user', message_type: 'text' },
+          assistant_message: null,
+        },
+      }),
+    );
+    await apiClient.sendMessage(7, {
+      content: 'hello',
+      widget_response: {
+        widget_id: 'w1',
+        widget_type: 'option_selector',
+        value: { value: 'tokyo' },
+      },
+    });
 
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/ai-chat/trips/7/messages');
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body.session_id).toBe('sess-1');
-    expect(body.widget_response).toBeDefined();
+    expect(body.widget_response).toEqual({
+      widget_id: 'w1',
+      widget_type: 'option_selector',
+      value: { value: 'tokyo' },
+    });
   });
 
   it('omits widget_response when not provided', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse({ reply: 'ok' }));
-    await apiClient.converse('sess-1', 'hello');
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({
+        data: {
+          user_message: { id: 1, trip_id: 7, user_id: 3, role: 'user', message_type: 'text' },
+          assistant_message: null,
+        },
+      }),
+    );
+    await apiClient.sendMessage(7, { content: 'hello' });
 
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/ai-chat/trips/7/messages');
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body.widget_response).toBeUndefined();
   });

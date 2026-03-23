@@ -5,14 +5,14 @@ import type { Restaurant } from '@/types/restaurant';
 import type { City, Country } from '@/types/location';
 import type { Trip, TripVersion } from '@/types/trip';
 import type {
-  CreateSessionResponse,
-  SendMessageResponse,
-  ChatHistoryResponse,
-  ListSessionsResponse,
-  MessageType,
+  AIChatMessage,
+  AIChatMessagesResponse,
+  AIChatSessionMetadata,
+  AIChatSessionsResponse,
+  AIChatMessageType,
+  SendAIChatMessageRequest,
+  SendAIChatMessageResponse,
   S3UploadCredentialsResponse,
-  AnalyzeImageResponse,
-  TranscribeAudioResponse,
 } from '@/types/ai-chat';
 
 class ApiClient {
@@ -202,67 +202,50 @@ class ApiClient {
     return response.data;
   }
 
+  async createTrip(currentVersion: Partial<TripVersion> = {}): Promise<Trip> {
+    const response = await this.request<{ data: Trip }>('/trip/create', {
+      method: 'POST',
+      body: JSON.stringify({
+        current_version: currentVersion,
+      }),
+    });
+    return response.data;
+  }
+
   // AI Chat methods
-  async createChatSession(language: string = 'en'): Promise<CreateSessionResponse> {
-    return this.request<CreateSessionResponse>('/ai-chat/create-session', {
-      method: 'POST',
-      body: JSON.stringify({ language }),
-    });
+  async listChatSessions(): Promise<AIChatSessionMetadata[]> {
+    const response = await this.request<AIChatSessionsResponse>('/ai-chat/sessions');
+    return response.data ?? [];
   }
 
-  async listChatSessions(): Promise<ListSessionsResponse> {
-    return this.request<ListSessionsResponse>('/ai-chat/sessions');
-  }
-
-  async createChatSessionForTrip(
-    tripId: number,
-    language: string = 'en',
-  ): Promise<CreateSessionResponse> {
-    return this.request<CreateSessionResponse>('/ai-chat/create-session-for-trip', {
-      method: 'POST',
-      body: JSON.stringify({ trip_id: tripId, language }),
-    });
+  async createChatSessionForTrip(tripId: number): Promise<AIChatSessionMetadata> {
+    const response = await this.request<{ data: AIChatSessionMetadata }>(
+      '/ai-chat/create-session-for-trip',
+      {
+        method: 'POST',
+        body: JSON.stringify({ trip_id: tripId }),
+      },
+    );
+    return response.data as AIChatSessionMetadata;
   }
 
   async sendMessage(
-    sessionId: string,
-    content: string,
-    messageType: MessageType = 'text',
-  ): Promise<SendMessageResponse> {
-    return this.request<SendMessageResponse>('/ai-chat/message', {
+    tripId: number,
+    payload: SendAIChatMessageRequest,
+  ): Promise<SendAIChatMessageResponse> {
+    return this.request<SendAIChatMessageResponse>(`/ai-chat/trips/${tripId}/messages`, {
       method: 'POST',
       body: JSON.stringify({
-        session_id: sessionId,
-        content,
-        message_type: messageType,
+        ...payload,
       }),
     });
   }
 
-  async getChatHistory(
-    sessionId: string,
-    page: number = 1,
-    perPage: number = 50,
-  ): Promise<ChatHistoryResponse> {
-    return this.request<ChatHistoryResponse>(
-      `/ai-chat/history/${sessionId}?page=${page}&per_page=${perPage}`,
+  async getChatHistory(tripId: number): Promise<AIChatMessage[]> {
+    const response = await this.request<AIChatMessagesResponse>(
+      `/ai-chat/trips/${tripId}/messages`,
     );
-  }
-
-  async converse(
-    sessionId: string,
-    content: string,
-    widgetResponse?: import('@/types/ai-chat').WidgetResponsePayload,
-  ): Promise<import('@/types/ai-chat').ConverseResponse> {
-    return this.request<import('@/types/ai-chat').ConverseResponse>('/ai-chat/converse', {
-      method: 'POST',
-      body: JSON.stringify({
-        session_id: sessionId,
-        content,
-        message_type: 'text',
-        ...(widgetResponse ? { widget_response: widgetResponse } : {}),
-      }),
-    });
+    return response.data ?? [];
   }
 
   // S3 Direct Upload Methods
@@ -338,39 +321,10 @@ class ApiClient {
     return `${baseUrl}/${key}`;
   }
 
-  async analyzeImageUrl(
-    sessionId: string,
-    mediaUrl: string,
-    width?: number,
-    height?: number,
-    filename?: string,
-  ): Promise<AnalyzeImageResponse> {
-    return this.request<AnalyzeImageResponse>('/media/analyze-image', {
-      method: 'POST',
-      body: JSON.stringify({
-        session_id: sessionId,
-        media_url: mediaUrl,
-        width,
-        height,
-        filename,
-      }),
-    });
-  }
-
-  async transcribeAudioUrl(
-    sessionId: string,
-    mediaUrl: string,
-    duration?: number,
-    filename?: string,
-  ): Promise<TranscribeAudioResponse> {
-    return this.request<TranscribeAudioResponse>('/media/transcribe-audio', {
-      method: 'POST',
-      body: JSON.stringify({
-        session_id: sessionId,
-        media_url: mediaUrl,
-        duration,
-        filename,
-      }),
+  async sendAudioMessage(tripId: number, mediaUrl: string): Promise<SendAIChatMessageResponse> {
+    return this.sendMessage(tripId, {
+      message_type: 'audio' as AIChatMessageType,
+      media_url: mediaUrl,
     });
   }
 }

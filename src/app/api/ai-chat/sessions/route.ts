@@ -12,7 +12,7 @@ export async function GET() {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/ai-chat/sessions`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/ai-chat/sessions`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,

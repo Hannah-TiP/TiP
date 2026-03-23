@@ -1,17 +1,16 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { AIMessage, WidgetResponsePayload } from '@/types/ai-chat';
+import type { AIChatMessage } from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MessageBubble from './MessageBubble';
 
 interface MessageListProps {
-  messages: AIMessage[];
+  messages: AIChatMessage[];
   isLoading: boolean;
-  onWidgetSubmit?: (payload: WidgetResponsePayload) => void;
 }
 
-export default function MessageList({ messages, isLoading, onWidgetSubmit }: MessageListProps) {
+export default function MessageList({ messages, isLoading }: MessageListProps) {
   const { t } = useLanguage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isInitialLoad = useRef(true);
@@ -47,12 +46,7 @@ export default function MessageList({ messages, isLoading, onWidgetSubmit }: Mes
 
         return (
           <div key={message.id || index}>
-            <MessageBubble
-              message={message}
-              isUser={isUser}
-              messageIndex={assistantIndex}
-              onWidgetSubmit={onWidgetSubmit}
-            />
+            <MessageBubble message={message} isUser={isUser} messageIndex={assistantIndex} />
           </div>
         );
       })}

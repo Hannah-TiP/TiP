@@ -12,43 +12,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Parse request body
-    const body = await request.json();
-    const { session_id, content, message_type = 'text' } = body;
+    const body = await request.json().catch(() => ({}));
 
-    if (!session_id || !content) {
-      return NextResponse.json(
-        { success: false, message: 'Missing required fields: session_id and content' },
-        { status: 400 },
-      );
-    }
-
-    // Call backend API
-    const response = await fetch(`${API_BASE_URL}/api/v1/ai-chat/message`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/trips`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
+        Language: 'en',
       },
-      body: JSON.stringify({
-        session_id,
-        content,
-        message_type,
-      }),
+      body: JSON.stringify(body),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
       return NextResponse.json(
-        { success: false, message: data.message || 'Failed to send message' },
+        { success: false, message: data.message || 'Failed to create trip' },
         { status: response.status },
       );
     }
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Send message error:', error);
+    console.error('Trip create API error:', error);
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

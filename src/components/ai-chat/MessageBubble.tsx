@@ -1,7 +1,6 @@
 'use client';
 
-import type { AIMessage, UIBlock, WidgetResponsePayload } from '@/types/ai-chat';
-import WidgetRenderer from './widgets/WidgetRenderer';
+import type { AIChatMessage } from '@/types/ai-chat';
 
 /** Render simple markdown: **bold** and *italic* */
 function renderMarkdown(text: string) {
@@ -19,36 +18,18 @@ function renderMarkdown(text: string) {
 }
 
 interface MessageBubbleProps {
-  message: AIMessage;
+  message: AIChatMessage;
   isUser: boolean;
   messageIndex?: number;
-  onWidgetSubmit?: (payload: WidgetResponsePayload) => void;
 }
 
-export default function MessageBubble({
-  message,
-  isUser,
-  messageIndex,
-  onWidgetSubmit,
-}: MessageBubbleProps) {
-  const uiBlocks: UIBlock[] = (message.message_metadata?.ui_blocks as UIBlock[]) || [];
+export default function MessageBubble({ message, isUser, messageIndex }: MessageBubbleProps) {
   if (isUser) {
     return (
       <div className="flex justify-end">
         <div className="bg-[#1E3D2F] text-white rounded-2xl rounded-tr-sm px-5 py-4 max-w-[400px]">
           {message.message_type === 'text' && (
             <p className="font-inter text-sm whitespace-pre-wrap">{message.content}</p>
-          )}
-          {message.message_type === 'image' && message.media_url && (
-            <div className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={message.media_url}
-                alt="Uploaded image"
-                className="rounded-lg"
-                style={{ width: '350px', height: 'auto' }}
-              />
-            </div>
           )}
           {message.message_type === 'audio' && message.media_url && (
             <div className="w-full">
@@ -88,7 +69,7 @@ export default function MessageBubble({
     );
   }
 
-  // Assistant message
+  // Assistant and human assistant messages
   return (
     <div className="flex gap-3">
       <div className="w-8 h-8 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0">
@@ -97,24 +78,8 @@ export default function MessageBubble({
       <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4 max-w-[600px]">
         {message.message_type === 'text' && (
           <p className="font-inter text-sm text-gray-800 whitespace-pre-wrap">
-            {renderMarkdown(message.content)}
+            {renderMarkdown(message.content ?? '')}
           </p>
-        )}
-        {message.message_type === 'image' && message.media_url && (
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={message.media_url}
-              alt="AI shared image"
-              className="rounded-lg"
-              style={{ width: '550px', height: 'auto' }}
-            />
-            {message.message_metadata?.analysis_result && (
-              <div className="mt-3 font-inter text-sm text-gray-800">
-                {message.message_metadata.analysis_result.description}
-              </div>
-            )}
-          </div>
         )}
         {message.message_type === 'audio' && message.media_url && (
           <div className="w-full">
@@ -122,19 +87,6 @@ export default function MessageBubble({
               <source src={message.media_url} />
               Your browser does not support the audio element.
             </audio>
-            {message.message_metadata?.transcription && (
-              <div className="mt-3 font-inter text-sm text-gray-600 italic">
-                &quot;{message.message_metadata.transcription}&quot;
-              </div>
-            )}
-          </div>
-        )}
-        {/* Render interactive widgets if present */}
-        {uiBlocks.length > 0 && onWidgetSubmit && (
-          <div className="mt-2">
-            {uiBlocks.map((block) => (
-              <WidgetRenderer key={block.id} block={block} onSubmit={onWidgetSubmit} />
-            ))}
           </div>
         )}
       </div>

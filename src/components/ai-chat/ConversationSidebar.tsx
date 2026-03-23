@@ -1,12 +1,18 @@
 'use client';
 
-import type { SessionWithTrip } from '@/types/ai-chat';
+import type { TripWithVersion } from '@/lib/trip-utils';
+import type { AIChatSessionMetadata } from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+export interface ConciergeSession {
+  session: AIChatSessionMetadata;
+  tripDetail: TripWithVersion | null;
+}
+
 interface ConversationSidebarProps {
-  sessions: SessionWithTrip[];
-  activeSessionId: string;
-  onSelectSession: (sessionId: string) => void;
+  sessions: ConciergeSession[];
+  activeSessionId: number | null;
+  onSelectSession: (sessionId: number) => void;
   onNewChat: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -27,12 +33,9 @@ function formatTime(isoStr: string | null): string {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-function getSessionLabel(s: SessionWithTrip): string | null {
-  if (s.trip_title) return s.trip_title;
-  if (s.trip_destinations) {
-    const dest = s.trip_destinations;
-    return dest.length > 28 ? dest.slice(0, 28) + '...' : dest;
-  }
+function getSessionLabel(s: ConciergeSession): string | null {
+  const title = s.tripDetail?.currentVersion?.title?.trim();
+  if (title) return title;
   return null; // will use t('chat.new_trip') in the component
 }
 
@@ -144,11 +147,14 @@ export default function ConversationSidebar({
       {/* Session list */}
       <div className="flex-1 overflow-y-auto">
         {sessions.map((s) => {
-          const isActive = s.session_id === activeSessionId;
+          const isActive = s.session.id === activeSessionId;
+          const tripStatus = s.tripDetail?.trip.status ?? null;
+          const startDate = s.tripDetail?.currentVersion?.start_date ?? null;
+          const endDate = s.tripDetail?.currentVersion?.end_date ?? null;
           return (
             <button
-              key={s.session_id}
-              onClick={() => onSelectSession(s.session_id)}
+              key={s.session.id}
+              onClick={() => onSelectSession(s.session.id)}
               className={`w-full text-left px-4 py-3 border-b border-gray-50 transition-colors ${
                 isActive
                   ? 'bg-[#1E3D2F]/5 border-l-2 border-l-[#C4956A]'
@@ -160,25 +166,20 @@ export default function ConversationSidebar({
                   {getSessionLabel(s) || t('chat.new_trip')}
                 </span>
                 <span className="font-inter text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">
-                  {formatTime(s.last_message_at)}
+                  {formatTime(s.session.last_message_at ?? null)}
                 </span>
               </div>
-              {formatDateRange(s.trip_start_date, s.trip_end_date) && (
+              {formatDateRange(startDate, endDate) && (
                 <p className="font-inter text-[11px] text-gray-400 mt-0.5 truncate">
-                  {formatDateRange(s.trip_start_date, s.trip_end_date)}
+                  {formatDateRange(startDate, endDate)}
                 </p>
               )}
               <div className="flex items-center gap-2 mt-1">
                 <span
-                  className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-inter ${getStatusColor(s.trip_status)}`}
+                  className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-inter ${getStatusColor(tripStatus)}`}
                 >
-                  {getStatusLabel(s.trip_status)}
+                  {getStatusLabel(tripStatus)}
                 </span>
-                {s.message_count > 0 && (
-                  <span className="font-inter text-[10px] text-gray-400">
-                    {s.message_count} msg{s.message_count !== 1 ? 's' : ''}
-                  </span>
-                )}
               </div>
             </button>
           );

@@ -13,14 +13,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const language = body.language || 'en';
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/ai-chat/create-session-for-trip`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/ai-chat/sessions`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        language: language,
       },
       body: JSON.stringify({ trip_id: body.trip_id }),
     });
