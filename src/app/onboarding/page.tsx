@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
-import { getLocalizedText } from '@/types/common';
+import CityAutocomplete from '@/components/CityAutocomplete';
 import type { User } from '@/types/auth';
-import type { City } from '@/types/location';
 
 const TRAVEL_STYLES = [
   { value: 'Solo Retreat', icon: '\u{1F9D8}', description: 'Peaceful, personal time' },
@@ -57,7 +56,6 @@ export default function OnboardingPage() {
 
   // Step 2: Location
   const [cityId, setCityId] = useState<number | undefined>(undefined);
-  const [cities, setCities] = useState<City[]>([]);
 
   // Step 3: Birthday
   const [birthYear, setBirthYear] = useState('');
@@ -71,8 +69,9 @@ export default function OnboardingPage() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([apiClient.getProfile(), apiClient.getCities('en')])
-      .then(([profile, cityList]) => {
+    apiClient
+      .getProfile()
+      .then((profile) => {
         if (cancelled) return;
 
         // Populate form from existing profile data
@@ -84,7 +83,6 @@ export default function OnboardingPage() {
         setBirthDay(birth.day);
         setBirthYear(birth.year);
         setSelectedStyles(profile.travel_styles || []);
-        setCities(cityList);
 
         // Jump to first incomplete step
         setStep(getStartStep(profile));
@@ -295,18 +293,11 @@ export default function OnboardingPage() {
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">
                     Home City
                   </label>
-                  <select
-                    value={cityId ?? ''}
-                    onChange={(e) => setCityId(e.target.value ? Number(e.target.value) : undefined)}
-                    className={selectClass}
-                  >
-                    <option value="">Select your city</option>
-                    {cities.map((city) => (
-                      <option key={city.id} value={city.id}>
-                        {getLocalizedText(city.name)}
-                      </option>
-                    ))}
-                  </select>
+                  <CityAutocomplete
+                    value={cityId}
+                    onChange={(id) => setCityId(id)}
+                    placeholder="Search your city..."
+                  />
                 </div>
               </div>
             </div>

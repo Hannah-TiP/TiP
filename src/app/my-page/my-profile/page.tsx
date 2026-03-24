@@ -7,10 +7,9 @@ import TopBar from '@/components/TopBar';
 import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
 import BirthDatePicker from '@/components/BirthDatePicker';
+import CityAutocomplete from '@/components/CityAutocomplete';
 import { apiClient } from '@/lib/api-client';
-import { getLocalizedText } from '@/types/common';
 import type { User } from '@/types/auth';
-import type { City } from '@/types/location';
 
 const GENDER_OPTIONS = [
   { value: '', label: 'Select gender' },
@@ -36,8 +35,6 @@ export default function MyProfile() {
   const [birthday, setBirthday] = useState('');
   const [cityId, setCityId] = useState<number | undefined>(undefined);
 
-  const [cities, setCities] = useState<City[]>([]);
-
   // Track if form is dirty
   const [isDirty, setIsDirty] = useState(false);
 
@@ -48,18 +45,8 @@ export default function MyProfile() {
     }
     if (sessionStatus === 'authenticated') {
       loadProfile();
-      loadCities();
     }
   }, [sessionStatus, router]);
-
-  async function loadCities() {
-    try {
-      const data = await apiClient.getCities('en');
-      setCities(data);
-    } catch (err) {
-      console.error('Cities load error:', err);
-    }
-  }
 
   async function loadProfile() {
     try {
@@ -235,22 +222,15 @@ export default function MyProfile() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">City</label>
-                  <select
-                    value={cityId ?? ''}
-                    onChange={(e) => {
-                      setCityId(e.target.value ? Number(e.target.value) : undefined);
+                  <CityAutocomplete
+                    value={cityId}
+                    onChange={(id) => {
+                      setCityId(id);
                       setIsDirty(true);
                       setSuccess('');
                     }}
-                    className={inputClass}
-                  >
-                    <option value="">Select city</option>
-                    {cities.map((city) => (
-                      <option key={city.id} value={city.id}>
-                        {getLocalizedText(city.name)}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Search city..."
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">

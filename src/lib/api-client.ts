@@ -171,6 +171,18 @@ class ApiClient {
     return response.data;
   }
 
+  async searchCities(q: string, language: string = 'en'): Promise<City[]> {
+    const response = await this.request<{ data: City[] }>(
+      `/cities?q=${encodeURIComponent(q)}&language=${language}`,
+    );
+    return response.data;
+  }
+
+  async getCityById(id: number): Promise<City> {
+    const response = await this.request<{ data: City }>(`/cities/${id}`);
+    return response.data;
+  }
+
   // Trip methods
   async getTrips(params?: {
     status?: string;

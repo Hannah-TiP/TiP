@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element, @typescript-eslint/no-unused-vars */
 import type { AnchorHTMLAttributes, ImgHTMLAttributes } from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import OnboardingPage from '@/app/onboarding/page';
 import { apiClient } from '@/lib/api-client';
@@ -35,8 +35,9 @@ vi.mock('next/link', () => ({
 vi.mock('@/lib/api-client', () => ({
   apiClient: {
     getProfile: vi.fn(),
-    getCities: vi.fn(),
     updateProfile: vi.fn(),
+    getCityById: vi.fn(),
+    searchCities: vi.fn(),
   },
 }));
 
@@ -46,7 +47,7 @@ afterEach(() => {
 });
 
 describe('OnboardingPage', () => {
-  it('renders localized city options on the location step', async () => {
+  it('renders city autocomplete input on the location step', async () => {
     vi.mocked(apiClient.getProfile).mockResolvedValue({
       id: 1,
       email: 'test@example.com',
@@ -56,24 +57,10 @@ describe('OnboardingPage', () => {
       onboarding_completed: false,
       is_verified: true,
     });
-    vi.mocked(apiClient.getCities).mockResolvedValue([
-      {
-        id: 1,
-        region_id: 10,
-        slug: 'seoul',
-        status: true,
-        name: { en: 'Seoul', kr: '서울' },
-        link_services: true,
-        schema_version: 1,
-      },
-    ]);
 
     render(<OnboardingPage />);
 
     expect(await screen.findByText('Where do you call home?')).toBeTruthy();
-
-    await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'Seoul' })).toBeTruthy();
-    });
+    expect(screen.getByPlaceholderText('Search your city...')).toBeTruthy();
   });
 });
