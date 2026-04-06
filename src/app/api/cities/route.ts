@@ -6,8 +6,14 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
-    // Forward all query params to backend
-    const backendUrl = `${API_BASE_URL}/api/v2/locations/cities?${searchParams.toString()}`;
+    // Map frontend 'search' param to backend 'q' param
+    const backendParams = new URLSearchParams(searchParams);
+    const search = backendParams.get('search');
+    if (search) {
+      backendParams.set('q', search);
+      backendParams.delete('search');
+    }
+    const backendUrl = `${API_BASE_URL}/api/v2/locations/cities?${backendParams.toString()}`;
 
     const response = await fetch(backendUrl, {
       headers: {
