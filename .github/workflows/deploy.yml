@@ -96,6 +96,11 @@ jobs:
         with:
           name: build-artifacts-${{ github.sha }}
 
+      - name: Copy static and public to standalone
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+
       - name: Run Lighthouse CI
         run: npx lhci autorun
 
