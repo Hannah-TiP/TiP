@@ -1,19 +1,23 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import PreviewBanner from '@/components/PreviewBanner';
+import DraftBadge from '@/components/DraftBadge';
 import { apiClient } from '@/lib/api-client';
+import { usePreviewMode } from '@/hooks/usePreviewMode';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Activity } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
 import type { City } from '@/types/location';
 
-export default function MoreDreamsPage() {
+function MoreDreamsContent() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { isPreview } = usePreviewMode();
 
   // Filter state
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
@@ -31,8 +35,8 @@ export default function MoreDreamsPage() {
       try {
         setIsLoading(true);
         const [activityData, restaurantData, cityData] = await Promise.all([
-          apiClient.getActivities({ language: 'en' }),
-          apiClient.getRestaurants({ language: 'en' }),
+          apiClient.getActivities({ language: 'en', include_draft: isPreview }),
+          apiClient.getRestaurants({ language: 'en', include_draft: isPreview }),
           apiClient.getCities('en'),
         ]);
         setActivities(activityData);
@@ -46,7 +50,7 @@ export default function MoreDreamsPage() {
     }
 
     loadData();
-  }, []);
+  }, [isPreview]);
 
   // Load cities when dropdown opens
   useEffect(() => {
@@ -95,7 +99,9 @@ export default function MoreDreamsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-light">
+    <main className={`min-h-screen bg-gray-light ${isPreview ? 'pt-10' : ''}`}>
+      <PreviewBanner />
+
       {/* Hero */}
       <section className="relative h-[720px] w-full overflow-hidden">
         <Image
@@ -304,7 +310,9 @@ export default function MoreDreamsPage() {
               <Link
                 key={activity.id}
                 href={`/activity/${activity.slug}`}
-                className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
+                className={`group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg ${
+                  activity.status === 'draft' ? 'ring-2 ring-amber-400' : ''
+                }`}
               >
                 <div className="relative h-56 overflow-hidden">
                   <Image
@@ -317,6 +325,7 @@ export default function MoreDreamsPage() {
                   <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
                     {getActivityTag(activity)}
                   </div>
+                  <DraftBadge status={activity.status} />
                 </div>
                 <div className="p-5">
                   <h3 className="font-primary text-[18px] font-semibold text-green-dark">
@@ -369,7 +378,9 @@ export default function MoreDreamsPage() {
               <Link
                 key={restaurant.id}
                 href={`/restaurant/${restaurant.slug}`}
-                className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
+                className={`group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg ${
+                  restaurant.status === 'draft' ? 'ring-2 ring-amber-400' : ''
+                }`}
               >
                 <div className="relative h-56 overflow-hidden">
                   <Image
@@ -382,6 +393,7 @@ export default function MoreDreamsPage() {
                   <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
                     RESTAURANT
                   </div>
+                  <DraftBadge status={restaurant.status} />
                 </div>
                 <div className="p-5">
                   <h3 className="font-primary text-[18px] font-semibold text-green-dark">
@@ -423,5 +435,13 @@ export default function MoreDreamsPage() {
 
       <Footer />
     </main>
+  );
+}
+
+export default function MoreDreamsPage() {
+  return (
+    <Suspense>
+      <MoreDreamsContent />
+    </Suspense>
   );
 }

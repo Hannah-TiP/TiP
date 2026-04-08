@@ -8,7 +8,10 @@ export async function GET(request: NextRequest) {
     const backendSearchParams = new URLSearchParams();
     const cityId = searchParams.get('city_id');
     const language = searchParams.get('language') || 'en';
+    const includeDraft = searchParams.get('include_draft');
+
     if (cityId) backendSearchParams.set('city_id', cityId);
+    if (includeDraft === 'true') backendSearchParams.set('include_draft', 'true');
 
     const query = backendSearchParams.toString();
     const backendUrl = `${API_BASE_URL}/api/v2/restaurants${query ? `?${query}` : ''}`;

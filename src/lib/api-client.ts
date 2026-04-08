@@ -107,10 +107,15 @@ class ApiClient {
   }
 
   // Hotel methods
-  async getHotels(params?: { city_id?: number; language?: string }): Promise<Hotel[]> {
+  async getHotels(params?: {
+    city_id?: number;
+    language?: string;
+    include_draft?: boolean;
+  }): Promise<Hotel[]> {
     const searchParams = new URLSearchParams();
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
     if (params?.language) searchParams.set('language', params.language);
+    if (params?.include_draft) searchParams.set('include_draft', 'true');
 
     const query = searchParams.toString();
     const endpoint = `/hotels${query ? `?${query}` : ''}`;
@@ -129,11 +134,13 @@ class ApiClient {
     city_id?: number;
     category?: string;
     language?: string;
+    include_draft?: boolean;
   }): Promise<Activity[]> {
     const searchParams = new URLSearchParams();
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
     if (params?.category) searchParams.set('category', params.category);
     if (params?.language) searchParams.set('language', params.language);
+    if (params?.include_draft) searchParams.set('include_draft', 'true');
 
     const query = searchParams.toString();
     const endpoint = `/activities${query ? `?${query}` : ''}`;
@@ -148,10 +155,15 @@ class ApiClient {
   }
 
   // Restaurant methods
-  async getRestaurants(params?: { city_id?: number; language?: string }): Promise<Restaurant[]> {
+  async getRestaurants(params?: {
+    city_id?: number;
+    language?: string;
+    include_draft?: boolean;
+  }): Promise<Restaurant[]> {
     const searchParams = new URLSearchParams();
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
     if (params?.language) searchParams.set('language', params.language);
+    if (params?.include_draft) searchParams.set('include_draft', 'true');
 
     const query = searchParams.toString();
     const endpoint = `/restaurants${query ? `?${query}` : ''}`;
