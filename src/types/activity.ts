@@ -1,4 +1,4 @@
-import type { Image, MultiLanguageString } from '@/types/common';
+import type { Image, MultiLanguageString, Policy } from '@/types/common';
 
 export interface Activity {
   id: number;
@@ -12,6 +12,7 @@ export interface Activity {
   opening_hours?: MultiLanguageString | null;
   visit_duration?: MultiLanguageString | null;
   address?: MultiLanguageString | null;
+  policies?: Policy[] | null;
   schema_version: number;
   created_at?: string | null;
   updated_at?: string | null;

@@ -1,4 +1,4 @@
-import type { Image, MultiLanguageString } from '@/types/common';
+import type { Image, MultiLanguageString, Policy } from '@/types/common';
 
 export enum MichelinTier {
   ONE_STAR = '1_star',
@@ -26,6 +26,7 @@ export interface Restaurant {
   address?: MultiLanguageString | null;
   recognitions?: RestaurantRecognition[] | null;
   images?: Image[] | null;
+  policies?: Policy[] | null;
   schema_version: number;
   created_at?: string | null;
   updated_at?: string | null;

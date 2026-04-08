@@ -8,6 +8,11 @@ export interface GeoPoint {
   lng: number;
 }
 
+export interface Policy {
+  type: string;
+  description: MultiLanguageString;
+}
+
 export interface Image {
   original: string;
   w128?: string | null;
