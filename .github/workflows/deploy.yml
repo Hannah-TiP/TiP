@@ -91,23 +91,13 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts-${{ github.sha }}
+      - name: Build Application
+        run: npm run build
 
-      - name: Debug artifact contents
+      - name: Prepare standalone server
         run: |
-          echo "=== Top-level ==="
-          ls -la
-          echo "=== .next/ ==="
-          ls -la .next/ 2>/dev/null || echo ".next not found"
-          echo "=== .next/standalone/ ==="
-          ls -la .next/standalone/ 2>/dev/null || echo ".next/standalone not found"
-          echo "=== Find server.js ==="
-          find . -name "server.js" -path "*/standalone/*" 2>/dev/null || echo "server.js not found"
-          echo "=== Find static dir ==="
-          find . -name "static" -type d 2>/dev/null | head -10
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
 
       - name: Run Lighthouse CI
         run: npx lhci autorun
