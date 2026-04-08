@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import HotelMap from '@/components/HotelMap';
+import PreviewBanner from '@/components/PreviewBanner';
+import DraftBadge from '@/components/DraftBadge';
 import { apiClient } from '@/lib/api-client';
+import { usePreviewMode } from '@/hooks/usePreviewMode';
 import { getLocalizedText } from '@/types/common';
 import { getHotelImages, type Hotel } from '@/types/hotel';
 import type { City } from '@/types/location';
@@ -33,9 +36,10 @@ const STAR_RATING_OPTIONS = [
   { value: '4', label: '4 Star' },
 ];
 
-export default function DreamHotelsPage() {
+function DreamHotelsContent() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { isPreview } = usePreviewMode();
 
   // Filter state
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
@@ -55,7 +59,10 @@ export default function DreamHotelsPage() {
     async function loadHotels() {
       try {
         setIsLoading(true);
-        const data = await apiClient.getHotels({ language: 'en' });
+        const data = await apiClient.getHotels({
+          language: 'en',
+          include_draft: isPreview,
+        });
         setHotels(data);
       } catch (error) {
         console.error('Failed to load hotels:', error);
@@ -65,7 +72,7 @@ export default function DreamHotelsPage() {
     }
 
     loadHotels();
-  }, []);
+  }, [isPreview]);
 
   // Load cities when destination dropdown opens
   useEffect(() => {
@@ -112,7 +119,9 @@ export default function DreamHotelsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-light">
+    <main className={`min-h-screen bg-gray-light ${isPreview ? 'pt-10' : ''}`}>
+      <PreviewBanner />
+
       {/* Hero */}
       <section className="relative h-[720px] w-full overflow-hidden">
         <Image
@@ -383,7 +392,9 @@ export default function DreamHotelsPage() {
               <Link
                 key={hotel.id}
                 href={`/hotel/${hotel.slug}`}
-                className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
+                className={`group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg ${
+                  hotel.status === 'draft' ? 'ring-2 ring-amber-400' : ''
+                }`}
               >
                 <div className="relative h-56 overflow-hidden">
                   <Image
@@ -396,6 +407,7 @@ export default function DreamHotelsPage() {
                   <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
                     {getHotelTag(hotel)}
                   </div>
+                  <DraftBadge status={hotel.status} />
                 </div>
                 <div className="p-5">
                   <h3 className="font-primary text-[18px] font-semibold text-green-dark">
@@ -442,5 +454,13 @@ export default function DreamHotelsPage() {
 
       <Footer />
     </main>
+  );
+}
+
+export default function DreamHotelsPage() {
+  return (
+    <Suspense>
+      <DreamHotelsContent />
+    </Suspense>
   );
 }
