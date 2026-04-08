@@ -96,10 +96,18 @@ jobs:
         with:
           name: build-artifacts-${{ github.sha }}
 
-      - name: Copy static and public to standalone
+      - name: Debug artifact contents
         run: |
-          cp -r .next/static .next/standalone/.next/static
-          cp -r public .next/standalone/public
+          echo "=== Top-level ==="
+          ls -la
+          echo "=== .next/ ==="
+          ls -la .next/ 2>/dev/null || echo ".next not found"
+          echo "=== .next/standalone/ ==="
+          ls -la .next/standalone/ 2>/dev/null || echo ".next/standalone not found"
+          echo "=== Find server.js ==="
+          find . -name "server.js" -path "*/standalone/*" 2>/dev/null || echo "server.js not found"
+          echo "=== Find static dir ==="
+          find . -name "static" -type d 2>/dev/null | head -10
 
       - name: Run Lighthouse CI
         run: npx lhci autorun
