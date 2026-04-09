@@ -10,59 +10,65 @@ import { apiClient } from '@/lib/api-client';
 import { usePreviewMode } from '@/hooks/usePreviewMode';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Activity } from '@/types/activity';
-import type { Restaurant } from '@/types/restaurant';
 import type { City } from '@/types/location';
 
-function MoreDreamsContent() {
+const CATEGORY_OPTIONS = [
+  { value: '', label: 'All categories' },
+  { value: 'sightseeing', label: 'Sightseeing' },
+  { value: 'museum', label: 'Museum' },
+  { value: 'show', label: 'Show' },
+  { value: 'food', label: 'Food' },
+  { value: 'wellness', label: 'Wellness' },
+  { value: 'adventure', label: 'Adventure' },
+  { value: 'culture', label: 'Culture' },
+];
+
+function getActivityTag(activity: Activity): string {
+  if (!activity.category) return 'ACTIVITY';
+  return activity.category.toUpperCase();
+}
+
+function ActivitiesContent() {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { isPreview } = usePreviewMode();
 
   // Filter state
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState('');
 
-  // Dropdown state
-  const [openDropdown, setOpenDropdown] = useState<'destination' | null>(null);
+  // Dropdown open state
+  const [openDropdown, setOpenDropdown] = useState<'destination' | 'category' | null>(null);
+
+  // Destination search
   const [citySearch, setCitySearch] = useState('');
   const [cities, setCities] = useState<City[]>([]);
-  const [citiesLoading, setCitiesLoading] = useState(false);
+  const [citiesLoading] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    async function loadData() {
+    async function loadActivities() {
       try {
         setIsLoading(true);
-        const [activityData, restaurantData, cityData] = await Promise.all([
-          apiClient.getActivities({ language: 'en', include_draft: isPreview }),
-          apiClient.getRestaurants({ language: 'en', include_draft: isPreview }),
+        const [activityData, cityData] = await Promise.all([
+          apiClient.getActivities({
+            language: 'en',
+            include_draft: isPreview,
+          }),
           apiClient.getCities('en'),
         ]);
         setActivities(activityData);
-        setRestaurants(restaurantData);
         setCities(cityData);
       } catch (error) {
-        console.error('Failed to load data:', error);
+        console.error('Failed to load activities:', error);
       } finally {
         setIsLoading(false);
       }
     }
 
-    loadData();
+    loadActivities();
   }, [isPreview]);
-
-  // Load cities when dropdown opens
-  useEffect(() => {
-    if (openDropdown === 'destination' && cities.length === 0) {
-      setCitiesLoading(true);
-      apiClient
-        .getCities('en')
-        .then(setCities)
-        .catch(() => {})
-        .finally(() => setCitiesLoading(false));
-    }
-  }, [openDropdown, cities.length]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -75,27 +81,30 @@ function MoreDreamsContent() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredActivities = useMemo(() => {
-    if (!selectedCity) return activities;
-    return activities.filter((a) => a.city_id === selectedCity.id);
-  }, [activities, selectedCity]);
+  // City name lookup
+  const cityNameById = useMemo(() => {
+    return new Map(cities.map((city) => [city.id, getLocalizedText(city.name)]));
+  }, [cities]);
 
-  const filteredRestaurants = useMemo(() => {
-    if (!selectedCity) return restaurants;
-    return restaurants.filter((r) => r.city_id === selectedCity.id);
-  }, [restaurants, selectedCity]);
+  // Filtered activities
+  const filteredActivities = useMemo(() => {
+    return activities.filter((activity) => {
+      if (selectedCity && activity.city_id !== selectedCity.id) return false;
+      if (selectedCategory && activity.category !== selectedCategory) return false;
+      return true;
+    });
+  }, [activities, selectedCity, selectedCategory]);
 
   const filteredCities = cities.filter((c) =>
     getLocalizedText(c.name).toLowerCase().includes(citySearch.toLowerCase()),
   );
 
-  const cityNameById = useMemo(() => {
-    return new Map(cities.map((city) => [city.id, getLocalizedText(city.name)]));
-  }, [cities]);
+  const hasActiveFilters = selectedCity || selectedCategory;
 
-  function getActivityTag(activity: Activity): string {
-    if (!activity.category) return 'ACTIVITY';
-    return activity.category.toUpperCase();
+  function clearFilters() {
+    setSelectedCity(null);
+    setSelectedCategory('');
+    setOpenDropdown(null);
   }
 
   return (
@@ -105,8 +114,8 @@ function MoreDreamsContent() {
       {/* Hero */}
       <section className="relative h-[720px] w-full overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&h=900&fit=crop"
-          alt="More Dreams hero"
+          src="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=1920&h=900&fit=crop"
+          alt="Luxury experiences"
           fill
           sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
@@ -156,21 +165,22 @@ function MoreDreamsContent() {
         {/* Hero Content */}
         <div className="relative z-10 flex h-[calc(100%-64px)] flex-col items-center justify-center text-center">
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
-            CURATED COLLECTION
+            EXTRAORDINARY EXPERIENCES
           </span>
           <h1 className="font-primary text-[64px] font-normal italic leading-tight text-white">
-            More Dreams
+            Dream Activities
           </h1>
           <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-white/60">
-            Discover extraordinary activities and exquisite restaurants, hand-selected across our
-            curated destinations.
+            Discover the world&apos;s most captivating experiences, from cultural landmarks to
+            unforgettable adventures, hand-selected for the discerning traveler.
           </p>
         </div>
       </section>
 
-      {/* Destination filter */}
+      {/* Search filters */}
       <section className="bg-white px-20 py-10" ref={dropdownRef}>
         <div className="flex items-center gap-4">
+          {/* Destination filter */}
           <div className="relative flex-1">
             <button
               onClick={() => {
@@ -248,12 +258,50 @@ function MoreDreamsContent() {
             )}
           </div>
 
-          {selectedCity ? (
+          {/* Category filter */}
+          <div className="relative flex-1">
             <button
-              onClick={() => {
-                setSelectedCity(null);
-                setOpenDropdown(null);
-              }}
+              onClick={() => setOpenDropdown(openDropdown === 'category' ? null : 'category')}
+              className={`w-full rounded-lg border bg-white px-5 py-4 text-left transition-colors ${
+                openDropdown === 'category'
+                  ? 'border-gold'
+                  : 'border-gray-border hover:border-gray-400'
+              }`}
+            >
+              <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                CATEGORY
+              </p>
+              <p className="text-[14px] font-medium text-green-dark">
+                {CATEGORY_OPTIONS.find((o) => o.value === selectedCategory)?.label ||
+                  'All categories'}
+              </p>
+            </button>
+            {openDropdown === 'category' && (
+              <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white p-2 shadow-xl">
+                {CATEGORY_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setSelectedCategory(option.value);
+                      setOpenDropdown(null);
+                    }}
+                    className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
+                      selectedCategory === option.value
+                        ? 'font-semibold text-gold'
+                        : 'text-green-dark'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Clear / Search button */}
+          {hasActiveFilters ? (
+            <button
+              onClick={clearFilters}
               className="rounded-lg border border-green-dark px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-green-dark hover:text-white"
             >
               Clear
@@ -265,29 +313,23 @@ function MoreDreamsContent() {
           )}
         </div>
 
-        {selectedCity && (
+        {/* Active filter count */}
+        {hasActiveFilters && (
           <p className="mt-3 text-[13px] text-gray-text">
-            Showing {filteredActivities.length} activities and {filteredRestaurants.length}{' '}
-            restaurants in {getLocalizedText(selectedCity.name)}
+            Showing {filteredActivities.length} of {activities.length} activities
           </p>
         )}
       </section>
 
-      {/* Activities Section */}
+      {/* Activities Grid */}
       <section className="bg-gray-light px-20 py-20">
         <div className="mb-12 text-center">
           <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-            EXTRAORDINARY EXPERIENCES
+            CURATED FOR YOU
           </span>
           <h2 className="mt-3 font-primary text-[42px] italic text-green-dark">
-            Activities & Experiences
+            Featured Activities & Experiences
           </h2>
-          <Link
-            href="/more-dreams/activities"
-            className="mt-4 inline-block text-[13px] font-medium text-gold hover:underline"
-          >
-            View All Activities &rarr;
-          </Link>
         </div>
 
         {isLoading ? (
@@ -297,16 +339,16 @@ function MoreDreamsContent() {
         ) : filteredActivities.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-gray-text">
-              {selectedCity
-                ? 'No activities found for this destination.'
+              {hasActiveFilters
+                ? 'No activities match your filters.'
                 : 'No activities available at the moment.'}
             </p>
-            {selectedCity && (
+            {hasActiveFilters && (
               <button
-                onClick={() => setSelectedCity(null)}
+                onClick={clearFilters}
                 className="mt-4 text-[14px] font-medium text-gold underline hover:no-underline"
               >
-                Clear filter
+                Clear all filters
               </button>
             )}
           </div>
@@ -349,92 +391,18 @@ function MoreDreamsContent() {
         )}
       </section>
 
-      {/* Restaurants Section */}
-      <section className="bg-white px-20 py-20">
-        <div className="mb-12 text-center">
-          <span className="text-[11px] font-semibold tracking-[4px] text-gold">FINE DINING</span>
-          <h2 className="mt-3 font-primary text-[42px] italic text-green-dark">
-            Curated Restaurants
-          </h2>
-          <Link
-            href="/more-dreams/restaurants"
-            className="mt-4 inline-block text-[13px] font-medium text-gold hover:underline"
-          >
-            View All Restaurants &rarr;
-          </Link>
-        </div>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
-          </div>
-        ) : filteredRestaurants.length === 0 ? (
-          <div className="py-20 text-center">
-            <p className="text-gray-text">
-              {selectedCity
-                ? 'No restaurants found for this destination.'
-                : 'No restaurants available at the moment.'}
-            </p>
-            {selectedCity && (
-              <button
-                onClick={() => setSelectedCity(null)}
-                className="mt-4 text-[14px] font-medium text-gold underline hover:no-underline"
-              >
-                Clear filter
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-4 gap-6">
-            {filteredRestaurants.map((restaurant) => (
-              <Link
-                key={restaurant.id}
-                href={`/restaurant/${restaurant.slug}`}
-                className={`group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg ${
-                  restaurant.status === 'draft' ? 'ring-2 ring-amber-400' : ''
-                }`}
-              >
-                <div className="relative h-56 overflow-hidden">
-                  <Image
-                    src={getImageUrl(restaurant.images?.[0])}
-                    alt={getLocalizedText(restaurant.name)}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 25vw"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
-                    RESTAURANT
-                  </div>
-                  <DraftBadge status={restaurant.status} />
-                </div>
-                <div className="p-5">
-                  <h3 className="font-primary text-[18px] font-semibold text-green-dark">
-                    {getLocalizedText(restaurant.name)}
-                  </h3>
-                  {restaurant.city_id && cityNameById.get(restaurant.city_id) && (
-                    <p className="mt-1 text-[13px] text-gray-text">
-                      {cityNameById.get(restaurant.city_id)}
-                    </p>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
       {/* CTA Section */}
       <section className="bg-green-dark px-[100px] py-20">
-        <div className="max-w-2xl mx-auto text-center">
+        <div className="mx-auto max-w-2xl text-center">
           <span className="text-[11px] font-semibold tracking-[4px] text-gold">
             PERSONAL CONCIERGE
           </span>
           <h2 className="mt-3 font-primary text-[42px] italic text-[#FAF5EF]">
-            Let TiP Curate Your Perfect Voyage
+            Let TiP Curate Your Perfect Experience
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[16px] leading-relaxed text-white/50">
-            From extraordinary experiences to exquisite dining — tell us your dream and we&apos;ll
-            craft the journey.
+            From cultural landmarks to hidden gems — tell us your dream and we&apos;ll craft
+            the perfect itinerary.
           </p>
           <Link
             href="/concierge"
@@ -450,10 +418,10 @@ function MoreDreamsContent() {
   );
 }
 
-export default function MoreDreamsPage() {
+export default function ActivitiesPage() {
   return (
     <Suspense>
-      <MoreDreamsContent />
+      <ActivitiesContent />
     </Suspense>
   );
 }
