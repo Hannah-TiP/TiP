@@ -267,9 +267,7 @@ function RestaurantsContent() {
           {/* Recognition filter */}
           <div className="relative flex-1">
             <button
-              onClick={() =>
-                setOpenDropdown(openDropdown === 'recognition' ? null : 'recognition')
-              }
+              onClick={() => setOpenDropdown(openDropdown === 'recognition' ? null : 'recognition')}
               className={`w-full rounded-lg border bg-white px-5 py-4 text-left transition-colors ${
                 openDropdown === 'recognition'
                   ? 'border-gold'
@@ -417,8 +415,8 @@ function RestaurantsContent() {
             Reserve the Finest Tables
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[16px] leading-relaxed text-white/50">
-            From Michelin-starred dining to local culinary treasures — let our concierge
-            secure the perfect reservation for you.
+            From Michelin-starred dining to local culinary treasures — let our concierge secure the
+            perfect reservation for you.
           </p>
           <Link
             href="/concierge"

@@ -401,8 +401,8 @@ function ActivitiesContent() {
             Let TiP Curate Your Perfect Experience
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[16px] leading-relaxed text-white/50">
-            From cultural landmarks to hidden gems — tell us your dream and we&apos;ll craft
-            the perfect itinerary.
+            From cultural landmarks to hidden gems — tell us your dream and we&apos;ll craft the
+            perfect itinerary.
           </p>
           <Link
             href="/concierge"
