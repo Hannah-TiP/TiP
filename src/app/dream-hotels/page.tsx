@@ -199,7 +199,7 @@ function DreamHotelsContent() {
             </div>
           </div>
         ) : (
-          <HotelMap hotels={filteredHotels} />
+          <HotelMap hotels={filteredHotels} selectedCity={selectedCity} />
         )}
 
         {/* Search filters */}
