@@ -4,11 +4,13 @@ import { useCallback, useState, useEffect, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, InfoWindow } from '@react-google-maps/api';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getLocalizedText } from '@/types/common';
+import { getLocalizedText, type GeoPoint } from '@/types/common';
 import { Hotel, getHotelCoordinates, getHotelImages } from '@/types/hotel';
 
 interface HotelMapProps {
   hotels: Hotel[];
+  /** When set, the map pans and zooms to this city's coordinates. */
+  selectedCityGeo?: GeoPoint | null;
 }
 
 const mapContainerStyle = {
@@ -20,6 +22,9 @@ const defaultCenter = {
   lat: 20,
   lng: 0,
 };
+
+/** Zoom level used when focusing on a single city (shows city-level detail). */
+const CITY_ZOOM_LEVEL = 12;
 
 // Libraries array must be static to prevent unnecessary reloads
 const libraries: 'marker'[] = ['marker'];
@@ -35,7 +40,7 @@ const mapOptions = {
   // Configure map styling in Google Cloud Console instead
 };
 
-export default function HotelMap({ hotels }: HotelMapProps) {
+export default function HotelMap({ hotels, selectedCityGeo }: HotelMapProps) {
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
@@ -140,15 +145,13 @@ export default function HotelMap({ hotels }: HotelMapProps) {
           google.maps.event.removeListener(listener);
         });
         isInitialFit.current = false;
-      } else {
-        // Filter change: animate smoothly
-        // panTo animates to center, then we zoom after the pan settles
+      } else if (!selectedCityGeo) {
+        // Filter change without city selection: animate to fit hotel bounds
         const center = bounds.getCenter();
         map.panTo(center);
 
         const listener = map.addListener('idle', () => {
           google.maps.event.removeListener(listener);
-          // Now fit bounds after pan, capping zoom for single hotels
           map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
           const zoomListener = map.addListener('idle', () => {
             if (map.getZoom()! > 14) map.setZoom(14);
@@ -156,6 +159,7 @@ export default function HotelMap({ hotels }: HotelMapProps) {
           });
         });
       }
+      // When selectedCityGeo is set, the separate useEffect below handles zoom
     }
 
     // Close InfoWindow if selected hotel is no longer in the filtered set
@@ -170,7 +174,42 @@ export default function HotelMap({ hotels }: HotelMapProps) {
       });
       markersRef.current = [];
     };
-  }, [map, hotels, selectedHotel]);
+  }, [map, hotels, selectedHotel, selectedCityGeo]);
+
+  // Pan and zoom to selected city when its geo coordinates change
+  useEffect(() => {
+    if (!map || isInitialFit.current) return;
+
+    if (selectedCityGeo) {
+      // Smoothly fly to the selected city
+      map.panTo({ lat: selectedCityGeo.lat, lng: selectedCityGeo.lng });
+      const listener = map.addListener('idle', () => {
+        google.maps.event.removeListener(listener);
+        map.setZoom(CITY_ZOOM_LEVEL);
+      });
+    } else {
+      // City filter cleared — return to default view showing all hotels
+      const hotelsWithCoordinates = hotels
+        .map((hotel) => ({ coordinates: getHotelCoordinates(hotel) }))
+        .filter((item) => item.coordinates !== null);
+
+      if (hotelsWithCoordinates.length > 0) {
+        const bounds = new window.google.maps.LatLngBounds();
+        hotelsWithCoordinates.forEach(({ coordinates }) => {
+          bounds.extend(coordinates!);
+        });
+        map.panTo(bounds.getCenter());
+        const listener = map.addListener('idle', () => {
+          google.maps.event.removeListener(listener);
+          map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
+          const zoomListener = map.addListener('idle', () => {
+            if (map.getZoom()! > 14) map.setZoom(14);
+            google.maps.event.removeListener(zoomListener);
+          });
+        });
+      }
+    }
+  }, [map, selectedCityGeo, hotels]);
 
   if (loadError) {
     return (
