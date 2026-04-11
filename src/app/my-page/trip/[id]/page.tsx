@@ -152,8 +152,8 @@ function CancelTripDialog({
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-8">
         <h3 className="text-lg font-bold text-gray-900 mb-2">Cancel this trip?</h3>
         <p className="text-sm text-gray-500 mb-6">
-          This action cannot be undone. The trip will be marked as canceled and will no longer appear
-          in your active trips.
+          This action cannot be undone. The trip will be marked as canceled and will no longer
+          appear in your active trips.
         </p>
         <div className="flex justify-end gap-3">
           <button
