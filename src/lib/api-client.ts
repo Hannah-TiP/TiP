@@ -2,7 +2,7 @@ import type { User, UpdateProfileData } from '@/types/auth';
 import type { Hotel } from '@/types/hotel';
 import type { Activity } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
-import type { City, Country } from '@/types/location';
+import type { City, Country, Region } from '@/types/location';
 import type { Trip, TripVersion } from '@/types/trip';
 import type {
   AIChatMessage,
@@ -103,6 +103,12 @@ class ApiClient {
   // Country methods
   async getCountries(): Promise<Country[]> {
     const response = await this.request<{ data: Country[] }>('/countries');
+    return response.data;
+  }
+
+  // Region methods
+  async getRegions(language: string = 'en'): Promise<Region[]> {
+    const response = await this.request<{ data: Region[] }>(`/regions?language=${language}`);
     return response.data;
   }
 
