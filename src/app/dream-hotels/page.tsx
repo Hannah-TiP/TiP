@@ -95,7 +95,6 @@ function DreamHotelsContent() {
     [isPreview],
   );
 
-
   // Re-fetch hotels when filters change
   useEffect(() => {
     fetchHotels({
