@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import TopBar from '@/components/TopBar';
 import SubNav from '@/components/SubNav';
@@ -18,7 +18,16 @@ const STATUS_LABELS: Record<string, string> = {
   'ready-to-travel': 'Ready to Travel',
   'traveling-now': 'Traveling Now',
   'travel-completed': 'Completed',
+  canceled: 'Canceled',
 };
+
+/** Statuses where the trip can still be canceled (not yet paid). */
+const CANCELABLE_STATUSES = new Set([
+  'draft',
+  'waiting-for-proposal',
+  'in-progress',
+  'waiting-for-payment',
+]);
 
 const ITEM_LABELS: Record<TripPlanItem['item_type'], string> = {
   flight: 'Flight',
@@ -128,11 +137,54 @@ function HeroCard({ trip }: { trip: TripWithVersion }) {
   );
 }
 
+/** Confirmation dialog for canceling a trip. */
+function CancelTripDialog({
+  onConfirm,
+  onClose,
+  canceling,
+}: {
+  onConfirm: () => void;
+  onClose: () => void;
+  canceling: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-8">
+        <h3 className="text-lg font-bold text-gray-900 mb-2">Cancel this trip?</h3>
+        <p className="text-sm text-gray-500 mb-6">
+          This action cannot be undone. The trip will be marked as canceled and will no longer
+          appear in your active trips.
+        </p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            disabled={canceling}
+            className="px-5 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            Keep Trip
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={canceling}
+            className="px-5 py-2.5 bg-red-600 text-white text-sm font-medium rounded-full hover:bg-red-700 transition-colors disabled:opacity-50"
+          >
+            {canceling ? 'Canceling...' : 'Yes, Cancel Trip'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [tripWithVersion, setTripWithVersion] = useState<TripWithVersion | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -149,6 +201,25 @@ export default function TripDetailPage() {
 
     load();
   }, [id]);
+
+  const handleCancelTrip = useCallback(async () => {
+    if (!id) return;
+    setCanceling(true);
+    setCancelError(null);
+    try {
+      const res = await fetch(`/api/trip/${id}/cancel`, { method: 'POST' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.message || 'Failed to cancel trip');
+      }
+      // Redirect back to my-page after successful cancellation
+      router.push('/my-page');
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : 'Failed to cancel trip');
+      setCanceling(false);
+      setShowCancelDialog(false);
+    }
+  }, [id, router]);
 
   if (loading) {
     return (
@@ -190,11 +261,20 @@ export default function TripDetailPage() {
   const documents = collectTripDocuments(currentVersion);
   const allItems = plan.flatMap((day) => day.items);
   const isPending = trip.status === 'draft' || trip.status === 'waiting-for-proposal';
+  const canCancel = CANCELABLE_STATUSES.has(trip.status);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <TopBar activeLink="My Page" />
       <SubNav activeTab="Upcoming Travels" />
+
+      {showCancelDialog && (
+        <CancelTripDialog
+          onConfirm={handleCancelTrip}
+          onClose={() => setShowCancelDialog(false)}
+          canceling={canceling}
+        />
+      )}
 
       <div className="max-w-7xl mx-auto px-6 mt-8 mb-16 space-y-6">
         <Link href="/my-page" className="text-sm text-gray-500 hover:text-gray-900 inline-block">
@@ -202,6 +282,12 @@ export default function TripDetailPage() {
         </Link>
 
         <HeroCard trip={tripWithVersion} />
+
+        {cancelError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+            {cancelError}
+          </div>
+        )}
 
         {isPending && (
           <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -365,6 +451,21 @@ export default function TripDetailPage() {
                 </div>
               </div>
             </div>
+
+            {canCancel && (
+              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <h3 className="font-semibold text-gray-900 mb-2">Cancel Trip</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  If you no longer need this trip, you can cancel it. This cannot be undone.
+                </p>
+                <button
+                  onClick={() => setShowCancelDialog(true)}
+                  className="w-full px-5 py-2.5 border border-red-200 text-red-600 text-sm font-medium rounded-full hover:bg-red-50 transition-colors"
+                >
+                  Cancel Trip
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
