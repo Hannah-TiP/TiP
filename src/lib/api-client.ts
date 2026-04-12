@@ -114,12 +114,19 @@ class ApiClient {
 
   // Hotel methods
   async getHotels(params?: {
+    country_id?: number;
+    star_rating?: string;
+    q?: string;
     city_id?: number;
     language?: string;
     include_draft?: boolean;
   }): Promise<Hotel[]> {
     const searchParams = new URLSearchParams();
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
+    if (params?.country_id !== undefined)
+      searchParams.set('country_id', params.country_id.toString());
+    if (params?.star_rating) searchParams.set('star_rating', params.star_rating);
+    if (params?.q) searchParams.set('q', params.q);
     if (params?.language) searchParams.set('language', params.language);
     if (params?.include_draft) searchParams.set('include_draft', 'true');
 

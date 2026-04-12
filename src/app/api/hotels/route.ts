@@ -8,9 +8,15 @@ export async function GET(request: NextRequest) {
     const backendSearchParams = new URLSearchParams();
 
     const cityId = searchParams.get('city_id');
+    const countryId = searchParams.get('country_id');
+    const starRating = searchParams.get('star_rating');
+    const q = searchParams.get('q');
     const includeDraft = searchParams.get('include_draft');
 
     if (cityId) backendSearchParams.set('city_id', cityId);
+    if (countryId) backendSearchParams.set('country_id', countryId);
+    if (starRating) backendSearchParams.set('star_rating', starRating);
+    if (q) backendSearchParams.set('q', q);
     if (includeDraft === 'true') backendSearchParams.set('include_draft', 'true');
 
     const query = backendSearchParams.toString();

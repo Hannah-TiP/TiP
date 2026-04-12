@@ -9,6 +9,7 @@ import PreviewBanner from '@/components/PreviewBanner';
 import DraftBadge from '@/components/DraftBadge';
 import { apiClient } from '@/lib/api-client';
 import { usePreviewMode } from '@/hooks/usePreviewMode';
+import { useDebounce } from '@/hooks/useDebounce';
 import { getLocalizedText } from '@/types/common';
 import { getHotelImages, type Hotel } from '@/types/hotel';
 import type { City, Country, Region } from '@/types/location';
@@ -40,6 +41,7 @@ type DropdownType = 'country' | 'destination' | 'type' | null;
 
 function DreamHotelsContent() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
   const { isPreview } = usePreviewMode();
 
@@ -52,11 +54,12 @@ function DreamHotelsContent() {
   const [hotelSearch, setHotelSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const debouncedSearch = useDebounce(hotelSearch, 300);
 
   // Dropdown open state
   const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
 
-  // Country data
+  // Country data (loaded once for dropdowns)
   const [countries, setCountries] = useState<Country[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [countrySearch, setCountrySearch] = useState('');
@@ -69,13 +72,18 @@ function DreamHotelsContent() {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    async function loadHotels() {
+  // Fetch hotels with current filters (server-side filtering)
+  const fetchHotels = useCallback(
+    async (params: { country_id?: number; city_id?: number; star_rating?: string; q?: string }) => {
       try {
         setIsLoading(true);
         const data = await apiClient.getHotels({
           language: 'en',
           include_draft: isPreview,
+          country_id: params.country_id,
+          city_id: params.city_id,
+          star_rating: params.star_rating || undefined,
+          q: params.q || undefined,
         });
         setHotels(data);
       } catch (error) {
@@ -83,12 +91,21 @@ function DreamHotelsContent() {
       } finally {
         setIsLoading(false);
       }
-    }
+    },
+    [isPreview],
+  );
 
-    loadHotels();
-  }, [isPreview]);
+  // Re-fetch hotels when filters change
+  useEffect(() => {
+    fetchHotels({
+      country_id: selectedCountry?.id,
+      city_id: selectedCity?.id,
+      star_rating: selectedStarRating,
+      q: debouncedSearch.trim() || undefined,
+    });
+  }, [selectedCountry?.id, selectedCity?.id, selectedStarRating, debouncedSearch, fetchHotels]);
 
-  // Load location data (countries, regions, cities) on mount
+  // Load location data (countries, regions, cities) on mount for dropdowns
   useEffect(() => {
     async function loadLocationData() {
       setLocationDataLoading(true);
@@ -142,8 +159,9 @@ function DreamHotelsContent() {
     return cityToCountry;
   }, [regions, cities]);
 
-  // Get countries that have hotels
+  // Get countries that have hotels (use total hotel list for dropdown display)
   const countriesWithHotels = useMemo(() => {
+    // When we have hotels loaded, derive which countries have them
     const countryIdsWithHotels = new Set<number>();
     for (const hotel of hotels) {
       if (hotel.city_id) {
@@ -153,7 +171,12 @@ function DreamHotelsContent() {
         }
       }
     }
-    return countries.filter((c) => countryIdsWithHotels.has(c.id));
+    // If no filters active and we have hotels, use the hotel data
+    // Otherwise show all countries (user may want to explore)
+    if (countryIdsWithHotels.size > 0) {
+      return countries.filter((c) => countryIdsWithHotels.has(c.id));
+    }
+    return countries;
   }, [hotels, countries, cityToCountryMap]);
 
   // Get cities filtered by selected country
@@ -165,27 +188,7 @@ function DreamHotelsContent() {
     });
   }, [cities, selectedCountry, cityToCountryMap]);
 
-  // Filtered hotels
-  const filteredHotels = useMemo(() => {
-    return hotels.filter((hotel) => {
-      // Country filter
-      if (selectedCountry && hotel.city_id) {
-        const hotelCountryId = cityToCountryMap.get(hotel.city_id);
-        if (hotelCountryId !== selectedCountry.id) return false;
-      }
-      if (selectedCity && hotel.city_id !== selectedCity.id) return false;
-      if (selectedStarRating && hotel.star_rating !== selectedStarRating) return false;
-      // Hotel name search filter
-      if (hotelSearch.trim()) {
-        const searchLower = hotelSearch.trim().toLowerCase();
-        const hotelName = getLocalizedText(hotel.name).toLowerCase();
-        if (!hotelName.includes(searchLower)) return false;
-      }
-      return true;
-    });
-  }, [hotels, selectedCountry, selectedCity, selectedStarRating, hotelSearch, cityToCountryMap]);
-
-  // Hotel name autocomplete suggestions
+  // Autocomplete suggestions from current hotel results
   const hotelSuggestions = useMemo(() => {
     if (!hotelSearch.trim() || hotelSearch.trim().length < 1) return [];
     const searchLower = hotelSearch.trim().toLowerCase();
@@ -313,7 +316,7 @@ function DreamHotelsContent() {
             </div>
           </div>
         ) : (
-          <HotelMap hotels={filteredHotels} />
+          <HotelMap hotels={hotels} />
         )}
 
         {/* Hotel Name Search */}
@@ -607,7 +610,7 @@ function DreamHotelsContent() {
           {/* Active filter count */}
           {hasActiveFilters && (
             <p className="mt-3 text-[13px] text-gray-text">
-              Showing {filteredHotels.length} of {hotels.length} hotels
+              {hotels.length} {hotels.length === 1 ? 'hotel' : 'hotels'} found
             </p>
           )}
         </div>
@@ -628,7 +631,7 @@ function DreamHotelsContent() {
           <div className="flex items-center justify-center py-20">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
           </div>
-        ) : filteredHotels.length === 0 ? (
+        ) : hotels.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-gray-text">
               {hasActiveFilters
@@ -646,7 +649,7 @@ function DreamHotelsContent() {
           </div>
         ) : (
           <div className="grid grid-cols-4 gap-6">
-            {filteredHotels.map((hotel) => (
+            {hotels.map((hotel) => (
               <Link
                 key={hotel.id}
                 href={`/hotel/${hotel.slug}`}
