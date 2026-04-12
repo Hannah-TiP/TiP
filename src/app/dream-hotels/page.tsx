@@ -12,7 +12,7 @@ import { usePreviewMode } from '@/hooks/usePreviewMode';
 import { useDebounce } from '@/hooks/useDebounce';
 import { getLocalizedText } from '@/types/common';
 import { getHotelImages, type Hotel } from '@/types/hotel';
-import type { City, Country, Region } from '@/types/location';
+import type { DestinationSuggestion } from '@/types/destination';
 
 const partners = [
   'VIRTUOSO',
@@ -37,7 +37,20 @@ const STAR_RATING_OPTIONS = [
   { value: '4', label: '4 Star' },
 ];
 
-type DropdownType = 'country' | 'destination' | 'type' | null;
+function getDestinationTypeLabel(type: string): string {
+  switch (type) {
+    case 'country':
+      return 'Country';
+    case 'region':
+      return 'Region';
+    case 'city':
+      return 'City';
+    default:
+      return '';
+  }
+}
+
+type DropdownType = 'type' | null;
 
 function DreamHotelsContent() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -46,9 +59,18 @@ function DreamHotelsContent() {
   const { isPreview } = usePreviewMode();
 
   // Filter state
-  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
-  const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [selectedStarRating, setSelectedStarRating] = useState('');
+
+  // Unified destination search
+  const [destinationSearch, setDestinationSearch] = useState('');
+  const [selectedDestination, setSelectedDestination] = useState<DestinationSuggestion | null>(
+    null,
+  );
+  const [destinationSuggestions, setDestinationSuggestions] = useState<DestinationSuggestion[]>([]);
+  const [isDestinationFocused, setIsDestinationFocused] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const destinationRef = useRef<HTMLDivElement>(null);
+  const debouncedDestination = useDebounce(destinationSearch, 300);
 
   // Hotel name search
   const [hotelSearch, setHotelSearch] = useState('');
@@ -58,30 +80,49 @@ function DreamHotelsContent() {
 
   // Dropdown open state
   const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
-
-  // Country data (loaded once for dropdowns)
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [countrySearch, setCountrySearch] = useState('');
-  const [locationDataLoading, setLocationDataLoading] = useState(false);
-
-  // Destination search
-  const [citySearch, setCitySearch] = useState('');
-  const [cities, setCities] = useState<City[]>([]);
-  const citiesLoading = locationDataLoading;
-
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch destination suggestions
+  useEffect(() => {
+    if (!debouncedDestination.trim() || selectedDestination) {
+      setDestinationSuggestions([]);
+      return;
+    }
+
+    let cancelled = false;
+    async function fetchSuggestions() {
+      setIsLoadingSuggestions(true);
+      try {
+        const results = await apiClient.searchDestinations(debouncedDestination.trim(), {
+          limit: 10,
+        });
+        if (!cancelled) {
+          setDestinationSuggestions(results);
+        }
+      } catch (error) {
+        console.error('Failed to search destinations:', error);
+      } finally {
+        if (!cancelled) {
+          setIsLoadingSuggestions(false);
+        }
+      }
+    }
+
+    fetchSuggestions();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedDestination, selectedDestination]);
 
   // Fetch hotels with current filters (server-side filtering)
   const fetchHotels = useCallback(
-    async (params: { country_id?: number; city_id?: number; star_rating?: string; q?: string }) => {
+    async (params: { destination?: string; star_rating?: string; q?: string }) => {
       try {
         setIsLoading(true);
         const data = await apiClient.getHotels({
           language: 'en',
           include_draft: isPreview,
-          country_id: params.country_id,
-          city_id: params.city_id,
+          destination: params.destination || undefined,
           star_rating: params.star_rating || undefined,
           q: params.q || undefined,
         });
@@ -95,40 +136,22 @@ function DreamHotelsContent() {
     [isPreview],
   );
 
+  // Build destination query from selected destination
+  const destinationQuery = useMemo(() => {
+    if (!selectedDestination) return undefined;
+    return getLocalizedText(selectedDestination.name);
+  }, [selectedDestination]);
+
   // Re-fetch hotels when filters change
   useEffect(() => {
     fetchHotels({
-      country_id: selectedCountry?.id,
-      city_id: selectedCity?.id,
+      destination: destinationQuery,
       star_rating: selectedStarRating,
       q: debouncedSearch.trim() || undefined,
     });
-  }, [selectedCountry?.id, selectedCity?.id, selectedStarRating, debouncedSearch, fetchHotels]);
+  }, [destinationQuery, selectedStarRating, debouncedSearch, fetchHotels]);
 
-  // Load location data (countries, regions, cities) on mount for dropdowns
-  useEffect(() => {
-    async function loadLocationData() {
-      setLocationDataLoading(true);
-      try {
-        const [countriesData, regionsData, citiesData] = await Promise.all([
-          apiClient.getCountries(),
-          apiClient.getRegions('en'),
-          apiClient.getCities('en'),
-        ]);
-        setCountries(countriesData);
-        setRegions(regionsData);
-        setCities(citiesData);
-      } catch (error) {
-        console.error('Failed to load location data:', error);
-      } finally {
-        setLocationDataLoading(false);
-      }
-    }
-
-    loadLocationData();
-  }, []);
-
-  // Close dropdown on outside click
+  // Close dropdown / suggestion panel on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -137,56 +160,13 @@ function DreamHotelsContent() {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setIsSearchFocused(false);
       }
+      if (destinationRef.current && !destinationRef.current.contains(e.target as Node)) {
+        setIsDestinationFocused(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Build city-to-country mapping: city_id -> country_id
-  const cityToCountryMap = useMemo(() => {
-    const regionToCountry = new Map<number, number>();
-    for (const region of regions) {
-      regionToCountry.set(region.id, region.country_id);
-    }
-
-    const cityToCountry = new Map<number, number>();
-    for (const city of cities) {
-      const countryId = regionToCountry.get(city.region_id);
-      if (countryId !== undefined) {
-        cityToCountry.set(city.id, countryId);
-      }
-    }
-    return cityToCountry;
-  }, [regions, cities]);
-
-  // Get countries that have hotels (use total hotel list for dropdown display)
-  const countriesWithHotels = useMemo(() => {
-    // When we have hotels loaded, derive which countries have them
-    const countryIdsWithHotels = new Set<number>();
-    for (const hotel of hotels) {
-      if (hotel.city_id) {
-        const countryId = cityToCountryMap.get(hotel.city_id);
-        if (countryId !== undefined) {
-          countryIdsWithHotels.add(countryId);
-        }
-      }
-    }
-    // If no filters active and we have hotels, use the hotel data
-    // Otherwise show all countries (user may want to explore)
-    if (countryIdsWithHotels.size > 0) {
-      return countries.filter((c) => countryIdsWithHotels.has(c.id));
-    }
-    return countries;
-  }, [hotels, countries, cityToCountryMap]);
-
-  // Get cities filtered by selected country
-  const citiesForSelectedCountry = useMemo(() => {
-    if (!selectedCountry) return cities;
-    return cities.filter((city) => {
-      const countryId = cityToCountryMap.get(city.id);
-      return countryId === selectedCountry.id;
-    });
-  }, [cities, selectedCountry, cityToCountryMap]);
 
   // Autocomplete suggestions from current hotel results
   const hotelSuggestions = useMemo(() => {
@@ -200,40 +180,31 @@ function DreamHotelsContent() {
       .slice(0, 8);
   }, [hotels, hotelSearch]);
 
-  const filteredCities = citiesForSelectedCountry.filter((c) =>
-    getLocalizedText(c.name).toLowerCase().includes(citySearch.toLowerCase()),
-  );
-
-  const filteredCountries = countriesWithHotels.filter((c) =>
-    getLocalizedText(c.name).toLowerCase().includes(countrySearch.toLowerCase()),
-  );
-
-  const hasActiveFilters =
-    selectedCountry || selectedCity || selectedStarRating || hotelSearch.trim();
+  const hasActiveFilters = selectedDestination || selectedStarRating || hotelSearch.trim();
 
   const clearFilters = useCallback(() => {
-    setSelectedCountry(null);
-    setSelectedCity(null);
+    setSelectedDestination(null);
+    setDestinationSearch('');
+    setDestinationSuggestions([]);
     setSelectedStarRating('');
     setHotelSearch('');
     setOpenDropdown(null);
     setIsSearchFocused(false);
+    setIsDestinationFocused(false);
   }, []);
 
-  const handleSelectCountry = useCallback(
-    (country: Country | null) => {
-      setSelectedCountry(country);
-      // Clear city if it doesn't belong to the new country
-      if (country && selectedCity) {
-        const cityCountryId = cityToCountryMap.get(selectedCity.id);
-        if (cityCountryId !== country.id) {
-          setSelectedCity(null);
-        }
-      }
-      setOpenDropdown(null);
-    },
-    [selectedCity, cityToCountryMap],
-  );
+  const handleSelectDestination = useCallback((dest: DestinationSuggestion) => {
+    setSelectedDestination(dest);
+    setDestinationSearch(getLocalizedText(dest.name));
+    setDestinationSuggestions([]);
+    setIsDestinationFocused(false);
+  }, []);
+
+  const handleClearDestination = useCallback(() => {
+    setSelectedDestination(null);
+    setDestinationSearch('');
+    setDestinationSuggestions([]);
+  }, []);
 
   return (
     <main className={`min-h-screen bg-gray-light ${isPreview ? 'pt-10' : ''}`}>
@@ -402,154 +373,100 @@ function DreamHotelsContent() {
         {/* Search filters */}
         <div className="px-20 py-6" ref={dropdownRef}>
           <div className="flex items-center gap-4">
-            {/* Country filter */}
-            <div className="relative flex-1">
-              <button
-                onClick={() => {
-                  setOpenDropdown(openDropdown === 'country' ? null : 'country');
-                  setCountrySearch('');
-                }}
-                className={`w-full rounded-lg border bg-white px-5 py-4 text-left transition-colors ${
-                  openDropdown === 'country'
-                    ? 'border-gold'
-                    : 'border-gray-border hover:border-gray-400'
-                }`}
-              >
-                <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
-                  COUNTRY
-                </p>
-                <p className="text-[14px] font-medium text-green-dark">
-                  {selectedCountry ? getLocalizedText(selectedCountry.name) : 'All countries'}
-                </p>
-              </button>
-              {openDropdown === 'country' && (
-                <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white shadow-xl">
-                  <div className="border-b border-gray-100 p-4">
+            {/* Unified Destination filter */}
+            <div className="relative flex-[2]" ref={destinationRef}>
+              <div className="relative">
+                <div
+                  className={`w-full rounded-lg border bg-white px-5 py-3 transition-colors ${
+                    isDestinationFocused
+                      ? 'border-gold'
+                      : 'border-gray-border hover:border-gray-400'
+                  }`}
+                >
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                    DESTINATION
+                  </p>
+                  <div className="flex items-center">
                     <input
                       type="text"
-                      placeholder="Search countries..."
-                      value={countrySearch}
-                      onChange={(e) => setCountrySearch(e.target.value)}
-                      className="w-full rounded-lg bg-gray-50 px-4 py-3 text-[14px] text-green-dark outline-none placeholder:text-gray-400"
-                      autoFocus
+                      placeholder="Search country, region, or city..."
+                      value={destinationSearch}
+                      onChange={(e) => {
+                        setDestinationSearch(e.target.value);
+                        if (selectedDestination) {
+                          setSelectedDestination(null);
+                        }
+                      }}
+                      onFocus={() => setIsDestinationFocused(true)}
+                      className="w-full bg-transparent text-[14px] font-medium text-green-dark outline-none placeholder:font-normal placeholder:text-gray-400"
                     />
+                    {(destinationSearch || selectedDestination) && (
+                      <button
+                        onClick={handleClearDestination}
+                        className="ml-2 flex-shrink-0 text-gray-400 hover:text-green-dark"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
                   </div>
-                  <div className="max-h-[280px] overflow-auto p-2">
-                    {locationDataLoading ? (
+                </div>
+                {selectedDestination && (
+                  <span className="absolute right-12 top-1/2 -translate-y-1/2 rounded-full bg-gold/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gold">
+                    {getDestinationTypeLabel(selectedDestination.type)}
+                  </span>
+                )}
+              </div>
+              {/* Destination suggestions dropdown */}
+              {isDestinationFocused &&
+                !selectedDestination &&
+                (destinationSuggestions.length > 0 || isLoadingSuggestions) && (
+                  <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white shadow-xl">
+                    {isLoadingSuggestions ? (
                       <div className="flex items-center justify-center py-6">
                         <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
                       </div>
                     ) : (
-                      <>
-                        <button
-                          onClick={() => handleSelectCountry(null)}
-                          className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
-                            !selectedCountry ? 'font-semibold text-gold' : 'text-green-dark'
-                          }`}
-                        >
-                          All countries
-                        </button>
-                        {filteredCountries.map((country) => (
+                      <div className="max-h-[320px] overflow-auto p-2">
+                        {destinationSuggestions.map((dest) => (
                           <button
-                            key={country.id}
-                            onClick={() => handleSelectCountry(country)}
-                            className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
-                              selectedCountry?.id === country.id
-                                ? 'font-semibold text-gold'
-                                : 'text-green-dark'
-                            }`}
+                            key={`${dest.type}-${dest.id}`}
+                            onClick={() => handleSelectDestination(dest)}
+                            className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
                           >
-                            {getLocalizedText(country.name)}
+                            <div>
+                              <p className="text-[14px] font-medium text-green-dark">
+                                {getLocalizedText(dest.name)}
+                              </p>
+                              {dest.country_name && (
+                                <p className="text-[12px] text-gray-text">
+                                  {getLocalizedText(dest.country_name)}
+                                  {dest.region_name
+                                    ? ` · ${getLocalizedText(dest.region_name)}`
+                                    : ''}
+                                </p>
+                              )}
+                            </div>
+                            <span className="flex-shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-text">
+                              {getDestinationTypeLabel(dest.type)}
+                            </span>
                           </button>
                         ))}
-                        {filteredCountries.length === 0 && !locationDataLoading && (
-                          <p className="px-3 py-4 text-center text-[13px] text-gray-500">
-                            No countries found
-                          </p>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Destination filter */}
-            <div className="relative flex-1">
-              <button
-                onClick={() => {
-                  setOpenDropdown(openDropdown === 'destination' ? null : 'destination');
-                  setCitySearch('');
-                }}
-                className={`w-full rounded-lg border bg-white px-5 py-4 text-left transition-colors ${
-                  openDropdown === 'destination'
-                    ? 'border-gold'
-                    : 'border-gray-border hover:border-gray-400'
-                }`}
-              >
-                <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
-                  DESTINATION
-                </p>
-                <p className="text-[14px] font-medium text-green-dark">
-                  {selectedCity ? getLocalizedText(selectedCity.name) : 'All destinations'}
-                </p>
-              </button>
-              {openDropdown === 'destination' && (
-                <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white shadow-xl">
-                  <div className="border-b border-gray-100 p-4">
-                    <input
-                      type="text"
-                      placeholder="Search destinations..."
-                      value={citySearch}
-                      onChange={(e) => setCitySearch(e.target.value)}
-                      className="w-full rounded-lg bg-gray-50 px-4 py-3 text-[14px] text-green-dark outline-none placeholder:text-gray-400"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="max-h-[280px] overflow-auto p-2">
-                    {citiesLoading ? (
-                      <div className="flex items-center justify-center py-6">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
                       </div>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => {
-                            setSelectedCity(null);
-                            setOpenDropdown(null);
-                          }}
-                          className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
-                            !selectedCity ? 'font-semibold text-gold' : 'text-green-dark'
-                          }`}
-                        >
-                          All destinations
-                        </button>
-                        {filteredCities.map((city) => (
-                          <button
-                            key={city.id}
-                            onClick={() => {
-                              setSelectedCity(city);
-                              setOpenDropdown(null);
-                            }}
-                            className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
-                              selectedCity?.id === city.id
-                                ? 'font-semibold text-gold'
-                                : 'text-green-dark'
-                            }`}
-                          >
-                            {getLocalizedText(city.name)}
-                          </button>
-                        ))}
-                        {filteredCities.length === 0 && !citiesLoading && (
-                          <p className="px-3 py-4 text-center text-[13px] text-gray-500">
-                            No destinations found
-                          </p>
-                        )}
-                      </>
                     )}
                   </div>
-                </div>
-              )}
+                )}
             </div>
 
             {/* Hotel Type filter */}
