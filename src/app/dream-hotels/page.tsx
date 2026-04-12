@@ -41,7 +41,7 @@ type DropdownType = 'country' | 'destination' | 'type' | null;
 
 function DreamHotelsContent() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [totalHotelCount, setTotalHotelCount] = useState<number>(0);
+
   const [isLoading, setIsLoading] = useState(true);
   const { isPreview } = usePreviewMode();
 
@@ -95,21 +95,6 @@ function DreamHotelsContent() {
     [isPreview],
   );
 
-  // Fetch total hotel count on mount (unfiltered)
-  useEffect(() => {
-    async function loadTotalCount() {
-      try {
-        const data = await apiClient.getHotels({
-          language: 'en',
-          include_draft: isPreview,
-        });
-        setTotalHotelCount(data.length);
-      } catch {
-        // ignore
-      }
-    }
-    loadTotalCount();
-  }, [isPreview]);
 
   // Re-fetch hotels when filters change
   useEffect(() => {
@@ -626,7 +611,7 @@ function DreamHotelsContent() {
           {/* Active filter count */}
           {hasActiveFilters && (
             <p className="mt-3 text-[13px] text-gray-text">
-              Showing {hotels.length} of {totalHotelCount} hotels
+              {hotels.length} {hotels.length === 1 ? 'hotel' : 'hotels'} found
             </p>
           )}
         </div>
