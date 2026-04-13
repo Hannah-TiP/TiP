@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import MoreDreamsMap from '@/components/MoreDreamsMap';
 import PreviewBanner from '@/components/PreviewBanner';
 import DraftBadge from '@/components/DraftBadge';
 import { apiClient } from '@/lib/api-client';
@@ -93,6 +94,11 @@ function MoreDreamsContent() {
     return new Map(cities.map((city) => [city.id, getLocalizedText(city.name)]));
   }, [cities]);
 
+  const handleCitySelect = useCallback((city: City | null) => {
+    setSelectedCity(city);
+    setOpenDropdown(null);
+  }, []);
+
   function getActivityTag(activity: Activity): string {
     if (!activity.category) return 'ACTIVITY';
     return activity.category.toUpperCase();
@@ -166,6 +172,25 @@ function MoreDreamsContent() {
             curated destinations.
           </p>
         </div>
+      </section>
+
+      {/* Interactive Map */}
+      <section className="bg-white">
+        {isLoading ? (
+          <div className="flex h-[520px] items-center justify-center bg-[#E8E4D8]">
+            <div className="text-center">
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
+              <p className="text-[16px] font-medium text-green-dark">Loading destinations...</p>
+            </div>
+          </div>
+        ) : (
+          <MoreDreamsMap
+            activities={activities}
+            restaurants={restaurants}
+            cities={cities}
+            onCitySelect={handleCitySelect}
+          />
+        )}
       </section>
 
       {/* Destination filter */}
