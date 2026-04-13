@@ -116,13 +116,21 @@ function DreamHotelsContent() {
 
   // Fetch hotels with current filters (server-side filtering)
   const fetchHotels = useCallback(
-    async (params: { destination?: string; star_rating?: string; q?: string }) => {
+    async (params: {
+      country_id?: number;
+      region_id?: number;
+      city_id?: number;
+      star_rating?: string;
+      q?: string;
+    }) => {
       try {
         setIsLoading(true);
         const data = await apiClient.getHotels({
           language: 'en',
           include_draft: isPreview,
-          destination: params.destination || undefined,
+          country_id: params.country_id,
+          region_id: params.region_id,
+          city_id: params.city_id,
           star_rating: params.star_rating || undefined,
           q: params.q || undefined,
         });
@@ -136,20 +144,29 @@ function DreamHotelsContent() {
     [isPreview],
   );
 
-  // Build destination query from selected destination
-  const destinationQuery = useMemo(() => {
-    if (!selectedDestination) return undefined;
-    return getLocalizedText(selectedDestination.name);
+  // Build destination filter params from selected destination (ID-based)
+  const destinationFilter = useMemo(() => {
+    if (!selectedDestination) return {};
+    switch (selectedDestination.type) {
+      case 'country':
+        return { country_id: selectedDestination.id };
+      case 'region':
+        return { region_id: selectedDestination.id };
+      case 'city':
+        return { city_id: selectedDestination.id };
+      default:
+        return {};
+    }
   }, [selectedDestination]);
 
-  // Re-fetch hotels when filters change
+  // Re-fetch hotels when filters change (only on selection, not while typing)
   useEffect(() => {
     fetchHotels({
-      destination: destinationQuery,
+      ...destinationFilter,
       star_rating: selectedStarRating,
       q: debouncedSearch.trim() || undefined,
     });
-  }, [destinationQuery, selectedStarRating, debouncedSearch, fetchHotels]);
+  }, [destinationFilter, selectedStarRating, debouncedSearch, fetchHotels]);
 
   // Close dropdown / suggestion panel on outside click
   useEffect(() => {

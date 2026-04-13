@@ -43,24 +43,48 @@ describe('apiClient.searchDestinations', () => {
   });
 });
 
-describe('apiClient.getHotels with destination', () => {
+describe('apiClient.getHotels with ID-based filtering', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('sends destination param when provided', async () => {
+  it('sends region_id param when provided', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ data: [] }),
     });
 
-    await apiClient.getHotels({ destination: 'Tokyo' });
+    await apiClient.getHotels({ region_id: 5 });
 
     const calledUrl = mockFetch.mock.calls[0][0] as string;
-    expect(calledUrl).toContain('destination=Tokyo');
+    expect(calledUrl).toContain('region_id=5');
   });
 
-  it('does not send destination when not provided', async () => {
+  it('sends country_id param when provided', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: [] }),
+    });
+
+    await apiClient.getHotels({ country_id: 3 });
+
+    const calledUrl = mockFetch.mock.calls[0][0] as string;
+    expect(calledUrl).toContain('country_id=3');
+  });
+
+  it('sends city_id param when provided', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: [] }),
+    });
+
+    await apiClient.getHotels({ city_id: 7 });
+
+    const calledUrl = mockFetch.mock.calls[0][0] as string;
+    expect(calledUrl).toContain('city_id=7');
+  });
+
+  it('does not include destination param', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ data: [] }),
