@@ -15,6 +15,7 @@ import type {
   S3UploadCredentialsResponse,
 } from '@/types/ai-chat';
 import type { DestinationSuggestion } from '@/types/destination';
+import type { WishlistItem } from '@/types/wishlist';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -380,6 +381,30 @@ class ApiClient {
     return this.sendMessage(tripId, {
       message_type: 'audio' as AIChatMessageType,
       media_url: mediaUrl,
+    });
+  }
+
+  // Wishlist methods
+  async getWishlist(): Promise<WishlistItem[]> {
+    const response = await this.request<{ data: WishlistItem[] }>('/wishlist');
+    return response.data;
+  }
+
+  async getWishlistIds(): Promise<number[]> {
+    const response = await this.request<{ data: number[] }>('/wishlist/ids');
+    return response.data;
+  }
+
+  async addToWishlist(hotelId: number): Promise<void> {
+    await this.request('/wishlist', {
+      method: 'POST',
+      body: JSON.stringify({ hotel_id: hotelId }),
+    });
+  }
+
+  async removeFromWishlist(hotelId: number): Promise<void> {
+    await this.request(`/wishlist/${hotelId}`, {
+      method: 'DELETE',
     });
   }
 }

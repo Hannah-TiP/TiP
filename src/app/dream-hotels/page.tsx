@@ -12,6 +12,7 @@ import { usePreviewMode } from '@/hooks/usePreviewMode';
 import { useDebounce } from '@/hooks/useDebounce';
 import { getLocalizedText } from '@/types/common';
 import { getHotelImages, type Hotel } from '@/types/hotel';
+import WishlistButton from '@/components/WishlistButton';
 import type { DestinationSuggestion } from '@/types/destination';
 
 const partners = [
@@ -603,6 +604,9 @@ function DreamHotelsContent() {
                     {getHotelTag(hotel)}
                   </div>
                   <DraftBadge status={hotel.status} />
+                  <div className="absolute right-3 top-3 z-10">
+                    <WishlistButton hotelId={hotel.id} size="sm" />
+                  </div>
                 </div>
                 <div className="p-5">
                   <h3 className="font-primary text-[18px] font-semibold text-green-dark">
