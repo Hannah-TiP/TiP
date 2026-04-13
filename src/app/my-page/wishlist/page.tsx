@@ -100,7 +100,7 @@ export default function WishlistPage() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((item) => (
               <div
-                key={item.wishlist_id}
+                key={item.hotel.id}
                 className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
               >
                 <Link href={`/hotel/${item.hotel.slug}`}>
@@ -131,16 +131,6 @@ export default function WishlistPage() {
                   <p className="mt-1 text-[13px] text-gray-text">
                     {getLocalizedText(item.hotel.address)}
                   </p>
-                  {item.added_at && (
-                    <p className="mt-3 text-[11px] text-gray-text/60">
-                      Saved{' '}
-                      {new Date(item.added_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </p>
-                  )}
                 </div>
               </div>
             ))}
