@@ -81,13 +81,11 @@ export default function WishlistPage() {
   return (
     <main className="min-h-screen bg-gray-light">
       <TopBar activeLink="My Page" />
-      <SubNav />
+      <SubNav activeTab="Wishlist" />
 
       <div className="mx-auto max-w-7xl px-6 pt-8 pb-4">
         <h1 className="font-primary text-[42px] italic text-green-dark">My Wishlist</h1>
-        <p className="mt-2 text-[15px] text-gray-text">
-          Hotels you have saved for future travels.
-        </p>
+        <p className="mt-2 text-[15px] text-gray-text">Hotels you have saved for future travels.</p>
       </div>
 
       {isLoading ? (
@@ -135,7 +133,12 @@ export default function WishlistPage() {
                   </p>
                   {item.added_at && (
                     <p className="mt-3 text-[11px] text-gray-text/60">
-                      Saved {new Date(item.added_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      Saved{' '}
+                      {new Date(item.added_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
                     </p>
                   )}
                 </div>

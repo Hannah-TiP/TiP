@@ -9,7 +9,11 @@ interface WishlistButtonProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export default function WishlistButton({ hotelId, className = '', size = 'md' }: WishlistButtonProps) {
+export default function WishlistButton({
+  hotelId,
+  className = '',
+  size = 'md',
+}: WishlistButtonProps) {
   const { wishlistIds, toggleWishlist } = useWishlist();
   const [isAnimating, setIsAnimating] = useState(false);
   const isWishlisted = wishlistIds.has(hotelId);

@@ -30,7 +30,9 @@ export default function RootLayout({
       </head>
       <body className="h-full antialiased font-secondary">
         <SessionProvider>
-          <LanguageProvider><WishlistProvider>{children}</WishlistProvider></LanguageProvider>
+          <LanguageProvider>
+            <WishlistProvider>{children}</WishlistProvider>
+          </LanguageProvider>
         </SessionProvider>
       </body>
     </html>
