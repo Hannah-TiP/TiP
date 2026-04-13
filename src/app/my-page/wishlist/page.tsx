@@ -100,36 +100,36 @@ export default function WishlistPage() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((item) => (
               <div
-                key={item.hotel.id}
+                key={item.id}
                 className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
               >
-                <Link href={`/hotel/${item.hotel.slug}`}>
+                <Link href={`/hotel/${item.slug}`}>
                   <div className="relative h-56 overflow-hidden">
                     <Image
-                      src={getHotelImages(item.hotel)[0]}
-                      alt={getLocalizedText(item.hotel.name)}
+                      src={getHotelImages(item)[0]}
+                      alt={getLocalizedText(item.name)}
                       fill
                       sizes="(max-width: 768px) 100vw, 33vw"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute right-3 top-3 z-10">
-                      <WishlistButton hotelId={item.hotel.id} size="sm" />
+                      <WishlistButton hotelId={item.id} size="sm" />
                     </div>
-                    {item.hotel.star_rating && (
+                    {item.star_rating && (
                       <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
-                        {item.hotel.star_rating} STAR
+                        {item.star_rating} STAR
                       </div>
                     )}
                   </div>
                 </Link>
                 <div className="p-5">
-                  <Link href={`/hotel/${item.hotel.slug}`}>
+                  <Link href={`/hotel/${item.slug}`}>
                     <h3 className="font-primary text-[18px] font-semibold text-green-dark hover:text-gold transition-colors">
-                      {getLocalizedText(item.hotel.name)}
+                      {getLocalizedText(item.name)}
                     </h3>
                   </Link>
                   <p className="mt-1 text-[13px] text-gray-text">
-                    {getLocalizedText(item.hotel.address)}
+                    {getLocalizedText(item.address)}
                   </p>
                 </div>
               </div>

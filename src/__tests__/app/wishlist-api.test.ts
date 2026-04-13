@@ -30,7 +30,7 @@ describe('GET /api/wishlist', () => {
     mockAuth.mockResolvedValue({ accessToken: 'test-token' });
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ data: [{ hotel: { id: 10 } }] }),
+      json: async () => ({ data: [{ id: 10, slug: 'test', status: 'published' }] }),
     });
 
     const response = await GET();

@@ -19,7 +19,7 @@ beforeEach(() => {
 
 describe('ApiClient wishlist methods', () => {
   it('getWishlist calls GET /api/wishlist', async () => {
-    const mockData = [{ hotel: { id: 10 } }];
+    const mockData = [{ id: 10, slug: 'test', status: 'published' }];
     mockFetch.mockResolvedValueOnce(mockResponse({ data: mockData }));
 
     const result = await apiClient.getWishlist();
