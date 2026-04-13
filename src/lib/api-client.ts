@@ -14,6 +14,7 @@ import type {
   SendAIChatMessageResponse,
   S3UploadCredentialsResponse,
 } from '@/types/ai-chat';
+import type { DestinationSuggestion } from '@/types/destination';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -112,12 +113,28 @@ class ApiClient {
     return response.data;
   }
 
+  // Destination search
+  async searchDestinations(
+    q: string,
+    params?: { limit?: number; language?: string },
+  ): Promise<DestinationSuggestion[]> {
+    const searchParams = new URLSearchParams({ q });
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.language) searchParams.set('language', params.language);
+
+    const response = await this.request<{ data: DestinationSuggestion[] }>(
+      `/destinations/search?${searchParams}`,
+    );
+    return response.data;
+  }
+
   // Hotel methods
   async getHotels(params?: {
     country_id?: number;
+    region_id?: number;
+    city_id?: number;
     star_rating?: string;
     q?: string;
-    city_id?: number;
     language?: string;
     include_draft?: boolean;
   }): Promise<Hotel[]> {
@@ -125,6 +142,7 @@ class ApiClient {
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
     if (params?.country_id !== undefined)
       searchParams.set('country_id', params.country_id.toString());
+    if (params?.region_id !== undefined) searchParams.set('region_id', params.region_id.toString());
     if (params?.star_rating) searchParams.set('star_rating', params.star_rating);
     if (params?.q) searchParams.set('q', params.q);
     if (params?.language) searchParams.set('language', params.language);
