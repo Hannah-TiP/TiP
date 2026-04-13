@@ -9,6 +9,7 @@ import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
 import { getLocalizedText } from '@/types/common';
 import { getHotelExternalLink, getHotelImages, type Hotel } from '@/types/hotel';
+import WishlistButton from '@/components/WishlistButton';
 
 function getTagline(hotel: Hotel): string {
   if (hotel.star_rating === '5') return 'PALACE HOTEL';
@@ -120,6 +121,9 @@ export default function HotelDetailPage() {
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+        <div className="absolute right-8 top-24 z-20">
+          <WishlistButton hotelId={hotel.id} size="lg" />
+        </div>
         <div className="relative z-10 flex h-full flex-col justify-end px-20 pb-16">
           <span className="mb-3 inline-block w-fit rounded-full bg-gold/90 px-4 py-1.5 text-[11px] font-semibold tracking-[2px] text-white">
             {getTagline(hotel)}

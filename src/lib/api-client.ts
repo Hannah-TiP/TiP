@@ -382,6 +382,30 @@ class ApiClient {
       media_url: mediaUrl,
     });
   }
+
+  // Wishlist methods
+  async getWishlist(): Promise<Hotel[]> {
+    const response = await this.request<{ data: Hotel[] }>('/wishlist');
+    return response.data;
+  }
+
+  async getWishlistIds(): Promise<number[]> {
+    const response = await this.request<{ data: number[] }>('/wishlist/ids');
+    return response.data;
+  }
+
+  async addToWishlist(hotelId: number): Promise<void> {
+    await this.request('/wishlist', {
+      method: 'POST',
+      body: JSON.stringify({ hotel_id: hotelId }),
+    });
+  }
+
+  async removeFromWishlist(hotelId: number): Promise<void> {
+    await this.request(`/wishlist/${hotelId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

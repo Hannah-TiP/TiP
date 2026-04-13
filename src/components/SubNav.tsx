@@ -10,6 +10,7 @@ const tabs = [
   { label: 'Upcoming Travels', href: '/my-page' },
   { label: 'Travel History', href: '/my-page/travel-history' },
   { label: 'Membership', href: '/my-page/membership' },
+  { label: 'Wishlist', href: '/my-page/wishlist' },
   { label: 'My Profile', href: '/my-page/my-profile' },
 ];
 
