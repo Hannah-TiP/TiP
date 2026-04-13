@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
 
-interface WishlistContextValue {
+interface UserContextValue {
   /** Set of hotel IDs currently in the user's wishlist */
   wishlistIds: Set<number>;
   /** Whether the wishlist data is still loading */
@@ -14,9 +14,9 @@ interface WishlistContextValue {
   refresh: () => Promise<void>;
 }
 
-const WishlistContext = createContext<WishlistContextValue | null>(null);
+const UserContext = createContext<UserContextValue | null>(null);
 
-export function WishlistProvider({ children }: { children: React.ReactNode }) {
+export function UserProvider({ children }: { children: React.ReactNode }) {
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
 
@@ -76,16 +76,16 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <WishlistContext.Provider value={{ wishlistIds, isLoading, toggleWishlist, refresh }}>
+    <UserContext.Provider value={{ wishlistIds, isLoading, toggleWishlist, refresh }}>
       {children}
-    </WishlistContext.Provider>
+    </UserContext.Provider>
   );
 }
 
-export function useWishlist() {
-  const context = useContext(WishlistContext);
+export function useUser() {
+  const context = useContext(UserContext);
   if (!context) {
-    throw new Error('useWishlist must be used within a WishlistProvider');
+    throw new Error('useUser must be used within a UserProvider');
   }
   return context;
 }

@@ -9,8 +9,7 @@ import Footer from '@/components/Footer';
 import WishlistButton from '@/components/WishlistButton';
 import { apiClient } from '@/lib/api-client';
 import { getLocalizedText } from '@/types/common';
-import { getHotelImages } from '@/types/hotel';
-import type { WishlistItem } from '@/types/wishlist';
+import { getHotelImages, type Hotel } from '@/types/hotel';
 
 function LoadingSkeleton() {
   return (
@@ -61,7 +60,7 @@ function EmptyState() {
 }
 
 export default function WishlistPage() {
-  const [items, setItems] = useState<WishlistItem[]>([]);
+  const [items, setItems] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

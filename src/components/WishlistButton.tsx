@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useWishlist } from '@/contexts/WishlistContext';
+import { useUser } from '@/contexts/UserContext';
 
 interface WishlistButtonProps {
   hotelId: number;
@@ -14,7 +14,7 @@ export default function WishlistButton({
   className = '',
   size = 'md',
 }: WishlistButtonProps) {
-  const { wishlistIds, toggleWishlist } = useWishlist();
+  const { wishlistIds, toggleWishlist } = useUser();
   const [isAnimating, setIsAnimating] = useState(false);
   const isWishlisted = wishlistIds.has(hotelId);
 

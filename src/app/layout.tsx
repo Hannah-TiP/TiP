@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { SessionProvider } from 'next-auth/react';
 import { LanguageProvider } from '@/contexts/LanguageContext';
-import { WishlistProvider } from '@/contexts/WishlistContext';
+import { UserProvider } from '@/contexts/UserContext';
 
 export const metadata: Metadata = {
   title: 'TiP - Luxury Travel Concierge',
@@ -31,7 +31,7 @@ export default function RootLayout({
       <body className="h-full antialiased font-secondary">
         <SessionProvider>
           <LanguageProvider>
-            <WishlistProvider>{children}</WishlistProvider>
+            <UserProvider>{children}</UserProvider>
           </LanguageProvider>
         </SessionProvider>
       </body>

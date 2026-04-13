@@ -15,7 +15,6 @@ import type {
   S3UploadCredentialsResponse,
 } from '@/types/ai-chat';
 import type { DestinationSuggestion } from '@/types/destination';
-import type { WishlistItem } from '@/types/wishlist';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -385,8 +384,8 @@ class ApiClient {
   }
 
   // Wishlist methods
-  async getWishlist(): Promise<WishlistItem[]> {
-    const response = await this.request<{ data: WishlistItem[] }>('/wishlist');
+  async getWishlist(): Promise<Hotel[]> {
+    const response = await this.request<{ data: Hotel[] }>('/wishlist');
     return response.data;
   }
 
