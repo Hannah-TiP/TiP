@@ -99,10 +99,17 @@ export interface AIChatSessionMetadata {
   user_id: number;
   trip_id: number;
   status: AIChatSessionStatus;
+  session_id?: string | null;
   last_message_at?: string | null;
   schema_version: number;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+export interface AIChatMessageMetadata {
+  ui_blocks?: UIBlock[] | null;
+  field_updated?: string[] | null;
+  widget_response?: WidgetResponse | null;
 }
 
 export interface AIChatMessage {
@@ -115,6 +122,7 @@ export interface AIChatMessage {
   media_url?: string | null;
   widget_response?: AIChatWidgetResponse | null;
   widgets?: AIChatWidget[] | null;
+  message_metadata?: AIChatMessageMetadata | null;
   sent_at?: string | null;
   schema_version: number;
   created_at?: string | null;
@@ -156,6 +164,93 @@ export interface SendAIChatMessageResponse {
   success?: boolean;
   code?: number;
   data?: SendAIChatMessageData;
+}
+
+// ── /converse endpoint (Enhanced AI Chat v2) ──────────────────────────────
+
+export type UIBlockType =
+  | 'date_range_picker'
+  | 'number_stepper'
+  | 'option_selector'
+  | 'hotel_carousel'
+  | 'confirm_summary';
+
+export interface DateRangePickerConfig {
+  min_date?: string | null;
+  max_date?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+}
+
+export interface NumberStepperConfigField {
+  key: string;
+  label: string;
+  min?: number | null;
+  max?: number | null;
+  default?: number | null;
+}
+
+export interface NumberStepperConfig {
+  fields: NumberStepperConfigField[];
+}
+
+export interface OptionSelectorConfig {
+  options: OptionSelectorOption[];
+}
+
+export interface HotelCarouselConfig {
+  hotels: Array<{
+    id: number;
+    name?: unknown;
+    star_rating?: string | number | null;
+    images?: unknown[];
+    address?: unknown;
+    [key: string]: unknown;
+  }>;
+}
+
+export type UIBlockConfig =
+  | DateRangePickerConfig
+  | NumberStepperConfig
+  | OptionSelectorConfig
+  | HotelCarouselConfig
+  | Record<string, unknown>;
+
+export interface UIBlock {
+  type: UIBlockType | string;
+  id: string;
+  label: string;
+  config: UIBlockConfig;
+}
+
+export interface WidgetResponse {
+  widget_id: string;
+  widget_type: UIBlockType | string;
+  value: Record<string, unknown>;
+}
+
+export interface ConverseRequest {
+  session_id: string;
+  content?: string;
+  message_type?: AIChatMessageType;
+  widget_response?: WidgetResponse | null;
+}
+
+export interface ConverseResponse {
+  session_id: string;
+  response: string;
+  trip: Record<string, unknown>;
+  ui_blocks: UIBlock[];
+  field_updated: string[];
+  user_message_id?: number | null;
+  assistant_message_id?: number | null;
+}
+
+export interface ConverseApiResponse {
+  success?: boolean;
+  code?: number;
+  data?: ConverseResponse;
+  message?: string;
 }
 
 export interface S3UploadCredentialsResponse {

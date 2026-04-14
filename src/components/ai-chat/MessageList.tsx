@@ -1,24 +1,23 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { AIChatMessage } from '@/types/ai-chat';
+import type { AIChatMessage, WidgetResponse } from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MessageBubble from './MessageBubble';
 
 interface MessageListProps {
   messages: AIChatMessage[];
   isLoading: boolean;
+  onWidgetSubmit?: (response: WidgetResponse) => void;
 }
 
-export default function MessageList({ messages, isLoading }: MessageListProps) {
+export default function MessageList({ messages, isLoading, onWidgetSubmit }: MessageListProps) {
   const { t } = useLanguage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isInitialLoad = useRef(true);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesEndRef.current) {
-      // Use instant scroll on initial load, smooth scroll for new messages
       messagesEndRef.current.scrollIntoView({
         behavior: isInitialLoad.current ? 'auto' : 'smooth',
       });
@@ -36,6 +35,15 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
     );
   }
 
+  // Find the last assistant message — only its widgets should remain interactive
+  let lastAssistantIndex = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role !== 'user') {
+      lastAssistantIndex = i;
+      break;
+    }
+  }
+
   return (
     <div className="flex-1 overflow-y-auto px-[60px] py-[32px] space-y-6">
       {messages.map((message, index) => {
@@ -44,14 +52,21 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
           ? undefined
           : messages.slice(0, index).filter((m) => m.role === 'assistant').length;
 
+        const isLastAssistant = !isUser && index === lastAssistantIndex;
+
         return (
           <div key={message.id || index}>
-            <MessageBubble message={message} isUser={isUser} messageIndex={assistantIndex} />
+            <MessageBubble
+              message={message}
+              isUser={isUser}
+              messageIndex={assistantIndex}
+              onWidgetSubmit={!isUser ? onWidgetSubmit : undefined}
+              widgetsDisabled={!isLastAssistant || isLoading}
+            />
           </div>
         );
       })}
 
-      {/* Loading indicator */}
       {isLoading && (
         <div className="flex gap-3">
           <div className="w-8 h-8 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0">

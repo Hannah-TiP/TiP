@@ -1,7 +1,27 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { TripWithVersion } from '@/lib/trip-utils';
+
+const FIELD_TO_ROW_KEYS: Record<string, string[]> = {
+  destination: ['destination'],
+  start_date: ['dates'],
+  end_date: ['dates'],
+  adults: ['travelers'],
+  kids: ['travelers'],
+  purpose: ['purpose'],
+  service_type: ['purpose'],
+};
+
+function rowKeysFromFields(fields: string[]): Set<string> {
+  const keys = new Set<string>();
+  for (const field of fields) {
+    const mapped = FIELD_TO_ROW_KEYS[field];
+    if (mapped) mapped.forEach((k) => keys.add(k));
+  }
+  return keys;
+}
 
 /** Parse "YYYY-MM-DD" as local date (avoids UTC midnight → previous day in western timezones) */
 function parseLocalDate(dateStr: string): Date {
@@ -140,15 +160,40 @@ interface TripDetailPanelProps {
   tripDetail: TripWithVersion | null;
   onSubmitTrip?: () => void;
   isLoading?: boolean;
+  highlightedFields?: string[];
+  highlightToken?: number;
 }
 
 export default function TripDetailPanel({
   tripDetail,
   onSubmitTrip,
   isLoading,
+  highlightedFields,
+  highlightToken,
 }: TripDetailPanelProps) {
   const { t } = useLanguage();
   const plan = tripDetail?.currentVersion?.plan ?? [];
+
+  const [expiredToken, setExpiredToken] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!highlightedFields || highlightedFields.length === 0) return;
+    const rows = rowKeysFromFields(highlightedFields);
+    if (rows.size === 0) return;
+    const timer = setTimeout(() => setExpiredToken(highlightToken), 2000);
+    return () => clearTimeout(timer);
+  }, [highlightedFields, highlightToken]);
+
+  const activeHighlights = useMemo<Set<string>>(() => {
+    if (!highlightedFields || highlightedFields.length === 0) return new Set();
+    if (expiredToken !== undefined && expiredToken === highlightToken) return new Set();
+    return rowKeysFromFields(highlightedFields);
+  }, [highlightedFields, highlightToken, expiredToken]);
+
+  const highlightClass = (key: string) =>
+    activeHighlights.has(key)
+      ? 'bg-amber-100 transition-colors duration-500'
+      : 'transition-colors duration-500';
 
   return (
     <div className="w-[420px] flex flex-col bg-[#FAFAF8] overflow-y-auto">
@@ -168,7 +213,10 @@ export default function TripDetailPanel({
             )}
 
             {(tripDetail.currentVersion?.title?.trim() || 'New Trip') && (
-              <div className="flex justify-between font-inter text-sm">
+              <div
+                className={`flex justify-between font-inter text-sm rounded px-2 -mx-2 py-1 ${highlightClass('destination')}`}
+                data-testid="trip-row-destination"
+              >
                 <span className="text-gray-500">{t('chat.destination')}</span>
                 <span className="text-[#1E3D2F] font-medium text-right max-w-[200px]">
                   {tripDetail.currentVersion?.title?.trim() || 'New Trip'}
@@ -177,7 +225,10 @@ export default function TripDetailPanel({
             )}
 
             {tripDetail.currentVersion?.start_date && tripDetail.currentVersion?.end_date && (
-              <div className="flex justify-between font-inter text-sm">
+              <div
+                className={`flex justify-between font-inter text-sm rounded px-2 -mx-2 py-1 ${highlightClass('dates')}`}
+                data-testid="trip-row-dates"
+              >
                 <span className="text-gray-500">{t('chat.dates')}</span>
                 <span className="text-[#1E3D2F] font-medium">
                   {parseLocalDate(tripDetail.currentVersion.start_date).toLocaleDateString(
@@ -198,7 +249,10 @@ export default function TripDetailPanel({
             )}
 
             {(tripDetail.currentVersion?.adults ?? 0) > 0 && (
-              <div className="flex justify-between font-inter text-sm">
+              <div
+                className={`flex justify-between font-inter text-sm rounded px-2 -mx-2 py-1 ${highlightClass('travelers')}`}
+                data-testid="trip-row-travelers"
+              >
                 <span className="text-gray-500">{t('chat.travelers')}</span>
                 <span className="text-[#1E3D2F] font-medium">
                   {tripDetail.currentVersion?.adults ?? 0}{' '}
@@ -213,7 +267,10 @@ export default function TripDetailPanel({
             )}
 
             {tripDetail.currentVersion?.summary && (
-              <div className="flex justify-between font-inter text-sm">
+              <div
+                className={`flex justify-between font-inter text-sm rounded px-2 -mx-2 py-1 ${highlightClass('purpose')}`}
+                data-testid="trip-row-purpose"
+              >
                 <span className="text-gray-500">{t('chat.purpose')}</span>
                 <span className="text-[#1E3D2F] font-medium">
                   {tripDetail.currentVersion.summary}

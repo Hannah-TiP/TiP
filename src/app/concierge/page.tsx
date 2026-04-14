@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TopBar from '@/components/TopBar';
 import MessageList from '@/components/ai-chat/MessageList';
@@ -13,7 +13,12 @@ import { useSession } from 'next-auth/react';
 import { apiClient } from '@/lib/api-client';
 import { createTripChatSession } from '@/lib/ai-chat-utils';
 import { getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
-import type { AIChatMessage, AIChatSessionMetadata } from '@/types/ai-chat';
+import type {
+  AIChatMessage,
+  AIChatSessionMetadata,
+  ConverseResponse,
+  WidgetResponse,
+} from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 function sortSessions(
@@ -67,6 +72,47 @@ function ConciergeContent() {
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [highlightedFields, setHighlightedFields] = useState<string[]>([]);
+  const [highlightToken, setHighlightToken] = useState(0);
+  const optimisticIdRef = useRef(-1);
+
+  function nextOptimisticId() {
+    const next = optimisticIdRef.current;
+    optimisticIdRef.current -= 1;
+    return next;
+  }
+
+  function summarizeWidgetResponse(response: WidgetResponse): string {
+    const v = response.value as Record<string, unknown>;
+    switch (response.widget_type) {
+      case 'date_range_picker': {
+        const start = v.start_date;
+        const end = v.end_date;
+        if (typeof start === 'string' && typeof end === 'string') {
+          return `Selected dates: ${start} to ${end}`;
+        }
+        return 'Selected dates';
+      }
+      case 'number_stepper': {
+        const parts: string[] = [];
+        for (const [key, value] of Object.entries(v)) {
+          parts.push(`${value} ${key}`);
+        }
+        return parts.length > 0 ? parts.join(', ') : 'Selected travelers';
+      }
+      case 'option_selector': {
+        const label = v.label ?? v.value;
+        return typeof label === 'string' ? label : 'Selected option';
+      }
+      case 'hotel_carousel': {
+        const name = v.hotel_name;
+        if (typeof name === 'string') return `Selected hotel: ${name}`;
+        return 'Selected hotel';
+      }
+      default:
+        return 'Submitted';
+    }
+  }
 
   const sessions = useMemo(
     () => sortSessions(rawSessions, detailsByTripId),
@@ -216,6 +262,97 @@ function ConciergeContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
+  function buildOptimisticMessage(
+    userId: number,
+    tripId: number,
+    role: 'user' | 'assistant',
+    content: string,
+    extras: Partial<AIChatMessage> = {},
+  ): AIChatMessage {
+    const now = new Date().toISOString();
+    return {
+      id: nextOptimisticId(),
+      user_id: userId,
+      trip_id: tripId,
+      role,
+      message_type: 'text',
+      content,
+      sent_at: now,
+      created_at: now,
+      schema_version: 1,
+      ...extras,
+    };
+  }
+
+  async function sendConverse(
+    targetSession: AIChatSessionMetadata,
+    content: string,
+    widgetResponse: WidgetResponse | null,
+    silent: boolean,
+  ) {
+    if (!targetSession.session_id) {
+      console.error('[Concierge] Session has no session_id; cannot call /converse');
+      if (!silent) {
+        setError('Chat session is missing its identifier. Please refresh.');
+      }
+      return;
+    }
+
+    const userId = targetSession.user_id;
+    const tripId = targetSession.trip_id;
+
+    const userContent = widgetResponse ? summarizeWidgetResponse(widgetResponse) : content;
+    const optimisticUserMsg = buildOptimisticMessage(userId, tripId, 'user', userContent, {
+      message_metadata: widgetResponse ? { widget_response: widgetResponse } : null,
+    });
+    setMessages((prev) => [...prev, optimisticUserMsg]);
+
+    setIsLoading(true);
+    if (!silent) setError(null);
+
+    try {
+      const data: ConverseResponse = await apiClient.converse(
+        targetSession.session_id,
+        widgetResponse ? '' : content,
+        'text',
+        widgetResponse,
+      );
+
+      const assistantMsg = buildOptimisticMessage(userId, tripId, 'assistant', data.response, {
+        id: data.assistant_message_id ?? nextOptimisticId(),
+        message_metadata: {
+          ui_blocks: data.ui_blocks,
+          field_updated: data.field_updated,
+        },
+      });
+
+      setMessages((prev) => [...prev, assistantMsg]);
+
+      const updatedSession: AIChatSessionMetadata = {
+        ...targetSession,
+        last_message_at: assistantMsg.sent_at ?? new Date().toISOString(),
+      };
+      setRawSessions((prev) => {
+        const deduped = prev.filter((item) => item.id !== updatedSession.id);
+        return [updatedSession, ...deduped];
+      });
+
+      await hydrateTripDetail(tripId);
+
+      if (data.field_updated && data.field_updated.length > 0) {
+        setHighlightedFields(data.field_updated);
+        setHighlightToken((t) => t + 1);
+      }
+    } catch (err) {
+      console.error('[Concierge] Failed to converse:', err);
+      if (!silent) {
+        setError('Failed to send message. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function handleSendMessage(
     content: string,
     sessionOverride?: AIChatSessionMetadata,
@@ -223,51 +360,13 @@ function ConciergeContent() {
   ) {
     const targetSession = sessionOverride ?? activeSession?.session ?? null;
     if (!targetSession || !content.trim()) return;
+    await sendConverse(targetSession, content, null, silent);
+  }
 
-    setIsLoading(true);
-    if (!silent) {
-      setError(null);
-    }
-
-    try {
-      const response = await apiClient.sendMessage(targetSession.trip_id, {
-        message_type: 'text',
-        content,
-      });
-
-      const data = response.data;
-      if (!data) {
-        throw new Error('Missing send message response data');
-      }
-
-      setMessages((prev) => {
-        const next = [...prev, data.user_message];
-        if (data.assistant_message) {
-          next.push(data.assistant_message);
-        }
-        return next;
-      });
-
-      const updatedSession: AIChatSessionMetadata = {
-        ...targetSession,
-        last_message_at:
-          data.assistant_message?.sent_at ?? data.user_message.sent_at ?? new Date().toISOString(),
-      };
-
-      setRawSessions((prev) => {
-        const deduped = prev.filter((item) => item.id !== updatedSession.id);
-        return [updatedSession, ...deduped];
-      });
-
-      await hydrateTripDetail(targetSession.trip_id);
-    } catch (err) {
-      console.error('[Concierge] Failed to send message:', err);
-      if (!silent) {
-        setError('Failed to send message. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
+  async function handleWidgetSubmit(response: WidgetResponse) {
+    const targetSession = activeSession?.session ?? null;
+    if (!targetSession) return;
+    await sendConverse(targetSession, '', response, false);
   }
 
   async function handleUploadAudio(file: File) {
@@ -404,7 +503,11 @@ function ConciergeContent() {
         />
 
         <div className="flex-1 flex flex-col border-r border-gray-100">
-          <MessageList messages={messages} isLoading={isLoading} />
+          <MessageList
+            messages={messages}
+            isLoading={isLoading}
+            onWidgetSubmit={handleWidgetSubmit}
+          />
           <ChatInput
             onSendMessage={(content) => handleSendMessage(content)}
             onUploadAudio={handleUploadAudio}
@@ -418,6 +521,8 @@ function ConciergeContent() {
             activeSession ? () => handleSendMessage(t('chat.submit_trip_message')) : undefined
           }
           isLoading={isLoading}
+          highlightedFields={highlightedFields}
+          highlightToken={highlightToken}
         />
       </div>
     </div>
