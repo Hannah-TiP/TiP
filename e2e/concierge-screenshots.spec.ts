@@ -341,7 +341,7 @@ test.describe('Concierge visual captures', () => {
   });
 
   test('06 trip panel mid-highlight', async ({ page, context }) => {
-    let tripRef = { current: tripVersion({ title: 'Paris Trip' }) };
+    const tripRef = { current: tripVersion({ title: 'Paris Trip' }) };
     await context.route('**/api/ai-chat/sessions', (route) =>
       route.fulfill({
         status: 200,
