@@ -35,19 +35,8 @@ function tripVersion(overrides: Record<string, unknown> = {}) {
 
 test.describe('Concierge /converse flow', () => {
   test.beforeEach(async ({ context }) => {
-    // Pretend we are signed in by injecting a fake next-auth session cookie response
-    await context.route('**/api/auth/session', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          user: { id: 1, email: 'test@test.com' },
-          accessToken: 'fake-token',
-          expires: new Date(Date.now() + 3600_000).toISOString(),
-        }),
-      });
-    });
-
+    // Auth comes from storageState (see playwright.config.ts / global-setup.ts).
+    // Only mock the chat/trip API surface that this spec exercises.
     await context.route('**/api/ai-chat/sessions', async (route) => {
       await route.fulfill({
         status: 200,
@@ -170,7 +159,10 @@ test.describe('Concierge /converse flow', () => {
     await page.getByTestId('option-leisure').click();
 
     // Optimistic user message for the widget interaction appears
-    await expect(page.getByText('Leisure', { exact: false })).toBeVisible({ timeout: 5000 });
+    // (scope to a paragraph so the "Leisure" widget button doesn't match)
+    await expect(page.getByRole('paragraph').filter({ hasText: /^Leisure$/ })).toBeVisible({
+      timeout: 5000,
+    });
 
     // Assistant follow-up text appears
     await expect(page.getByText('Got it. Leisure trip noted.')).toBeVisible({
