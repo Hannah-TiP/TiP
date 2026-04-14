@@ -4,7 +4,11 @@ import path from 'node:path';
 const AUTH_STATE_PATH = path.join(__dirname, 'e2e', '.auth', 'user.json');
 
 // Specs that require an authenticated session (run with stored storageState).
-const AUTH_REQUIRED_SPECS = ['**/concierge-converse.spec.ts', '**/cancel-trip.spec.ts'];
+const AUTH_REQUIRED_SPECS = [
+  '**/concierge-converse.spec.ts',
+  '**/concierge-screenshots.spec.ts',
+  '**/cancel-trip.spec.ts',
+];
 
 export default defineConfig({
   testDir: './e2e',
