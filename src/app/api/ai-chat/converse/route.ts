@@ -13,20 +13,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { session_id, content = '', message_type = 'text', widget_response = null } = body || {};
+    const { trip_id, content = '', message_type = 'text', widget_response = null } = body || {};
 
-    if (!session_id) {
-      return NextResponse.json({ success: false, message: 'Missing session_id' }, { status: 400 });
+    if (!trip_id) {
+      return NextResponse.json({ success: false, message: 'Missing trip_id' }, { status: 400 });
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/ai-chat/converse`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/ai-chat/trips/${trip_id}/converse`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        session_id,
         content,
         message_type,
         widget_response,

@@ -290,10 +290,10 @@ function ConciergeContent() {
     widgetResponse: WidgetResponse | null,
     silent: boolean,
   ) {
-    if (!targetSession.session_id) {
-      console.error('[Concierge] Session has no session_id; cannot call /converse');
+    if (!targetSession.trip_id) {
+      console.error('[Concierge] Session has no trip_id; cannot call /converse');
       if (!silent) {
-        setError('Chat session is missing its identifier. Please refresh.');
+        setError('Chat session is missing its trip identifier. Please refresh.');
       }
       return;
     }
@@ -312,7 +312,7 @@ function ConciergeContent() {
 
     try {
       const data: ConverseResponse = await apiClient.converse(
-        targetSession.session_id,
+        tripId,
         widgetResponse ? '' : content,
         'text',
         widgetResponse,

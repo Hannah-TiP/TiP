@@ -26,21 +26,21 @@ describe('POST /api/ai-chat/converse', () => {
 
   it('returns 401 when not authenticated', async () => {
     mockAuth.mockResolvedValue(null);
-    const res = await POST(mockRequest({ session_id: 'sess-1', content: 'Hi' }));
+    const res = await POST(mockRequest({ trip_id: 1, content: 'Hi' }));
     const body = await res.json();
     expect(res.status).toBe(401);
     expect(body.success).toBe(false);
   });
 
-  it('returns 400 when session_id missing', async () => {
+  it('returns 400 when trip_id missing', async () => {
     mockAuth.mockResolvedValue({ accessToken: 'tok' });
     const res = await POST(mockRequest({ content: 'Hi' }));
     const body = await res.json();
     expect(res.status).toBe(400);
-    expect(body.message).toMatch(/session_id/i);
+    expect(body.message).toMatch(/trip_id/i);
   });
 
-  it('forwards request to backend with bearer token and full payload', async () => {
+  it('forwards request to backend v2 endpoint with bearer token and full payload', async () => {
     mockAuth.mockResolvedValue({ accessToken: 'tok-abc' });
     mockFetch.mockResolvedValue({
       ok: true,
@@ -49,7 +49,6 @@ describe('POST /api/ai-chat/converse', () => {
         Promise.resolve({
           success: true,
           data: {
-            session_id: 'sess-1',
             response: 'ok',
             trip: { id: 1 },
             ui_blocks: [],
@@ -66,7 +65,7 @@ describe('POST /api/ai-chat/converse', () => {
 
     const res = await POST(
       mockRequest({
-        session_id: 'sess-1',
+        trip_id: 1,
         content: 'Hi',
         message_type: 'text',
         widget_response: widgetResponse,
@@ -75,7 +74,7 @@ describe('POST /api/ai-chat/converse', () => {
     const body = await res.json();
 
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/v1/ai-chat/converse'),
+      expect.stringContaining('/api/v2/ai-chat/trips/1/converse'),
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({
@@ -87,13 +86,11 @@ describe('POST /api/ai-chat/converse', () => {
 
     const forwardedBody = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(forwardedBody).toEqual({
-      session_id: 'sess-1',
       content: 'Hi',
       message_type: 'text',
       widget_response: widgetResponse,
     });
     expect(body.success).toBe(true);
-    expect(body.data.session_id).toBe('sess-1');
   });
 
   it('returns backend error status when backend rejects', async () => {
@@ -104,7 +101,7 @@ describe('POST /api/ai-chat/converse', () => {
       json: () => Promise.resolve({ detail: 'Failed to process message' }),
     });
 
-    const res = await POST(mockRequest({ session_id: 'sess-1', content: 'Hi' }));
+    const res = await POST(mockRequest({ trip_id: 1, content: 'Hi' }));
     const body = await res.json();
 
     expect(res.status).toBe(500);

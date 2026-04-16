@@ -19,7 +19,6 @@ beforeEach(() => {
 
 describe('apiClient.converse', () => {
   const mockData = {
-    session_id: 'sess-uuid-1',
     response: 'Hello!',
     trip: { id: 42 },
     ui_blocks: [],
@@ -30,14 +29,14 @@ describe('apiClient.converse', () => {
 
   it('POSTs to /api/ai-chat/converse', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ data: mockData }));
-    await apiClient.converse('sess-uuid-1', 'Hi');
+    await apiClient.converse(42, 'Hi');
 
     const [url, opts] = mockFetch.mock.calls[0];
     expect(url).toBe('/api/ai-chat/converse');
     expect(opts.method).toBe('POST');
   });
 
-  it('sends session_id, content, message_type and widget_response in body', async () => {
+  it('sends trip_id, content, message_type and widget_response in body', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ data: mockData }));
     const widgetResponse = {
       widget_id: 'w1',
@@ -45,11 +44,11 @@ describe('apiClient.converse', () => {
       value: { start_date: '2026-05-01', end_date: '2026-05-08' },
     };
 
-    await apiClient.converse('sess-uuid-1', 'pick', 'text', widgetResponse);
+    await apiClient.converse(42, 'pick', 'text', widgetResponse);
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body).toEqual({
-      session_id: 'sess-uuid-1',
+      trip_id: 42,
       content: 'pick',
       message_type: 'text',
       widget_response: widgetResponse,
@@ -58,7 +57,7 @@ describe('apiClient.converse', () => {
 
   it('defaults message_type to text and widget_response to null', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ data: mockData }));
-    await apiClient.converse('sess-uuid-1', 'Hi');
+    await apiClient.converse(42, 'Hi');
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body.message_type).toBe('text');
@@ -67,12 +66,12 @@ describe('apiClient.converse', () => {
 
   it('unwraps response.data', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ data: mockData }));
-    const result = await apiClient.converse('sess-uuid-1', 'Hi');
+    const result = await apiClient.converse(42, 'Hi');
     expect(result).toEqual(mockData);
   });
 
   it('throws when response has no data', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ success: true, message: 'oops' }));
-    await expect(apiClient.converse('sess-uuid-1', 'Hi')).rejects.toThrow(/oops/);
+    await expect(apiClient.converse(42, 'Hi')).rejects.toThrow(/oops/);
   });
 });
