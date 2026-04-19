@@ -2,6 +2,7 @@
 
 import type { AIChatMessage, UIBlock, WidgetResponse } from '@/types/ai-chat';
 import WidgetRenderer from './widgets/WidgetRenderer';
+import WidgetResponseDisplay from './WidgetResponseDisplay';
 
 const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
   hour: '2-digit',
@@ -48,13 +49,19 @@ export default function MessageBubble({
   const uiBlocks: UIBlock[] =
     message.message_metadata?.ui_blocks ?? (message.widgets as unknown as UIBlock[] | null) ?? [];
 
+  const widgetResponse = message.message_metadata?.widget_response ?? null;
+  const hasWidgetResponse = isUser && widgetResponse !== null;
+  const hasTextContent = !!message.content;
+
   if (isUser) {
     return (
       <div className="flex flex-col items-end gap-1">
         <div className="bg-[#1E3D2F] text-white rounded-2xl rounded-tr-sm px-5 py-4 max-w-[400px]">
-          {message.message_type === 'text' && (
+          {hasWidgetResponse ? (
+            <WidgetResponseDisplay response={widgetResponse} />
+          ) : message.message_type === 'text' && hasTextContent ? (
             <p className="font-inter text-sm whitespace-pre-wrap">{message.content}</p>
-          )}
+          ) : null}
           {message.message_type === 'audio' && message.media_url && (
             <div className="w-full">
               <div className="flex items-center gap-2 mb-2">

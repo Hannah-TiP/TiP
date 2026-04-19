@@ -161,11 +161,11 @@ test.describe('Concierge /converse flow', () => {
     // Click an option in the widget
     await page.getByTestId('option-leisure').click();
 
-    // Optimistic user message for the widget interaction appears
-    // (scope to a paragraph so the "Leisure" widget button doesn't match)
-    await expect(page.getByRole('paragraph').filter({ hasText: /^Leisure$/ })).toBeVisible({
+    // Optimistic user message for the widget interaction appears as a widget response badge
+    await expect(page.getByTestId('widget-response-option-selector')).toBeVisible({
       timeout: 5000,
     });
+    await expect(page.getByTestId('widget-response-option-selector')).toHaveText('Leisure');
 
     // Assistant follow-up text appears
     await expect(page.getByText('Got it. Leisure trip noted.')).toBeVisible({

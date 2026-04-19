@@ -82,38 +82,6 @@ function ConciergeContent() {
     return next;
   }
 
-  function summarizeWidgetResponse(response: WidgetResponse): string {
-    const v = response.value as Record<string, unknown>;
-    switch (response.widget_type) {
-      case 'date_range_picker': {
-        const start = v.start_date;
-        const end = v.end_date;
-        if (typeof start === 'string' && typeof end === 'string') {
-          return `Selected dates: ${start} to ${end}`;
-        }
-        return 'Selected dates';
-      }
-      case 'number_stepper': {
-        const parts: string[] = [];
-        for (const [key, value] of Object.entries(v)) {
-          parts.push(`${value} ${key}`);
-        }
-        return parts.length > 0 ? parts.join(', ') : 'Selected travelers';
-      }
-      case 'option_selector': {
-        const label = v.label ?? v.value;
-        return typeof label === 'string' ? label : 'Selected option';
-      }
-      case 'hotel_carousel': {
-        const name = v.hotel_name;
-        if (typeof name === 'string') return `Selected hotel: ${name}`;
-        return 'Selected hotel';
-      }
-      default:
-        return 'Submitted';
-    }
-  }
-
   const sessions = useMemo(
     () => sortSessions(rawSessions, detailsByTripId),
     [rawSessions, detailsByTripId],
@@ -301,7 +269,7 @@ function ConciergeContent() {
     const userId = targetSession.user_id;
     const tripId = targetSession.trip_id;
 
-    const userContent = widgetResponse ? summarizeWidgetResponse(widgetResponse) : content;
+    const userContent = widgetResponse ? '' : content;
     const optimisticUserMsg = buildOptimisticMessage(userId, tripId, 'user', userContent, {
       message_metadata: widgetResponse ? { widget_response: widgetResponse } : null,
     });
