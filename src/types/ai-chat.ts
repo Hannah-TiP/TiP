@@ -1,3 +1,5 @@
+import type { Trip, TripVersion } from '@/types/trip';
+
 export type AIChatSessionStatus = 'ai' | 'human';
 export type AIChatMessageRole = 'user' | 'assistant' | 'human_assistant' | 'system';
 export type AIChatMessageType = 'text' | 'audio';
@@ -237,13 +239,11 @@ export interface ConverseRequest {
 }
 
 export interface ConverseResponse {
-  session_id: string;
-  response: string;
-  trip: Record<string, unknown>;
-  ui_blocks: UIBlock[];
+  user_message: AIChatMessage;
+  assistant_message: AIChatMessage | null;
+  trip: Trip | null;
+  trip_version: TripVersion | null;
   field_updated: string[];
-  user_message_id?: number | null;
-  assistant_message_id?: number | null;
 }
 
 export interface ConverseApiResponse {

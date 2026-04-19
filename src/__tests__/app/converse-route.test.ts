@@ -49,9 +49,10 @@ describe('POST /api/ai-chat/converse', () => {
         Promise.resolve({
           success: true,
           data: {
-            response: 'ok',
+            user_message: { id: 1, content: 'Hi', role: 'user' },
+            assistant_message: { id: 2, content: 'ok', role: 'assistant', widgets: [] },
             trip: { id: 1 },
-            ui_blocks: [],
+            trip_version: null,
             field_updated: [],
           },
         }),
@@ -74,7 +75,7 @@ describe('POST /api/ai-chat/converse', () => {
     const body = await res.json();
 
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/v2/ai-chat/trips/1/converse'),
+      expect.stringContaining('/api/v2/ai-chat/trips/1/messages'),
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({

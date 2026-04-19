@@ -19,24 +19,23 @@ beforeEach(() => {
 
 describe('apiClient.converse', () => {
   const mockData = {
-    response: 'Hello!',
+    user_message: { id: 1, content: 'Hi', role: 'user' },
+    assistant_message: { id: 2, content: 'Hello!', role: 'assistant', widgets: [] },
     trip: { id: 42 },
-    ui_blocks: [],
+    trip_version: null,
     field_updated: [],
-    user_message_id: 1,
-    assistant_message_id: 2,
   };
 
-  it('POSTs to /api/ai-chat/converse', async () => {
+  it('POSTs to /api/ai-chat/trips/{tripId}/messages', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ data: mockData }));
     await apiClient.converse(42, 'Hi');
 
     const [url, opts] = mockFetch.mock.calls[0];
-    expect(url).toBe('/api/ai-chat/converse');
+    expect(url).toBe('/api/ai-chat/trips/42/messages');
     expect(opts.method).toBe('POST');
   });
 
-  it('sends trip_id, content, message_type and widget_response in body', async () => {
+  it('sends content, message_type and widget_response in body (trip_id in URL)', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ data: mockData }));
     const widgetResponse = {
       widget_id: 'w1',
@@ -48,7 +47,6 @@ describe('apiClient.converse', () => {
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body).toEqual({
-      trip_id: 42,
       content: 'pick',
       message_type: 'text',
       widget_response: widgetResponse,

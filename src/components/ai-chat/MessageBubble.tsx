@@ -45,7 +45,8 @@ export default function MessageBubble({
   widgetsDisabled,
 }: MessageBubbleProps) {
   const timestamp = formatTimestamp(message.sent_at ?? message.created_at);
-  const uiBlocks: UIBlock[] = message.message_metadata?.ui_blocks ?? [];
+  const uiBlocks: UIBlock[] =
+    message.message_metadata?.ui_blocks ?? (message.widgets as unknown as UIBlock[] | null) ?? [];
 
   if (isUser) {
     return (

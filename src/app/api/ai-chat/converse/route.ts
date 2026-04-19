@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Missing trip_id' }, { status: 400 });
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v2/ai-chat/trips/${trip_id}/converse`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/ai-chat/trips/${trip_id}/messages`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,

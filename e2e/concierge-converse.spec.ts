@@ -45,18 +45,6 @@ test.describe('Concierge /converse flow', () => {
       });
     });
 
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ success: true, data: [] }),
-        });
-      } else {
-        await route.fulfill({ status: 200, body: '{}' });
-      }
-    });
-
     let tripVersionState = tripVersion();
 
     await context.route(`**/api/trip/${TRIP_ID}`, async (route) => {
@@ -76,37 +64,49 @@ test.describe('Concierge /converse flow', () => {
     });
 
     let converseCallCount = 0;
-    await context.route('**/api/ai-chat/converse', async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: [] }),
+        });
+        return;
+      }
+
       converseCallCount += 1;
       const requestBody = JSON.parse(route.request().postData() || '{}');
 
       if (converseCallCount === 1) {
-        // First call: text "Plan a trip to Paris" → assistant returns date_range_picker widget
+        // First call: text "Plan a trip to Paris" → assistant returns option_selector widget
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
             success: true,
             data: {
-              session_id: SESSION_UUID,
-              response: 'Sure! When would you like to travel?',
-              trip: { id: TRIP_ID },
-              ui_blocks: [
-                {
-                  type: 'option_selector',
-                  id: 'opt-1',
-                  label: 'Pick a purpose',
-                  config: {
-                    options: [
-                      { value: 'leisure', label: 'Leisure' },
-                      { value: 'business', label: 'Business' },
-                    ],
+              user_message: { id: 100, content: 'Plan a trip to Paris', role: 'user' },
+              assistant_message: {
+                id: 101,
+                content: 'Sure! When would you like to travel?',
+                role: 'assistant',
+                widgets: [
+                  {
+                    type: 'option_selector',
+                    id: 'opt-1',
+                    label: 'Pick a purpose',
+                    config: {
+                      options: [
+                        { value: 'leisure', label: 'Leisure' },
+                        { value: 'business', label: 'Business' },
+                      ],
+                    },
                   },
-                },
-              ],
+                ],
+              },
+              trip: { id: TRIP_ID },
+              trip_version: null,
               field_updated: ['destination'],
-              user_message_id: 100,
-              assistant_message_id: 101,
             },
           }),
         });
@@ -123,13 +123,16 @@ test.describe('Concierge /converse flow', () => {
           body: JSON.stringify({
             success: true,
             data: {
-              session_id: SESSION_UUID,
-              response: 'Got it. Leisure trip noted.',
+              user_message: { id: 102, content: '', role: 'user' },
+              assistant_message: {
+                id: 103,
+                content: 'Got it. Leisure trip noted.',
+                role: 'assistant',
+                widgets: [],
+              },
               trip: { id: TRIP_ID },
-              ui_blocks: [],
+              trip_version: null,
               field_updated: ['purpose'],
-              user_message_id: 102,
-              assistant_message_id: 103,
             },
           }),
         });

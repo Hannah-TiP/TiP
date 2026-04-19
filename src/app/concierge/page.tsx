@@ -318,12 +318,11 @@ function ConciergeContent() {
         widgetResponse,
       );
 
-      const assistantMsg = buildOptimisticMessage(userId, tripId, 'assistant', data.response, {
-        id: data.assistant_message_id ?? nextOptimisticId(),
-        message_metadata: {
-          ui_blocks: data.ui_blocks,
-          field_updated: data.field_updated,
-        },
+      const assistantContent = data.assistant_message?.content ?? '';
+      const assistantWidgets = data.assistant_message?.widgets ?? null;
+      const assistantMsg = buildOptimisticMessage(userId, tripId, 'assistant', assistantContent, {
+        id: data.assistant_message?.id ?? nextOptimisticId(),
+        widgets: assistantWidgets,
       });
 
       setMessages((prev) => [...prev, assistantMsg]);

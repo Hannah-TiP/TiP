@@ -305,10 +305,9 @@ class ApiClient {
     messageType: AIChatMessageType = 'text',
     widgetResponse: WidgetResponse | null = null,
   ): Promise<ConverseResponse> {
-    const response = await this.request<ConverseApiResponse>('/ai-chat/converse', {
+    const response = await this.request<ConverseApiResponse>(`/ai-chat/trips/${tripId}/messages`, {
       method: 'POST',
       body: JSON.stringify({
-        trip_id: tripId,
         content,
         message_type: messageType,
         widget_response: widgetResponse,

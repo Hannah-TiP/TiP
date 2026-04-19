@@ -39,9 +39,9 @@ function outPath(name: string): string {
   return path.join(SCREENSHOT_DIR, name);
 }
 
-type ConverseResponse = {
+type MockConverseResponse = {
   response: string;
-  ui_blocks?: unknown[];
+  widgets?: unknown[];
   field_updated?: string[];
   assistant_message_id?: number;
   user_message_id?: number;
@@ -58,16 +58,6 @@ async function mockTripAndSession(
       body: JSON.stringify({ success: true, data: [baseSession] }),
     }),
   );
-  await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, (route) => {
-    if (route.request().method() === 'GET') {
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: [] }),
-      });
-    }
-    return route.fulfill({ status: 200, body: '{}' });
-  });
   await context.route(`**/api/trip/${TRIP_ID}`, (route) =>
     route.fulfill({
       status: 200,
@@ -84,24 +74,37 @@ async function mockTripAndSession(
   );
 }
 
-async function mockConverseSequence(context: BrowserContext, responses: ConverseResponse[]) {
+async function mockConverseSequence(context: BrowserContext, responses: MockConverseResponse[]) {
   let call = 0;
-  await context.route('**/api/ai-chat/converse', async (route) => {
+  await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [] }),
+      });
+      return;
+    }
     const r = responses[Math.min(call, responses.length - 1)];
     call += 1;
+    const umId = r.user_message_id ?? 100 + call;
+    const amId = r.assistant_message_id ?? 200 + call;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
         success: true,
         data: {
-          session_id: SESSION_UUID,
-          response: r.response,
+          user_message: { id: umId, content: '', role: 'user' },
+          assistant_message: {
+            id: amId,
+            content: r.response,
+            role: 'assistant',
+            widgets: r.widgets ?? [],
+          },
           trip: { id: TRIP_ID },
-          ui_blocks: r.ui_blocks ?? [],
+          trip_version: null,
           field_updated: r.field_updated ?? [],
-          user_message_id: r.user_message_id ?? 100 + call,
-          assistant_message_id: r.assistant_message_id ?? 200 + call,
         },
       }),
     });
@@ -132,7 +135,15 @@ test.describe('Concierge visual captures', () => {
     await mockTripAndSession(context, tripRef);
     // Delay the assistant response so the optimistic user bubble is alone on screen
     let firstCall = true;
-    await context.route('**/api/ai-chat/converse', async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: [] }),
+        });
+        return;
+      }
       if (firstCall) {
         firstCall = false;
         await new Promise((r) => setTimeout(r, 2500));
@@ -143,13 +154,16 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({
           success: true,
           data: {
-            session_id: SESSION_UUID,
-            response: 'Sure! When would you like to travel?',
+            user_message: { id: 100, content: '', role: 'user' },
+            assistant_message: {
+              id: 101,
+              content: 'Sure! When would you like to travel?',
+              role: 'assistant',
+              widgets: [],
+            },
             trip: { id: TRIP_ID },
-            ui_blocks: [],
+            trip_version: null,
             field_updated: [],
-            user_message_id: 100,
-            assistant_message_id: 101,
           },
         }),
       });
@@ -171,7 +185,7 @@ test.describe('Concierge visual captures', () => {
     await mockConverseSequence(context, [
       {
         response: 'Sure! What kind of trip is this?',
-        ui_blocks: [
+        widgets: [
           {
             type: 'option_selector',
             id: 'opt-1',
@@ -202,7 +216,15 @@ test.describe('Concierge visual captures', () => {
     const tripRef = { current: tripVersion({ title: 'Paris Trip' }) };
     await mockTripAndSession(context, tripRef);
     let call = 0;
-    await context.route('**/api/ai-chat/converse', async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: [] }),
+        });
+        return;
+      }
       call += 1;
       if (call === 1) {
         await route.fulfill({
@@ -211,25 +233,28 @@ test.describe('Concierge visual captures', () => {
           body: JSON.stringify({
             success: true,
             data: {
-              session_id: SESSION_UUID,
-              response: 'Sure! What kind of trip is this?',
-              trip: { id: TRIP_ID },
-              ui_blocks: [
-                {
-                  type: 'option_selector',
-                  id: 'opt-1',
-                  label: 'Pick a purpose',
-                  config: {
-                    options: [
-                      { value: 'leisure', label: 'Leisure' },
-                      { value: 'business', label: 'Business' },
-                    ],
+              user_message: { id: 100, content: '', role: 'user' },
+              assistant_message: {
+                id: 101,
+                content: 'Sure! What kind of trip is this?',
+                role: 'assistant',
+                widgets: [
+                  {
+                    type: 'option_selector',
+                    id: 'opt-1',
+                    label: 'Pick a purpose',
+                    config: {
+                      options: [
+                        { value: 'leisure', label: 'Leisure' },
+                        { value: 'business', label: 'Business' },
+                      ],
+                    },
                   },
-                },
-              ],
+                ],
+              },
+              trip: { id: TRIP_ID },
+              trip_version: null,
               field_updated: ['destination'],
-              user_message_id: 100,
-              assistant_message_id: 101,
             },
           }),
         });
@@ -243,13 +268,16 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({
           success: true,
           data: {
-            session_id: SESSION_UUID,
-            response: 'Got it. Leisure trip noted.',
+            user_message: { id: 102, content: '', role: 'user' },
+            assistant_message: {
+              id: 103,
+              content: 'Got it. Leisure trip noted.',
+              role: 'assistant',
+              widgets: [],
+            },
             trip: { id: TRIP_ID },
-            ui_blocks: [],
+            trip_version: null,
             field_updated: ['purpose'],
-            user_message_id: 102,
-            assistant_message_id: 103,
           },
         }),
       });
@@ -274,7 +302,15 @@ test.describe('Concierge visual captures', () => {
     const tripRef = { current: tripVersion({ title: 'Paris Trip' }) };
     await mockTripAndSession(context, tripRef);
     let call = 0;
-    await context.route('**/api/ai-chat/converse', async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: [] }),
+        });
+        return;
+      }
       call += 1;
       if (call === 1) {
         await route.fulfill({
@@ -283,25 +319,28 @@ test.describe('Concierge visual captures', () => {
           body: JSON.stringify({
             success: true,
             data: {
-              session_id: SESSION_UUID,
-              response: 'Sure! What kind of trip is this?',
-              trip: { id: TRIP_ID },
-              ui_blocks: [
-                {
-                  type: 'option_selector',
-                  id: 'opt-1',
-                  label: 'Pick a purpose',
-                  config: {
-                    options: [
-                      { value: 'leisure', label: 'Leisure' },
-                      { value: 'business', label: 'Business' },
-                    ],
+              user_message: { id: 100, content: '', role: 'user' },
+              assistant_message: {
+                id: 101,
+                content: 'Sure! What kind of trip is this?',
+                role: 'assistant',
+                widgets: [
+                  {
+                    type: 'option_selector',
+                    id: 'opt-1',
+                    label: 'Pick a purpose',
+                    config: {
+                      options: [
+                        { value: 'leisure', label: 'Leisure' },
+                        { value: 'business', label: 'Business' },
+                      ],
+                    },
                   },
-                },
-              ],
+                ],
+              },
+              trip: { id: TRIP_ID },
+              trip_version: null,
               field_updated: [],
-              user_message_id: 100,
-              assistant_message_id: 101,
             },
           }),
         });
@@ -313,13 +352,16 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({
           success: true,
           data: {
-            session_id: SESSION_UUID,
-            response: 'Got it. Leisure trip noted. Anything else to adjust?',
+            user_message: { id: 102, content: '', role: 'user' },
+            assistant_message: {
+              id: 103,
+              content: 'Got it. Leisure trip noted. Anything else to adjust?',
+              role: 'assistant',
+              widgets: [],
+            },
             trip: { id: TRIP_ID },
-            ui_blocks: [],
+            trip_version: null,
             field_updated: [],
-            user_message_id: 102,
-            assistant_message_id: 103,
           },
         }),
       });
@@ -349,13 +391,6 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({ success: true, data: [baseSession] }),
       }),
     );
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: [] }),
-      }),
-    );
     await context.route(`**/api/trip/${TRIP_ID}`, (route) =>
       route.fulfill({
         status: 200,
@@ -370,7 +405,15 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({ data: tripRef.current }),
       }),
     );
-    await context.route('**/api/ai-chat/converse', async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: [] }),
+        });
+        return;
+      }
       // Update trip on this call so TripDetailPanel refetches with new purpose
       tripRef.current = tripVersion({ title: 'Paris Trip', summary: 'Leisure' });
       await route.fulfill({
@@ -379,13 +422,16 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({
           success: true,
           data: {
-            session_id: SESSION_UUID,
-            response: 'Got it. Leisure trip noted.',
+            user_message: { id: 100, content: '', role: 'user' },
+            assistant_message: {
+              id: 101,
+              content: 'Got it. Leisure trip noted.',
+              role: 'assistant',
+              widgets: [],
+            },
             trip: { id: TRIP_ID },
-            ui_blocks: [],
+            trip_version: null,
             field_updated: ['purpose'],
-            user_message_id: 100,
-            assistant_message_id: 101,
           },
         }),
       });
@@ -417,7 +463,7 @@ test.describe('Concierge visual captures', () => {
     await mockConverseSequence(context, [
       {
         response: 'Here are a few things I need from you:',
-        ui_blocks: [
+        widgets: [
           {
             type: 'date_range_picker',
             id: 'dates-1',
@@ -485,7 +531,15 @@ test.describe('Concierge visual captures', () => {
     const tripRef = { current: tripVersion({ title: 'Paris Trip' }) };
     await mockTripAndSession(context, tripRef);
     let call = 0;
-    await context.route('**/api/ai-chat/converse', async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: [] }),
+        });
+        return;
+      }
       call += 1;
       if (call === 1) {
         await route.fulfill({
@@ -494,13 +548,16 @@ test.describe('Concierge visual captures', () => {
           body: JSON.stringify({
             success: true,
             data: {
-              session_id: SESSION_UUID,
-              response: 'Lovely choice. Paris is wonderful in spring.',
+              user_message: { id: 100, content: '', role: 'user' },
+              assistant_message: {
+                id: 101,
+                content: 'Lovely choice. Paris is wonderful in spring.',
+                role: 'assistant',
+                widgets: [],
+              },
               trip: { id: TRIP_ID },
-              ui_blocks: [],
+              trip_version: null,
               field_updated: [],
-              user_message_id: 100,
-              assistant_message_id: 101,
             },
           }),
         });
@@ -512,13 +569,16 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({
           success: true,
           data: {
-            session_id: SESSION_UUID,
-            response: 'Got it — two adults it is.',
+            user_message: { id: 102, content: '', role: 'user' },
+            assistant_message: {
+              id: 103,
+              content: 'Got it — two adults it is.',
+              role: 'assistant',
+              widgets: [],
+            },
             trip: { id: TRIP_ID },
-            ui_blocks: [],
+            trip_version: null,
             field_updated: [],
-            user_message_id: 102,
-            assistant_message_id: 103,
           },
         }),
       });
