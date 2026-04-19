@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TopBar from '@/components/TopBar';
 import MessageList from '@/components/ai-chat/MessageList';
@@ -17,6 +17,7 @@ import type {
   AIChatMessage,
   AIChatSessionMetadata,
   ConverseResponse,
+  PendingMessage,
   WidgetResponse,
 } from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -74,13 +75,7 @@ function ConciergeContent() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [highlightedFields, setHighlightedFields] = useState<string[]>([]);
   const [highlightToken, setHighlightToken] = useState(0);
-  const optimisticIdRef = useRef(-1);
-
-  function nextOptimisticId() {
-    const next = optimisticIdRef.current;
-    optimisticIdRef.current -= 1;
-    return next;
-  }
+  const [pendingMessage, setPendingMessage] = useState<PendingMessage | null>(null);
 
   const sessions = useMemo(
     () => sortSessions(rawSessions, detailsByTripId),
@@ -230,28 +225,6 @@ function ConciergeContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  function buildOptimisticMessage(
-    userId: number,
-    tripId: number,
-    role: 'user' | 'assistant',
-    content: string,
-    extras: Partial<AIChatMessage> = {},
-  ): AIChatMessage {
-    const now = new Date().toISOString();
-    return {
-      id: nextOptimisticId(),
-      user_id: userId,
-      trip_id: tripId,
-      role,
-      message_type: 'text',
-      content,
-      sent_at: now,
-      created_at: now,
-      schema_version: 1,
-      ...extras,
-    };
-  }
-
   async function sendConverse(
     targetSession: AIChatSessionMetadata,
     content: string,
@@ -266,14 +239,13 @@ function ConciergeContent() {
       return;
     }
 
-    const userId = targetSession.user_id;
     const tripId = targetSession.trip_id;
 
-    const userContent = widgetResponse ? '' : content;
-    const optimisticUserMsg = buildOptimisticMessage(userId, tripId, 'user', userContent, {
-      message_metadata: widgetResponse ? { widget_response: widgetResponse } : null,
+    setPendingMessage({
+      content: widgetResponse ? '' : content,
+      widget_response: widgetResponse,
+      sent_at: new Date().toISOString(),
     });
-    setMessages((prev) => [...prev, optimisticUserMsg]);
 
     setIsLoading(true);
     if (!silent) setError(null);
@@ -286,18 +258,20 @@ function ConciergeContent() {
         widgetResponse,
       );
 
-      const assistantContent = data.assistant_message?.content ?? '';
-      const assistantWidgets = data.assistant_message?.widgets ?? null;
-      const assistantMsg = buildOptimisticMessage(userId, tripId, 'assistant', assistantContent, {
-        id: data.assistant_message?.id ?? nextOptimisticId(),
-        widgets: assistantWidgets,
+      setPendingMessage(null);
+
+      setMessages((prev) => {
+        const next = [...prev, data.user_message];
+        if (data.assistant_message) {
+          next.push(data.assistant_message);
+        }
+        return next;
       });
 
-      setMessages((prev) => [...prev, assistantMsg]);
-
+      const lastMsg = data.assistant_message ?? data.user_message;
       const updatedSession: AIChatSessionMetadata = {
         ...targetSession,
-        last_message_at: assistantMsg.sent_at ?? new Date().toISOString(),
+        last_message_at: lastMsg.sent_at ?? new Date().toISOString(),
       };
       setRawSessions((prev) => {
         const deduped = prev.filter((item) => item.id !== updatedSession.id);
@@ -315,6 +289,7 @@ function ConciergeContent() {
       if (!silent) {
         setError('Failed to send message. Please try again.');
       }
+      setPendingMessage(null);
     } finally {
       setIsLoading(false);
     }
@@ -473,6 +448,7 @@ function ConciergeContent() {
           <MessageList
             messages={messages}
             isLoading={isLoading}
+            pendingMessage={pendingMessage}
             onWidgetSubmit={handleWidgetSubmit}
           />
           <ChatInput

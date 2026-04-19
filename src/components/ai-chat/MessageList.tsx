@@ -1,17 +1,24 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { AIChatMessage, WidgetResponse } from '@/types/ai-chat';
+import type { AIChatMessage, PendingMessage, WidgetResponse } from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MessageBubble from './MessageBubble';
+import WidgetResponseDisplay from './WidgetResponseDisplay';
 
 interface MessageListProps {
   messages: AIChatMessage[];
   isLoading: boolean;
+  pendingMessage?: PendingMessage | null;
   onWidgetSubmit?: (response: WidgetResponse) => void;
 }
 
-export default function MessageList({ messages, isLoading, onWidgetSubmit }: MessageListProps) {
+export default function MessageList({
+  messages,
+  isLoading,
+  pendingMessage,
+  onWidgetSubmit,
+}: MessageListProps) {
   const { t } = useLanguage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isInitialLoad = useRef(true);
@@ -23,9 +30,9 @@ export default function MessageList({ messages, isLoading, onWidgetSubmit }: Mes
       });
       isInitialLoad.current = false;
     }
-  }, [messages]);
+  }, [messages, pendingMessage]);
 
-  if (messages.length === 0 && !isLoading) {
+  if (messages.length === 0 && !isLoading && !pendingMessage) {
     return (
       <div className="flex-1 overflow-y-auto px-[60px] py-[32px] flex items-center justify-center">
         <div className="text-center text-gray-400">
@@ -66,6 +73,18 @@ export default function MessageList({ messages, isLoading, onWidgetSubmit }: Mes
           </div>
         );
       })}
+
+      {pendingMessage && (
+        <div className="flex flex-col items-end gap-1" data-testid="pending-message">
+          <div className="bg-[#1E3D2F] text-white rounded-2xl rounded-tr-sm px-5 py-4 max-w-[400px]">
+            {pendingMessage.widget_response ? (
+              <WidgetResponseDisplay response={pendingMessage.widget_response} />
+            ) : pendingMessage.content ? (
+              <p className="font-inter text-sm whitespace-pre-wrap">{pendingMessage.content}</p>
+            ) : null}
+          </div>
+        </div>
+      )}
 
       {isLoading && (
         <div className="flex gap-3">

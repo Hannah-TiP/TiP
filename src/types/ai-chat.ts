@@ -231,6 +231,12 @@ export interface WidgetResponse {
   value: Record<string, unknown>;
 }
 
+export interface PendingMessage {
+  content: string;
+  widget_response: WidgetResponse | null;
+  sent_at: string;
+}
+
 export interface ConverseRequest {
   session_id: string;
   content?: string;
