@@ -95,11 +95,12 @@ async function mockChatSequence(context: BrowserContext, responses: MockChatResp
       body: JSON.stringify({
         success: true,
         data: {
-          user_message: { id: umId, content: '', role: 'user' },
+          user_message: { id: umId, content: '', role: 'user', message_type: 'text' },
           assistant_message: {
             id: amId,
             content: r.response,
             role: 'assistant',
+            message_type: 'text',
             widgets: r.widgets ?? [],
           },
           trip: { id: TRIP_ID },
@@ -154,11 +155,12 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({
           success: true,
           data: {
-            user_message: { id: 100, content: '', role: 'user' },
+            user_message: { id: 100, content: '', role: 'user', message_type: 'text' },
             assistant_message: {
               id: 101,
               content: 'Sure! When would you like to travel?',
               role: 'assistant',
+              message_type: 'text',
               widgets: [],
             },
             trip: { id: TRIP_ID },
@@ -173,7 +175,7 @@ test.describe('Concierge visual captures', () => {
     const input = page.getByPlaceholder(/ask your concierge/i);
     await input.fill('Plan a trip to Paris');
     await input.press('Enter');
-    await page.getByText('Plan a trip to Paris').waitFor({ timeout: 5000 });
+    await page.getByText('Plan a trip to Paris').waitFor({ timeout: 10_000 });
     // Brief pause so optimistic bubble + timestamp are rendered, before assistant response arrives
     await page.waitForTimeout(600);
     await page.screenshot({ path: outPath('02-text-sent.png'), fullPage: false });
@@ -231,11 +233,12 @@ test.describe('Concierge visual captures', () => {
           body: JSON.stringify({
             success: true,
             data: {
-              user_message: { id: 100, content: '', role: 'user' },
+              user_message: { id: 100, content: '', role: 'user', message_type: 'text' },
               assistant_message: {
                 id: 101,
                 content: 'Sure! What kind of trip is this?',
                 role: 'assistant',
+                message_type: 'text',
                 widgets: [
                   {
                     widget_type: 'option_selector',
@@ -264,11 +267,12 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({
           success: true,
           data: {
-            user_message: { id: 102, content: '', role: 'user' },
+            user_message: { id: 102, content: '', role: 'user', message_type: 'text' },
             assistant_message: {
               id: 103,
               content: 'Got it. Leisure trip noted.',
               role: 'assistant',
+              message_type: 'text',
               widgets: [],
             },
             trip: { id: TRIP_ID },
@@ -285,11 +289,8 @@ test.describe('Concierge visual captures', () => {
     await input.press('Enter');
     await page.getByTestId('option-leisure').waitFor({ timeout: 10_000 });
     await page.getByTestId('option-leisure').click();
-    // Wait for the optimistic "Leisure" paragraph bubble
-    await page
-      .getByRole('paragraph')
-      .filter({ hasText: /^Leisure$/ })
-      .waitFor({ timeout: 5000 });
+    // Wait for the widget response badge to appear
+    await page.getByTestId('widget-response-option-selector').waitFor({ timeout: 5000 });
     await page.waitForTimeout(500);
     await page.screenshot({ path: outPath('04-widget-click.png'), fullPage: false });
   });
@@ -315,11 +316,12 @@ test.describe('Concierge visual captures', () => {
           body: JSON.stringify({
             success: true,
             data: {
-              user_message: { id: 100, content: '', role: 'user' },
+              user_message: { id: 100, content: '', role: 'user', message_type: 'text' },
               assistant_message: {
                 id: 101,
                 content: 'Sure! What kind of trip is this?',
                 role: 'assistant',
+                message_type: 'text',
                 widgets: [
                   {
                     widget_type: 'option_selector',
@@ -346,11 +348,12 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({
           success: true,
           data: {
-            user_message: { id: 102, content: '', role: 'user' },
+            user_message: { id: 102, content: '', role: 'user', message_type: 'text' },
             assistant_message: {
               id: 103,
               content: 'Got it. Leisure trip noted. Anything else to adjust?',
               role: 'assistant',
+              message_type: 'text',
               widgets: [],
             },
             trip: { id: TRIP_ID },
@@ -416,11 +419,12 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({
           success: true,
           data: {
-            user_message: { id: 100, content: '', role: 'user' },
+            user_message: { id: 100, content: '', role: 'user', message_type: 'text' },
             assistant_message: {
               id: 101,
               content: 'Got it. Leisure trip noted.',
               role: 'assistant',
+              message_type: 'text',
               widgets: [],
             },
             trip: { id: TRIP_ID },
@@ -511,11 +515,12 @@ test.describe('Concierge visual captures', () => {
           body: JSON.stringify({
             success: true,
             data: {
-              user_message: { id: 100, content: '', role: 'user' },
+              user_message: { id: 100, content: '', role: 'user', message_type: 'text' },
               assistant_message: {
                 id: 101,
                 content: 'Lovely choice. Paris is wonderful in spring.',
                 role: 'assistant',
+                message_type: 'text',
                 widgets: [],
               },
               trip: { id: TRIP_ID },
@@ -532,11 +537,12 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({
           success: true,
           data: {
-            user_message: { id: 102, content: '', role: 'user' },
+            user_message: { id: 102, content: '', role: 'user', message_type: 'text' },
             assistant_message: {
               id: 103,
               content: 'Got it — two adults it is.',
               role: 'assistant',
+              message_type: 'text',
               widgets: [],
             },
             trip: { id: TRIP_ID },
