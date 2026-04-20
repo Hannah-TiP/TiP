@@ -57,7 +57,14 @@ export async function POST(request: NextRequest, context: { params: Promise<unkn
     }
 
     const body = await request.json();
-    const { content, message_type = 'text', media_url, widget_response, sent_at } = body;
+    const {
+      content,
+      message_type = 'text',
+      media_url,
+      widget_response,
+      sent_at,
+      include_draft,
+    } = body;
 
     const response = await fetch(`${API_BASE_URL}/api/v2/ai-chat/trips/${trip_id}/messages`, {
       method: 'POST',
@@ -71,6 +78,7 @@ export async function POST(request: NextRequest, context: { params: Promise<unkn
         media_url,
         widget_response,
         sent_at,
+        include_draft,
       }),
     });
 

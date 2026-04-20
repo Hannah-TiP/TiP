@@ -145,6 +145,7 @@ export interface SendAIChatMessageRequest {
   media_url?: string | null;
   widget_response?: AIChatWidgetResponse | null;
   sent_at?: string | null;
+  include_draft?: boolean;
 }
 
 export interface SendAIChatMessageData {
