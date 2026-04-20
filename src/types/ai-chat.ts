@@ -153,13 +153,16 @@ export interface SendAIChatMessageRequest {
   message_type?: AIChatMessageType;
   content?: string | null;
   media_url?: string | null;
-  widget_response?: AIChatWidgetResponse | null;
+  widget_response?: AIChatWidgetResponse | WidgetResponse | null;
   sent_at?: string | null;
 }
 
 export interface SendAIChatMessageData {
   user_message: AIChatMessage;
   assistant_message: AIChatMessage | null;
+  trip: Trip | null;
+  trip_version: TripVersion | null;
+  field_updated: string[];
 }
 
 export interface SendAIChatMessageResponse {
@@ -167,8 +170,6 @@ export interface SendAIChatMessageResponse {
   code?: number;
   data?: SendAIChatMessageData;
 }
-
-// ── /converse endpoint (Enhanced AI Chat v2) ──────────────────────────────
 
 export type UIBlockType =
   | 'date_range_picker'
@@ -235,28 +236,6 @@ export interface PendingMessage {
   content: string;
   widget_response: WidgetResponse | null;
   sent_at: string;
-}
-
-export interface ConverseRequest {
-  session_id: string;
-  content?: string;
-  message_type?: AIChatMessageType;
-  widget_response?: WidgetResponse | null;
-}
-
-export interface ConverseResponse {
-  user_message: AIChatMessage;
-  assistant_message: AIChatMessage | null;
-  trip: Trip | null;
-  trip_version: TripVersion | null;
-  field_updated: string[];
-}
-
-export interface ConverseApiResponse {
-  success?: boolean;
-  code?: number;
-  data?: ConverseResponse;
-  message?: string;
 }
 
 export interface S3UploadCredentialsResponse {

@@ -39,7 +39,7 @@ function outPath(name: string): string {
   return path.join(SCREENSHOT_DIR, name);
 }
 
-type MockConverseResponse = {
+type MockChatResponse = {
   response: string;
   widgets?: unknown[];
   field_updated?: string[];
@@ -74,7 +74,7 @@ async function mockTripAndSession(
   );
 }
 
-async function mockConverseSequence(context: BrowserContext, responses: MockConverseResponse[]) {
+async function mockChatSequence(context: BrowserContext, responses: MockChatResponse[]) {
   let call = 0;
   await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
     if (route.request().method() === 'GET') {
@@ -123,7 +123,7 @@ test.describe('Concierge visual captures', () => {
   test('01 initial load', async ({ page, context }) => {
     const tripRef = { current: tripVersion({ title: '' }) };
     await mockTripAndSession(context, tripRef);
-    await mockConverseSequence(context, [{ response: '' }]);
+    await mockChatSequence(context, [{ response: '' }]);
 
     await openConcierge(page);
     await page.waitForTimeout(500);
@@ -182,7 +182,7 @@ test.describe('Concierge visual captures', () => {
   test('03 assistant response with widget', async ({ page, context }) => {
     const tripRef = { current: tripVersion({ title: 'Paris Trip' }) };
     await mockTripAndSession(context, tripRef);
-    await mockConverseSequence(context, [
+    await mockChatSequence(context, [
       {
         response: 'Sure! What kind of trip is this?',
         widgets: [
@@ -460,7 +460,7 @@ test.describe('Concierge visual captures', () => {
   test('07 multiple widget types in one response', async ({ page, context }) => {
     const tripRef = { current: tripVersion({ title: 'Paris Trip' }) };
     await mockTripAndSession(context, tripRef);
-    await mockConverseSequence(context, [
+    await mockChatSequence(context, [
       {
         response: 'Here are a few things I need from you:',
         widgets: [

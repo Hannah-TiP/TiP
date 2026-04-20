@@ -13,9 +13,6 @@ import type {
   SendAIChatMessageRequest,
   SendAIChatMessageResponse,
   S3UploadCredentialsResponse,
-  ConverseApiResponse,
-  ConverseResponse,
-  WidgetResponse,
 } from '@/types/ai-chat';
 import type { DestinationSuggestion } from '@/types/destination';
 
@@ -297,26 +294,6 @@ class ApiClient {
         ...payload,
       }),
     });
-  }
-
-  async converse(
-    tripId: number,
-    content: string,
-    messageType: AIChatMessageType = 'text',
-    widgetResponse: WidgetResponse | null = null,
-  ): Promise<ConverseResponse> {
-    const response = await this.request<ConverseApiResponse>(`/ai-chat/trips/${tripId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({
-        content,
-        message_type: messageType,
-        widget_response: widgetResponse,
-      }),
-    });
-    if (!response.data) {
-      throw new Error(response.message || 'Missing converse response data');
-    }
-    return response.data;
   }
 
   async getChatHistory(tripId: number): Promise<AIChatMessage[]> {

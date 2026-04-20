@@ -16,7 +16,7 @@ import { getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
 import type {
   AIChatMessage,
   AIChatSessionMetadata,
-  ConverseResponse,
+  SendAIChatMessageData,
   PendingMessage,
   WidgetResponse,
 } from '@/types/ai-chat';
@@ -225,14 +225,14 @@ function ConciergeContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  async function sendConverse(
+  async function sendChatMessage(
     targetSession: AIChatSessionMetadata,
     content: string,
     widgetResponse: WidgetResponse | null,
     silent: boolean,
   ) {
     if (!targetSession.trip_id) {
-      console.error('[Concierge] Session has no trip_id; cannot call /converse');
+      console.error('[Concierge] Session has no trip_id; cannot send message');
       if (!silent) {
         setError('Chat session is missing its trip identifier. Please refresh.');
       }
@@ -251,12 +251,16 @@ function ConciergeContent() {
     if (!silent) setError(null);
 
     try {
-      const data: ConverseResponse = await apiClient.converse(
-        tripId,
-        widgetResponse ? '' : content,
-        'text',
-        widgetResponse,
-      );
+      const response = await apiClient.sendMessage(tripId, {
+        content: widgetResponse ? '' : content,
+        message_type: 'text',
+        widget_response: widgetResponse,
+      });
+
+      const data: SendAIChatMessageData | undefined = response.data;
+      if (!data) {
+        throw new Error('Missing message response data');
+      }
 
       setPendingMessage(null);
 
@@ -285,7 +289,7 @@ function ConciergeContent() {
         setHighlightToken((t) => t + 1);
       }
     } catch (err) {
-      console.error('[Concierge] Failed to converse:', err);
+      console.error('[Concierge] Failed to send message:', err);
       if (!silent) {
         setError('Failed to send message. Please try again.');
       }
@@ -302,13 +306,13 @@ function ConciergeContent() {
   ) {
     const targetSession = sessionOverride ?? activeSession?.session ?? null;
     if (!targetSession || !content.trim()) return;
-    await sendConverse(targetSession, content, null, silent);
+    await sendChatMessage(targetSession, content, null, silent);
   }
 
   async function handleWidgetSubmit(response: WidgetResponse) {
     const targetSession = activeSession?.session ?? null;
     if (!targetSession) return;
-    await sendConverse(targetSession, '', response, false);
+    await sendChatMessage(targetSession, '', response, false);
   }
 
   async function handleUploadAudio(file: File) {

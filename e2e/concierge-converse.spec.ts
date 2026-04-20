@@ -33,7 +33,7 @@ function tripVersion(overrides: Record<string, unknown> = {}) {
   };
 }
 
-test.describe('Concierge /converse flow', () => {
+test.describe('Concierge chat message flow', () => {
   test.beforeEach(async ({ context }) => {
     // Auth comes from storageState (see playwright.config.ts / global-setup.ts).
     // Only mock the chat/trip API surface that this spec exercises.
@@ -63,7 +63,7 @@ test.describe('Concierge /converse flow', () => {
       });
     });
 
-    let converseCallCount = 0;
+    let messageCallCount = 0;
     await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
@@ -74,10 +74,10 @@ test.describe('Concierge /converse flow', () => {
         return;
       }
 
-      converseCallCount += 1;
+      messageCallCount += 1;
       const requestBody = JSON.parse(route.request().postData() || '{}');
 
-      if (converseCallCount === 1) {
+      if (messageCallCount === 1) {
         // First call: text "Plan a trip to Paris" → assistant returns option_selector widget
         await route.fulfill({
           status: 200,
