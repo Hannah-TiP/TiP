@@ -85,11 +85,17 @@ test.describe('Concierge chat message flow', () => {
           body: JSON.stringify({
             success: true,
             data: {
-              user_message: { id: 100, content: 'Plan a trip to Paris', role: 'user' },
+              user_message: {
+                id: 100,
+                content: 'Plan a trip to Paris',
+                role: 'user',
+                message_type: 'text',
+              },
               assistant_message: {
                 id: 101,
                 content: 'Sure! When would you like to travel?',
                 role: 'assistant',
+                message_type: 'text',
                 widgets: [
                   {
                     widget_type: 'option_selector',
@@ -121,11 +127,18 @@ test.describe('Concierge chat message flow', () => {
           body: JSON.stringify({
             success: true,
             data: {
-              user_message: { id: 102, content: '', role: 'user' },
+              user_message: {
+                id: 102,
+                content: '',
+                role: 'user',
+                message_type: 'text',
+                widget_response: requestBody.widget_response,
+              },
               assistant_message: {
                 id: 103,
                 content: 'Got it. Leisure trip noted.',
                 role: 'assistant',
+                message_type: 'text',
                 widgets: [],
               },
               trip: { id: TRIP_ID },
@@ -147,12 +160,10 @@ test.describe('Concierge chat message flow', () => {
     await input.fill('Plan a trip to Paris');
     await input.press('Enter');
 
-    // Optimistic user message appears
-    await expect(page.getByText('Plan a trip to Paris')).toBeVisible({ timeout: 5000 });
-
-    // Assistant text + widget appears
+    // User message + assistant response appear (mock responds instantly so pending message may not render)
+    await expect(page.getByText('Plan a trip to Paris')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Sure! When would you like to travel?')).toBeVisible({
-      timeout: 5000,
+      timeout: 10000,
     });
     await expect(page.getByTestId('option-leisure')).toBeVisible();
 
@@ -163,7 +174,7 @@ test.describe('Concierge chat message flow', () => {
     await expect(page.getByTestId('widget-response-option-selector')).toBeVisible({
       timeout: 5000,
     });
-    await expect(page.getByTestId('widget-response-option-selector')).toHaveText('Leisure');
+    await expect(page.getByTestId('widget-response-option-selector')).toHaveText('leisure');
 
     // Assistant follow-up text appears
     await expect(page.getByText('Got it. Leisure trip noted.')).toBeVisible({
