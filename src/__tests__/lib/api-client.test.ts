@@ -207,4 +207,26 @@ describe('sendMessage', () => {
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body.widget_response).toBeUndefined();
   });
+
+  it('returns full response including trip, trip_version, and field_updated', async () => {
+    const fullData = {
+      user_message: { id: 1, trip_id: 7, user_id: 3, role: 'user', message_type: 'text' },
+      assistant_message: { id: 2, trip_id: 7, user_id: 3, role: 'assistant', message_type: 'text' },
+      trip: { id: 7, status: 'draft' },
+      trip_version: { id: 1, trip_id: 7, adults: 2, kids: 0 },
+      field_updated: ['destination', 'purpose'],
+    };
+    mockFetch.mockResolvedValueOnce(mockResponse({ success: true, data: fullData }));
+
+    const result = await apiClient.sendMessage(7, { content: 'Plan Paris trip' });
+    expect(result.data).toEqual(fullData);
+    expect(result.data?.field_updated).toEqual(['destination', 'purpose']);
+    expect(result.data?.trip).toEqual({ id: 7, status: 'draft' });
+  });
+
+  it('returns response with no data when backend omits it', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({ success: true }));
+    const result = await apiClient.sendMessage(7, { content: 'hello' });
+    expect(result.data).toBeUndefined();
+  });
 });

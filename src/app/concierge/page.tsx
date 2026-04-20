@@ -13,7 +13,13 @@ import { useSession } from 'next-auth/react';
 import { apiClient } from '@/lib/api-client';
 import { createTripChatSession } from '@/lib/ai-chat-utils';
 import { getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
-import type { AIChatMessage, AIChatSessionMetadata } from '@/types/ai-chat';
+import type {
+  AIChatMessage,
+  AIChatSessionMetadata,
+  SendAIChatMessageData,
+  PendingMessage,
+  AIChatWidgetResponse,
+} from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 function sortSessions(
@@ -67,6 +73,9 @@ function ConciergeContent() {
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [highlightedFields, setHighlightedFields] = useState<string[]>([]);
+  const [highlightToken, setHighlightToken] = useState(0);
+  const [pendingMessage, setPendingMessage] = useState<PendingMessage | null>(null);
 
   const sessions = useMemo(
     () => sortSessions(rawSessions, detailsByTripId),
@@ -163,7 +172,7 @@ function ConciergeContent() {
             await selectSession(existingForTrip.id, fetchedSessions);
             if (!cancelled && actionParam === 'submit') {
               router.replace(`/concierge?trip_id=${tripId}`, { scroll: false });
-              await handleSendMessage(t('chat.submit_trip_message'), existingForTrip, true);
+              await handleSendMessage(t('chat.submit_trip_message'), existingForTrip);
             }
             return;
           }
@@ -179,7 +188,7 @@ function ConciergeContent() {
 
             if (!cancelled && actionParam === 'submit') {
               router.replace(`/concierge?trip_id=${tripId}`, { scroll: false });
-              await handleSendMessage(t('chat.submit_trip_message'), createdSession, true);
+              await handleSendMessage(t('chat.submit_trip_message'), createdSession);
             }
             return;
           } catch (err) {
@@ -216,29 +225,41 @@ function ConciergeContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  async function handleSendMessage(
+  async function sendChatMessage(
+    targetSession: AIChatSessionMetadata,
     content: string,
-    sessionOverride?: AIChatSessionMetadata,
-    silent = false,
+    widgetResponse: AIChatWidgetResponse | null,
   ) {
-    const targetSession = sessionOverride ?? activeSession?.session ?? null;
-    if (!targetSession || !content.trim()) return;
-
-    setIsLoading(true);
-    if (!silent) {
-      setError(null);
+    if (!targetSession.trip_id) {
+      console.error('[Concierge] Session has no trip_id; cannot send message');
+      setError('Chat session is missing its trip identifier. Please refresh.');
+      return;
     }
 
+    const tripId = targetSession.trip_id;
+
+    setPendingMessage({
+      content: widgetResponse ? '' : content,
+      widget_response: widgetResponse,
+      sent_at: new Date().toISOString(),
+    });
+
+    setIsLoading(true);
+    setError(null);
+
     try {
-      const response = await apiClient.sendMessage(targetSession.trip_id, {
+      const response = await apiClient.sendMessage(tripId, {
+        content: widgetResponse ? '' : content,
         message_type: 'text',
-        content,
+        widget_response: widgetResponse,
       });
 
-      const data = response.data;
+      const data: SendAIChatMessageData | undefined = response.data;
       if (!data) {
-        throw new Error('Missing send message response data');
+        throw new Error('Missing message response data');
       }
+
+      setPendingMessage(null);
 
       setMessages((prev) => {
         const next = [...prev, data.user_message];
@@ -248,26 +269,41 @@ function ConciergeContent() {
         return next;
       });
 
+      const lastMsg = data.assistant_message ?? data.user_message;
       const updatedSession: AIChatSessionMetadata = {
         ...targetSession,
-        last_message_at:
-          data.assistant_message?.sent_at ?? data.user_message.sent_at ?? new Date().toISOString(),
+        last_message_at: lastMsg.sent_at ?? new Date().toISOString(),
       };
-
       setRawSessions((prev) => {
         const deduped = prev.filter((item) => item.id !== updatedSession.id);
         return [updatedSession, ...deduped];
       });
 
-      await hydrateTripDetail(targetSession.trip_id);
+      await hydrateTripDetail(tripId);
+
+      if (data.field_updated && data.field_updated.length > 0) {
+        setHighlightedFields(data.field_updated);
+        setHighlightToken((t) => t + 1);
+      }
     } catch (err) {
       console.error('[Concierge] Failed to send message:', err);
-      if (!silent) {
-        setError('Failed to send message. Please try again.');
-      }
+      setError('Failed to send message. Please try again.');
+      setPendingMessage(null);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handleSendMessage(content: string, sessionOverride?: AIChatSessionMetadata) {
+    const targetSession = sessionOverride ?? activeSession?.session ?? null;
+    if (!targetSession || !content.trim()) return;
+    await sendChatMessage(targetSession, content, null);
+  }
+
+  async function handleWidgetSubmit(response: AIChatWidgetResponse) {
+    const targetSession = activeSession?.session ?? null;
+    if (!targetSession) return;
+    await sendChatMessage(targetSession, '', response);
   }
 
   async function handleUploadAudio(file: File) {
@@ -404,7 +440,12 @@ function ConciergeContent() {
         />
 
         <div className="flex-1 flex flex-col border-r border-gray-100">
-          <MessageList messages={messages} isLoading={isLoading} />
+          <MessageList
+            messages={messages}
+            isLoading={isLoading}
+            pendingMessage={pendingMessage}
+            onWidgetSubmit={handleWidgetSubmit}
+          />
           <ChatInput
             onSendMessage={(content) => handleSendMessage(content)}
             onUploadAudio={handleUploadAudio}
@@ -418,6 +459,8 @@ function ConciergeContent() {
             activeSession ? () => handleSendMessage(t('chat.submit_trip_message')) : undefined
           }
           isLoading={isLoading}
+          highlightedFields={highlightedFields}
+          highlightToken={highlightToken}
         />
       </div>
     </div>

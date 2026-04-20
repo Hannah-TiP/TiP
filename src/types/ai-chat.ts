@@ -1,3 +1,5 @@
+import type { Trip, TripVersion } from '@/types/trip';
+
 export type AIChatSessionStatus = 'ai' | 'human';
 export type AIChatMessageRole = 'user' | 'assistant' | 'human_assistant' | 'system';
 export type AIChatMessageType = 'text' | 'audio';
@@ -100,7 +102,6 @@ export interface AIChatSessionMetadata {
   trip_id: number;
   status: AIChatSessionStatus;
   last_message_at?: string | null;
-  schema_version: number;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -116,7 +117,6 @@ export interface AIChatMessage {
   widget_response?: AIChatWidgetResponse | null;
   widgets?: AIChatWidget[] | null;
   sent_at?: string | null;
-  schema_version: number;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -150,12 +150,21 @@ export interface SendAIChatMessageRequest {
 export interface SendAIChatMessageData {
   user_message: AIChatMessage;
   assistant_message: AIChatMessage | null;
+  trip: Trip | null;
+  trip_version: TripVersion | null;
+  field_updated: string[];
 }
 
 export interface SendAIChatMessageResponse {
   success?: boolean;
   code?: number;
   data?: SendAIChatMessageData;
+}
+
+export interface PendingMessage {
+  content: string;
+  widget_response: AIChatWidgetResponse | null;
+  sent_at: string;
 }
 
 export interface S3UploadCredentialsResponse {

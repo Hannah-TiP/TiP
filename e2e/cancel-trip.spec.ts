@@ -2,14 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Cancel trip feature', () => {
   test('trip detail page shows cancel button for draft trip', async ({ page }) => {
-    // Sign in as test user
-    await page.goto('/sign-in');
-    await page.getByPlaceholder(/email/i).fill('test@test.com');
-    await page.getByPlaceholder(/password/i).fill('testtest');
-    await page.getByRole('button', { name: 'Continue', exact: true }).click();
-
-    // Wait for redirect to my-page
-    await page.waitForURL('**/my-page**', { timeout: 15000 });
+    await page.goto('/my-page');
 
     // Navigate to a trip detail page (assumes seeded trips exist)
     const tripLink = page.locator('a[href^="/my-page/trip/"]').first();
@@ -35,12 +28,7 @@ test.describe('Cancel trip feature', () => {
   });
 
   test('cancel dialog opens and can be dismissed', async ({ page }) => {
-    // Sign in
-    await page.goto('/sign-in');
-    await page.getByPlaceholder(/email/i).fill('test@test.com');
-    await page.getByPlaceholder(/password/i).fill('testtest');
-    await page.getByRole('button', { name: 'Continue', exact: true }).click();
-    await page.waitForURL('**/my-page**', { timeout: 15000 });
+    await page.goto('/my-page');
 
     // Navigate to a trip detail page
     const tripLink = page.locator('a[href^="/my-page/trip/"]').first();
@@ -68,14 +56,8 @@ test.describe('Cancel trip feature', () => {
   });
 
   test('cancel button is not shown for paid trips', async ({ page }) => {
-    // Sign in
-    await page.goto('/sign-in');
-    await page.getByPlaceholder(/email/i).fill('test@test.com');
-    await page.getByPlaceholder(/password/i).fill('testtest');
-    await page.getByRole('button', { name: 'Continue', exact: true }).click();
-    await page.waitForURL('**/my-page**', { timeout: 15000 });
+    await page.goto('/my-page');
 
-    // Navigate to my-page and check trip cards
     // Look for any trip with a paid/completed status badge
     const paidBadge = page
       .getByText(/payment confirmed|ready to travel|traveling now|completed/i)
@@ -94,10 +76,14 @@ test.describe('Cancel trip feature', () => {
     }
   });
 
-  test('unauthenticated user cannot access trip detail page', async ({ page }) => {
-    // Directly navigate to a trip detail page without signing in
-    await page.goto('/my-page/trip/1');
-    // Should redirect to sign-in
-    await expect(page).toHaveURL(/sign-in/, { timeout: 10000 });
+  test.describe('unauthenticated', () => {
+    test.use({ storageState: { cookies: [], origins: [] } });
+
+    test('unauthenticated user cannot access trip detail page', async ({ page }) => {
+      // Directly navigate to a trip detail page without signing in
+      await page.goto('/my-page/trip/1');
+      // Should redirect to sign-in
+      await expect(page).toHaveURL(/sign-in/, { timeout: 10000 });
+    });
   });
 });
