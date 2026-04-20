@@ -479,7 +479,17 @@ test.describe('Concierge visual captures', () => {
           {
             widget_type: 'hotel_carousel',
             widget_id: 'hotels-1',
-            hotel_ids: [1, 2, 3],
+            hotels: [
+              { id: 1, name: 'Ritz Paris', image_url: null, overview: null, benefits: [] },
+              {
+                id: 2,
+                name: 'Four Seasons George V',
+                image_url: null,
+                overview: null,
+                benefits: [],
+              },
+              { id: 3, name: 'Bvlgari Paris', image_url: null, overview: null, benefits: [] },
+            ],
           },
         ],
       },
