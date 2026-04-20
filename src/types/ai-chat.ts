@@ -108,12 +108,6 @@ export interface AIChatSessionMetadata {
   updated_at?: string | null;
 }
 
-export interface AIChatMessageMetadata {
-  ui_blocks?: UIBlock[] | null;
-  field_updated?: string[] | null;
-  widget_response?: WidgetResponse | null;
-}
-
 export interface AIChatMessage {
   id: number;
   user_id: number;
@@ -122,9 +116,8 @@ export interface AIChatMessage {
   message_type: AIChatMessageType;
   content?: string | null;
   media_url?: string | null;
-  widget_response?: AIChatWidgetResponse | null;
-  widgets?: AIChatWidget[] | null;
-  message_metadata?: AIChatMessageMetadata | null;
+  widget_response?: WidgetResponse | null;
+  widgets?: UIBlock[] | null;
   sent_at?: string | null;
   schema_version: number;
   created_at?: string | null;

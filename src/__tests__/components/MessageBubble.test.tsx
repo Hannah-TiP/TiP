@@ -32,12 +32,10 @@ describe('MessageBubble user messages', () => {
   it('renders widget response display instead of text for widget response messages', () => {
     const msg = makeUserMessage({
       content: '',
-      message_metadata: {
-        widget_response: {
-          widget_id: 'w-1',
-          widget_type: 'option_selector',
-          value: { value: 'leisure', label: 'Leisure' },
-        },
+      widget_response: {
+        widget_id: 'w-1',
+        widget_type: 'option_selector',
+        value: { value: 'leisure', label: 'Leisure' },
       },
     });
 
@@ -51,12 +49,10 @@ describe('MessageBubble user messages', () => {
   it('renders widget response for date range picker in user bubble', () => {
     const msg = makeUserMessage({
       content: '',
-      message_metadata: {
-        widget_response: {
-          widget_id: 'w-2',
-          widget_type: 'date_range_picker',
-          value: { start_date: '2026-06-01', end_date: '2026-06-10' },
-        },
+      widget_response: {
+        widget_id: 'w-2',
+        widget_type: 'date_range_picker',
+        value: { start_date: '2026-06-01', end_date: '2026-06-10' },
       },
     });
 
@@ -70,12 +66,10 @@ describe('MessageBubble user messages', () => {
   it('renders widget response for number stepper in user bubble', () => {
     const msg = makeUserMessage({
       content: '',
-      message_metadata: {
-        widget_response: {
-          widget_id: 'w-3',
-          widget_type: 'number_stepper',
-          value: { adults: 2, kids: 1 },
-        },
+      widget_response: {
+        widget_id: 'w-3',
+        widget_type: 'number_stepper',
+        value: { adults: 2, kids: 1 },
       },
     });
 
@@ -87,7 +81,7 @@ describe('MessageBubble user messages', () => {
     expect(el.textContent).toContain('1 Kids');
   });
 
-  it('does not render widget response display for messages without metadata', () => {
+  it('does not render widget response display for messages without widget_response', () => {
     const msg = makeUserMessage({ content: 'Just text' });
     render(<MessageBubble message={msg} isUser />);
 

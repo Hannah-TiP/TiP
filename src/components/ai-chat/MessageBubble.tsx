@@ -1,6 +1,6 @@
 'use client';
 
-import type { AIChatMessage, UIBlock, WidgetResponse } from '@/types/ai-chat';
+import type { AIChatMessage, WidgetResponse } from '@/types/ai-chat';
 import WidgetRenderer from './widgets/WidgetRenderer';
 import WidgetResponseDisplay from './WidgetResponseDisplay';
 
@@ -46,10 +46,9 @@ export default function MessageBubble({
   widgetsDisabled,
 }: MessageBubbleProps) {
   const timestamp = formatTimestamp(message.sent_at ?? message.created_at);
-  const uiBlocks: UIBlock[] =
-    message.message_metadata?.ui_blocks ?? (message.widgets as unknown as UIBlock[] | null) ?? [];
+  const uiBlocks = message.widgets ?? [];
 
-  const widgetResponse = message.message_metadata?.widget_response ?? null;
+  const widgetResponse = message.widget_response ?? null;
   const hasWidgetResponse = isUser && widgetResponse !== null;
   const hasTextContent = !!message.content;
 
