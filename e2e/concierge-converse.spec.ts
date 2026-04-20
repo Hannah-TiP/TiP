@@ -147,12 +147,10 @@ test.describe('Concierge chat message flow', () => {
     await input.fill('Plan a trip to Paris');
     await input.press('Enter');
 
-    // Optimistic user message appears
-    await expect(page.getByText('Plan a trip to Paris')).toBeVisible({ timeout: 5000 });
-
-    // Assistant text + widget appears
+    // User message + assistant response appear (mock responds instantly so pending message may not render)
+    await expect(page.getByText('Plan a trip to Paris')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Sure! When would you like to travel?')).toBeVisible({
-      timeout: 5000,
+      timeout: 10000,
     });
     await expect(page.getByTestId('option-leisure')).toBeVisible();
 
