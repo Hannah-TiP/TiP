@@ -71,20 +71,23 @@ describe('WidgetRenderer factory', () => {
     const widget: AIChatWidget = {
       widget_id: 'w-4',
       widget_type: 'hotel_carousel',
-      hotel_ids: [100, 101],
+      hotels: [
+        { id: 100, name: 'Ritz Paris', image_url: null, overview: null, benefits: [] },
+        { id: 101, name: 'Four Seasons', image_url: null, overview: null, benefits: [] },
+      ],
     };
 
     const onSubmit = vi.fn();
     render(<WidgetRenderer block={widget} onSubmit={onSubmit} />);
 
-    expect(screen.getByText('Hotel 100')).toBeDefined();
-    expect(screen.getByText('Hotel 101')).toBeDefined();
+    expect(screen.getByText('Ritz Paris')).toBeDefined();
+    expect(screen.getByText('Four Seasons')).toBeDefined();
 
     fireEvent.click(screen.getByTestId('hotel-card-100'));
     expect(onSubmit).toHaveBeenCalledWith({
       widget_id: 'w-4',
       widget_type: 'hotel_carousel',
-      value: { hotel_id: 100 },
+      value: { hotel_id: 100, name: 'Ritz Paris' },
     });
   });
 

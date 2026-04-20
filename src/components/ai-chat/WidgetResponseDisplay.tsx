@@ -90,6 +90,8 @@ export default function WidgetResponseDisplay({ response }: WidgetResponseDispla
     }
     case 'hotel_carousel': {
       const hotelId = response.value.hotel_id;
+      const hotelName = response.value.name;
+      const label = hotelName ?? (hotelId != null ? `Hotel ${hotelId}` : 'Hotel selected');
       return (
         <div className="flex items-center gap-2" data-testid="widget-response-hotel-carousel">
           <svg
@@ -111,9 +113,7 @@ export default function WidgetResponseDisplay({ response }: WidgetResponseDispla
             <path d="M9 13h1" />
             <path d="M9 17h1" />
           </svg>
-          <span className="font-inter text-sm">
-            {hotelId != null ? `Hotel ${hotelId}` : 'Hotel selected'}
-          </span>
+          <span className="font-inter text-sm">{label}</span>
         </div>
       );
     }
