@@ -229,4 +229,34 @@ describe('sendMessage', () => {
     const result = await apiClient.sendMessage(7, { content: 'hello' });
     expect(result.data).toBeUndefined();
   });
+
+  it('forwards include_draft when set to true', async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({
+        data: {
+          user_message: { id: 1, trip_id: 7, user_id: 3, role: 'user', message_type: 'text' },
+          assistant_message: null,
+        },
+      }),
+    );
+    await apiClient.sendMessage(7, { content: 'Show hotels', include_draft: true });
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.include_draft).toBe(true);
+  });
+
+  it('does not include include_draft when not provided', async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({
+        data: {
+          user_message: { id: 1, trip_id: 7, user_id: 3, role: 'user', message_type: 'text' },
+          assistant_message: null,
+        },
+      }),
+    );
+    await apiClient.sendMessage(7, { content: 'hello' });
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.include_draft).toBeUndefined();
+  });
 });

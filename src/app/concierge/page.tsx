@@ -21,6 +21,7 @@ import type {
   AIChatWidgetResponse,
 } from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePreviewMode } from '@/hooks/usePreviewMode';
 
 function sortSessions(
   sessions: AIChatSessionMetadata[],
@@ -62,6 +63,7 @@ function ConciergeContent() {
   const isAuthenticated = !!session;
   const authLoading = status === 'loading';
   const { t } = useLanguage();
+  const { isPreview } = usePreviewMode();
 
   const [rawSessions, setRawSessions] = useState<AIChatSessionMetadata[]>([]);
   const [detailsByTripId, setDetailsByTripId] = useState<Record<number, TripWithVersion | null>>(
@@ -252,6 +254,7 @@ function ConciergeContent() {
         content: widgetResponse ? '' : content,
         message_type: 'text',
         widget_response: widgetResponse,
+        include_draft: isPreview,
       });
 
       const data: SendAIChatMessageData | undefined = response.data;
