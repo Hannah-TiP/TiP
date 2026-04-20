@@ -92,15 +92,13 @@ test.describe('Concierge chat message flow', () => {
                 role: 'assistant',
                 widgets: [
                   {
-                    type: 'option_selector',
-                    id: 'opt-1',
+                    widget_type: 'option_selector',
+                    widget_id: 'opt-1',
                     label: 'Pick a purpose',
-                    config: {
-                      options: [
-                        { value: 'leisure', label: 'Leisure' },
-                        { value: 'business', label: 'Business' },
-                      ],
-                    },
+                    options: [
+                      { value: 'leisure', label: 'Leisure' },
+                      { value: 'business', label: 'Business' },
+                    ],
                   },
                 ],
               },

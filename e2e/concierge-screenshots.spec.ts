@@ -187,16 +187,14 @@ test.describe('Concierge visual captures', () => {
         response: 'Sure! What kind of trip is this?',
         widgets: [
           {
-            type: 'option_selector',
-            id: 'opt-1',
+            widget_type: 'option_selector',
+            widget_id: 'opt-1',
             label: 'Pick a purpose',
-            config: {
-              options: [
-                { value: 'leisure', label: 'Leisure' },
-                { value: 'business', label: 'Business' },
-                { value: 'family', label: 'Family' },
-              ],
-            },
+            options: [
+              { value: 'leisure', label: 'Leisure' },
+              { value: 'business', label: 'Business' },
+              { value: 'family', label: 'Family' },
+            ],
           },
         ],
         field_updated: ['destination'],
@@ -240,15 +238,13 @@ test.describe('Concierge visual captures', () => {
                 role: 'assistant',
                 widgets: [
                   {
-                    type: 'option_selector',
-                    id: 'opt-1',
+                    widget_type: 'option_selector',
+                    widget_id: 'opt-1',
                     label: 'Pick a purpose',
-                    config: {
-                      options: [
-                        { value: 'leisure', label: 'Leisure' },
-                        { value: 'business', label: 'Business' },
-                      ],
-                    },
+                    options: [
+                      { value: 'leisure', label: 'Leisure' },
+                      { value: 'business', label: 'Business' },
+                    ],
                   },
                 ],
               },
@@ -326,15 +322,13 @@ test.describe('Concierge visual captures', () => {
                 role: 'assistant',
                 widgets: [
                   {
-                    type: 'option_selector',
-                    id: 'opt-1',
+                    widget_type: 'option_selector',
+                    widget_id: 'opt-1',
                     label: 'Pick a purpose',
-                    config: {
-                      options: [
-                        { value: 'leisure', label: 'Leisure' },
-                        { value: 'business', label: 'Business' },
-                      ],
-                    },
+                    options: [
+                      { value: 'leisure', label: 'Leisure' },
+                      { value: 'business', label: 'Business' },
+                    ],
                   },
                 ],
               },
@@ -465,54 +459,23 @@ test.describe('Concierge visual captures', () => {
         response: 'Here are a few things I need from you:',
         widgets: [
           {
-            type: 'date_range_picker',
-            id: 'dates-1',
-            label: 'Pick your dates',
-            config: { start_date: null, end_date: null },
+            widget_type: 'date_range_picker',
+            widget_id: 'dates-1',
+            min_date: null,
+            max_date: null,
           },
           {
-            type: 'number_stepper',
-            id: 'travelers-1',
-            label: 'How many travelers?',
-            config: {
-              fields: [
-                { key: 'adults', label: 'Adults', min: 1, max: 10, default: 2 },
-                { key: 'kids', label: 'Kids', min: 0, max: 10, default: 0 },
-              ],
-            },
+            widget_type: 'number_stepper',
+            widget_id: 'travelers-1',
+            fields: [
+              { key: 'adults', label: 'Adults', min: 1, max: 10, default: 2 },
+              { key: 'kids', label: 'Kids', min: 0, max: 10, default: 0 },
+            ],
           },
           {
-            type: 'hotel_carousel',
-            id: 'hotels-1',
-            label: 'Pick a hotel you like',
-            config: {
-              hotels: [
-                {
-                  id: 1,
-                  name: { en: 'Hôtel Plaza Athénée', kr: '' },
-                  star_rating: 5,
-                  images: [
-                    'https://images.unsplash.com/photo-1455587734955-081b22074882?w=400&h=200&fit=crop',
-                  ],
-                },
-                {
-                  id: 2,
-                  name: { en: 'Le Bristol Paris', kr: '' },
-                  star_rating: 5,
-                  images: [
-                    'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400&h=200&fit=crop',
-                  ],
-                },
-                {
-                  id: 3,
-                  name: { en: 'Ritz Paris', kr: '' },
-                  star_rating: 5,
-                  images: [
-                    'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=200&fit=crop',
-                  ],
-                },
-              ],
-            },
+            widget_type: 'hotel_carousel',
+            widget_id: 'hotels-1',
+            hotel_ids: [1, 2, 3],
           },
         ],
       },
