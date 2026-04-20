@@ -32,6 +32,7 @@ export interface OptionSelectorValue {
 
 export interface HotelCarouselValue {
   hotel_id?: number | null;
+  name?: string | null;
 }
 
 export interface AIChatDateRangePickerWidget {
@@ -54,10 +55,18 @@ export interface AIChatOptionSelectorWidget {
   options: OptionSelectorOption[];
 }
 
+export interface HotelCarouselItem {
+  id: number;
+  name: string | null;
+  image_url: string | null;
+  overview: string | null;
+  benefits: string[];
+}
+
 export interface AIChatHotelCarouselWidget {
   widget_id: string;
   widget_type: 'hotel_carousel';
-  hotel_ids: number[];
+  hotels: HotelCarouselItem[];
 }
 
 export type AIChatWidget =
