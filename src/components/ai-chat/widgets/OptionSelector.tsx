@@ -1,32 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import type { OptionSelectorConfig, UIBlock, WidgetResponse } from '@/types/ai-chat';
+import type { AIChatOptionSelectorWidget, AIChatWidgetResponse } from '@/types/ai-chat';
 
 interface Props {
-  block: UIBlock;
-  config: OptionSelectorConfig;
-  onSubmit: (response: WidgetResponse) => void;
+  widget: AIChatOptionSelectorWidget;
+  onSubmit: (response: AIChatWidgetResponse) => void;
   disabled?: boolean;
 }
 
-export default function OptionSelector({ block, config, onSubmit, disabled }: Props) {
-  const options = config.options ?? [];
+export default function OptionSelector({ widget, onSubmit, disabled }: Props) {
+  const options = widget.options ?? [];
   const [selected, setSelected] = useState<string | null>(null);
 
-  function handleSelect(value: string, label: string) {
+  function handleSelect(value: string) {
     if (disabled || selected) return;
     setSelected(value);
     onSubmit({
-      widget_id: block.id,
+      widget_id: widget.widget_id,
       widget_type: 'option_selector',
-      value: { value, label },
+      value: { value },
     });
   }
 
   return (
     <div className="mt-3 border border-gray-200 rounded-lg p-3 bg-white">
-      <p className="font-inter text-xs text-gray-500 mb-2">{block.label}</p>
+      <p className="font-inter text-xs text-gray-500 mb-2">{widget.label ?? 'Select an option'}</p>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => {
           const isSelected = selected === option.value;
@@ -34,7 +33,7 @@ export default function OptionSelector({ block, config, onSubmit, disabled }: Pr
             <button
               type="button"
               key={option.value}
-              onClick={() => handleSelect(option.value, option.label)}
+              onClick={() => handleSelect(option.value)}
               disabled={disabled || !!selected}
               className={`px-4 py-2 rounded-full border text-sm transition-colors disabled:opacity-60 ${
                 isSelected

@@ -16,7 +16,6 @@ function makeUserMessage(overrides: Partial<AIChatMessage> = {}): AIChatMessage 
     message_type: 'text',
     content: 'Hello',
     sent_at: '2026-05-01T10:00:00Z',
-    schema_version: 1,
     ...overrides,
   };
 }
@@ -35,7 +34,7 @@ describe('MessageBubble user messages', () => {
       widget_response: {
         widget_id: 'w-1',
         widget_type: 'option_selector',
-        value: { value: 'leisure', label: 'Leisure' },
+        value: { value: 'leisure' },
       },
     });
 
@@ -43,7 +42,7 @@ describe('MessageBubble user messages', () => {
 
     const badge = screen.getByTestId('widget-response-option-selector');
     expect(badge).toBeDefined();
-    expect(badge.textContent).toBe('Leisure');
+    expect(badge.textContent).toBe('leisure');
   });
 
   it('renders widget response for date range picker in user bubble', () => {
@@ -69,7 +68,7 @@ describe('MessageBubble user messages', () => {
       widget_response: {
         widget_id: 'w-3',
         widget_type: 'number_stepper',
-        value: { adults: 2, kids: 1 },
+        value: { values: { adults: 2, kids: 1 } },
       },
     });
 

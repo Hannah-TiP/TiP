@@ -1,9 +1,9 @@
 'use client';
 
-import type { WidgetResponse } from '@/types/ai-chat';
+import type { AIChatWidgetResponse } from '@/types/ai-chat';
 
 interface WidgetResponseDisplayProps {
-  response: WidgetResponse;
+  response: AIChatWidgetResponse;
 }
 
 function formatDateLabel(dateStr: string): string {
@@ -25,12 +25,10 @@ function capitalize(str: string): string {
 }
 
 export default function WidgetResponseDisplay({ response }: WidgetResponseDisplayProps) {
-  const v = response.value as Record<string, unknown>;
-
   switch (response.widget_type) {
     case 'date_range_picker': {
-      const start = typeof v.start_date === 'string' ? v.start_date : null;
-      const end = typeof v.end_date === 'string' ? v.end_date : null;
+      const start = response.value.start_date ?? null;
+      const end = response.value.end_date ?? null;
       const label =
         start && end
           ? `${formatDateLabel(start)} \u2013 ${formatDateLabel(end)}`
@@ -59,7 +57,7 @@ export default function WidgetResponseDisplay({ response }: WidgetResponseDispla
       );
     }
     case 'number_stepper': {
-      const entries = Object.entries(v);
+      const entries = Object.entries(response.value.values);
       if (entries.length === 0) {
         return (
           <span className="font-inter text-sm" data-testid="widget-response-number-stepper">
@@ -81,19 +79,17 @@ export default function WidgetResponseDisplay({ response }: WidgetResponseDispla
       );
     }
     case 'option_selector': {
-      const label =
-        typeof v.label === 'string' ? v.label : typeof v.value === 'string' ? v.value : 'Selected';
       return (
         <span
           className="inline-flex items-center bg-white/20 rounded-full px-4 py-1 font-inter text-sm"
           data-testid="widget-response-option-selector"
         >
-          {label}
+          {response.value.value}
         </span>
       );
     }
     case 'hotel_carousel': {
-      const name = typeof v.hotel_name === 'string' ? v.hotel_name : null;
+      const hotelId = response.value.hotel_id;
       return (
         <div className="flex items-center gap-2" data-testid="widget-response-hotel-carousel">
           <svg
@@ -115,15 +111,11 @@ export default function WidgetResponseDisplay({ response }: WidgetResponseDispla
             <path d="M9 13h1" />
             <path d="M9 17h1" />
           </svg>
-          <span className="font-inter text-sm">{name ?? 'Hotel selected'}</span>
+          <span className="font-inter text-sm">
+            {hotelId != null ? `Hotel ${hotelId}` : 'Hotel selected'}
+          </span>
         </div>
       );
     }
-    default:
-      return (
-        <span className="font-inter text-sm" data-testid="widget-response-default">
-          Selection confirmed
-        </span>
-      );
   }
 }

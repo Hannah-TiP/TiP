@@ -1,6 +1,6 @@
 'use client';
 
-import type { AIChatMessage, WidgetResponse } from '@/types/ai-chat';
+import type { AIChatMessage, AIChatWidgetResponse } from '@/types/ai-chat';
 import WidgetRenderer from './widgets/WidgetRenderer';
 import WidgetResponseDisplay from './WidgetResponseDisplay';
 
@@ -34,7 +34,7 @@ interface MessageBubbleProps {
   message: AIChatMessage;
   isUser: boolean;
   messageIndex?: number;
-  onWidgetSubmit?: (response: WidgetResponse) => void;
+  onWidgetSubmit?: (response: AIChatWidgetResponse) => void;
   widgetsDisabled?: boolean;
 }
 
@@ -46,7 +46,7 @@ export default function MessageBubble({
   widgetsDisabled,
 }: MessageBubbleProps) {
   const timestamp = formatTimestamp(message.sent_at ?? message.created_at);
-  const uiBlocks = message.widgets ?? [];
+  const widgets = message.widgets ?? [];
 
   const widgetResponse = message.widget_response ?? null;
   const hasWidgetResponse = isUser && widgetResponse !== null;
@@ -126,12 +126,12 @@ export default function MessageBubble({
             </div>
           )}
         </div>
-        {uiBlocks.length > 0 && onWidgetSubmit && (
+        {widgets.length > 0 && onWidgetSubmit && (
           <div className="mt-2 space-y-2">
-            {uiBlocks.map((block) => (
+            {widgets.map((widget) => (
               <WidgetRenderer
-                key={block.id}
-                block={block}
+                key={widget.widget_id}
+                block={widget}
                 onSubmit={onWidgetSubmit}
                 disabled={widgetsDisabled}
               />

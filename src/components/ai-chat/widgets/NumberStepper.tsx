@@ -1,17 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import type { NumberStepperConfig, UIBlock, WidgetResponse } from '@/types/ai-chat';
+import type { AIChatNumberStepperWidget, AIChatWidgetResponse } from '@/types/ai-chat';
 
 interface Props {
-  block: UIBlock;
-  config: NumberStepperConfig;
-  onSubmit: (response: WidgetResponse) => void;
+  widget: AIChatNumberStepperWidget;
+  onSubmit: (response: AIChatWidgetResponse) => void;
   disabled?: boolean;
 }
 
-export default function NumberStepper({ block, config, onSubmit, disabled }: Props) {
-  const fields = config.fields ?? [];
+export default function NumberStepper({ widget, onSubmit, disabled }: Props) {
+  const fields = widget.fields ?? [];
   const [values, setValues] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
     for (const field of fields) {
@@ -35,15 +34,15 @@ export default function NumberStepper({ block, config, onSubmit, disabled }: Pro
   function handleSubmit() {
     setSubmitted(true);
     onSubmit({
-      widget_id: block.id,
+      widget_id: widget.widget_id,
       widget_type: 'number_stepper',
-      value: { ...values },
+      value: { values: { ...values } },
     });
   }
 
   return (
     <div className="mt-3 border border-gray-200 rounded-lg p-3 bg-white">
-      <p className="font-inter text-xs text-gray-500 mb-3">{block.label}</p>
+      <p className="font-inter text-xs text-gray-500 mb-3">Select values</p>
       <div className="space-y-2">
         {fields.map((field) => (
           <div key={field.key} className="flex items-center justify-between gap-3">

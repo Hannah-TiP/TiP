@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { AIChatMessage, PendingMessage, WidgetResponse } from '@/types/ai-chat';
+import type { AIChatMessage, PendingMessage, AIChatWidgetResponse } from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MessageBubble from './MessageBubble';
 import WidgetResponseDisplay from './WidgetResponseDisplay';
@@ -10,7 +10,7 @@ interface MessageListProps {
   messages: AIChatMessage[];
   isLoading: boolean;
   pendingMessage?: PendingMessage | null;
-  onWidgetSubmit?: (response: WidgetResponse) => void;
+  onWidgetSubmit?: (response: AIChatWidgetResponse) => void;
 }
 
 export default function MessageList({

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import WidgetRenderer from '@/components/ai-chat/widgets/WidgetRenderer';
-import type { UIBlock } from '@/types/ai-chat';
+import type { AIChatWidget } from '@/types/ai-chat';
 
 afterEach(() => {
   cleanup();
@@ -9,19 +9,15 @@ afterEach(() => {
 
 describe('WidgetRenderer factory', () => {
   it('dispatches to NumberStepper for number_stepper type', () => {
-    const block: UIBlock = {
-      id: 'w-1',
-      type: 'number_stepper',
-      label: 'Travelers',
-      config: {
-        fields: [{ key: 'adults', label: 'Adults', min: 1, max: 5, default: 2 }],
-      },
+    const widget: AIChatWidget = {
+      widget_id: 'w-1',
+      widget_type: 'number_stepper',
+      fields: [{ key: 'adults', label: 'Adults', min: 1, max: 5, default: 2 }],
     };
 
     const onSubmit = vi.fn();
-    render(<WidgetRenderer block={block} onSubmit={onSubmit} />);
+    render(<WidgetRenderer block={widget} onSubmit={onSubmit} />);
 
-    expect(screen.getByText('Travelers')).toBeDefined();
     expect(screen.getByText('Adults')).toBeDefined();
     expect(screen.getByTestId('stepper-value-adults').textContent).toBe('2');
 
@@ -31,86 +27,74 @@ describe('WidgetRenderer factory', () => {
     expect(onSubmit).toHaveBeenCalledWith({
       widget_id: 'w-1',
       widget_type: 'number_stepper',
-      value: { adults: 3 },
+      value: { values: { adults: 3 } },
     });
   });
 
   it('dispatches to OptionSelector for option_selector type', () => {
-    const block: UIBlock = {
-      id: 'w-2',
-      type: 'option_selector',
+    const widget: AIChatWidget = {
+      widget_id: 'w-2',
+      widget_type: 'option_selector',
       label: 'Purpose',
-      config: {
-        options: [
-          { value: 'leisure', label: 'Leisure' },
-          { value: 'business', label: 'Business' },
-        ],
-      },
+      options: [
+        { value: 'leisure', label: 'Leisure' },
+        { value: 'business', label: 'Business' },
+      ],
     };
 
     const onSubmit = vi.fn();
-    render(<WidgetRenderer block={block} onSubmit={onSubmit} />);
+    render(<WidgetRenderer block={widget} onSubmit={onSubmit} />);
 
     fireEvent.click(screen.getByTestId('option-leisure'));
 
     expect(onSubmit).toHaveBeenCalledWith({
       widget_id: 'w-2',
       widget_type: 'option_selector',
-      value: { value: 'leisure', label: 'Leisure' },
+      value: { value: 'leisure' },
     });
   });
 
   it('dispatches to DateRangePicker for date_range_picker type', () => {
-    const block: UIBlock = {
-      id: 'w-3',
-      type: 'date_range_picker',
-      label: 'Travel dates',
-      config: { min_date: '2026-04-01' },
+    const widget: AIChatWidget = {
+      widget_id: 'w-3',
+      widget_type: 'date_range_picker',
+      min_date: '2026-04-01',
     };
 
-    render(<WidgetRenderer block={block} onSubmit={() => {}} />);
+    render(<WidgetRenderer block={widget} onSubmit={() => {}} />);
 
-    expect(screen.getByText('Travel dates')).toBeDefined();
     expect(screen.getByTestId('date-range-trigger')).toBeDefined();
     expect(screen.getByTestId('date-range-submit')).toBeDefined();
   });
 
   it('dispatches to HotelCarousel for hotel_carousel type', () => {
-    const block: UIBlock = {
-      id: 'w-4',
-      type: 'hotel_carousel',
-      label: 'Hotels',
-      config: {
-        hotels: [
-          { id: 100, name: { en: 'Test Hotel' }, star_rating: '5' },
-          { id: 101, name: 'Plain Name Hotel' },
-        ],
-      },
+    const widget: AIChatWidget = {
+      widget_id: 'w-4',
+      widget_type: 'hotel_carousel',
+      hotel_ids: [100, 101],
     };
 
     const onSubmit = vi.fn();
-    render(<WidgetRenderer block={block} onSubmit={onSubmit} />);
+    render(<WidgetRenderer block={widget} onSubmit={onSubmit} />);
 
-    expect(screen.getByText('Test Hotel')).toBeDefined();
-    expect(screen.getByText('Plain Name Hotel')).toBeDefined();
+    expect(screen.getByText('Hotel 100')).toBeDefined();
+    expect(screen.getByText('Hotel 101')).toBeDefined();
 
     fireEvent.click(screen.getByTestId('hotel-card-100'));
     expect(onSubmit).toHaveBeenCalledWith({
       widget_id: 'w-4',
       widget_type: 'hotel_carousel',
-      value: { hotel_id: 100, hotel_name: 'Test Hotel' },
+      value: { hotel_id: 100 },
     });
   });
 
-  it('renders nothing for unknown widget type (e.g. confirm_summary, deferred)', () => {
-    const block: UIBlock = {
-      id: 'w-5',
-      type: 'confirm_summary',
-      label: 'Confirm',
-      config: {},
-    };
+  it('renders nothing for unknown widget type', () => {
+    const widget = {
+      widget_id: 'w-5',
+      widget_type: 'confirm_summary',
+    } as unknown as AIChatWidget;
 
-    const { container } = render(<WidgetRenderer block={block} onSubmit={() => {}} />);
+    const { container } = render(<WidgetRenderer block={widget} onSubmit={() => {}} />);
     expect(container.firstChild).toBeNull();
   });
 });

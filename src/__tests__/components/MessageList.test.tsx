@@ -28,7 +28,6 @@ function makeMessage(overrides: Partial<AIChatMessage> = {}): AIChatMessage {
     message_type: 'text',
     content: 'Hello, how can I help?',
     sent_at: '2026-05-01T10:00:00Z',
-    schema_version: 1,
     ...overrides,
   };
 }
@@ -61,7 +60,7 @@ describe('MessageList pending message', () => {
       widget_response: {
         widget_id: 'w-1',
         widget_type: 'option_selector',
-        value: { value: 'leisure', label: 'Leisure' },
+        value: { value: 'leisure' },
       },
       sent_at: '2026-05-01T10:01:00Z',
     };

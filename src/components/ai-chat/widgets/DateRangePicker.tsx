@@ -2,12 +2,11 @@
 
 import { useState } from 'react';
 import DatePickerDropdown from '@/components/DatePickerDropdown';
-import type { DateRangePickerConfig, UIBlock, WidgetResponse } from '@/types/ai-chat';
+import type { AIChatDateRangePickerWidget, AIChatWidgetResponse } from '@/types/ai-chat';
 
 interface Props {
-  block: UIBlock;
-  config: DateRangePickerConfig;
-  onSubmit: (response: WidgetResponse) => void;
+  widget: AIChatDateRangePickerWidget;
+  onSubmit: (response: AIChatWidgetResponse) => void;
   disabled?: boolean;
 }
 
@@ -19,17 +18,17 @@ function formatLabel(date: string | null): string {
   return local.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export default function DateRangePicker({ block, config, onSubmit, disabled }: Props) {
+export default function DateRangePicker({ widget, onSubmit, disabled }: Props) {
   const [open, setOpen] = useState(false);
-  const [checkIn, setCheckIn] = useState(config.start_date ?? '');
-  const [checkOut, setCheckOut] = useState(config.end_date ?? '');
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   function handleConfirm() {
     if (!checkIn || !checkOut) return;
     setSubmitted(true);
     onSubmit({
-      widget_id: block.id,
+      widget_id: widget.widget_id,
       widget_type: 'date_range_picker',
       value: { start_date: checkIn, end_date: checkOut },
     });
@@ -37,7 +36,7 @@ export default function DateRangePicker({ block, config, onSubmit, disabled }: P
 
   return (
     <div className="mt-3 border border-gray-200 rounded-lg p-3 bg-white">
-      <p className="font-inter text-xs text-gray-500 mb-2">{block.label}</p>
+      <p className="font-inter text-xs text-gray-500 mb-2">Select dates</p>
 
       <div className="relative inline-block">
         <button
