@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { TripWithVersion } from '@/lib/trip-utils';
+import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
+import type { TripPlanItem } from '@/types/trip';
 
 const FIELD_TO_ROW_KEYS: Record<string, string[]> = {
   destination: ['destination'],
@@ -278,26 +280,72 @@ export default function TripDetailPanel({
               </div>
             )}
 
-            {/* Travel Plans */}
+            {/* Travel Plans — detailed day-by-day view */}
             {plan.length > 0 && (
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <h3 className="font-cormorant text-lg font-semibold text-[#1E3D2F] mb-3">
                   {t('chat.travel_plans')}
                 </h3>
-                <div className="space-y-2">
-                  {plan.map((day, idx) => (
+                <div className="space-y-3">
+                  {plan.map((day, dayIdx) => (
                     <div
-                      key={`${day.date}-${idx}`}
+                      key={`${day.date}-${dayIdx}`}
+                      data-testid={`trip-day-${dayIdx}`}
                       className="bg-white rounded-lg p-3 border border-gray-100"
                     >
-                      <p className="font-inter text-sm font-medium text-[#1E3D2F]">
-                        {day.title || `${t('chat.day')} ${idx + 1}`}
-                      </p>
-                      {day.items && day.items.length > 0 && (
-                        <p className="font-inter text-xs text-gray-500 mt-1">
-                          {day.items.length === 1
-                            ? t('chat.activities_one')
-                            : `${day.items.length} ${t('chat.activities_other')}`}
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="font-inter text-[10px] font-semibold text-[#1E3D2F] bg-green-50 px-1.5 py-0.5 rounded">
+                          {t('chat.day')} {dayIdx + 1}
+                        </span>
+                        <span className="font-inter text-[11px] text-gray-400">
+                          {formatDateLabel(day.date)}
+                        </span>
+                        {day.title && (
+                          <span className="font-inter text-[11px] font-medium text-gray-700 truncate">
+                            {day.title}
+                          </span>
+                        )}
+                      </div>
+                      {day.items.length > 0 ? (
+                        <div className="space-y-2">
+                          {day.items.map((item: TripPlanItem, itemIdx) => (
+                            <div
+                              key={`${day.date}-${itemIdx}`}
+                              data-testid={`trip-plan-item-${item.item_type}-${itemIdx}`}
+                              className="flex items-start gap-2"
+                            >
+                              <span
+                                className={`font-inter text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0 mt-0.5 ${ITEM_COLORS[item.item_type]}`}
+                              >
+                                {ITEM_LABELS[item.item_type]}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-inter text-xs font-medium text-[#1E3D2F] truncate">
+                                  {item.title || ITEM_LABELS[item.item_type]}
+                                </p>
+                                {item.location && (
+                                  <p className="font-inter text-[11px] text-gray-400 truncate">
+                                    {item.location}
+                                  </p>
+                                )}
+                                {item.start_at && (
+                                  <p className="font-inter text-[11px] text-gray-400">
+                                    {formatTime(item.start_at)}
+                                    {item.end_at ? ` – ${formatTime(item.end_at)}` : ''}
+                                  </p>
+                                )}
+                                {item.description && (
+                                  <p className="font-inter text-[11px] text-gray-500 mt-1 line-clamp-2">
+                                    {item.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="font-inter text-[11px] text-gray-400">
+                          {t('chat.no_items_today')}
                         </p>
                       )}
                     </div>
