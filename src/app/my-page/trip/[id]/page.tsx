@@ -6,8 +6,8 @@ import Link from 'next/link';
 import TopBar from '@/components/TopBar';
 import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
-import type { TripPlanItem } from '@/types/trip';
 import { collectTripDocuments, getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
+import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Planning',
@@ -29,24 +29,6 @@ const CANCELABLE_STATUSES = new Set([
   'waiting-for-payment',
 ]);
 
-const ITEM_LABELS: Record<TripPlanItem['item_type'], string> = {
-  flight: 'Flight',
-  hotel: 'Hotel',
-  restaurant: 'Restaurant',
-  activity: 'Activity',
-  transfer: 'Transfer',
-  note: 'Note',
-};
-
-const ITEM_COLORS: Record<TripPlanItem['item_type'], string> = {
-  flight: 'bg-blue-100 text-blue-700',
-  hotel: 'bg-purple-100 text-purple-700',
-  restaurant: 'bg-amber-100 text-amber-700',
-  activity: 'bg-green-100 text-green-700',
-  transfer: 'bg-cyan-100 text-cyan-700',
-  note: 'bg-gray-100 text-gray-600',
-};
-
 function getNights(startDate?: string, endDate?: string): number | null {
   if (!startDate || !endDate) return null;
   const diff = new Date(endDate).getTime() - new Date(startDate).getTime();
@@ -59,22 +41,6 @@ function formatDate(dateStr?: string): string {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  });
-}
-
-function formatDateLabel(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
-function formatTime(dateStr?: string | null): string | undefined {
-  if (!dateStr) return undefined;
-  return new Date(dateStr).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
   });
 }
 

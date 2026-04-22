@@ -187,3 +187,106 @@ test.describe('Concierge chat message flow', () => {
     await expect(purposeRow).toHaveClass(/bg-amber-100/);
   });
 });
+
+test.describe('Concierge Your Itinerary panel — detailed plan view', () => {
+  test.beforeEach(async ({ context }) => {
+    await context.route('**/api/ai-chat/sessions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [baseSession] }),
+      });
+    });
+
+    const populatedVersion = tripVersion({
+      title: 'Paris Trip',
+      start_date: '2026-06-01',
+      end_date: '2026-06-03',
+      adults: 2,
+      kids: 0,
+      summary: 'Leisure',
+      plan: [
+        {
+          date: '2026-06-01',
+          title: 'Arrival Day',
+          items: [
+            {
+              item_type: 'hotel',
+              title: 'Ritz Paris',
+              location: '15 Place Vendôme',
+              start_at: '2026-06-01T15:00:00',
+              end_at: null,
+              description: 'Check in to the iconic hotel.',
+            },
+            {
+              item_type: 'restaurant',
+              title: 'Le Jules Verne',
+              location: 'Eiffel Tower',
+              start_at: '2026-06-01T19:30:00',
+              end_at: '2026-06-01T22:00:00',
+            },
+          ],
+        },
+        {
+          date: '2026-06-02',
+          title: null,
+          items: [],
+        },
+      ],
+    });
+
+    await context.route(`**/api/trip/${TRIP_ID}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: baseTrip }),
+      });
+    });
+
+    await context.route(`**/api/trip/${TRIP_ID}/current-version`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: populatedVersion }),
+      });
+    });
+
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: [] }),
+        });
+      }
+    });
+  });
+
+  test('renders detailed plan items and an empty-day note for days with no items', async ({
+    page,
+  }) => {
+    await page.goto('/concierge');
+
+    // Day 1 — populated
+    const day1 = page.getByTestId('trip-day-0');
+    await expect(day1).toBeVisible({ timeout: 10_000 });
+    await expect(day1).toContainText('Arrival Day');
+
+    const hotelItem = page.getByTestId('trip-plan-item-hotel-0');
+    await expect(hotelItem).toBeVisible();
+    await expect(hotelItem).toContainText('Hotel');
+    await expect(hotelItem).toContainText('Ritz Paris');
+    await expect(hotelItem).toContainText('15 Place Vendôme');
+    await expect(hotelItem).toContainText('Check in to the iconic hotel.');
+
+    const restaurantItem = page.getByTestId('trip-plan-item-restaurant-1');
+    await expect(restaurantItem).toBeVisible();
+    await expect(restaurantItem).toContainText('Restaurant');
+    await expect(restaurantItem).toContainText('Le Jules Verne');
+
+    // Day 2 — empty
+    const day2 = page.getByTestId('trip-day-1');
+    await expect(day2).toBeVisible();
+    await expect(day2).toContainText('No items for this day');
+  });
+});
