@@ -13,6 +13,7 @@ import { useSession } from 'next-auth/react';
 import { apiClient } from '@/lib/api-client';
 import { createTripChatSession } from '@/lib/ai-chat-utils';
 import { getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
+import { logChatResponse } from '@/lib/debug-log';
 import type {
   AIChatMessage,
   AIChatSessionMetadata,
@@ -282,7 +283,23 @@ function ConciergeContent() {
         return [updatedSession, ...deduped];
       });
 
-      await hydrateTripDetail(tripId);
+      let hydratedDetail: TripWithVersion | null = null;
+      let hydrateError: unknown;
+      try {
+        hydratedDetail = await getTripWithVersion(tripId);
+        setDetailsByTripId((prev) => ({ ...prev, [tripId]: hydratedDetail }));
+      } catch (err) {
+        hydrateError = err;
+        console.error('[Concierge] Failed to fetch trip:', err);
+        setDetailsByTripId((prev) => ({ ...prev, [tripId]: null }));
+      }
+
+      logChatResponse({
+        userMessage: data.user_message,
+        assistantMessage: data.assistant_message,
+        tripVersion: hydrateError ? undefined : (hydratedDetail?.currentVersion ?? null),
+        tripVersionError: hydrateError,
+      });
 
       if (data.field_updated && data.field_updated.length > 0) {
         setHighlightedFields(data.field_updated);
@@ -357,6 +374,11 @@ function ConciergeContent() {
       setRawSessions((prev) => {
         const deduped = prev.filter((item) => item.id !== updatedSession.id);
         return [updatedSession, ...deduped];
+      });
+
+      logChatResponse({
+        userMessage: data.user_message,
+        assistantMessage: data.assistant_message,
       });
     } catch (err) {
       console.error('[Concierge] Failed to upload audio:', err);
