@@ -100,4 +100,37 @@ describe('WidgetRenderer factory', () => {
     const { container } = render(<WidgetRenderer block={widget} onSubmit={() => {}} />);
     expect(container.firstChild).toBeNull();
   });
+
+  it('renders nothing for option_selector with empty options', () => {
+    const widget: AIChatWidget = {
+      widget_id: 'w-empty-opt',
+      widget_type: 'option_selector',
+      options: [],
+    };
+
+    const { container } = render(<WidgetRenderer block={widget} onSubmit={() => {}} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('renders nothing for hotel_carousel with empty hotels', () => {
+    const widget: AIChatWidget = {
+      widget_id: 'w-empty-hotels',
+      widget_type: 'hotel_carousel',
+      hotels: [],
+    };
+
+    const { container } = render(<WidgetRenderer block={widget} onSubmit={() => {}} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('renders nothing for number_stepper with empty fields', () => {
+    const widget: AIChatWidget = {
+      widget_id: 'w-empty-fields',
+      widget_type: 'number_stepper',
+      fields: [],
+    };
+
+    const { container } = render(<WidgetRenderer block={widget} onSubmit={() => {}} />);
+    expect(container.firstChild).toBeNull();
+  });
 });

@@ -40,6 +40,8 @@ export default function NumberStepper({ widget, onSubmit, disabled }: Props) {
     });
   }
 
+  if (fields.length === 0) return null;
+
   return (
     <div className="mt-3 border border-gray-200 rounded-lg p-3 bg-white">
       <p className="font-inter text-xs text-gray-500 mb-3">Select values</p>
