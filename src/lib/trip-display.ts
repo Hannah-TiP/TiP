@@ -20,9 +20,13 @@ export const ITEM_COLORS: Record<TripPlanItem['item_type'], string> = {
   note: 'bg-gray-100 text-gray-600',
 };
 
-/** Format a YYYY-MM-DD date as e.g. "Mon, May 1". */
+/** Format a YYYY-MM-DD date as e.g. "Mon, May 1". Parses as a local date — `new Date('2026-05-02')` would parse as UTC midnight and drift one day in western timezones. */
 export function formatDateLabel(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const [y, m, d] = parts.map((p) => parseInt(p, 10));
+  if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return dateStr;
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
