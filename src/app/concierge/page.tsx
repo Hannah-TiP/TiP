@@ -274,11 +274,29 @@ function ConciergeContent() {
       });
 
       const lastMsg = data.assistant_message ?? data.user_message;
-      const updatedSession: AIChatSessionMetadata = {
+      // Refetch the canonical session list so any out-of-band mode flips by
+      // an admin (AI -> human or human -> AI) are reflected immediately --
+      // the customer endpoint does not return updated session metadata, and
+      // we need session.status accurate for the takeover banner.
+      let refreshedSessions: AIChatSessionMetadata[] | null = null;
+      try {
+        refreshedSessions = await apiClient.listChatSessions();
+      } catch (err) {
+        console.error('[Concierge] Failed to refresh sessions:', err);
+      }
+
+      const updatedSession: AIChatSessionMetadata = refreshedSessions?.find(
+        (item) => item.id === targetSession.id,
+      ) ?? {
         ...targetSession,
         last_message_at: lastMsg.sent_at ?? new Date().toISOString(),
       };
       setRawSessions((prev) => {
+        if (refreshedSessions) {
+          // Keep order stable by promoting the just-used session to the top.
+          const others = refreshedSessions.filter((item) => item.id !== updatedSession.id);
+          return [updatedSession, ...others];
+        }
         const deduped = prev.filter((item) => item.id !== updatedSession.id);
         return [updatedSession, ...deduped];
       });
@@ -471,6 +489,19 @@ function ConciergeContent() {
             pendingMessage={pendingMessage}
             onWidgetSubmit={handleWidgetSubmit}
           />
+          {activeSession?.session.status === 'human' && (
+            <div
+              className="bg-[#FFF7E6] border-t border-[#FFD591] px-[60px] py-3 flex items-center gap-2"
+              data-testid="human-takeover-banner"
+            >
+              <span className="font-inter text-xs uppercase tracking-wider text-[#C4956A] font-semibold">
+                Concierge Team
+              </span>
+              <span className="font-inter text-sm text-gray-700">
+                A human concierge is taking over from here. The AI is paused.
+              </span>
+            </div>
+          )}
           <ChatInput
             onSendMessage={(content) => handleSendMessage(content)}
             onUploadAudio={handleUploadAudio}

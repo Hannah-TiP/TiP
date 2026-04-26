@@ -126,6 +126,11 @@ export interface AIChatMessage {
   widget_response?: AIChatWidgetResponse | null;
   widgets?: AIChatWidget[] | null;
   sent_at?: string | null;
+  // Backend audit field for HUMAN_ASSISTANT (admin takeover) messages. The
+  // customer FE intentionally never renders this -- a generic "Concierge
+  // Team" badge is shown instead. Kept in the type so other consumers don't
+  // strip the field.
+  created_by_admin_id?: number | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
