@@ -8,6 +8,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/concierge-converse.spec.ts',
   '**/concierge-screenshots.spec.ts',
   '**/cancel-trip.spec.ts',
+  '**/concierge-human-takeover.spec.ts',
 ];
 
 export default defineConfig({
