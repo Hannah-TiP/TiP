@@ -94,6 +94,24 @@ function ConciergeContent() {
     }
   }, [authLoading, isAuthenticated, router]);
 
+  // While the chat is in human mode (admin has taken over), poll the message
+  // history every second so admin replies surface in near-real-time. AI mode
+  // doesn't need this — assistant replies arrive in the POST response.
+  const isHumanMode = activeSession?.session.status === 'human';
+  const activeTripId = activeSession?.session.trip_id ?? null;
+  useEffect(() => {
+    if (!isHumanMode || activeTripId == null) return;
+    const id = window.setInterval(async () => {
+      try {
+        const history = await apiClient.getChatHistory(activeTripId);
+        setMessages(history);
+      } catch {
+        // Silent — transient errors during polling shouldn't trigger UI noise.
+      }
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [isHumanMode, activeTripId]);
+
   async function hydrateTripDetail(tripId: number): Promise<TripWithVersion | null> {
     try {
       const detail = await getTripWithVersion(tripId);
