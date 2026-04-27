@@ -105,12 +105,37 @@ export default function MessageBubble({
   }
 
   // Assistant and human assistant messages
+  // human_assistant rows are admin takeover replies. Customers must NOT see
+  // any individual admin identity -- render a generic "Concierge Team"
+  // affordance (gold avatar + small badge) so the source feels like the
+  // same brand voice as the AI.
+  const isHumanConcierge = message.role === 'human_assistant';
+  const avatarClasses = isHumanConcierge
+    ? 'w-8 h-8 rounded-full bg-[#C4956A] text-white flex items-center justify-center text-[10px] font-bold shrink-0'
+    : 'w-8 h-8 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0';
+  const avatarLabel = isHumanConcierge
+    ? 'CT'
+    : messageIndex !== undefined
+      ? messageIndex + 1
+      : 'AI';
+
   return (
-    <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0">
-        {messageIndex !== undefined ? messageIndex + 1 : 'AI'}
+    <div
+      className="flex gap-3"
+      data-testid={isHumanConcierge ? 'message-human-concierge' : undefined}
+    >
+      <div className={avatarClasses} title={isHumanConcierge ? 'Concierge Team' : 'AI Concierge'}>
+        {avatarLabel}
       </div>
       <div className="flex-1 max-w-[600px]">
+        {isHumanConcierge && (
+          <div
+            className="font-inter text-[10px] uppercase tracking-wider text-[#C4956A] font-semibold mb-1 ml-1"
+            data-testid="concierge-team-badge"
+          >
+            Concierge Team
+          </div>
+        )}
         <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4">
           {message.message_type === 'text' && (
             <p className="font-inter text-sm text-gray-800 whitespace-pre-wrap">
