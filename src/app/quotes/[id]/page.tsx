@@ -91,19 +91,19 @@ function HeroCard({
   const showExpiry = status === 'SENT' && !!expiresAt;
 
   return (
-    <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex">
-      <div className="w-[420px] flex-shrink-0 relative">
-        <div className="w-full h-full min-h-[220px] bg-gradient-to-br from-[#2a5240] to-[#C4956A] flex items-center justify-center">
-          <span className="text-white text-2xl font-bold px-6 text-center">{title}</span>
+    <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex flex-col md:flex-row">
+      <div className="w-full md:w-[420px] md:flex-shrink-0 relative">
+        <div className="w-full h-full min-h-[180px] md:min-h-[220px] bg-gradient-to-br from-[#2a5240] to-[#C4956A] flex items-center justify-center">
+          <span className="text-white text-xl md:text-2xl font-bold px-6 text-center">{title}</span>
         </div>
       </div>
-      <div className="flex-1 p-10 text-white flex flex-col justify-center">
+      <div className="flex-1 p-6 md:p-10 text-white flex flex-col justify-center">
         <div className="flex items-center gap-3 mb-2">
           <p className="text-sm uppercase tracking-widest text-white/60">Quote</p>
           <StatusBadge status={status} />
         </div>
-        <h1 className="text-4xl font-bold mb-4">{title}</h1>
-        <div className="flex flex-wrap gap-8 text-sm">
+        <h1 className="text-2xl md:text-4xl font-bold mb-4 break-words">{title}</h1>
+        <div className="flex flex-wrap gap-4 md:gap-8 text-sm">
           <div>
             <p className="text-white/50">Dates</p>
             <p className="font-semibold">
@@ -282,8 +282,8 @@ export default function QuoteDetailPage() {
         <TopBar activeLink="My Page" />
         <div className="max-w-7xl mx-auto px-6 mt-8 space-y-4 animate-pulse">
           <div className="h-56 bg-gray-200 rounded-2xl" />
-          <div className="grid grid-cols-3 gap-6">
-            <div className="col-span-2 h-72 bg-gray-200 rounded-xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 h-72 bg-gray-200 rounded-xl" />
             <div className="h-56 bg-gray-200 rounded-xl" />
           </div>
         </div>
@@ -328,8 +328,8 @@ export default function QuoteDetailPage() {
         />
 
         {currentVersion ? (
-          <div className="grid grid-cols-3 gap-6">
-            <div className="col-span-2 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
               <LineItemsCard version={currentVersion} />
             </div>
             <div className="space-y-6">
