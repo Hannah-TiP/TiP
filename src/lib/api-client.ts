@@ -4,6 +4,7 @@ import type { Activity } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
 import type { City, Country, Region } from '@/types/location';
 import type { Trip, TripVersion } from '@/types/trip';
+import type { QuoteWithVersion } from '@/types/quote';
 import type {
   AIChatMessage,
   AIChatMessagesResponse,
@@ -264,6 +265,12 @@ class ApiClient {
         current_version: currentVersion,
       }),
     });
+    return response.data;
+  }
+
+  // Quote methods
+  async getQuote(id: number): Promise<QuoteWithVersion> {
+    const response = await this.request<{ data: QuoteWithVersion }>(`/quotes/${id}`);
     return response.data;
   }
 
