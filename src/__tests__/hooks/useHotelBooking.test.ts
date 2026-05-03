@@ -35,7 +35,11 @@ beforeEach(() => {
 // ── Pure validators ─────────────────────────────────────────────────────────
 
 describe('validateBookingDates', () => {
-  const today = new Date('2026-06-01T00:00:00Z');
+  // Construct from local-time components (noon local) so the local-date
+  // helper inside `validateBookingDates` reads as 2026-06-01 regardless of
+  // the host's timezone. Using `new Date('2026-06-01T00:00:00Z')` would
+  // shift the LOCAL date to 2026-05-31 anywhere west of UTC.
+  const today = new Date(2026, 5, 1, 12, 0, 0);
 
   it('rejects missing dates', () => {
     expect(validateBookingDates('', '', today)).toBe('hotel.booking_error_dates_required');
@@ -72,6 +76,46 @@ describe('validateBookingDates', () => {
     expect(validateBookingDates('2026-06-10', '2026-06-13', today)).toBeNull();
     // Today as check-in is allowed.
     expect(validateBookingDates('2026-06-01', '2026-06-02', today)).toBeNull();
+  });
+
+  it('uses the local calendar date, not UTC, when comparing against today', () => {
+    // Simulates 1am local on June 1 in UTC+9 (KST). UTC at this moment is
+    // 16:00 on May 31. The OLD implementation (`toISOString().slice(0, 10)`)
+    // would resolve `today` to "2026-05-31" and accept a check-in of
+    // "2026-05-31" — a date that's already past locally. The new
+    // implementation reads the LOCAL components and correctly rejects it.
+    //
+    // We reach the same condition in any timezone by constructing a Date
+    // whose local components are "June 1, 2026 01:00:00". Whether the
+    // host is in UTC, KST, or PST, `getFullYear/getMonth/getDate` always
+    // return 2026/6/1.
+    const earlyMorningLocal = new Date(2026, 5, 1, 1, 0, 0);
+    expect(validateBookingDates('2026-05-31', '2026-06-05', earlyMorningLocal)).toBe(
+      'hotel.booking_error_check_in_in_past',
+    );
+    // And of course June 1 itself is still allowed as today.
+    expect(validateBookingDates('2026-06-01', '2026-06-05', earlyMorningLocal)).toBeNull();
+  });
+
+  it('uses the system clock when called without an explicit `today`', () => {
+    // Mock the real `new Date()` to a specific local-time instant, then
+    // make sure the validator picks that up. This verifies the default
+    // argument path uses local-date components (not UTC).
+    vi.useFakeTimers();
+    try {
+      // 11:30 PM local on June 1, 2026 — anywhere west of UTC the
+      // OLD `toISOString().slice(0, 10)` would already read "2026-06-02",
+      // wrongly REJECTING a "2026-06-02" check-in as in the past on
+      // local June 1. The new implementation correctly accepts it.
+      vi.setSystemTime(new Date(2026, 5, 1, 23, 30, 0));
+      expect(validateBookingDates('2026-06-02', '2026-06-05')).toBeNull();
+      expect(validateBookingDates('2026-06-01', '2026-06-05')).toBeNull();
+      expect(validateBookingDates('2026-05-31', '2026-06-05')).toBe(
+        'hotel.booking_error_check_in_in_past',
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

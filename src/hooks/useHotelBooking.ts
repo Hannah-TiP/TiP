@@ -18,6 +18,23 @@ export type BookingDateErrorKey =
   | 'hotel.booking_error_check_in_in_past';
 
 /**
+ * Format a Date as `YYYY-MM-DD` using the host's LOCAL calendar fields.
+ *
+ * We deliberately avoid `toISOString().slice(0, 10)` because that returns
+ * the UTC date. For users in non-UTC timezones (e.g. Korea, UTC+9) the
+ * UTC string can read as "today" while the local date is already
+ * tomorrow (or vice-versa during the early morning), letting the
+ * past-date validator silently accept a date that's already gone by
+ * locally.
+ */
+function toLocalIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Validate the hotel booking dates for the Reserve flow.
  * Returns a translation key for the first failing rule, or null if valid.
  */
@@ -34,7 +51,9 @@ export function validateBookingDates(
     return 'hotel.booking_error_check_out_after_check_in';
   }
   // Compare YYYY-MM-DD lexicographically — same as date comparison.
-  const todayIso = today.toISOString().slice(0, 10);
+  // `today` is interpreted in the user's LOCAL timezone so e.g. 11:30pm
+  // KST on June 1 still reads as 2026-06-01 (not 2026-05-31 UTC).
+  const todayIso = toLocalIsoDate(today);
   if (checkIn < todayIso) {
     return 'hotel.booking_error_check_in_in_past';
   }
