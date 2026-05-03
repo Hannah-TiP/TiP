@@ -276,6 +276,19 @@ class ApiClient {
     return response.data;
   }
 
+  /**
+   * Fetch the most recent quote for a trip the caller owns.
+   *
+   * Backend `/api/v2/quotes?trip_id=...` returns quotes sorted by id desc,
+   * so the latest is `data[0]`. Returns `null` when the trip has no quotes
+   * yet — callers can render conditionally without distinguishing missing
+   * vs. empty.
+   */
+  async getLatestQuoteForTrip(tripId: number): Promise<QuoteWithVersion | null> {
+    const response = await this.request<{ data: QuoteWithVersion[] }>(`/quotes?trip_id=${tripId}`);
+    return response.data[0] ?? null;
+  }
+
   // Payment methods (Flywire checkout)
   async createCheckoutSession(quoteId: number): Promise<CheckoutSessionResponse> {
     const response = await this.request<{ data: CheckoutSessionResponse }>(

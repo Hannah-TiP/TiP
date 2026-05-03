@@ -13,6 +13,7 @@ import {
   type TripWithVersion,
 } from '@/lib/trip-utils';
 import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
+import { apiClient } from '@/lib/api-client';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Planning',
@@ -156,6 +157,7 @@ export default function TripDetailPage() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [latestQuoteId, setLatestQuoteId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -171,6 +173,29 @@ export default function TripDetailPage() {
     };
 
     load();
+  }, [id]);
+
+  // Best-effort: fetch the trip's latest quote so we can render a "View
+  // quote" affordance. Failures are swallowed — the link simply does not
+  // appear, which is the no-quote UX anyway.
+  useEffect(() => {
+    if (!id) return;
+    let canceled = false;
+
+    apiClient
+      .getLatestQuoteForTrip(Number(id))
+      .then((bundle) => {
+        if (canceled) return;
+        setLatestQuoteId(bundle ? bundle.quote.id : null);
+      })
+      .catch(() => {
+        if (canceled) return;
+        setLatestQuoteId(null);
+      });
+
+    return () => {
+      canceled = true;
+    };
   }, [id]);
 
   const handleCancelTrip = useCallback(async () => {
@@ -430,6 +455,22 @@ export default function TripDetailPage() {
                 </div>
               </div>
             </div>
+
+            {latestQuoteId !== null && (
+              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <h3 className="font-semibold text-gray-900 mb-2">Your Quote</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  A quote has been prepared for this trip. Review the line items and total.
+                </p>
+                <Link
+                  href={`/quotes/${latestQuoteId}`}
+                  data-testid="trip-detail-view-quote-link"
+                  className="block w-full px-5 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-full hover:bg-[#2a5240] transition-colors text-center"
+                >
+                  View Quote
+                </Link>
+              </div>
+            )}
 
             {canCancel && (
               <div className="bg-white rounded-xl border border-gray-200 p-5">
