@@ -6,7 +6,12 @@ import Link from 'next/link';
 import TopBar from '@/components/TopBar';
 import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
-import { collectTripDocuments, getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
+import {
+  collectTripDocuments,
+  getTripWithVersion,
+  tripDayNumber,
+  type TripWithVersion,
+} from '@/lib/trip-utils';
 import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -292,64 +297,72 @@ export default function TripDetailPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-5">Itinerary</h2>
               {plan.length > 0 ? (
                 <div className="space-y-4">
-                  {plan.map((day, index) => (
-                    <div key={`${day.date}-${index}`} className="flex gap-5 items-start">
-                      <div className="flex flex-col items-center">
-                        <div className="w-10 h-10 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
-                          {index + 1}
-                        </div>
-                        {index < plan.length - 1 && (
-                          <div className="w-px flex-1 bg-gray-200 mt-1 min-h-[24px]" />
-                        )}
-                      </div>
-                      <div className="bg-white rounded-xl border border-gray-200 p-5 flex-1 mb-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="text-xs font-semibold text-[#1E3D2F] bg-green-50 px-2 py-0.5 rounded">
-                            Day {index + 1}
-                          </span>
-                          <span className="text-xs text-gray-400">{formatDateLabel(day.date)}</span>
-                          {day.title && (
-                            <span className="text-xs font-medium text-gray-700">{day.title}</span>
+                  {plan.map((day, index) => {
+                    const dayNumber = tripDayNumber(day.date, currentVersion?.start_date);
+                    const dayBadgeText = dayNumber ?? index + 1;
+                    return (
+                      <div key={`${day.date}-${index}`} className="flex gap-5 items-start">
+                        <div className="flex flex-col items-center">
+                          <div className="w-10 h-10 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                            {dayBadgeText}
+                          </div>
+                          {index < plan.length - 1 && (
+                            <div className="w-px flex-1 bg-gray-200 mt-1 min-h-[24px]" />
                           )}
                         </div>
-                        {day.items.length > 0 ? (
-                          <div className="space-y-2">
-                            {day.items.map((item, itemIndex) => (
-                              <div
-                                key={`${day.date}-${itemIndex}`}
-                                className="flex items-start gap-3"
-                              >
-                                <span
-                                  className={`text-xs px-2 py-0.5 rounded font-medium flex-shrink-0 mt-0.5 ${ITEM_COLORS[item.item_type]}`}
-                                >
-                                  {ITEM_LABELS[item.item_type]}
-                                </span>
-                                <div className="min-w-0">
-                                  <p className="text-sm font-medium text-gray-900 truncate">
-                                    {item.title || ITEM_LABELS[item.item_type]}
-                                  </p>
-                                  {item.location && (
-                                    <p className="text-xs text-gray-400">{item.location}</p>
-                                  )}
-                                  {item.start_at && (
-                                    <p className="text-xs text-gray-400">
-                                      {formatTime(item.start_at)}
-                                      {item.end_at ? ` – ${formatTime(item.end_at)}` : ''}
-                                    </p>
-                                  )}
-                                  {item.description && (
-                                    <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
+                        <div className="bg-white rounded-xl border border-gray-200 p-5 flex-1 mb-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className="text-xs font-semibold text-[#1E3D2F] bg-green-50 px-2 py-0.5 rounded">
+                              Day {dayBadgeText}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {formatDateLabel(day.date)}
+                            </span>
+                            {day.title && (
+                              <span className="text-xs font-medium text-gray-700">{day.title}</span>
+                            )}
                           </div>
-                        ) : (
-                          <p className="text-sm text-gray-400">No items for this day.</p>
-                        )}
+                          {day.items.length > 0 ? (
+                            <div className="space-y-2">
+                              {day.items.map((item, itemIndex) => (
+                                <div
+                                  key={`${day.date}-${itemIndex}`}
+                                  className="flex items-start gap-3"
+                                >
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded font-medium flex-shrink-0 mt-0.5 ${ITEM_COLORS[item.item_type]}`}
+                                  >
+                                    {ITEM_LABELS[item.item_type]}
+                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                      {item.title || ITEM_LABELS[item.item_type]}
+                                    </p>
+                                    {item.location && (
+                                      <p className="text-xs text-gray-400">{item.location}</p>
+                                    )}
+                                    {item.start_at && (
+                                      <p className="text-xs text-gray-400">
+                                        {formatTime(item.start_at)}
+                                        {item.end_at ? ` – ${formatTime(item.end_at)}` : ''}
+                                      </p>
+                                    )}
+                                    {item.description && (
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {item.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-400">No items for this day.</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 text-sm">
