@@ -55,7 +55,10 @@ async function mockTripAndSession(
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ success: true, data: [baseSession] }),
+      body: JSON.stringify({
+        success: true,
+        data: [{ session: baseSession, trip: baseTrip }],
+      }),
     }),
   );
   await context.route(`**/api/trip/${TRIP_ID}`, (route) =>
@@ -385,7 +388,10 @@ test.describe('Concierge visual captures', () => {
       route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: [baseSession] }),
+        body: JSON.stringify({
+          success: true,
+          data: [{ session: baseSession, trip: baseTrip }],
+        }),
       }),
     );
     await context.route(`**/api/trip/${TRIP_ID}`, (route) =>
