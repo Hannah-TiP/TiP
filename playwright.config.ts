@@ -10,6 +10,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/cancel-trip.spec.ts',
   '**/concierge-human-takeover.spec.ts',
   '**/quotes.spec.ts',
+  '**/checkout.spec.ts',
 ];
 
 export default defineConfig({

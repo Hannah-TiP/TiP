@@ -5,6 +5,7 @@ import type { Restaurant } from '@/types/restaurant';
 import type { City, Country, Region } from '@/types/location';
 import type { Trip, TripVersion } from '@/types/trip';
 import type { QuoteWithVersion } from '@/types/quote';
+import type { CheckoutSessionResponse, WidgetConfig } from '@/types/payment';
 import type {
   AIChatMessage,
   AIChatMessagesResponse,
@@ -271,6 +272,22 @@ class ApiClient {
   // Quote methods
   async getQuote(id: number): Promise<QuoteWithVersion> {
     const response = await this.request<{ data: QuoteWithVersion }>(`/quotes/${id}`);
+    return response.data;
+  }
+
+  // Payment methods (Flywire checkout)
+  async createCheckoutSession(quoteId: number): Promise<CheckoutSessionResponse> {
+    const response = await this.request<{ data: CheckoutSessionResponse }>(
+      `/quotes/${quoteId}/checkout-session`,
+      { method: 'POST' },
+    );
+    return response.data;
+  }
+
+  async getWidgetConfig(paymentId: number): Promise<WidgetConfig> {
+    const response = await this.request<{ data: WidgetConfig }>(
+      `/payments/${paymentId}/widget-config`,
+    );
     return response.data;
   }
 
