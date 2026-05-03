@@ -41,7 +41,10 @@ test.describe('Concierge chat takeover -- customer-facing surface', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: [humanSession] }),
+        body: JSON.stringify({
+          success: true,
+          data: [{ session: humanSession, trip: baseTrip }],
+        }),
       });
     });
 
@@ -129,7 +132,10 @@ test.describe('Concierge chat takeover -- customer-facing surface', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: [aiSession] }),
+        body: JSON.stringify({
+          success: true,
+          data: [{ session: aiSession, trip: baseTrip }],
+        }),
       });
     });
 
