@@ -17,6 +17,7 @@ import { logChatResponse } from '@/lib/debug-log';
 import type {
   AIChatMessage,
   AIChatSessionMetadata,
+  AIChatSessionWithTrip,
   SendAIChatMessageData,
   PendingMessage,
   AIChatWidgetResponse,
@@ -25,13 +26,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { usePreviewMode } from '@/hooks/usePreviewMode';
 
 function sortSessions(
-  sessions: AIChatSessionMetadata[],
+  bundles: AIChatSessionWithTrip[],
   detailsByTripId: Record<number, TripWithVersion | null>,
 ): ConciergeSession[] {
-  return sessions
-    .map((session) => ({
-      session,
-      tripDetail: detailsByTripId[session.trip_id] ?? null,
+  return bundles
+    .map((bundle) => ({
+      session: bundle.session,
+      trip: bundle.trip,
+      tripDetail: detailsByTripId[bundle.session.trip_id] ?? null,
     }))
     .sort((a, b) => {
       const aTime = a.session.last_message_at ? new Date(a.session.last_message_at).getTime() : 0;
@@ -66,7 +68,7 @@ function ConciergeContent() {
   const { t } = useLanguage();
   const { isPreview } = usePreviewMode();
 
-  const [rawSessions, setRawSessions] = useState<AIChatSessionMetadata[]>([]);
+  const [rawSessions, setRawSessions] = useState<AIChatSessionWithTrip[]>([]);
   const [detailsByTripId, setDetailsByTripId] = useState<Record<number, TripWithVersion | null>>(
     {},
   );
@@ -136,9 +138,9 @@ function ConciergeContent() {
 
   async function selectSession(
     sessionId: number,
-    knownSessions: AIChatSessionMetadata[] = rawSessions,
+    knownSessions: AIChatSessionWithTrip[] = rawSessions,
   ) {
-    const selected = knownSessions.find((item) => item.id === sessionId);
+    const selected = knownSessions.find((item) => item.session.id === sessionId);
     if (!selected) return;
 
     setActiveSessionId(sessionId);
@@ -146,10 +148,10 @@ function ConciergeContent() {
     localStorage.setItem('concierge_active_session_id', String(sessionId));
 
     await Promise.all([
-      loadSessionHistory(selected.trip_id),
-      detailsByTripId[selected.trip_id] === undefined
-        ? hydrateTripDetail(selected.trip_id)
-        : Promise.resolve(detailsByTripId[selected.trip_id]),
+      loadSessionHistory(selected.session.trip_id),
+      detailsByTripId[selected.session.trip_id] === undefined
+        ? hydrateTripDetail(selected.session.trip_id)
+        : Promise.resolve(detailsByTripId[selected.session.trip_id]),
     ]);
   }
 
@@ -157,12 +159,13 @@ function ConciergeContent() {
     try {
       setError(null);
       const { session: createdSession } = await createTripChatSession();
-      setRawSessions((prev) => {
-        const deduped = prev.filter((item) => item.id !== createdSession.id);
-        return [createdSession, ...deduped];
-      });
+      // Refetch the canonical bundle list so the new session arrives with
+      // its trip joined — we don't have the trip from the create response
+      // alone.
+      const refreshed = await apiClient.listChatSessions();
+      setRawSessions(refreshed);
       await hydrateTripDetail(createdSession.trip_id);
-      await selectSession(createdSession.id, [createdSession, ...rawSessions]);
+      await selectSession(createdSession.id, refreshed);
     } catch (err) {
       console.error('[Concierge] Failed to create new chat:', err);
       setError('Failed to create new chat session.');
@@ -187,13 +190,13 @@ function ConciergeContent() {
 
         if (tripIdParam) {
           const tripId = Number.parseInt(tripIdParam, 10);
-          const existingForTrip = fetchedSessions.find((item) => item.trip_id === tripId);
+          const existingForTrip = fetchedSessions.find((item) => item.session.trip_id === tripId);
 
           if (existingForTrip) {
-            await selectSession(existingForTrip.id, fetchedSessions);
+            await selectSession(existingForTrip.session.id, fetchedSessions);
             if (!cancelled && actionParam === 'submit') {
               router.replace(`/concierge?trip_id=${tripId}`, { scroll: false });
-              await handleSendMessage(t('chat.submit_trip_message'), existingForTrip);
+              await handleSendMessage(t('chat.submit_trip_message'), existingForTrip.session);
             }
             return;
           }
@@ -202,10 +205,12 @@ function ConciergeContent() {
             const createdSession = await apiClient.createChatSessionForTrip(tripId);
             if (cancelled) return;
 
-            const updatedSessions = [createdSession, ...fetchedSessions];
-            setRawSessions(updatedSessions);
+            // Refetch to pick up the new session with its trip joined.
+            const refreshed = await apiClient.listChatSessions();
+            if (cancelled) return;
+            setRawSessions(refreshed);
             await hydrateTripDetail(createdSession.trip_id);
-            await selectSession(createdSession.id, updatedSessions);
+            await selectSession(createdSession.id, refreshed);
 
             if (!cancelled && actionParam === 'submit') {
               router.replace(`/concierge?trip_id=${tripId}`, { scroll: false });
@@ -220,10 +225,13 @@ function ConciergeContent() {
         if (fetchedSessions.length > 0) {
           const storedId = localStorage.getItem('concierge_active_session_id');
           const storedSession = storedId
-            ? fetchedSessions.find((item) => item.id === Number.parseInt(storedId, 10))
+            ? fetchedSessions.find((item) => item.session.id === Number.parseInt(storedId, 10))
             : null;
 
-          await selectSession(storedSession?.id ?? fetchedSessions[0].id, fetchedSessions);
+          await selectSession(
+            storedSession?.session.id ?? fetchedSessions[0].session.id,
+            fetchedSessions,
+          );
         } else {
           await handleNewChat();
         }
@@ -296,27 +304,36 @@ function ConciergeContent() {
       // an admin (AI -> human or human -> AI) are reflected immediately --
       // the customer endpoint does not return updated session metadata, and
       // we need session.status accurate for the takeover banner.
-      let refreshedSessions: AIChatSessionMetadata[] | null = null;
+      let refreshedBundles: AIChatSessionWithTrip[] | null = null;
       try {
-        refreshedSessions = await apiClient.listChatSessions();
+        refreshedBundles = await apiClient.listChatSessions();
       } catch (err) {
         console.error('[Concierge] Failed to refresh sessions:', err);
       }
 
-      const updatedSession: AIChatSessionMetadata = refreshedSessions?.find(
-        (item) => item.id === targetSession.id,
-      ) ?? {
-        ...targetSession,
-        last_message_at: lastMsg.sent_at ?? new Date().toISOString(),
-      };
       setRawSessions((prev) => {
-        if (refreshedSessions) {
+        if (refreshedBundles) {
           // Keep order stable by promoting the just-used session to the top.
-          const others = refreshedSessions.filter((item) => item.id !== updatedSession.id);
-          return [updatedSession, ...others];
+          const updated = refreshedBundles.find((item) => item.session.id === targetSession.id);
+          if (updated) {
+            const others = refreshedBundles.filter((item) => item.session.id !== targetSession.id);
+            return [updated, ...others];
+          }
+          return refreshedBundles;
         }
-        const deduped = prev.filter((item) => item.id !== updatedSession.id);
-        return [updatedSession, ...deduped];
+        // Refresh failed — patch the existing bundle's session field with
+        // the new last_message_at so ordering still reflects activity.
+        return prev.map((bundle) =>
+          bundle.session.id === targetSession.id
+            ? {
+                ...bundle,
+                session: {
+                  ...bundle.session,
+                  last_message_at: lastMsg.sent_at ?? new Date().toISOString(),
+                },
+              }
+            : bundle,
+        );
       });
 
       let hydratedDetail: TripWithVersion | null = null;
@@ -401,15 +418,18 @@ function ConciergeContent() {
         return next;
       });
 
-      const updatedSession: AIChatSessionMetadata = {
-        ...targetSession,
-        last_message_at:
-          data.assistant_message?.sent_at ?? data.user_message.sent_at ?? new Date().toISOString(),
-      };
+      const updatedLastMessageAt =
+        data.assistant_message?.sent_at ?? data.user_message.sent_at ?? new Date().toISOString();
 
       setRawSessions((prev) => {
-        const deduped = prev.filter((item) => item.id !== updatedSession.id);
-        return [updatedSession, ...deduped];
+        const updated = prev.find((item) => item.session.id === targetSession.id);
+        if (!updated) return prev;
+        const patched: AIChatSessionWithTrip = {
+          ...updated,
+          session: { ...updated.session, last_message_at: updatedLastMessageAt },
+        };
+        const others = prev.filter((item) => item.session.id !== targetSession.id);
+        return [patched, ...others];
       });
 
       logChatResponse({

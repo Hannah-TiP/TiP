@@ -115,6 +115,16 @@ export interface AIChatSessionMetadata {
   updated_at?: string | null;
 }
 
+/**
+ * A chat session bundled with its current trip row. Returned by the
+ * `/ai-chat/sessions` list endpoint so the concierge sidebar can render
+ * the trip-status badge for every session without N+1 trip fetches.
+ */
+export interface AIChatSessionWithTrip {
+  session: AIChatSessionMetadata;
+  trip: Trip;
+}
+
 export interface AIChatMessage {
   id: number;
   user_id: number;
@@ -144,7 +154,7 @@ export interface AIChatSessionResponse {
 export interface AIChatSessionsResponse {
   success?: boolean;
   code?: number;
-  data?: AIChatSessionMetadata[];
+  data?: AIChatSessionWithTrip[];
 }
 
 export interface AIChatMessagesResponse {

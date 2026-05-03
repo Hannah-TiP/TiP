@@ -11,6 +11,7 @@ import type {
   AIChatMessagesResponse,
   AIChatSessionMetadata,
   AIChatSessionsResponse,
+  AIChatSessionWithTrip,
   AIChatMessageType,
   SendAIChatMessageRequest,
   SendAIChatMessageResponse,
@@ -292,7 +293,7 @@ class ApiClient {
   }
 
   // AI Chat methods
-  async listChatSessions(): Promise<AIChatSessionMetadata[]> {
+  async listChatSessions(): Promise<AIChatSessionWithTrip[]> {
     const response = await this.request<AIChatSessionsResponse>('/ai-chat/sessions');
     return response.data ?? [];
   }
