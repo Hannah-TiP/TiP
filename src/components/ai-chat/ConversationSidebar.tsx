@@ -2,10 +2,16 @@
 
 import type { TripWithVersion } from '@/lib/trip-utils';
 import type { AIChatSessionMetadata } from '@/types/ai-chat';
+import type { Trip } from '@/types/trip';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export interface ConciergeSession {
   session: AIChatSessionMetadata;
+  // The trip joined onto the session by the list endpoint — drives the
+  // sidebar status badge for every entry, not just the active one.
+  trip: Trip;
+  // Lazy-hydrated for the active session only — gives the right panel
+  // the full trip + current version (with title, dates, plan, etc.).
   tripDetail: TripWithVersion | null;
 }
 
@@ -147,12 +153,10 @@ export default function ConversationSidebar({
       <div className="flex-1 overflow-y-auto">
         {sessions.map((s) => {
           const isActive = s.session.id === activeSessionId;
-          // Prefer the trip_status that the backend joins onto the
-          // session row — present for every entry. Fall back to the
-          // lazy-hydrated tripDetail (only populated for the active
-          // session) for legacy backends. If neither is available,
-          // skip the badge rather than misleadingly showing "Draft".
-          const tripStatus = s.session.trip_status ?? s.tripDetail?.trip.status ?? null;
+          // The backend bundles trip with each session, so every entry
+          // has its current trip status — no more "Draft" fallback for
+          // inactive sidebar rows.
+          const tripStatus = s.trip.status;
           const startDate = s.tripDetail?.currentVersion?.start_date ?? null;
           const endDate = s.tripDetail?.currentVersion?.end_date ?? null;
           return (
@@ -178,15 +182,13 @@ export default function ConversationSidebar({
                   {formatDateRange(startDate, endDate)}
                 </p>
               )}
-              {tripStatus && (
-                <div className="flex items-center gap-2 mt-1">
-                  <span
-                    className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-inter ${getStatusColor(tripStatus)}`}
-                  >
-                    {getStatusLabel(tripStatus)}
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center gap-2 mt-1">
+                <span
+                  className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-inter ${getStatusColor(tripStatus)}`}
+                >
+                  {getStatusLabel(tripStatus)}
+                </span>
+              </div>
             </button>
           );
         })}
