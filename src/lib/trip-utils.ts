@@ -52,3 +52,29 @@ export function getTripReviewableItems(currentVersion?: TripVersion | null): Tri
     ),
   );
 }
+
+/** Parse "YYYY-MM-DD" as local date (avoids UTC midnight → previous day in western timezones). */
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/**
+ * Day number relative to a trip's start (start = 1). Use this when rendering
+ * "Day N" labels — the plan list is sparse (only days with items), so a
+ * positional index is unreliable.
+ *
+ * Math.round on the ms delta absorbs DST transitions that nudge the diff by
+ * ±1 hour. Returns null if either date is missing/empty so callers can
+ * suppress the badge instead of falling back to a wrong value.
+ */
+export function tripDayNumber(
+  dayDateStr: string | null | undefined,
+  startDateStr: string | null | undefined,
+): number | null {
+  if (!dayDateStr || !startDateStr) return null;
+  const start = parseLocalDate(startDateStr);
+  const day = parseLocalDate(dayDateStr);
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  return Math.round((day.getTime() - start.getTime()) / MS_PER_DAY) + 1;
+}

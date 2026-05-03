@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { TripWithVersion } from '@/lib/trip-utils';
+import { tripDayNumber, type TripWithVersion } from '@/lib/trip-utils';
 import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
 import type { TripPlanItem } from '@/types/trip';
 
@@ -29,21 +29,6 @@ function rowKeysFromFields(fields: string[]): Set<string> {
 function parseLocalDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d);
-}
-
-/**
- * Day number relative to the trip start (start = 1). The plan list is sparse —
- * it only includes days with items — so the array index is unreliable for
- * labelling. Compute from the actual date instead. Math.round absorbs DST
- * transitions that nudge the diff by ±1 hour.
- */
-function tripDayNumber(dayDateStr: string, startDateStr?: string | null): number | null {
-  if (!startDateStr) return null;
-  const start = parseLocalDate(startDateStr);
-  const day = parseLocalDate(dayDateStr);
-  const MS_PER_DAY = 24 * 60 * 60 * 1000;
-  const diff = Math.round((day.getTime() - start.getTime()) / MS_PER_DAY);
-  return diff + 1;
 }
 
 // ── Journey Stepper ─────────────────────────────────────────────────────

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
+import { tripDayNumber } from '@/lib/trip-utils';
 import type { QuoteLineItem, QuoteStatus, QuoteWithVersion, QuoteVersion } from '@/types/quote';
 import type { Trip, TripVersion } from '@/types/trip';
 
@@ -256,10 +257,22 @@ function ToastStack({
   );
 }
 
-function LineItemsCard({ version }: { version: QuoteVersion }) {
+function LineItemsCard({
+  version,
+  tripVersion,
+}: {
+  version: QuoteVersion;
+  tripVersion: TripVersion | null;
+}) {
   const grouped = useMemo(() => groupByDay(version.line_items), [version.line_items]);
   const dayKeys = Array.from(grouped.keys());
   const currency = version.total_snapshot.currency;
+
+  // Quote line items reference the bound trip plan by day_index. To show the
+  // user-friendly "Day N" label we convert via the trip plan's date for that
+  // index, then offset against the trip's start_date.
+  const planDates = tripVersion?.plan ?? null;
+  const startDate = tripVersion?.start_date ?? null;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -268,42 +281,47 @@ function LineItemsCard({ version }: { version: QuoteVersion }) {
         <p className="text-sm text-gray-500">No line items in this quote yet.</p>
       ) : (
         <div className="space-y-6">
-          {dayKeys.map((dayIndex) => (
-            <div key={dayIndex}>
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-xs font-semibold text-[#1E3D2F] bg-green-50 px-2 py-0.5 rounded">
-                  Day {dayIndex + 1}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {grouped.get(dayIndex)?.map((item, idx) => {
-                  const lineCurrency = item.currency || currency;
-                  const qty = item.quantity ?? 1;
-                  return (
-                    <div
-                      key={`${dayIndex}-${idx}`}
-                      className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 last:border-b-0"
-                    >
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">
-                          {item.label}
-                          {qty > 1 ? (
-                            <span className="ml-2 text-xs text-gray-400">×{qty}</span>
+          {dayKeys.map((dayIndex) => {
+            const planDay = planDates?.[dayIndex];
+            const dayNumber = planDay ? tripDayNumber(planDay.date, startDate) : null;
+            const dayBadgeText = dayNumber ?? dayIndex + 1;
+            return (
+              <div key={dayIndex}>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-xs font-semibold text-[#1E3D2F] bg-green-50 px-2 py-0.5 rounded">
+                    Day {dayBadgeText}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {grouped.get(dayIndex)?.map((item, idx) => {
+                    const lineCurrency = item.currency || currency;
+                    const qty = item.quantity ?? 1;
+                    return (
+                      <div
+                        key={`${dayIndex}-${idx}`}
+                        className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">
+                            {item.label}
+                            {qty > 1 ? (
+                              <span className="ml-2 text-xs text-gray-400">×{qty}</span>
+                            ) : null}
+                          </p>
+                          {item.notes ? (
+                            <p className="text-xs text-gray-500 mt-0.5">{item.notes}</p>
                           ) : null}
-                        </p>
-                        {item.notes ? (
-                          <p className="text-xs text-gray-500 mt-0.5">{item.notes}</p>
-                        ) : null}
+                        </div>
+                        <div className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                          {formatCurrency(item.amount, lineCurrency)}
+                        </div>
                       </div>
-                      <div className="text-sm font-semibold text-gray-900 whitespace-nowrap">
-                        {formatCurrency(item.amount, lineCurrency)}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -588,7 +606,7 @@ function QuoteDetailContent() {
         {currentVersion ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <LineItemsCard version={currentVersion} />
+              <LineItemsCard version={currentVersion} tripVersion={tripVersion} />
             </div>
             <div className="space-y-6">
               <TotalsCard version={currentVersion} />
