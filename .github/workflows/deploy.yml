@@ -201,6 +201,8 @@ jobs:
           echo "gmaps_map_id=${NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}" >> $GITHUB_OUTPUT
           echo "google_client_id=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}" >> $GITHUB_OUTPUT
           echo "enable_preview_mode=${NEXT_PUBLIC_ENABLE_PREVIEW_MODE}" >> $GITHUB_OUTPUT
+          echo "flywire_script_url=${NEXT_PUBLIC_FLYWIRE_SCRIPT_URL}" >> $GITHUB_OUTPUT
+          echo "flywire_env=${NEXT_PUBLIC_FLYWIRE_ENV}" >> $GITHUB_OUTPUT
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
@@ -223,6 +225,8 @@ jobs:
             NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=${{ steps.build-env.outputs.gmaps_map_id }}
             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ steps.build-env.outputs.google_client_id }}
             NEXT_PUBLIC_ENABLE_PREVIEW_MODE=${{ steps.build-env.outputs.enable_preview_mode }}
+            NEXT_PUBLIC_FLYWIRE_SCRIPT_URL=${{ steps.build-env.outputs.flywire_script_url }}
+            NEXT_PUBLIC_FLYWIRE_ENV=${{ steps.build-env.outputs.flywire_env }}
 
   deploy-preview:
     runs-on: ubuntu-latest
