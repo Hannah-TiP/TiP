@@ -1,4 +1,4 @@
-import type { Trip, TripVersion } from '@/types/trip';
+import type { Trip, TripStatus, TripVersion } from '@/types/trip';
 
 export type AIChatSessionStatus = 'ai' | 'human';
 export type AIChatMessageRole = 'user' | 'assistant' | 'human_assistant' | 'system';
@@ -110,6 +110,11 @@ export interface AIChatSessionMetadata {
   user_id: number;
   trip_id: number;
   status: AIChatSessionStatus;
+  // Joined from trips_v2 by the backend's list-sessions endpoint so the
+  // concierge sidebar can render the correct trip-status badge without
+  // separately hydrating each TripDetail. May be undefined for older
+  // backend responses or for sessions surfaced without the join.
+  trip_status?: TripStatus | null;
   last_message_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;

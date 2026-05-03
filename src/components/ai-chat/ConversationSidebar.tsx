@@ -74,8 +74,7 @@ function getStatusColor(status: string | null): string {
   }
 }
 
-function getStatusLabel(status: string | null): string {
-  if (!status) return 'Draft';
+function getStatusLabel(status: string): string {
   return status
     .split('-')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -148,7 +147,12 @@ export default function ConversationSidebar({
       <div className="flex-1 overflow-y-auto">
         {sessions.map((s) => {
           const isActive = s.session.id === activeSessionId;
-          const tripStatus = s.tripDetail?.trip.status ?? null;
+          // Prefer the trip_status that the backend joins onto the
+          // session row — present for every entry. Fall back to the
+          // lazy-hydrated tripDetail (only populated for the active
+          // session) for legacy backends. If neither is available,
+          // skip the badge rather than misleadingly showing "Draft".
+          const tripStatus = s.session.trip_status ?? s.tripDetail?.trip.status ?? null;
           const startDate = s.tripDetail?.currentVersion?.start_date ?? null;
           const endDate = s.tripDetail?.currentVersion?.end_date ?? null;
           return (
@@ -174,13 +178,15 @@ export default function ConversationSidebar({
                   {formatDateRange(startDate, endDate)}
                 </p>
               )}
-              <div className="flex items-center gap-2 mt-1">
-                <span
-                  className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-inter ${getStatusColor(tripStatus)}`}
-                >
-                  {getStatusLabel(tripStatus)}
-                </span>
-              </div>
+              {tripStatus && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span
+                    className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-inter ${getStatusColor(tripStatus)}`}
+                  >
+                    {getStatusLabel(tripStatus)}
+                  </span>
+                </div>
+              )}
             </button>
           );
         })}
