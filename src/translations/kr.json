@@ -91,6 +91,10 @@
   "hotel.booking_check_out": "체크아웃",
   "hotel.booking_reserve_cta": "예약 요청하기",
   "hotel.booking_concierge_cta": "컨시어지 문의",
+  "hotel.booking_error_dates_required": "체크인과 체크아웃 날짜를 모두 선택해 주세요.",
+  "hotel.booking_error_check_out_after_check_in": "체크아웃은 체크인 이후여야 합니다.",
+  "hotel.booking_error_check_in_in_past": "체크인 날짜는 오늘 이후여야 합니다.",
+  "hotel.booking_error_generic": "예약을 시작하지 못했습니다. 다시 시도해 주세요.",
   "hotel.trust_secure": "보안 결제",
   "hotel.trust_cancel": "무료 취소",
   "hotel.trust_support": "한국어 지원"

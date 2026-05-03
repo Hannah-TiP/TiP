@@ -1,26 +1,35 @@
 'use client';
 
-import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BookingCardProps {
   hotelName: string;
   benefits: string[];
+  checkIn: string;
+  checkOut: string;
+  onCheckInChange: (value: string) => void;
+  onCheckOutChange: (value: string) => void;
   onReserve: () => void;
   onAskConcierge: () => void;
+  errorMessage?: string | null;
+  isSubmitting?: boolean;
   benefitsTitle?: string;
 }
 
 export default function BookingCard({
   hotelName,
   benefits,
+  checkIn,
+  checkOut,
+  onCheckInChange,
+  onCheckOutChange,
   onReserve,
   onAskConcierge,
+  errorMessage,
+  isSubmitting = false,
   benefitsTitle,
 }: BookingCardProps) {
   const { t } = useLanguage();
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
 
   const resolvedBenefitsTitle = benefitsTitle ?? t('hotel.booking_benefits_title');
 
@@ -64,7 +73,7 @@ export default function BookingCard({
               id="hotel-booking-checkin"
               type="date"
               value={checkIn}
-              onChange={(e) => setCheckIn(e.target.value)}
+              onChange={(e) => onCheckInChange(e.target.value)}
               className="mt-1 w-full border border-gray-border bg-gray-light px-3 py-2 text-[13px] text-green-dark focus:border-gold focus:outline-none"
             />
           </div>
@@ -79,23 +88,35 @@ export default function BookingCard({
               id="hotel-booking-checkout"
               type="date"
               value={checkOut}
-              onChange={(e) => setCheckOut(e.target.value)}
+              onChange={(e) => onCheckOutChange(e.target.value)}
               className="mt-1 w-full border border-gray-border bg-gray-light px-3 py-2 text-[13px] text-green-dark focus:border-gold focus:outline-none"
             />
           </div>
         </div>
 
+        {errorMessage && (
+          <p
+            role="alert"
+            className="mt-3 text-[12px] leading-[1.5] text-red-600"
+            data-testid="booking-card-error"
+          >
+            {errorMessage}
+          </p>
+        )}
+
         <button
           type="button"
           onClick={onReserve}
-          className="mt-5 w-full bg-gold py-4 text-[12px] font-semibold uppercase tracking-[2px] text-white transition-opacity hover:opacity-90"
+          disabled={isSubmitting}
+          className="mt-5 w-full bg-gold py-4 text-[12px] font-semibold uppercase tracking-[2px] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {t('hotel.booking_reserve_cta')}
         </button>
         <button
           type="button"
           onClick={onAskConcierge}
-          className="mt-3 w-full border border-gray-border py-3 text-[12px] font-semibold uppercase tracking-[1.5px] text-green-dark transition-colors hover:border-gold hover:text-gold"
+          disabled={isSubmitting}
+          className="mt-3 w-full border border-gray-border py-3 text-[12px] font-semibold uppercase tracking-[1.5px] text-green-dark transition-colors hover:border-gold hover:text-gold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {t('hotel.booking_concierge_cta')}
         </button>

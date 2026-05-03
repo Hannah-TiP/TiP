@@ -20,7 +20,13 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),
     back: vi.fn(),
+    replace: vi.fn(),
   }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+vi.mock('next-auth/react', () => ({
+  useSession: () => ({ status: 'unauthenticated', data: null }),
 }));
 
 vi.mock('next/image', () => ({

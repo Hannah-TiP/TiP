@@ -114,3 +114,18 @@ export interface Trip {
   created_at?: string | null;
   updated_at?: string | null;
 }
+
+export interface TripFromHotelBundle {
+  trip: Trip;
+  session: {
+    id: number;
+    user_id: number;
+    trip_id: number;
+    status: string;
+    last_message_at?: string | null;
+    schema_version: number;
+    created_at?: string | null;
+    updated_at?: string | null;
+  };
+  trip_version_id: number;
+}

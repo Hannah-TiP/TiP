@@ -16,7 +16,11 @@ function SignInForm() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const redirectTo = searchParams.get('redirect') || '/my-page';
+  // Accept both `callbackUrl` (NextAuth convention used by callers like the
+  // hotel-page Reserve flow and the Flywire checkout page) and the legacy
+  // `redirect` param. Either drops the user back where they came from after
+  // a successful sign-in.
+  const redirectTo = searchParams.get('callbackUrl') || searchParams.get('redirect') || '/my-page';
 
   const handleGoogleSuccess = async (response: CredentialResponse) => {
     if (!response.credential) return;
