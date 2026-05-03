@@ -55,10 +55,6 @@ export default function MessageList({
     <div className="flex-1 overflow-y-auto px-[60px] py-[32px] space-y-6">
       {messages.map((message, index) => {
         const isUser = message.role === 'user';
-        const assistantIndex = isUser
-          ? undefined
-          : messages.slice(0, index).filter((m) => m.role === 'assistant').length;
-
         const isLastAssistant = !isUser && index === lastAssistantIndex;
 
         return (
@@ -66,7 +62,6 @@ export default function MessageList({
             <MessageBubble
               message={message}
               isUser={isUser}
-              messageIndex={assistantIndex}
               onWidgetSubmit={!isUser ? onWidgetSubmit : undefined}
               widgetsDisabled={!isLastAssistant || isLoading}
             />

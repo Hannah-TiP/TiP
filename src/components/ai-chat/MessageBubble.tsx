@@ -33,7 +33,6 @@ function renderMarkdown(text: string) {
 interface MessageBubbleProps {
   message: AIChatMessage;
   isUser: boolean;
-  messageIndex?: number;
   onWidgetSubmit?: (response: AIChatWidgetResponse) => void;
   widgetsDisabled?: boolean;
 }
@@ -41,7 +40,6 @@ interface MessageBubbleProps {
 export default function MessageBubble({
   message,
   isUser,
-  messageIndex,
   onWidgetSubmit,
   widgetsDisabled,
 }: MessageBubbleProps) {
@@ -110,14 +108,12 @@ export default function MessageBubble({
   // affordance (gold avatar + small badge) so the source feels like the
   // same brand voice as the AI.
   const isHumanConcierge = message.role === 'human_assistant';
+  // AI assistant uses a pill-shaped "Concierge" badge inline; the human
+  // takeover variant keeps the legacy circular "CT" + label-above pattern.
   const avatarClasses = isHumanConcierge
     ? 'w-8 h-8 rounded-full bg-[#C4956A] text-white flex items-center justify-center text-[10px] font-bold shrink-0'
-    : 'w-8 h-8 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0';
-  const avatarLabel = isHumanConcierge
-    ? 'CT'
-    : messageIndex !== undefined
-      ? messageIndex + 1
-      : 'AI';
+    : 'h-8 px-3 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0 whitespace-nowrap';
+  const avatarLabel = isHumanConcierge ? 'CT' : 'Concierge';
 
   return (
     <div
