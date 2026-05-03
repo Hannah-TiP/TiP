@@ -153,4 +153,18 @@ describe('TripDetailPanel — detailed itinerary view', () => {
     expect(screen.queryByTestId('trip-row-destination')).toBeNull();
     expect(screen.queryByText('Travel Plans')).toBeNull();
   });
+
+  it('renders a "View trip details" link pointing to /my-page/trip/<id>', () => {
+    render(<TripDetailPanel tripDetail={makeTripWithVersion([])} />);
+
+    const link = screen.getByTestId('trip-detail-panel-view-trip-link');
+    expect(link).toBeDefined();
+    expect(link.getAttribute('href')).toBe('/my-page/trip/1');
+  });
+
+  it('does NOT render the "View trip details" link when there is no trip', () => {
+    render(<TripDetailPanel tripDetail={null} />);
+
+    expect(screen.queryByTestId('trip-detail-panel-view-trip-link')).toBeNull();
+  });
 });

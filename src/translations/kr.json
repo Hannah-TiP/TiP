@@ -32,6 +32,7 @@
   "chat.submit_trip": "여행 제출",
   "chat.submit_trip_hint": "제출할 준비가 되셨나요? 컨시어지 팀이 맞춤 제안을 준비합니다.",
   "chat.submit_trip_message": "여행을 제출해 주세요.",
+  "chat.view_trip_details": "여행 상세 보기 →",
   "chat.upload_image": "이미지 업로드",
   "chat.upload_audio": "오디오 업로드",
   "chat.image_size_error": "이미지 파일 크기는 10MB 이하여야 합니다",

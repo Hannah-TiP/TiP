@@ -86,3 +86,60 @@ describe('apiClient.getQuote', () => {
     window.removeEventListener('auth:unauthorized', handler);
   });
 });
+
+describe('apiClient.getLatestQuoteForTrip', () => {
+  it('GETs /api/quotes?trip_id=… and returns the first item (latest)', async () => {
+    const latest: QuoteWithVersion = {
+      quote: {
+        id: 99,
+        trip_id: 7,
+        trip_version_id: 3,
+        user_id: 11,
+        current_quote_version_id: 200,
+        status: 'SENT',
+        sent_at: '2026-04-30T12:00:00Z',
+        schema_version: 1,
+      },
+      current_version: null,
+    };
+    const older: QuoteWithVersion = {
+      quote: {
+        id: 42,
+        trip_id: 7,
+        trip_version_id: 3,
+        user_id: 11,
+        current_quote_version_id: 100,
+        status: 'EXPIRED',
+        schema_version: 1,
+      },
+      current_version: null,
+    };
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: [latest, older] }));
+
+    const result = await apiClient.getLatestQuoteForTrip(7);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/quotes?trip_id=7',
+      expect.objectContaining({
+        credentials: 'include',
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+        }),
+      }),
+    );
+    expect(result).toEqual(latest);
+  });
+
+  it('returns null when the trip has no quotes', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: [] }));
+
+    const result = await apiClient.getLatestQuoteForTrip(7);
+
+    expect(result).toBeNull();
+  });
+
+  it('throws backend error message on non-OK response', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Trip not found' }, 404));
+    await expect(apiClient.getLatestQuoteForTrip(123)).rejects.toThrow('Trip not found');
+  });
+});

@@ -32,6 +32,7 @@
   "chat.submit_trip": "Submit Trip",
   "chat.submit_trip_hint": "Ready to submit? Our concierge team will start crafting your proposal.",
   "chat.submit_trip_message": "Please submit my trip now.",
+  "chat.view_trip_details": "View trip details →",
   "chat.upload_image": "Upload image",
   "chat.upload_audio": "Upload audio",
   "chat.image_size_error": "Image file size must be less than 10MB",

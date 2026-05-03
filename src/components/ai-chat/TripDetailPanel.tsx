@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { tripDayNumber, type TripWithVersion } from '@/lib/trip-utils';
 import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
@@ -213,6 +214,16 @@ export default function TripDetailPanel({
                 <JourneyStepper status={tripDetail.trip.status} />
               </div>
             )}
+
+            <div className="flex justify-end -mt-2 mb-1">
+              <Link
+                href={`/my-page/trip/${tripDetail.trip.id}`}
+                data-testid="trip-detail-panel-view-trip-link"
+                className="font-inter text-[11px] text-[#1E3D2F] hover:text-[#C4956A] underline underline-offset-2 transition-colors"
+              >
+                {t('chat.view_trip_details')}
+              </Link>
+            </div>
 
             {(tripDetail.currentVersion?.title?.trim() || 'New Trip') && (
               <div
