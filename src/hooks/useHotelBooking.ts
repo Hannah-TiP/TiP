@@ -18,6 +18,12 @@ export type BookingDateErrorKey =
   | 'hotel.booking_error_check_in_in_past';
 
 /**
+ * Translation keys surfaced for Submit Request -- a superset of the date
+ * errors plus a guard for missing adults.
+ */
+export type SubmitRequestErrorKey = BookingDateErrorKey | 'hotel.booking_error_adults_required';
+
+/**
  * Format a Date as `YYYY-MM-DD` using the host's LOCAL calendar fields.
  *
  * We deliberately avoid `toISOString().slice(0, 10)` because that returns
@@ -61,21 +67,53 @@ export function validateBookingDates(
 }
 
 /**
+ * Validate the full Submit Request payload — dates plus traveler counts.
+ * Adults must be at least 1; kids must be a non-negative integer (the
+ * stepper enforces this UI-side, but we double-check here so the API call
+ * never goes out with garbage values).
+ */
+export function validateSubmitRequest(
+  checkIn: string,
+  checkOut: string,
+  adults: number,
+  kids: number,
+  today: Date = new Date(),
+): SubmitRequestErrorKey | null {
+  const dateError = validateBookingDates(checkIn, checkOut, today);
+  if (dateError) return dateError;
+  if (!Number.isInteger(adults) || adults < 1) {
+    return 'hotel.booking_error_adults_required';
+  }
+  if (!Number.isInteger(kids) || kids < 0) {
+    return 'hotel.booking_error_adults_required';
+  }
+  return null;
+}
+
+/**
  * Build the sign-in redirect URL the user is bounced to when they click
- * Reserve / Ask Concierge while unauthenticated. After auth they land back
- * on the hotel page with `?reserve=1` (or `?ask=1`) plus dates so the
- * page can auto-fire the action.
+ * Reserve / Ask Concierge / Submit Request while unauthenticated. After
+ * auth they land back on the hotel page with the action flag plus the
+ * fields they had filled in so the page can auto-fire the action.
  */
 export function buildAuthCallbackUrl(
   hotelSlug: string,
-  action: 'reserve' | 'ask',
-  checkIn?: string,
-  checkOut?: string,
+  action: 'reserve' | 'ask' | 'submit_request',
+  options: {
+    checkIn?: string;
+    checkOut?: string;
+    adults?: number;
+    kids?: number;
+  } = {},
 ): string {
   const params = new URLSearchParams();
-  params.set(action === 'reserve' ? 'reserve' : 'ask', '1');
-  if (checkIn) params.set('checkin', checkIn);
-  if (checkOut) params.set('checkout', checkOut);
+  params.set(action, '1');
+  if (options.checkIn) params.set('checkin', options.checkIn);
+  if (options.checkOut) params.set('checkout', options.checkOut);
+  if (action === 'submit_request') {
+    if (options.adults !== undefined) params.set('adults', String(options.adults));
+    if (options.kids !== undefined) params.set('kids', String(options.kids));
+  }
   return `/hotel/${hotelSlug}?${params.toString()}`;
 }
 
@@ -87,6 +125,7 @@ interface UseHotelBookingArgs {
 interface UseHotelBookingResult {
   reserve: (checkIn: string, checkOut: string) => Promise<void>;
   askConcierge: (checkIn?: string, checkOut?: string) => Promise<void>;
+  submitRequest: (checkIn: string, checkOut: string, adults: number, kids: number) => Promise<void>;
   dateError: string | null;
   apiError: string | null;
   clearErrors: () => void;
@@ -94,9 +133,10 @@ interface UseHotelBookingResult {
 }
 
 /**
- * Single source of truth for the hotel page's Reserve and Ask Concierge
- * handlers. Both buttons in BookingCard and StickyBookingBar invoke this
- * hook so the validation, auth-gate, and API plumbing live in one place.
+ * Single source of truth for the hotel page's Reserve, Ask Concierge, and
+ * Submit Request handlers. All buttons in BookingCard / StickyBookingBar
+ * route through this hook so the validation, auth-gate, and API plumbing
+ * live in one place.
  */
 export function useHotelBooking({
   hotelId,
@@ -116,8 +156,11 @@ export function useHotelBooking({
   }, []);
 
   const redirectToSignIn = useCallback(
-    (action: 'reserve' | 'ask', checkIn?: string, checkOut?: string) => {
-      const callbackUrl = buildAuthCallbackUrl(hotelSlug, action, checkIn, checkOut);
+    (
+      action: 'reserve' | 'ask' | 'submit_request',
+      options: { checkIn?: string; checkOut?: string; adults?: number; kids?: number } = {},
+    ) => {
+      const callbackUrl = buildAuthCallbackUrl(hotelSlug, action, options);
       router.push(`/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}`);
     },
     [hotelSlug, router],
@@ -135,7 +178,7 @@ export function useHotelBooking({
       }
 
       if (sessionStatus !== 'authenticated') {
-        redirectToSignIn('reserve', checkIn, checkOut);
+        redirectToSignIn('reserve', { checkIn, checkOut });
         return;
       }
 
@@ -163,7 +206,7 @@ export function useHotelBooking({
       clearErrors();
 
       if (sessionStatus !== 'authenticated') {
-        redirectToSignIn('ask', checkIn, checkOut);
+        redirectToSignIn('ask', { checkIn, checkOut });
         return;
       }
 
@@ -186,5 +229,54 @@ export function useHotelBooking({
     [hotelId, sessionStatus, redirectToSignIn, router, clearErrors, t],
   );
 
-  return { reserve, askConcierge, dateError, apiError, clearErrors, isSubmitting };
+  const submitRequest = useCallback(
+    async (checkIn: string, checkOut: string, adults: number, kids: number) => {
+      if (hotelId == null) return;
+      clearErrors();
+
+      const errorKey = validateSubmitRequest(checkIn, checkOut, adults, kids);
+      if (errorKey) {
+        setDateError(t(errorKey));
+        return;
+      }
+
+      if (sessionStatus !== 'authenticated') {
+        redirectToSignIn('submit_request', {
+          checkIn,
+          checkOut,
+          adults,
+          kids,
+        });
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        const bundle = await apiClient.submitRequestFromHotel({
+          hotel_id: hotelId,
+          start_date: checkIn,
+          end_date: checkOut,
+          adults,
+          kids,
+        });
+        router.push(`/concierge?trip_id=${bundle.trip.id}`);
+      } catch (err) {
+        console.error('Failed to submit request from hotel:', err);
+        setApiError(t('hotel.booking_error_generic'));
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [hotelId, sessionStatus, redirectToSignIn, router, clearErrors, t],
+  );
+
+  return {
+    reserve,
+    askConcierge,
+    submitRequest,
+    dateError,
+    apiError,
+    clearErrors,
+    isSubmitting,
+  };
 }

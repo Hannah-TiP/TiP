@@ -63,6 +63,7 @@ vi.mock('@/lib/api-client', () => ({
   apiClient: {
     getHotelBySlug: vi.fn(),
     createTripFromHotel: vi.fn(),
+    submitRequestFromHotel: vi.fn(),
   },
 }));
 
@@ -97,6 +98,7 @@ beforeEach(() => {
   sessionRef.current = 'unauthenticated';
   vi.mocked(apiClient.getHotelBySlug).mockResolvedValue(baseHotel);
   vi.mocked(apiClient.createTripFromHotel).mockReset();
+  vi.mocked(apiClient.submitRequestFromHotel).mockReset();
 });
 
 afterEach(() => {
@@ -155,21 +157,81 @@ describe('HotelDetailPage — auto-resume after sign-in', () => {
     });
   });
 
+  it('fires Submit Request once when ?submit_request=1 with dates+travelers + authed, then cleans the URL', async () => {
+    const { default: HotelDetailPage } = await import('@/app/hotel/[id]/page');
+
+    sessionRef.current = 'authenticated';
+    searchParamsRef.current = new URLSearchParams(
+      'submit_request=1&checkin=2099-06-10&checkout=2099-06-13&adults=3&kids=1',
+    );
+    vi.mocked(apiClient.submitRequestFromHotel).mockResolvedValueOnce({
+      trip: { id: 99 } as never,
+      session: { id: 1 } as never,
+      trip_version_id: 5,
+    });
+
+    render(<HotelDetailPage />);
+
+    await waitFor(() => {
+      expect(apiClient.submitRequestFromHotel).toHaveBeenCalledTimes(1);
+    });
+    expect(apiClient.submitRequestFromHotel).toHaveBeenCalledWith({
+      hotel_id: 42,
+      start_date: '2099-06-10',
+      end_date: '2099-06-13',
+      adults: 3,
+      kids: 1,
+    });
+    // Reserve flow must NOT have been used.
+    expect(apiClient.createTripFromHotel).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith('/concierge?trip_id=99');
+    });
+    expect(replaceMock).toHaveBeenCalledWith('/hotel/aman-tokyo');
+  });
+
+  it('falls back to default traveler counts (2/0) when ?submit_request=1 omits adults/kids', async () => {
+    const { default: HotelDetailPage } = await import('@/app/hotel/[id]/page');
+
+    sessionRef.current = 'authenticated';
+    searchParamsRef.current = new URLSearchParams(
+      'submit_request=1&checkin=2099-06-10&checkout=2099-06-13',
+    );
+    vi.mocked(apiClient.submitRequestFromHotel).mockResolvedValueOnce({
+      trip: { id: 100 } as never,
+      session: { id: 1 } as never,
+      trip_version_id: 5,
+    });
+
+    render(<HotelDetailPage />);
+
+    await waitFor(() => {
+      expect(apiClient.submitRequestFromHotel).toHaveBeenCalledTimes(1);
+    });
+    expect(apiClient.submitRequestFromHotel).toHaveBeenCalledWith({
+      hotel_id: 42,
+      start_date: '2099-06-10',
+      end_date: '2099-06-13',
+      adults: 2,
+      kids: 0,
+    });
+  });
+
   it('does not auto-fire when the user is unauthed (post-redirect mount before auth lands)', async () => {
     const { default: HotelDetailPage } = await import('@/app/hotel/[id]/page');
 
     sessionRef.current = 'unauthenticated';
     searchParamsRef.current = new URLSearchParams(
-      'reserve=1&checkin=2099-06-10&checkout=2099-06-13',
+      'submit_request=1&checkin=2099-06-10&checkout=2099-06-13&adults=2&kids=0',
     );
 
     render(<HotelDetailPage />);
 
-    // Wait one tick — verify the handler never ran.
     await waitFor(() => {
       expect(apiClient.getHotelBySlug).toHaveBeenCalled();
     });
     expect(apiClient.createTripFromHotel).not.toHaveBeenCalled();
+    expect(apiClient.submitRequestFromHotel).not.toHaveBeenCalled();
     expect(replaceMock).not.toHaveBeenCalled();
   });
 
@@ -185,6 +247,7 @@ describe('HotelDetailPage — auto-resume after sign-in', () => {
       expect(apiClient.getHotelBySlug).toHaveBeenCalled();
     });
     expect(apiClient.createTripFromHotel).not.toHaveBeenCalled();
+    expect(apiClient.submitRequestFromHotel).not.toHaveBeenCalled();
     expect(replaceMock).not.toHaveBeenCalled();
   });
 });

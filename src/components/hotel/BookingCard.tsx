@@ -7,13 +7,89 @@ interface BookingCardProps {
   benefits: string[];
   checkIn: string;
   checkOut: string;
+  adults: number;
+  kids: number;
   onCheckInChange: (value: string) => void;
   onCheckOutChange: (value: string) => void;
-  onReserve: () => void;
+  onAdultsChange: (value: number) => void;
+  onKidsChange: (value: number) => void;
+  onSubmitRequest: () => void;
   onAskConcierge: () => void;
   errorMessage?: string | null;
   isSubmitting?: boolean;
   benefitsTitle?: string;
+}
+
+const ADULTS_MIN = 1;
+const ADULTS_MAX = 20;
+const KIDS_MIN = 0;
+const KIDS_MAX = 10;
+
+interface StepperProps {
+  id: string;
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+  decrementLabel: string;
+  incrementLabel: string;
+}
+
+function Stepper({
+  id,
+  label,
+  value,
+  min,
+  max,
+  onChange,
+  decrementLabel,
+  incrementLabel,
+}: StepperProps) {
+  const dec = () => {
+    if (value > min) onChange(value - 1);
+  };
+  const inc = () => {
+    if (value < max) onChange(value + 1);
+  };
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="block text-[10px] font-semibold uppercase tracking-[1.5px] text-gray-text"
+      >
+        {label}
+      </label>
+      <div className="mt-1 flex items-center justify-between border border-gray-border bg-gray-light px-3 py-2">
+        <button
+          type="button"
+          onClick={dec}
+          disabled={value <= min}
+          aria-label={decrementLabel}
+          className="text-[16px] leading-none text-green-dark transition-opacity hover:text-gold disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          −
+        </button>
+        <span
+          id={id}
+          aria-live="polite"
+          data-testid={`booking-card-${id}-value`}
+          className="text-[13px] font-semibold text-green-dark"
+        >
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={inc}
+          disabled={value >= max}
+          aria-label={incrementLabel}
+          className="text-[16px] leading-none text-green-dark transition-opacity hover:text-gold disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function BookingCard({
@@ -21,9 +97,13 @@ export default function BookingCard({
   benefits,
   checkIn,
   checkOut,
+  adults,
+  kids,
   onCheckInChange,
   onCheckOutChange,
-  onReserve,
+  onAdultsChange,
+  onKidsChange,
+  onSubmitRequest,
   onAskConcierge,
   errorMessage,
   isSubmitting = false,
@@ -94,6 +174,29 @@ export default function BookingCard({
           </div>
         </div>
 
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Stepper
+            id="hotel-booking-adults"
+            label={t('hotel.booking_adults')}
+            value={adults}
+            min={ADULTS_MIN}
+            max={ADULTS_MAX}
+            onChange={onAdultsChange}
+            decrementLabel={t('hotel.booking_adults_decrement')}
+            incrementLabel={t('hotel.booking_adults_increment')}
+          />
+          <Stepper
+            id="hotel-booking-kids"
+            label={t('hotel.booking_kids')}
+            value={kids}
+            min={KIDS_MIN}
+            max={KIDS_MAX}
+            onChange={onKidsChange}
+            decrementLabel={t('hotel.booking_kids_decrement')}
+            incrementLabel={t('hotel.booking_kids_increment')}
+          />
+        </div>
+
         {errorMessage && (
           <p
             role="alert"
@@ -106,11 +209,11 @@ export default function BookingCard({
 
         <button
           type="button"
-          onClick={onReserve}
+          onClick={onSubmitRequest}
           disabled={isSubmitting}
           className="mt-5 w-full bg-gold py-4 text-[12px] font-semibold uppercase tracking-[2px] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {t('hotel.booking_reserve_cta')}
+          {t('hotel.booking_submit_request_cta')}
         </button>
         <button
           type="button"
