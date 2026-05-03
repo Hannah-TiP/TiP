@@ -62,7 +62,7 @@ test.describe('Flywire checkout', () => {
     await expect(page.getByTestId('pay-now-button')).toHaveCount(0);
   });
 
-  test('/checkout/flywire renders the container + injects the script', async ({ page }) => {
+  test('/checkout/flywire renders the status panel + injects the script', async ({ page }) => {
     test.skip(!PENDING_PAYMENT_ID, 'E2E_PAYMENT_PENDING_ID is not set; skipping');
 
     // Stub the widget-config response so the page mounts even if the seeded
@@ -95,8 +95,9 @@ test.describe('Flywire checkout', () => {
       timeout: 15_000,
     });
 
-    // Container div is in the DOM (we don't try to render the real widget).
-    await expect(page.getByTestId('flywire-checkout-container')).toBeVisible();
+    // The "opening checkout" status panel is rendered (we don't try to mount
+    // the real widget — initiate() opens the checkout as its own modal).
+    await expect(page.getByTestId('flywire-checkout-status')).toBeVisible();
 
     // Flywire script tag was injected. next/script renders <script src=...>
     // somewhere in the document; assert at least one matching tag.

@@ -9,10 +9,11 @@
 // authenticated /api/payments/{id}/widget-config endpoint so a malicious
 // user can't tamper with the amount via the URL.
 //
-// We mount the Flywire widget into <div id="flywire-checkout" /> after BOTH
-// the config has loaded AND the script's onLoad fires. If the script never
-// resolves window.FlywirePayment within 5s of being injected, we surface
-// a refresh CTA rather than spin forever.
+// FlywirePayment.initiate() opens the secure checkout as a modal overlay
+// itself — there is no host element to render into. This page just shows
+// a small "opening checkout" status panel that sits behind the modal. If
+// the script never resolves window.FlywirePayment within 5s of being
+// injected, we surface a refresh CTA rather than spin forever.
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -165,7 +166,7 @@ function FlywireCheckoutContent() {
     if (typeof window === 'undefined' || !window.FlywirePayment) return;
 
     try {
-      const handle = window.FlywirePayment.initiate({
+      window.FlywirePayment.initiate({
         env: FLYWIRE_ENV,
         recipientCode: config.portal_code,
         amount: parseFloat(config.amount),
@@ -176,7 +177,6 @@ function FlywireCheckoutContent() {
         returnUrl: config.return_url,
         recipientFields: { booking_reference: config.booking_reference },
       });
-      handle.render('#flywire-checkout');
       setWidgetMounted(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to initialise checkout widget';
@@ -255,10 +255,17 @@ function FlywireCheckoutContent() {
           </div>
         ) : (
           <div
-            id="flywire-checkout"
-            data-testid="flywire-checkout-container"
-            className="bg-white rounded-2xl border border-gray-200 min-h-[480px] p-4"
-          />
+            data-testid="flywire-checkout-status"
+            className="rounded-2xl border border-gray-200 bg-white px-6 py-12 text-center"
+          >
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-4">
+              <span className="block w-5 h-5 rounded-full border-2 border-gray-300 border-t-[#1E3D2F] animate-spin" />
+            </div>
+            <p className="text-sm font-semibold text-gray-900 mb-1">Opening secure checkout…</p>
+            <p className="text-xs text-gray-500">
+              Flywire&apos;s payment window will appear in a moment.
+            </p>
+          </div>
         )}
       </div>
 
