@@ -41,7 +41,10 @@ test.describe('Concierge chat message flow', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: [baseSession] }),
+        body: JSON.stringify({
+          success: true,
+          data: [{ session: baseSession, trip: baseTrip }],
+        }),
       });
     });
 
@@ -194,7 +197,10 @@ test.describe('Concierge Your Itinerary panel — detailed plan view', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: [baseSession] }),
+        body: JSON.stringify({
+          success: true,
+          data: [{ session: baseSession, trip: baseTrip }],
+        }),
       });
     });
 
