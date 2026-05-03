@@ -398,6 +398,19 @@ export default function TripDetailPage() {
           </div>
 
           <div className="space-y-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="font-semibold text-gray-900 mb-2">Edit in Concierge</h3>
+              <p className="text-xs text-gray-500 mb-4">
+                Open this trip in Concierge to make changes or ask questions about it.
+              </p>
+              <Link
+                href={`/concierge?trip_id=${trip.id}`}
+                className="inline-flex w-full items-center justify-center gap-2 px-5 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-full hover:bg-[#2a5240] transition-colors"
+              >
+                Edit in Concierge
+              </Link>
+            </div>
+
             {documents.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-3">Booking Documents</h2>
