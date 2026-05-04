@@ -28,6 +28,16 @@ interface KeyFact {
   value: string;
 }
 
+const DEFAULT_ADULTS = 2;
+const DEFAULT_KIDS = 0;
+
+function parseCount(value: string | null, fallback: number): number {
+  if (!value) return fallback;
+  const n = parseInt(value, 10);
+  if (Number.isNaN(n) || n < 0) return fallback;
+  return n;
+}
+
 export default function HotelDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -41,15 +51,21 @@ export default function HotelDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
+  const [adults, setAdults] = useState(DEFAULT_ADULTS);
+  const [kids, setKids] = useState(DEFAULT_KIDS);
 
-  // Prefill the date inputs from the URL when the user is bounced back
+  // Prefill the booking inputs from the URL when the user is bounced back
   // from the sign-in page. Reading on first render avoids a flash of empty
   // inputs before auto-resume fires.
   const initialCheckIn = searchParams.get('checkin') ?? '';
   const initialCheckOut = searchParams.get('checkout') ?? '';
+  const initialAdults = parseCount(searchParams.get('adults'), DEFAULT_ADULTS);
+  const initialKids = parseCount(searchParams.get('kids'), DEFAULT_KIDS);
   useEffect(() => {
     if (initialCheckIn) setCheckIn(initialCheckIn);
     if (initialCheckOut) setCheckOut(initialCheckOut);
+    if (searchParams.get('adults')) setAdults(initialAdults);
+    if (searchParams.get('kids')) setKids(initialKids);
     // We deliberately depend only on the initial values; subsequent URL
     // changes are made via router.replace below and must not overwrite the
     // user's edits.
@@ -76,13 +92,12 @@ export default function HotelDetailPage() {
     }
   }, [slug]);
 
-  const { reserve, askConcierge, dateError, apiError, clearErrors, isSubmitting } = useHotelBooking(
-    { hotelId: hotel?.id ?? null, hotelSlug: slug },
-  );
+  const { reserve, askConcierge, submitRequest, dateError, apiError, clearErrors, isSubmitting } =
+    useHotelBooking({ hotelId: hotel?.id ?? null, hotelSlug: slug });
 
-  // Auto-resume after sign-in: when the URL carries ?reserve=1 or ?ask=1
-  // and the user is now authed, fire the corresponding handler once and
-  // strip the query params so a refresh doesn't re-fire.
+  // Auto-resume after sign-in: when the URL carries an action flag and the
+  // user is now authed, fire the corresponding handler once and strip the
+  // query params so a refresh doesn't re-fire.
   const autoResumedRef = useRef(false);
   useEffect(() => {
     if (autoResumedRef.current) return;
@@ -91,23 +106,28 @@ export default function HotelDetailPage() {
 
     const shouldReserve = searchParams.get('reserve') === '1';
     const shouldAsk = searchParams.get('ask') === '1';
-    if (!shouldReserve && !shouldAsk) return;
+    const shouldSubmitRequest = searchParams.get('submit_request') === '1';
+    if (!shouldReserve && !shouldAsk && !shouldSubmitRequest) return;
 
     const checkInParam = searchParams.get('checkin') ?? '';
     const checkOutParam = searchParams.get('checkout') ?? '';
 
     autoResumedRef.current = true;
 
-    if (shouldReserve) {
+    if (shouldSubmitRequest) {
+      const adultsParam = parseCount(searchParams.get('adults'), DEFAULT_ADULTS);
+      const kidsParam = parseCount(searchParams.get('kids'), DEFAULT_KIDS);
+      submitRequest(checkInParam, checkOutParam, adultsParam, kidsParam);
+    } else if (shouldReserve) {
       reserve(checkInParam, checkOutParam);
     } else {
       askConcierge(checkInParam || undefined, checkOutParam || undefined);
     }
 
-    // Clean the action+date params from the URL so a manual refresh after
-    // dismiss doesn't trigger another submission.
+    // Clean the action+date+traveler params from the URL so a manual refresh
+    // after dismiss doesn't trigger another submission.
     router.replace(`/hotel/${slug}`);
-  }, [sessionStatus, hotel, searchParams, reserve, askConcierge, router, slug]);
+  }, [sessionStatus, hotel, searchParams, reserve, askConcierge, submitRequest, router, slug]);
 
   const hotelImages = useMemo(
     () => (hotel ? getHotelImages(hotel) : ['/placeholder.jpg']),
@@ -173,7 +193,7 @@ export default function HotelDetailPage() {
     hotel.check_out_time ? { label: t('hotel.fact_check_out'), value: hotel.check_out_time } : null,
   ].filter((fact): fact is KeyFact => fact !== null);
 
-  const handleReserve = () => reserve(checkIn, checkOut);
+  const handleSubmitRequest = () => submitRequest(checkIn, checkOut, adults, kids);
   const handleAskConcierge = () => askConcierge(checkIn || undefined, checkOut || undefined);
   const handleCheckInChange = (value: string) => {
     setCheckIn(value);
@@ -181,6 +201,14 @@ export default function HotelDetailPage() {
   };
   const handleCheckOutChange = (value: string) => {
     setCheckOut(value);
+    if (dateError || apiError) clearErrors();
+  };
+  const handleAdultsChange = (value: number) => {
+    setAdults(value);
+    if (dateError || apiError) clearErrors();
+  };
+  const handleKidsChange = (value: number) => {
+    setKids(value);
     if (dateError || apiError) clearErrors();
   };
 
@@ -210,8 +238,8 @@ export default function HotelDetailPage() {
       <StickyBookingBar
         perksLabel={t('hotel.tip_exclusive_perks')}
         perksSubtitle={t('hotel.exclusive_perks_subtitle')}
-        ctaLabel={t('hotel.reserve_cta')}
-        onReserveClick={handleReserve}
+        ctaLabel={t('hotel.submit_request_cta')}
+        onReserveClick={handleSubmitRequest}
       />
 
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-16 px-6 py-16 md:px-10 lg:grid-cols-[1fr_380px]">
@@ -304,9 +332,13 @@ export default function HotelDetailPage() {
           benefits={tipBenefits}
           checkIn={checkIn}
           checkOut={checkOut}
+          adults={adults}
+          kids={kids}
           onCheckInChange={handleCheckInChange}
           onCheckOutChange={handleCheckOutChange}
-          onReserve={handleReserve}
+          onAdultsChange={handleAdultsChange}
+          onKidsChange={handleKidsChange}
+          onSubmitRequest={handleSubmitRequest}
           onAskConcierge={handleAskConcierge}
           errorMessage={dateError ?? apiError ?? null}
           isSubmitting={isSubmitting}

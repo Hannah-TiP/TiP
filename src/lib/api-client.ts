@@ -291,6 +291,29 @@ class ApiClient {
     return response.data;
   }
 
+  /**
+   * Submit a fully-specified hotel-anchored trip request directly to the
+   * concierge team. Lands the trip in WAITING_FOR_PROPOSAL status and seeds
+   * the chat thread with a confirmation message — no AI back-and-forth.
+   * Used by the hotel detail page's Submit Request CTA.
+   */
+  async submitRequestFromHotel(payload: {
+    hotel_id: number;
+    start_date: string;
+    end_date: string;
+    adults: number;
+    kids: number;
+  }): Promise<CreateTripFromHotelResponse> {
+    const response = await this.request<{ data: CreateTripFromHotelResponse }>(
+      '/trips/submit-request-from-hotel',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    );
+    return response.data;
+  }
+
   // Quote methods
   async getQuote(id: number): Promise<QuoteWithVersion> {
     const response = await this.request<{ data: QuoteWithVersion }>(`/quotes/${id}`);

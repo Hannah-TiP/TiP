@@ -3,6 +3,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import {
   useHotelBooking,
   validateBookingDates,
+  validateSubmitRequest,
   buildAuthCallbackUrl,
 } from '@/hooks/useHotelBooking';
 import { apiClient } from '@/lib/api-client';
@@ -79,34 +80,16 @@ describe('validateBookingDates', () => {
   });
 
   it('uses the local calendar date, not UTC, when comparing against today', () => {
-    // Simulates 1am local on June 1 in UTC+9 (KST). UTC at this moment is
-    // 16:00 on May 31. The OLD implementation (`toISOString().slice(0, 10)`)
-    // would resolve `today` to "2026-05-31" and accept a check-in of
-    // "2026-05-31" — a date that's already past locally. The new
-    // implementation reads the LOCAL components and correctly rejects it.
-    //
-    // We reach the same condition in any timezone by constructing a Date
-    // whose local components are "June 1, 2026 01:00:00". Whether the
-    // host is in UTC, KST, or PST, `getFullYear/getMonth/getDate` always
-    // return 2026/6/1.
     const earlyMorningLocal = new Date(2026, 5, 1, 1, 0, 0);
     expect(validateBookingDates('2026-05-31', '2026-06-05', earlyMorningLocal)).toBe(
       'hotel.booking_error_check_in_in_past',
     );
-    // And of course June 1 itself is still allowed as today.
     expect(validateBookingDates('2026-06-01', '2026-06-05', earlyMorningLocal)).toBeNull();
   });
 
   it('uses the system clock when called without an explicit `today`', () => {
-    // Mock the real `new Date()` to a specific local-time instant, then
-    // make sure the validator picks that up. This verifies the default
-    // argument path uses local-date components (not UTC).
     vi.useFakeTimers();
     try {
-      // 11:30 PM local on June 1, 2026 — anywhere west of UTC the
-      // OLD `toISOString().slice(0, 10)` would already read "2026-06-02",
-      // wrongly REJECTING a "2026-06-02" check-in as in the past on
-      // local June 1. The new implementation correctly accepts it.
       vi.setSystemTime(new Date(2026, 5, 1, 23, 30, 0));
       expect(validateBookingDates('2026-06-02', '2026-06-05')).toBeNull();
       expect(validateBookingDates('2026-06-01', '2026-06-05')).toBeNull();
@@ -119,9 +102,46 @@ describe('validateBookingDates', () => {
   });
 });
 
+describe('validateSubmitRequest', () => {
+  const today = new Date(2026, 5, 1, 12, 0, 0);
+
+  it('returns the same date errors as validateBookingDates', () => {
+    expect(validateSubmitRequest('', '', 2, 0, today)).toBe('hotel.booking_error_dates_required');
+    expect(validateSubmitRequest('2026-06-13', '2026-06-10', 2, 0, today)).toBe(
+      'hotel.booking_error_check_out_after_check_in',
+    );
+  });
+
+  it('rejects adults < 1', () => {
+    expect(validateSubmitRequest('2026-06-10', '2026-06-13', 0, 0, today)).toBe(
+      'hotel.booking_error_adults_required',
+    );
+  });
+
+  it('rejects negative kids', () => {
+    expect(validateSubmitRequest('2026-06-10', '2026-06-13', 2, -1, today)).toBe(
+      'hotel.booking_error_adults_required',
+    );
+  });
+
+  it('rejects non-integer counts', () => {
+    expect(validateSubmitRequest('2026-06-10', '2026-06-13', 2.5, 0, today)).toBe(
+      'hotel.booking_error_adults_required',
+    );
+  });
+
+  it('accepts valid input', () => {
+    expect(validateSubmitRequest('2026-06-10', '2026-06-13', 2, 0, today)).toBeNull();
+    expect(validateSubmitRequest('2026-06-10', '2026-06-13', 1, 3, today)).toBeNull();
+  });
+});
+
 describe('buildAuthCallbackUrl', () => {
   it('encodes the reserve action with both dates', () => {
-    const url = buildAuthCallbackUrl('ritz-paris', 'reserve', '2026-06-10', '2026-06-13');
+    const url = buildAuthCallbackUrl('ritz-paris', 'reserve', {
+      checkIn: '2026-06-10',
+      checkOut: '2026-06-13',
+    });
     expect(url).toBe('/hotel/ritz-paris?reserve=1&checkin=2026-06-10&checkout=2026-06-13');
   });
 
@@ -131,8 +151,30 @@ describe('buildAuthCallbackUrl', () => {
   });
 
   it('omits absent dates', () => {
-    const url = buildAuthCallbackUrl('ritz-paris', 'reserve', '2026-06-10');
+    const url = buildAuthCallbackUrl('ritz-paris', 'reserve', { checkIn: '2026-06-10' });
     expect(url).toBe('/hotel/ritz-paris?reserve=1&checkin=2026-06-10');
+  });
+
+  it('encodes the submit_request action with dates and traveler counts', () => {
+    const url = buildAuthCallbackUrl('ritz-paris', 'submit_request', {
+      checkIn: '2026-06-10',
+      checkOut: '2026-06-13',
+      adults: 3,
+      kids: 1,
+    });
+    expect(url).toBe(
+      '/hotel/ritz-paris?submit_request=1&checkin=2026-06-10&checkout=2026-06-13&adults=3&kids=1',
+    );
+  });
+
+  it('does not propagate adults/kids on non-submit-request actions', () => {
+    const url = buildAuthCallbackUrl('ritz-paris', 'reserve', {
+      checkIn: '2026-06-10',
+      checkOut: '2026-06-13',
+      adults: 3,
+      kids: 1,
+    });
+    expect(url).toBe('/hotel/ritz-paris?reserve=1&checkin=2026-06-10&checkout=2026-06-13');
   });
 });
 
@@ -158,7 +200,6 @@ describe('useHotelBooking — Reserve flow', () => {
     sessionStatusRef.current = 'unauthenticated';
     const spy = vi.spyOn(apiClient, 'createTripFromHotel');
 
-    // Use far-future dates so the validator passes regardless of `today`.
     const { result } = renderHook(() => useHotelBooking({ hotelId: 42, hotelSlug: 'ritz-paris' }));
 
     await act(async () => {
@@ -267,6 +308,95 @@ describe('useHotelBooking — Ask Concierge flow', () => {
       start_date: '2099-06-10',
       end_date: '2099-06-13',
     });
+    spy.mockRestore();
+  });
+});
+
+describe('useHotelBooking — Submit Request flow', () => {
+  it('surfaces a date validation error and skips the API when dates are missing', async () => {
+    const spy = vi.spyOn(apiClient, 'submitRequestFromHotel');
+
+    const { result } = renderHook(() => useHotelBooking({ hotelId: 42, hotelSlug: 'ritz-paris' }));
+
+    await act(async () => {
+      await result.current.submitRequest('', '', 2, 0);
+    });
+
+    expect(result.current.dateError).toBe('hotel.booking_error_dates_required');
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('surfaces an adults validation error when adults is below 1', async () => {
+    const spy = vi.spyOn(apiClient, 'submitRequestFromHotel');
+
+    const { result } = renderHook(() => useHotelBooking({ hotelId: 42, hotelSlug: 'ritz-paris' }));
+
+    await act(async () => {
+      await result.current.submitRequest('2099-06-10', '2099-06-13', 0, 0);
+    });
+
+    expect(result.current.dateError).toBe('hotel.booking_error_adults_required');
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('redirects unauthed users with ?submit_request=1 plus dates and traveler counts', async () => {
+    sessionStatusRef.current = 'unauthenticated';
+    const spy = vi.spyOn(apiClient, 'submitRequestFromHotel');
+
+    const { result } = renderHook(() => useHotelBooking({ hotelId: 42, hotelSlug: 'ritz-paris' }));
+
+    await act(async () => {
+      await result.current.submitRequest('2099-06-10', '2099-06-13', 3, 1);
+    });
+
+    expect(spy).not.toHaveBeenCalled();
+    const target = pushMock.mock.calls[0][0] as string;
+    const decoded = decodeURIComponent(target.replace('/sign-in?callbackUrl=', ''));
+    expect(decoded).toBe(
+      '/hotel/ritz-paris?submit_request=1&checkin=2099-06-10&checkout=2099-06-13&adults=3&kids=1',
+    );
+    spy.mockRestore();
+  });
+
+  it('calls the API and routes to /concierge when authed and all fields are valid', async () => {
+    const spy = vi.spyOn(apiClient, 'submitRequestFromHotel').mockResolvedValueOnce({
+      trip: { id: 77 } as never,
+      session: { id: 1 } as never,
+      trip_version_id: 99,
+    });
+
+    const { result } = renderHook(() => useHotelBooking({ hotelId: 42, hotelSlug: 'ritz-paris' }));
+
+    await act(async () => {
+      await result.current.submitRequest('2099-06-10', '2099-06-13', 2, 0);
+    });
+
+    expect(spy).toHaveBeenCalledWith({
+      hotel_id: 42,
+      start_date: '2099-06-10',
+      end_date: '2099-06-13',
+      adults: 2,
+      kids: 0,
+    });
+    expect(pushMock).toHaveBeenCalledWith('/concierge?trip_id=77');
+    spy.mockRestore();
+  });
+
+  it('surfaces an API error and stays on the page when the backend rejects', async () => {
+    const spy = vi
+      .spyOn(apiClient, 'submitRequestFromHotel')
+      .mockRejectedValueOnce(new Error('boom'));
+
+    const { result } = renderHook(() => useHotelBooking({ hotelId: 42, hotelSlug: 'ritz-paris' }));
+
+    await act(async () => {
+      await result.current.submitRequest('2099-06-10', '2099-06-13', 2, 0);
+    });
+
+    await waitFor(() => expect(result.current.apiError).toBe('hotel.booking_error_generic'));
+    expect(pushMock).not.toHaveBeenCalled();
     spy.mockRestore();
   });
 });

@@ -145,8 +145,8 @@ describe('HotelDetailPage', () => {
     // FAQ
     expect(screen.getByText('Check-in time?')).toBeTruthy();
 
-    // Reserve CTAs (sticky bar + booking card)
-    expect(screen.getAllByRole('button', { name: /reserve/i }).length).toBeGreaterThan(0);
+    // Submit Request CTAs (sticky bar + booking card) + Ask Concierge
+    expect(screen.getAllByRole('button', { name: /submit request/i }).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /ask concierge/i })).toBeTruthy();
   });
 
