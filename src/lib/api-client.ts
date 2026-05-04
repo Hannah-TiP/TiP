@@ -3,7 +3,7 @@ import type { Hotel } from '@/types/hotel';
 import type { Activity } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
 import type { City, Country, Region } from '@/types/location';
-import type { Trip, TripFromHotelBundle, TripVersion } from '@/types/trip';
+import type { Trip, CreateTripFromHotelResponse, TripVersion } from '@/types/trip';
 import type { QuoteWithVersion } from '@/types/quote';
 import type { CheckoutSessionResponse, WidgetConfig } from '@/types/payment';
 import type {
@@ -280,11 +280,14 @@ class ApiClient {
     start_date?: string;
     end_date?: string;
     adults?: number;
-  }): Promise<TripFromHotelBundle> {
-    const response = await this.request<{ data: TripFromHotelBundle }>('/trips/from-hotel', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+  }): Promise<CreateTripFromHotelResponse> {
+    const response = await this.request<{ data: CreateTripFromHotelResponse }>(
+      '/trips/from-hotel',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    );
     return response.data;
   }
 

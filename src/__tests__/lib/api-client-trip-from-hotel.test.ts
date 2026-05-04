@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { apiClient } from '@/lib/api-client';
-import type { TripFromHotelBundle } from '@/types/trip';
+import type { CreateTripFromHotelResponse } from '@/types/trip';
 
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
@@ -20,7 +20,7 @@ beforeEach(() => {
 
 describe('apiClient.createTripFromHotel', () => {
   it('POSTs /api/trips/from-hotel with the full payload and unwraps `data`', async () => {
-    const bundle: TripFromHotelBundle = {
+    const bundle: CreateTripFromHotelResponse = {
       trip: {
         id: 77,
         user_id: 11,
@@ -33,7 +33,6 @@ describe('apiClient.createTripFromHotel', () => {
         user_id: 11,
         trip_id: 77,
         status: 'ai',
-        schema_version: 1,
       },
       trip_version_id: 99,
     };
@@ -58,7 +57,7 @@ describe('apiClient.createTripFromHotel', () => {
   });
 
   it('omits dates when caller does not supply them (Ask Concierge case)', async () => {
-    const bundle: TripFromHotelBundle = {
+    const bundle: CreateTripFromHotelResponse = {
       trip: {
         id: 88,
         user_id: 11,
@@ -71,7 +70,6 @@ describe('apiClient.createTripFromHotel', () => {
         user_id: 11,
         trip_id: 88,
         status: 'ai',
-        schema_version: 1,
       },
       trip_version_id: 100,
     };

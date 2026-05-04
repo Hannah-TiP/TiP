@@ -1,3 +1,4 @@
+import type { AIChatSessionMetadata } from '@/types/ai-chat';
 import type { GeoPoint } from '@/types/common';
 
 export type TripStatus =
@@ -115,17 +116,8 @@ export interface Trip {
   updated_at?: string | null;
 }
 
-export interface TripFromHotelBundle {
+export interface CreateTripFromHotelResponse {
   trip: Trip;
-  session: {
-    id: number;
-    user_id: number;
-    trip_id: number;
-    status: string;
-    last_message_at?: string | null;
-    schema_version: number;
-    created_at?: string | null;
-    updated_at?: string | null;
-  };
+  session: AIChatSessionMetadata;
   trip_version_id: number;
 }
