@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import WishlistButton from '@/components/WishlistButton';
@@ -18,6 +19,7 @@ import ReviewsPlaceholder from '@/components/hotel/ReviewsPlaceholder';
 import FaqAccordion from '@/components/hotel/FaqAccordion';
 import { apiClient } from '@/lib/api-client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useHotelBooking } from '@/hooks/useHotelBooking';
 import { getLocalizedText } from '@/types/common';
 import { getHotelImages, type Hotel } from '@/types/hotel';
 
@@ -29,12 +31,30 @@ interface KeyFact {
 export default function HotelDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const slug = params.id as string;
   const { t } = useLanguage();
+  const { status: sessionStatus } = useSession();
 
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
+
+  // Prefill the date inputs from the URL when the user is bounced back
+  // from the sign-in page. Reading on first render avoids a flash of empty
+  // inputs before auto-resume fires.
+  const initialCheckIn = searchParams.get('checkin') ?? '';
+  const initialCheckOut = searchParams.get('checkout') ?? '';
+  useEffect(() => {
+    if (initialCheckIn) setCheckIn(initialCheckIn);
+    if (initialCheckOut) setCheckOut(initialCheckOut);
+    // We deliberately depend only on the initial values; subsequent URL
+    // changes are made via router.replace below and must not overwrite the
+    // user's edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     async function loadHotel() {
@@ -55,6 +75,39 @@ export default function HotelDetailPage() {
       loadHotel();
     }
   }, [slug]);
+
+  const { reserve, askConcierge, dateError, apiError, clearErrors, isSubmitting } = useHotelBooking(
+    { hotelId: hotel?.id ?? null, hotelSlug: slug },
+  );
+
+  // Auto-resume after sign-in: when the URL carries ?reserve=1 or ?ask=1
+  // and the user is now authed, fire the corresponding handler once and
+  // strip the query params so a refresh doesn't re-fire.
+  const autoResumedRef = useRef(false);
+  useEffect(() => {
+    if (autoResumedRef.current) return;
+    if (sessionStatus !== 'authenticated') return;
+    if (!hotel) return;
+
+    const shouldReserve = searchParams.get('reserve') === '1';
+    const shouldAsk = searchParams.get('ask') === '1';
+    if (!shouldReserve && !shouldAsk) return;
+
+    const checkInParam = searchParams.get('checkin') ?? '';
+    const checkOutParam = searchParams.get('checkout') ?? '';
+
+    autoResumedRef.current = true;
+
+    if (shouldReserve) {
+      reserve(checkInParam, checkOutParam);
+    } else {
+      askConcierge(checkInParam || undefined, checkOutParam || undefined);
+    }
+
+    // Clean the action+date params from the URL so a manual refresh after
+    // dismiss doesn't trigger another submission.
+    router.replace(`/hotel/${slug}`);
+  }, [sessionStatus, hotel, searchParams, reserve, askConcierge, router, slug]);
 
   const hotelImages = useMemo(
     () => (hotel ? getHotelImages(hotel) : ['/placeholder.jpg']),
@@ -120,12 +173,15 @@ export default function HotelDetailPage() {
     hotel.check_out_time ? { label: t('hotel.fact_check_out'), value: hotel.check_out_time } : null,
   ].filter((fact): fact is KeyFact => fact !== null);
 
-  const handleReserve = () => {
-    router.push(`/concierge?hotel_id=${hotel.id}`);
+  const handleReserve = () => reserve(checkIn, checkOut);
+  const handleAskConcierge = () => askConcierge(checkIn || undefined, checkOut || undefined);
+  const handleCheckInChange = (value: string) => {
+    setCheckIn(value);
+    if (dateError || apiError) clearErrors();
   };
-
-  const handleAskConcierge = () => {
-    router.push('/concierge');
+  const handleCheckOutChange = (value: string) => {
+    setCheckOut(value);
+    if (dateError || apiError) clearErrors();
   };
 
   const showLocationSection = !!hotel.geo || !!address;
@@ -246,8 +302,14 @@ export default function HotelDetailPage() {
         <BookingCard
           hotelName={hotelName}
           benefits={tipBenefits}
+          checkIn={checkIn}
+          checkOut={checkOut}
+          onCheckInChange={handleCheckInChange}
+          onCheckOutChange={handleCheckOutChange}
           onReserve={handleReserve}
           onAskConcierge={handleAskConcierge}
+          errorMessage={dateError ?? apiError ?? null}
+          isSubmitting={isSubmitting}
         />
       </div>
 

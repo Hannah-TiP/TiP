@@ -6,8 +6,10 @@ import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { isSafeRedirectPath } from '@/lib/redirect-validation';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+const DEFAULT_REDIRECT = '/my-page';
 
 function SignInForm() {
   const searchParams = useSearchParams();
@@ -16,7 +18,18 @@ function SignInForm() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const redirectTo = searchParams.get('redirect') || '/my-page';
+  // Accept both `callbackUrl` (NextAuth convention used by callers like the
+  // hotel-page Reserve flow and the Flywire checkout page) and the legacy
+  // `redirect` param. Either drops the user back where they came from after
+  // a successful sign-in. Both are guarded by `isSafeRedirectPath` so a
+  // crafted query like `?callbackUrl=https://evil.com` or `?callbackUrl=//evil.com`
+  // can't bounce the user off-site after auth.
+  const rawCallback = searchParams.get('callbackUrl');
+  const rawRedirect = searchParams.get('redirect');
+  const redirectTo =
+    (rawCallback && isSafeRedirectPath(rawCallback) ? rawCallback : null) ||
+    (rawRedirect && isSafeRedirectPath(rawRedirect) ? rawRedirect : null) ||
+    DEFAULT_REDIRECT;
 
   const handleGoogleSuccess = async (response: CredentialResponse) => {
     if (!response.credential) return;

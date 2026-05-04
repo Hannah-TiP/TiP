@@ -91,6 +91,10 @@
   "hotel.booking_check_out": "CHECK OUT",
   "hotel.booking_reserve_cta": "Reserve",
   "hotel.booking_concierge_cta": "Ask Concierge",
+  "hotel.booking_error_dates_required": "Please select both check-in and check-out dates.",
+  "hotel.booking_error_check_out_after_check_in": "Check-out must be after check-in.",
+  "hotel.booking_error_check_in_in_past": "Check-in cannot be in the past.",
+  "hotel.booking_error_generic": "Could not start your reservation. Please try again.",
   "hotel.trust_secure": "Secure payment",
   "hotel.trust_cancel": "Free cancellation",
   "hotel.trust_support": "Korean support"
