@@ -34,38 +34,151 @@ const elevateCards = [
   },
 ];
 
-const membershipTiers = [
+type Bilingual = { en: string; kr: string };
+
+type MembershipCircle = {
+  key: 'carte' | 'cercle' | 'confidence' | 'cenacle';
+  name: string; // not translated — circles keep their French identity
+  tagline: Bilingual;
+  price: Bilingual;
+  qualifying: Bilingual;
+  benefits: Bilingual[]; // 5 highlights per circle; full list lives on /my-page/membership
+  emphasis: 'soft' | 'recommended' | 'private';
+  cta: Bilingual;
+  ctaHref: string;
+};
+
+const membershipCircles: MembershipCircle[] = [
   {
-    name: 'Explorer',
-    price: 'Free',
-    period: '',
-    features: ['Access to AI Concierge', 'Save favorite hotels', 'Basic trip planning'],
-    highlight: false,
+    key: 'carte',
+    name: 'Carte',
+    tagline: {
+      en: 'Your entry into TiP.',
+      kr: '여정이 시작되는 곳',
+    },
+    price: { en: 'Free', kr: '무료' },
+    qualifying: {
+      en: 'Complimentary with your first TiP booking.',
+      kr: '첫 TiP 예약과 함께 자동 가입',
+    },
+    benefits: [
+      {
+        en: 'Preferred rates at 2,200+ partner hotels',
+        kr: '전 세계 2,200개 이상 파트너 호텔 특별 요금',
+      },
+      { en: 'Daily breakfast for two', kr: '매일 조식 2인 포함' },
+      { en: '$100 stay credit per booking', kr: '스테이당 $100 호텔 크레딧' },
+      { en: 'Room upgrade when available', kr: '객실 업그레이드 (가능 시)' },
+      {
+        en: 'Early check-in & late check-out when available',
+        kr: '얼리 체크인 · 레이트 체크아웃 (가능 시)',
+      },
+    ],
+    emphasis: 'soft',
+    cta: { en: 'Get Started', kr: '시작하기' },
+    ctaHref: '/sign-in',
   },
   {
-    name: 'Voyager',
-    price: '$29',
-    period: '/month',
-    features: [
-      'Everything in Explorer',
-      'Priority concierge support',
-      'Exclusive member rates',
-      'Room upgrades when available',
+    key: 'cercle',
+    name: 'Cercle',
+    tagline: {
+      en: 'Where TiP learns your style.',
+      kr: '당신의 취향이 스테이를 설계하기 시작하는 곳',
+    },
+    price: { en: 'Free', kr: '무료' },
+    qualifying: {
+      en: '$20,000 in annual TiP bookings, or by member referral.',
+      kr: '연간 $20,000 이상의 TiP 예약, 또는 멤버 추천',
+    },
+    benefits: [
+      { en: 'Up to $200 stay credit per booking', kr: '스테이당 최대 $200 크레딧' },
+      {
+        en: 'Hotel Whisperer — best room, told to you 24h before arrival',
+        kr: '호텔 위스퍼러 — 도착 24시간 전 최적의 객실 안내',
+      },
+      {
+        en: 'Personalized arrival — pillow, scent, flowers',
+        kr: '어라이벌 리추얼 — 베개 · 향 · 플라워 맞춤',
+      },
+      {
+        en: 'Birthday Stay — credit + private welcome',
+        kr: '버스데이 스테이 — 전용 크레딧과 환영',
+      },
+      {
+        en: 'Concierge Swap — request anything in Korean, day or night',
+        kr: '콩시에르주 스왑 — 한국어로 24시간 요청',
+      },
     ],
-    highlight: true,
+    emphasis: 'soft',
+    cta: { en: 'Learn More', kr: '자세히 보기' },
+    ctaHref: '/my-page/membership',
   },
   {
-    name: 'Elite',
-    price: '$99',
-    period: '/month',
-    features: [
-      'Everything in Voyager',
-      'Dedicated travel specialist',
-      'Guaranteed upgrades',
-      'VIP airport services',
-      'Complimentary experiences',
+    key: 'confidence',
+    name: 'Confidence',
+    tagline: {
+      en: 'The hotel already knows you.',
+      kr: '호텔이 이미 당신을 아는 곳',
+    },
+    price: { en: '₩3,500,000 / year', kr: '연 ₩3,500,000' },
+    qualifying: {
+      en: '$60,000 in annual bookings, or 12+ months as Cercle.',
+      kr: '연간 $60,000 이상, 또는 Cercle 멤버십 12개월 이상',
+    },
+    benefits: [
+      { en: 'Up to $300 stay credit per booking', kr: '스테이당 최대 $300 크레딧' },
+      {
+        en: 'Pre-Stay Call — 15 min with your Travel Designer',
+        kr: '프리 스테이 콜 — 트래블 디자이너와 15분 통화',
+      },
+      {
+        en: 'Dedicated Travel Designer for every itinerary',
+        kr: '데디케이티드 트래블 디자이너',
+      },
+      {
+        en: 'Guaranteed 4pm checkout at every TiP partner hotel',
+        kr: '모든 파트너 호텔 오후 4시 체크아웃 보장',
+      },
+      {
+        en: 'Consortium benefits — Virtuoso, Four Seasons Preferred, Rosewood Elite',
+        kr: '컨소시엄 혜택 — Virtuoso, Four Seasons Preferred, Rosewood Elite',
+      },
     ],
-    highlight: false,
+    emphasis: 'recommended',
+    cta: { en: 'Request Confidence', kr: 'Confidence 신청' },
+    ctaHref: '/my-page/membership',
+  },
+  {
+    key: 'cenacle',
+    name: 'Cénacle',
+    tagline: {
+      en: 'The inner circle.',
+      kr: '초대로만 열리는 가장 안쪽의 원',
+    },
+    price: { en: '₩12,000,000 / year', kr: '연 ₩12,000,000' },
+    qualifying: {
+      en: 'By invitation only. Limited to 10 new members per year.',
+      kr: '초대로만. 연간 최대 10명에게만 초대',
+    },
+    benefits: [
+      { en: 'Up to $500 stay credit per booking', kr: '스테이당 최대 $500 크레딧' },
+      {
+        en: 'Empty Room Guarantee — even when sold out',
+        kr: '엠프티 룸 개런티 — 매진 시에도 객실 확보',
+      },
+      {
+        en: 'First Night Privilege — Aman, Rosewood, Cheval Blanc, Six Senses',
+        kr: '퍼스트 나이트 프리빌리지 — 신규 오프닝 프리오프닝',
+      },
+      {
+        en: 'Anonymous check-in — no name, no ID, private entrances',
+        kr: '어노니머스 체크인 — 익명 입실',
+      },
+      { en: '24/7 dedicated advisor — one person, every detail', kr: '24시간 전담 어드바이저' },
+    ],
+    emphasis: 'private',
+    cta: { en: 'By Invitation', kr: '초대 전용' },
+    ctaHref: '/my-page/membership',
   },
 ];
 
@@ -311,80 +424,127 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Membership Section */}
-      <section className="bg-[#F5F4F2] px-[100px] py-16">
+      {/* Membership Section — Les Quatre Cercles */}
+      <section className="bg-[#F5F4F2] px-6 py-20 md:px-[100px]">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
-            <span className="text-[11px] font-semibold tracking-[4px] text-gold">MEMBERSHIP</span>
-            <h2 className="mt-3 font-primary text-[42px] italic text-green-dark">
-              Join the TiP Experience
+            <span className="text-[11px] font-semibold tracking-[4px] text-gold">
+              {lang === 'EN' ? 'TIP MEMBERSHIP' : 'TIP 멤버십'}
+            </span>
+            <h2 className="mt-3 font-primary text-[42px] italic leading-tight text-green-dark md:text-[52px]">
+              Les Quatre Cercles
             </h2>
-            <p className="mt-3 text-[15px] text-gray-text">
-              Choose the membership that matches your travel style.
+            <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-gray-text">
+              {lang === 'EN'
+                ? 'Four circles. Each opens differently. Every stay is recognized, every preference remembered.'
+                : '네 개의 원, 각기 다른 방식으로 열립니다. 모든 스테이는 특별하게 기억되고, 모든 취향은 섬세하게 반영됩니다.'}
             </p>
           </div>
 
-          <div className="mt-12 flex justify-center gap-6">
-            {membershipTiers.map((tier) => (
-              <div
-                key={tier.name}
-                className={`relative flex w-[340px] flex-col rounded-2xl p-8 ${
-                  tier.highlight ? 'bg-green-dark text-white shadow-lg' : 'bg-white shadow-sm'
-                }`}
-              >
-                {tier.highlight && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gold px-4 py-1 text-[11px] font-semibold text-white">
-                    RECOMMENDED
-                  </span>
-                )}
-                <h3
-                  className={`text-[20px] font-semibold ${tier.highlight ? 'text-white' : 'text-green-dark'}`}
-                >
-                  {tier.name}
-                </h3>
-                <div className="mt-4 flex items-baseline">
-                  <span
-                    className={`text-[36px] font-bold ${tier.highlight ? 'text-white' : 'text-green-dark'}`}
-                  >
-                    {tier.price}
-                  </span>
-                  <span
-                    className={`ml-1 text-[14px] ${tier.highlight ? 'text-white/60' : 'text-gray-text'}`}
-                  >
-                    {tier.period}
-                  </span>
-                </div>
-                <ul className="mt-6 flex flex-col gap-3">
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2">
-                      <span
-                        className={`icon-lucide mt-0.5 text-sm ${tier.highlight ? 'text-gold' : 'text-green-dark'}`}
-                      >
-                        &#xe86c;
-                      </span>
-                      <span
-                        className={`text-[14px] ${tier.highlight ? 'text-white/80' : 'text-gray-text'}`}
-                      >
-                        {feature}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  className={`mt-8 w-full rounded-full py-3 text-[13px] font-semibold transition-opacity hover:opacity-90 ${
-                    tier.highlight ? 'bg-white text-green-dark' : 'bg-green-dark text-white'
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            {membershipCircles.map((circle) => {
+              const isPrivate = circle.emphasis === 'private';
+              const isRecommended = circle.emphasis === 'recommended';
+              return (
+                <div
+                  key={circle.key}
+                  className={`relative flex flex-col rounded-2xl p-8 transition-shadow ${
+                    isPrivate
+                      ? 'bg-green-dark text-white shadow-lg'
+                      : isRecommended
+                        ? 'bg-white shadow-md ring-1 ring-gold/40'
+                        : 'bg-white shadow-sm'
                   }`}
                 >
-                  {tier.price === 'Free' ? 'Get Started' : 'Subscribe'}
-                </button>
-              </div>
-            ))}
+                  {isRecommended && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gold px-4 py-1 text-[10px] font-semibold uppercase tracking-[3px] text-white">
+                      {lang === 'EN' ? 'Recommended' : '추천'}
+                    </span>
+                  )}
+                  {isPrivate && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gold px-4 py-1 text-[10px] font-semibold uppercase tracking-[3px] text-white">
+                      {lang === 'EN' ? 'By Invitation' : '초대 전용'}
+                    </span>
+                  )}
+
+                  <div className="mb-1 text-[10px] font-semibold tracking-[3px] text-gold">◆</div>
+                  <h3
+                    className={`font-primary text-[28px] italic leading-tight ${
+                      isPrivate ? 'text-white' : 'text-green-dark'
+                    }`}
+                  >
+                    {circle.name}
+                  </h3>
+                  <p
+                    className={`mt-2 min-h-[40px] text-[13px] leading-relaxed ${
+                      isPrivate ? 'text-white/70' : 'text-gray-text'
+                    }`}
+                  >
+                    {circle.tagline[lang === 'EN' ? 'en' : 'kr']}
+                  </p>
+
+                  <div
+                    className={`mt-5 border-t pt-4 ${
+                      isPrivate ? 'border-white/20' : 'border-gray-border'
+                    }`}
+                  >
+                    <p
+                      className={`text-[20px] font-semibold ${
+                        isPrivate ? 'text-white' : 'text-green-dark'
+                      }`}
+                    >
+                      {circle.price[lang === 'EN' ? 'en' : 'kr']}
+                    </p>
+                    <p
+                      className={`mt-1 text-[11px] leading-relaxed ${
+                        isPrivate ? 'text-white/60' : 'text-gray-text'
+                      }`}
+                    >
+                      {circle.qualifying[lang === 'EN' ? 'en' : 'kr']}
+                    </p>
+                  </div>
+
+                  <ul className="mt-6 flex flex-1 flex-col gap-3">
+                    {circle.benefits.map((benefit, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span
+                          className={`mt-1.5 inline-block h-1 w-1 flex-shrink-0 rounded-full ${
+                            isPrivate ? 'bg-gold' : 'bg-green-dark/60'
+                          }`}
+                        />
+                        <span
+                          className={`text-[13px] leading-relaxed ${
+                            isPrivate ? 'text-white/80' : 'text-gray-text'
+                          }`}
+                        >
+                          {benefit[lang === 'EN' ? 'en' : 'kr']}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Link
+                    href={circle.ctaHref}
+                    className={`mt-8 inline-block rounded-full py-3 text-center text-[12px] font-semibold uppercase tracking-[2px] transition-opacity hover:opacity-90 ${
+                      isPrivate
+                        ? 'bg-gold text-green-dark'
+                        : isRecommended
+                          ? 'bg-green-dark text-white'
+                          : 'border border-green-dark/30 text-green-dark'
+                    }`}
+                  >
+                    {circle.cta[lang === 'EN' ? 'en' : 'kr']}
+                  </Link>
+                </div>
+              );
+            })}
           </div>
 
-          <div className="mt-8 flex items-center justify-center gap-2 text-gray-text">
-            <span className="icon-lucide text-sm">&#xea7c;</span>
-            <span className="text-[13px]">Scroll for more features</span>
-          </div>
+          <p className="mt-12 text-center font-primary text-[18px] italic text-green-dark/70">
+            {lang === 'EN'
+              ? 'Every circle brings you closer.'
+              : '모든 서클은 당신을 더 가까이 불러옵니다.'}
+          </p>
         </div>
       </section>
 
