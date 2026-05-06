@@ -166,16 +166,24 @@ function FlywireCheckoutContent() {
     if (typeof window === 'undefined' || !window.FlywirePayment) return;
 
     try {
+      // `currency` is intentionally NOT passed: it isn't a documented
+      // FlywirePayment.initiate() parameter — Flywire derives currency
+      // from the portal (PARSC = KRW). `requestPayerInfo: true` makes
+      // the widget collect payer details (firstName/lastName/email/etc.)
+      // itself; without it AND without pre-filled payer fields, Flywire
+      // bails with "Your payer information is not valid" before
+      // rendering the form. Pre-filling from the logged-in user is the
+      // better UX once we have proper account-level data wired through.
       window.FlywirePayment.initiate({
         env: FLYWIRE_ENV,
         recipientCode: config.portal_code,
         amount: parseFloat(config.amount),
-        currency: config.currency,
         callbackUrl: config.callback_url,
         callbackId: config.callback_id,
         callbackVersion: config.callback_version,
         returnUrl: config.return_url,
         recipientFields: { booking_reference: config.booking_reference },
+        requestPayerInfo: true,
       });
       setWidgetMounted(true);
     } catch (err) {

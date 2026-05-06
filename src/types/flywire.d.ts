@@ -8,12 +8,13 @@ interface FlywireInitiateConfig {
   env: string;
   recipientCode: string;
   amount: number;
-  currency: string;
   callbackUrl?: string;
   callbackId?: string;
   callbackVersion?: string;
   returnUrl?: string;
   recipientFields?: Record<string, string>;
+  requestPayerInfo?: boolean;
+  requestRecipientInfo?: boolean;
   nonce?: string;
   [key: string]: unknown;
 }
