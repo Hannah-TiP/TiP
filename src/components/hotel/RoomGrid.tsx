@@ -11,27 +11,40 @@ interface RoomGridProps {
 
 export default function RoomGrid({ rooms, fallbackImage }: RoomGridProps) {
   return (
-    <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {rooms.map((room, index) => {
         const roomImage = room.images?.[0] ? getImageUrl(room.images[0]) : fallbackImage;
         const sizeText = room.size_sqm ? `${room.size_sqm} m²` : null;
         const summary = getLocalizedText(room.summary);
-        const subtitle = [sizeText, summary].filter(Boolean).join(' · ');
+        const name = getLocalizedText(room.name);
         return (
           <article
-            key={`${getLocalizedText(room.name)}-${index}`}
-            className="group relative aspect-[4/3] overflow-hidden bg-gray-light"
+            key={`${name}-${index}`}
+            className="group flex flex-col overflow-hidden border border-gray-border bg-white"
           >
-            <Image
-              src={roomImage}
-              alt={getLocalizedText(room.name)}
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-5 text-white">
-              <h3 className="font-primary text-[22px] font-light">{getLocalizedText(room.name)}</h3>
-              {subtitle && <p className="mt-1 text-[12px] text-white/70">{subtitle}</p>}
+            <div className="relative aspect-[4/3] overflow-hidden bg-gray-light">
+              <Image
+                src={roomImage}
+                alt={name}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            </div>
+            <div className="flex flex-1 flex-col px-5 py-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <h3 className="font-primary text-[22px] font-light text-green-dark">{name}</h3>
+                {sizeText && (
+                  <span className="shrink-0 text-[11px] uppercase tracking-[0.15em] text-gold">
+                    {sizeText}
+                  </span>
+                )}
+              </div>
+              {summary && (
+                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-gray-text">
+                  {summary}
+                </p>
+              )}
             </div>
           </article>
         );
