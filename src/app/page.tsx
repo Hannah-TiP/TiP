@@ -145,7 +145,7 @@ const membershipCircles: MembershipCircle[] = [
       },
     ],
     emphasis: 'recommended',
-    cta: { en: 'Request Confidence', kr: 'Confidence 신청' },
+    cta: { en: 'Learn More', kr: '자세히 보기' },
     ctaHref: '/my-page/membership',
   },
   {
