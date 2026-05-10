@@ -20,7 +20,11 @@ test.describe('Landing page', () => {
     await expect(page.getByRole('link', { name: /explore hotels/i })).toBeVisible();
   });
 
-  test('displays membership tiers', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Explorer' })).toBeVisible();
+  test('displays Les Quatre Cercles', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Les Quatre Cercles' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Carte', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Cercle', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Confidence', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Cénacle', exact: true })).toBeVisible();
   });
 });
