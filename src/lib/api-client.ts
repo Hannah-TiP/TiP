@@ -18,6 +18,7 @@ import type {
   S3UploadCredentialsResponse,
 } from '@/types/ai-chat';
 import type { DestinationSuggestion } from '@/types/destination';
+import type { MyReferralsResponse, StayCredit } from '@/types/stay-credit';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -89,6 +90,16 @@ class ApiClient {
 
   async getCurrentUser(): Promise<User> {
     return this.request<User>('/auth/me');
+  }
+
+  async getMyCredits(): Promise<StayCredit[]> {
+    const response = await this.request<{ data: StayCredit[] }>('/me/credits');
+    return response.data ?? [];
+  }
+
+  async getMyReferrals(): Promise<MyReferralsResponse> {
+    const response = await this.request<{ data: MyReferralsResponse }>('/me/referrals');
+    return response.data;
   }
 
   // Profile methods
