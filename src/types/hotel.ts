@@ -2,7 +2,6 @@ import { getImageUrl, type GeoPoint, type Image, type MultiLanguageString } from
 
 export type HotelStatus = 'draft' | 'published' | 'archived';
 export type HotelStarRating = '1' | '2' | '3' | '4' | '5';
-export type MembershipTier = 'white' | 'blue' | 'black' | 'silver' | 'gold' | 'diamond';
 
 export interface HotelContact {
   phone?: string | null;
@@ -39,7 +38,6 @@ export interface HotelFeature {
 }
 
 export interface HotelBenefitProgram {
-  membership_tier?: MembershipTier | null;
   program_name?: string | null;
   valid_from?: string | null;
   valid_until?: string | null;
