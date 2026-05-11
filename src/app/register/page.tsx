@@ -168,8 +168,8 @@ function RegisterForm() {
     <div className="mt-8 w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
       {referralCode && (
         <div className="border-b border-gold/30 bg-gold/10 px-8 py-3 text-center text-sm text-green-dark">
-          Invited by <span className="font-mono font-semibold">{referralCode}</span> — you&apos;ll
-          both receive a stay credit when you join.
+          Invited by <span className="font-mono font-semibold">{referralCode}</span> — your stay
+          credit will be applied when you join.
         </div>
       )}
       {step === 'email' ? (

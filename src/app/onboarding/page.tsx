@@ -279,7 +279,7 @@ function OnboardingFlow() {
                 <p className="mt-2 text-gray-text">
                   {referredBy
                     ? 'Welcome to TiP — your stay credit has been added to your account.'
-                    : 'If a TiP member shared a code with you, both of you will receive a stay credit.'}
+                    : 'If a TiP member shared a code with you, your stay credit will be applied to your account.'}
                 </p>
               </div>
 
