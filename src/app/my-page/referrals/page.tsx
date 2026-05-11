@@ -89,8 +89,8 @@ export default function MyReferralsPage() {
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-gray-600">
               {en
-                ? 'Both of you receive a stay credit when they join through your invitation. Carte members earn $150 each. Cercle and Confidence members earn $300 each.'
-                : '소개한 분과 새로 가입한 분 모두에게 스테이 크레딧이 적립됩니다. Carte 멤버는 각 $150, Cercle 및 Confidence 멤버는 각 $300이 적립됩니다.'}
+                ? 'The friend you invite receives a stay credit when they join through your code. Your invite is worth $150 as a Carte member, or $300 as a Cercle, Confidence, or Cénacle member.'
+                : '추천 코드로 가입한 친구에게 스테이 크레딧이 적립됩니다. Carte 멤버의 추천은 $150, Cercle · Confidence · Cénacle 멤버의 추천은 $300의 가치가 있습니다.'}
             </p>
           </div>
 
@@ -170,13 +170,13 @@ export default function MyReferralsPage() {
                       </div>
                     </div>
                     <div className="text-[12px] text-gray-500">
-                      {ref.referrer_credit_id ? (
+                      {ref.referee_credit_id ? (
                         <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700 font-semibold">
-                          {en ? 'Credit issued' : '크레딧 적립'}
+                          {en ? 'Credit sent' : '크레딧 전달'}
                         </span>
                       ) : (
                         <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-500 font-semibold">
-                          {en ? 'Introduction' : '소개'}
+                          {en ? 'Joined' : '가입 완료'}
                         </span>
                       )}
                     </div>
