@@ -66,3 +66,11 @@ export interface MyReferralsResponse {
 export interface ClaimReferralResponse {
   referred_by: Referral | null;
 }
+
+// Mirrors tip-backend/v2/services/quote_credit.py::EligibleCredit.
+// A stay credit plus its FX-converted amount in the target quote's
+// currency, ready to render in the "Apply credit" picker.
+export interface EligibleCredit extends StayCredit {
+  converted_amount: string;
+  converted_currency: string;
+}
