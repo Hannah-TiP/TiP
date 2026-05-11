@@ -18,7 +18,12 @@ import type {
   S3UploadCredentialsResponse,
 } from '@/types/ai-chat';
 import type { DestinationSuggestion } from '@/types/destination';
-import type { ClaimReferralResponse, MyReferralsResponse, StayCredit } from '@/types/stay-credit';
+import type {
+  ClaimReferralResponse,
+  EligibleCredit,
+  MyReferralsResponse,
+  StayCredit,
+} from '@/types/stay-credit';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -350,6 +355,30 @@ class ApiClient {
   async getLatestQuoteForTrip(tripId: number): Promise<QuoteWithVersion | null> {
     const response = await this.request<{ data: QuoteWithVersion[] }>(`/quotes?trip_id=${tripId}`);
     return response.data[0] ?? null;
+  }
+
+  // Stay credits on quotes
+  async listEligibleCreditsForQuote(quoteId: number): Promise<EligibleCredit[]> {
+    const response = await this.request<{ data: EligibleCredit[] }>(
+      `/quotes/${quoteId}/eligible-credits`,
+    );
+    return response.data ?? [];
+  }
+
+  async applyQuoteCredit(quoteId: number, creditId: number): Promise<QuoteWithVersion> {
+    const response = await this.request<{ data: QuoteWithVersion }>(
+      `/quotes/${quoteId}/credits/${creditId}`,
+      { method: 'POST' },
+    );
+    return response.data;
+  }
+
+  async removeQuoteCredit(quoteId: number, creditId: number): Promise<QuoteWithVersion> {
+    const response = await this.request<{ data: QuoteWithVersion }>(
+      `/quotes/${quoteId}/credits/${creditId}`,
+      { method: 'DELETE' },
+    );
+    return response.data;
   }
 
   // Payment methods (Flywire checkout)

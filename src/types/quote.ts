@@ -50,6 +50,10 @@ export interface QuoteVersion {
   created_by_admin_id?: number | null;
   line_items: QuoteLineItem[];
   total_snapshot: QuoteTotalSnapshot;
+  // Stay credits applied to this version. Single-item max today (API
+  // enforced), but the shape is a list so multi-credit stacking can land
+  // later without a client change.
+  applied_stay_credit_ids?: number[];
   schema_version: number;
   created_at?: string | null;
   updated_at?: string | null;
