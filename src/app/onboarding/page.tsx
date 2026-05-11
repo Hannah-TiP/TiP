@@ -1,27 +1,33 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import type { User } from '@/types/auth';
+import type { MyReferralsResponse } from '@/types/stay-credit';
 
 const TRAVEL_STYLES = [
   { value: 'Solo Retreat', icon: '\u{1F9D8}', description: 'Peaceful, personal time' },
   {
     value: 'Family Memories',
-    icon: '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466}',
+    icon: '\u{1F468}‍\u{1F469}‍\u{1F467}‍\u{1F466}',
     description: 'Kid-friendly adventures',
   },
   { value: 'Romantic Escape', icon: '\u{1F495}', description: 'Intimate experiences' },
-  { value: 'Adventure Seeker', icon: '\u{1F3D4}\uFE0F', description: 'Thrill and excitement' },
-  { value: 'Cultural Explorer', icon: '\u{1F3DB}\uFE0F', description: 'Heritage and history' },
+  { value: 'Adventure Seeker', icon: '\u{1F3D4}️', description: 'Thrill and excitement' },
+  { value: 'Cultural Explorer', icon: '\u{1F3DB}️', description: 'Heritage and history' },
   { value: 'Wellness Focus', icon: '\u{1F33F}', description: 'Health and rejuvenation' },
 ];
 
-const TOTAL_STEPS = 4;
+// Steps: 1 = Referral, 2 = Name, 3 = Location, 4 = Birthday, 5 = Travel
+const TOTAL_STEPS = 5;
+
+// Backend code format is 8 chars from a 30-char alphabet; accept a generous
+// alphanumeric superset client-side and let the backend canonicalize.
+const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{4,16}$/i;
 
 function parseBirthday(birthday?: string): { month: string; day: string; year: string } {
   if (!birthday) return { month: '', day: '', year: '' };
@@ -32,49 +38,56 @@ function parseBirthday(birthday?: string): { month: string; day: string; year: s
   return { month: '', day: '', year: '' };
 }
 
-// Determine the first incomplete onboarding step from profile data
-// Steps 1-2 are required, steps 3-4 are optional (skippable)
+// Determine the first incomplete onboarding step from profile data.
+// Step 1 (referral) is sticky — once seen, never re-prompt.
+// Steps 2-3 are required; 4-5 are optional (skippable).
 function getStartStep(profile: User): number {
-  if (!profile.first_name || !profile.last_name) return 1;
-  if (!profile.city_id) return 2;
-  // Steps 3 and 4 are optional — once required steps are done,
-  // resume at the first optional step that's still empty, or step 4
-  if (!profile.birthday) return 3;
-  return 4;
+  if (!profile.referral_onboarding_seen) return 1;
+  if (!profile.first_name || !profile.last_name) return 2;
+  if (!profile.city_id) return 3;
+  if (!profile.birthday) return 4;
+  return 5;
 }
 
-export default function OnboardingPage() {
+function OnboardingFlow() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // ?ref= is carried through after signup so the referral step can prefill.
+  const rawRef = searchParams?.get('ref') ?? '';
+  const initialRefCode = REFERRAL_CODE_PATTERN.test(rawRef) ? rawRef.toUpperCase() : '';
+
   const [step, setStep] = useState(0); // 0 = loading
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Step 1: Name
+  // Step 1: Referral
+  const [referralCode, setReferralCode] = useState(initialRefCode);
+  const [referredBy, setReferredBy] = useState<MyReferralsResponse['referred_by']>(null);
+
+  // Step 2: Name
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
 
-  // Step 2: Location
+  // Step 3: Location
   const [cityId, setCityId] = useState<number | undefined>(undefined);
 
-  // Step 3: Birthday
+  // Step 4: Birthday
   const [birthYear, setBirthYear] = useState('');
   const [birthMonth, setBirthMonth] = useState('');
   const [birthDay, setBirthDay] = useState('');
 
-  // Step 4: Travel styles
+  // Step 5: Travel styles
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
 
-  // Load profile + countries on mount, resume at first incomplete step
+  // Load profile + referral attribution on mount, resume at first incomplete step
   useEffect(() => {
     let cancelled = false;
 
-    apiClient
-      .getProfile()
-      .then((profile) => {
+    Promise.all([apiClient.getProfile(), apiClient.getMyReferrals().catch(() => null)])
+      .then(([profile, referrals]) => {
         if (cancelled) return;
 
-        // Populate form from existing profile data
         setFirstName(profile.first_name || '');
         setLastName(profile.last_name || '');
         setCityId(profile.city_id ?? undefined);
@@ -83,12 +96,12 @@ export default function OnboardingPage() {
         setBirthDay(birth.day);
         setBirthYear(birth.year);
         setSelectedStyles(profile.travel_styles || []);
+        setReferredBy(referrals?.referred_by ?? null);
 
-        // Jump to first incomplete step
         setStep(getStartStep(profile));
       })
       .catch(() => {
-        if (!cancelled) setStep(1); // fallback to step 1 on error
+        if (!cancelled) setStep(1);
       });
 
     return () => {
@@ -112,13 +125,26 @@ export default function OnboardingPage() {
     setIsSaving(true);
     try {
       if (currentStep === 1) {
-        await apiClient.updateProfile({ first_name: firstName, last_name: lastName });
+        // Only attempt a claim when the user actually has an unclaimed code
+        // typed in AND isn't already attributed. The backend treats unknown
+        // codes as no-op (returns referred_by=null) so a stale value won't
+        // throw — but we still don't want to round-trip when there's
+        // nothing to do.
+        if (!referredBy && referralCode) {
+          const result = await apiClient.claimReferral(referralCode);
+          setReferredBy(result.referred_by);
+        }
+        // Mark the step as seen regardless of claim outcome — this is the
+        // skip-persistence the whole step hinges on.
+        await apiClient.updateProfile({ referral_onboarding_seen: true });
       } else if (currentStep === 2) {
-        await apiClient.updateProfile({ city_id: cityId });
+        await apiClient.updateProfile({ first_name: firstName, last_name: lastName });
       } else if (currentStep === 3) {
+        await apiClient.updateProfile({ city_id: cityId });
+      } else if (currentStep === 4) {
         await apiClient.updateProfile({ birthday: formatBirth() });
       }
-      // Step 4 is saved in handleComplete
+      // Step 5 is saved in handleComplete
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
@@ -145,11 +171,15 @@ export default function OnboardingPage() {
   }
 
   async function handleNext() {
-    if (step === 1 && (!firstName.trim() || !lastName.trim())) {
+    if (step === 1 && referralCode && !REFERRAL_CODE_PATTERN.test(referralCode)) {
+      setError('Referral code must be letters and numbers, 4–16 characters.');
+      return;
+    }
+    if (step === 2 && (!firstName.trim() || !lastName.trim())) {
       setError('Please enter your first and last name');
       return;
     }
-    if (step === 2 && !cityId) {
+    if (step === 3 && !cityId) {
       setError('Please select your city');
       return;
     }
@@ -165,6 +195,11 @@ export default function OnboardingPage() {
 
   async function handleSkip() {
     setError('');
+    if (step === 1) {
+      // Even on skip, mark the step as seen so we don't re-prompt on resume.
+      const saved = await saveStep(1);
+      if (!saved) return;
+    }
     if (step < TOTAL_STEPS) {
       setStep(step + 1);
     } else {
@@ -187,7 +222,8 @@ export default function OnboardingPage() {
     birthMonth && birthYear ? new Date(parseInt(birthYear), parseInt(birthMonth), 0).getDate() : 31;
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  const isSkippable = step === 3 || step === 4;
+  // Steps 1 (referral), 4 (birthday), 5 (travel) are skippable.
+  const isSkippable = step === 1 || step === 4 || step === 5;
   const saving = isLoading || isSaving;
 
   const selectClass =
@@ -195,7 +231,6 @@ export default function OnboardingPage() {
   const inputClass =
     'w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3D2F]/20 focus:border-[#1E3D2F]';
 
-  // Loading state while fetching profile
   if (step === 0) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-light">
@@ -234,8 +269,55 @@ export default function OnboardingPage() {
 
         {/* Step content */}
         <div className="w-full max-w-md">
-          {/* Step 1: Name */}
+          {/* Step 1: Referral */}
           {step === 1 && (
+            <div className="flex flex-col gap-6">
+              <div className="text-center">
+                <h1 className="font-primary text-[36px] italic text-green-dark">
+                  {referredBy ? "You're invited" : 'Were you invited?'}
+                </h1>
+                <p className="mt-2 text-gray-text">
+                  {referredBy
+                    ? 'Welcome to TiP — your stay credit has been added to your account.'
+                    : 'If a TiP member shared a code with you, both of you will receive a stay credit.'}
+                </p>
+              </div>
+
+              <div className="mt-4 rounded-xl bg-white p-8 shadow-lg">
+                {referredBy ? (
+                  <div className="text-center">
+                    <span className="text-[11px] font-semibold uppercase tracking-[3px] text-[#C4956A]">
+                      Invitation received
+                    </span>
+                    <div className="mt-2 text-sm text-gray-text">
+                      Continue to set up your profile.
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                      Referral code (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                      placeholder="ABCD1234"
+                      maxLength={16}
+                      className={`${inputClass} font-mono tracking-[2px]`}
+                      autoFocus
+                    />
+                    <p className="mt-2 text-xs text-gray-400">
+                      You can skip this step if you don&apos;t have a code.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Name */}
+          {step === 2 && (
             <div className="flex flex-col gap-6">
               <div className="text-center">
                 <h1 className="font-primary text-[36px] italic text-green-dark">Welcome to TiP</h1>
@@ -276,8 +358,8 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 2: Location */}
-          {step === 2 && (
+          {/* Step 3: Location */}
+          {step === 3 && (
             <div className="flex flex-col gap-6">
               <div className="text-center">
                 <h1 className="font-primary text-[36px] italic text-green-dark">
@@ -303,8 +385,8 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 3: Birthday */}
-          {step === 3 && (
+          {/* Step 4: Birthday */}
+          {step === 4 && (
             <div className="flex flex-col gap-6">
               <div className="text-center">
                 <h1 className="font-primary text-[36px] italic text-green-dark">
@@ -371,8 +453,8 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 4: Travel Styles */}
-          {step === 4 && (
+          {/* Step 5: Travel Styles */}
+          {step === 5 && (
             <div className="flex flex-col gap-6">
               <div className="text-center">
                 <h1 className="font-primary text-[36px] italic text-green-dark">
@@ -431,7 +513,7 @@ export default function OnboardingPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              {isSkippable && (
+              {isSkippable && !(step === 1 && referredBy) && (
                 <button
                   onClick={handleSkip}
                   disabled={saving}
@@ -452,5 +534,14 @@ export default function OnboardingPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function OnboardingPage() {
+  // useSearchParams requires a Suspense boundary in App Router.
+  return (
+    <Suspense fallback={null}>
+      <OnboardingFlow />
+    </Suspense>
   );
 }

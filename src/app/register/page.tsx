@@ -59,7 +59,14 @@ function RegisterForm() {
         throw new Error('Failed to establish session');
       }
 
-      window.location.href = '/onboarding';
+      // Forward the referral code into onboarding so the new step can
+      // prefill it and attempt the claim from there. For email signups the
+      // backend already claimed at register-time, so the onboarding step
+      // will see referred_by populated and auto-advance — but threading
+      // the param keeps the Google path covered uniformly.
+      window.location.href = referralCode
+        ? `/onboarding?ref=${encodeURIComponent(referralCode)}`
+        : '/onboarding';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google sign-up failed');
       setIsLoading(false);
@@ -143,7 +150,14 @@ function RegisterForm() {
       });
       if (result?.error) throw new Error('Failed to sign in after registration');
 
-      window.location.href = '/onboarding';
+      // Forward the referral code into onboarding so the new step can
+      // prefill it and attempt the claim from there. For email signups the
+      // backend already claimed at register-time, so the onboarding step
+      // will see referred_by populated and auto-advance — but threading
+      // the param keeps the Google path covered uniformly.
+      window.location.href = referralCode
+        ? `/onboarding?ref=${encodeURIComponent(referralCode)}`
+        : '/onboarding';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
       setIsLoading(false);
