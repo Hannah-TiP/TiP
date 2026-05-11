@@ -59,7 +59,7 @@ export default function MyReferralsPage() {
   const shareLink = useMemo(() => {
     if (!data?.code) return '';
     if (typeof window === 'undefined') return `?ref=${data.code}`;
-    return `${window.location.origin}/sign-in?ref=${data.code}`;
+    return `${window.location.origin}/register?ref=${data.code}`;
   }, [data?.code]);
 
   async function copyToClipboard(value: string) {

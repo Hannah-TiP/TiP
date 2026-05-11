@@ -1,14 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
+// Referral codes are 8 chars from a 30-char base32-ish alphabet (Crockford
+// minus I/L/O/U/0/1) — see tip-backend v2/services/referral.py. We accept a
+// generous superset here and let the backend canonicalize.
+const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{4,16}$/i;
+
 function RegisterForm() {
+  const searchParams = useSearchParams();
+  const rawRef = searchParams?.get('ref') ?? '';
+  const referralCode = REFERRAL_CODE_PATTERN.test(rawRef) ? rawRef.toUpperCase() : '';
+
   const [step, setStep] = useState<'email' | 'verify'>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -113,7 +123,12 @@ function RegisterForm() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, verification_code: verificationCode }),
+        body: JSON.stringify({
+          email,
+          password,
+          verification_code: verificationCode,
+          ...(referralCode ? { referral_code: referralCode } : {}),
+        }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -137,6 +152,12 @@ function RegisterForm() {
 
   return (
     <div className="mt-8 w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
+      {referralCode && (
+        <div className="border-b border-gold/30 bg-gold/10 px-8 py-3 text-center text-sm text-green-dark">
+          Invited by <span className="font-mono font-semibold">{referralCode}</span> — you&apos;ll
+          both receive a stay credit when you join.
+        </div>
+      )}
       {step === 'email' ? (
         <div className="flex flex-col gap-6 p-8">
           <h2 className="text-center text-[20px] font-semibold text-green-dark">Sign up</h2>
@@ -278,7 +299,10 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <RegisterForm />
+          {/* useSearchParams requires a Suspense boundary in App Router. */}
+          <Suspense fallback={null}>
+            <RegisterForm />
+          </Suspense>
         </div>
       </main>
     </GoogleOAuthProvider>
