@@ -54,4 +54,15 @@ export interface Referral {
 export interface MyReferralsResponse {
   code: string;
   referrals: Referral[];
+  // The referral row where THIS user is the referee, if any. Used by the
+  // onboarding step to decide between "you've been invited" vs the input
+  // prompt.
+  referred_by?: Referral | null;
+}
+
+// Mirrors tip-backend/v2/api/me_referral.py::POST /me/referrals/claim
+// success envelope. Idempotent: returns referred_by=null when the code
+// didn't resolve (stale code, self-referral, etc.) instead of 4xx.
+export interface ClaimReferralResponse {
+  referred_by: Referral | null;
 }

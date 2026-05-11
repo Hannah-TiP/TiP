@@ -18,7 +18,7 @@ import type {
   S3UploadCredentialsResponse,
 } from '@/types/ai-chat';
 import type { DestinationSuggestion } from '@/types/destination';
-import type { MyReferralsResponse, StayCredit } from '@/types/stay-credit';
+import type { ClaimReferralResponse, MyReferralsResponse, StayCredit } from '@/types/stay-credit';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -99,6 +99,14 @@ class ApiClient {
 
   async getMyReferrals(): Promise<MyReferralsResponse> {
     const response = await this.request<{ data: MyReferralsResponse }>('/me/referrals');
+    return response.data;
+  }
+
+  async claimReferral(code: string): Promise<ClaimReferralResponse> {
+    const response = await this.request<{ data: ClaimReferralResponse }>('/me/referrals/claim', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
     return response.data;
   }
 

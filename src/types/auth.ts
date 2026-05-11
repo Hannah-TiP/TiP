@@ -26,6 +26,9 @@ export interface User {
   membership?: string;
   is_verified: boolean;
   onboarding_completed?: boolean;
+  // Sticky flag — set to true when the user claims a referral OR skips the
+  // onboarding referral step, so resume logic doesn't re-prompt.
+  referral_onboarding_seen?: boolean;
   travel_styles?: string[];
 }
 
@@ -37,6 +40,7 @@ export interface UpdateProfileData {
   city_id?: number | null;
   travel_styles?: string[];
   onboarding_completed?: boolean;
+  referral_onboarding_seen?: boolean;
 }
 
 export interface AuthContextType {
