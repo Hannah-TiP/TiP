@@ -33,9 +33,7 @@ const sampleBundle: QuoteWithVersion = {
       currency: 'USD',
       subtotal: '500.00',
       fees: [],
-      discounts: [
-        { label: 'Stay credit (welcome, USD 150)', amount: '150.00' },
-      ],
+      discounts: [{ label: 'Stay credit (welcome, USD 150)', amount: '150.00' }],
       total: '350.00',
     },
     applied_stay_credit_ids: [9],
@@ -99,9 +97,7 @@ describe('apiClient.applyQuoteCredit', () => {
     mockFetch.mockResolvedValueOnce(
       mockResponse({ message: 'A credit is already applied to this quote' }, 400),
     );
-    await expect(apiClient.applyQuoteCredit(42, 10)).rejects.toThrow(
-      /already applied/i,
-    );
+    await expect(apiClient.applyQuoteCredit(42, 10)).rejects.toThrow(/already applied/i);
   });
 });
 
