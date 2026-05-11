@@ -31,6 +31,11 @@ function SignInForm() {
     (rawRedirect && isSafeRedirectPath(rawRedirect) ? rawRedirect : null) ||
     DEFAULT_REDIRECT;
 
+  // Forward a referral code through to /register if the user clicks "Sign up"
+  // from this page. The actual claim happens at register-time on the backend.
+  const rawRef = searchParams.get('ref') ?? '';
+  const referralCode = /^[A-Z0-9]{4,16}$/i.test(rawRef) ? rawRef.toUpperCase() : '';
+
   const handleGoogleSuccess = async (response: CredentialResponse) => {
     if (!response.credential) return;
     setError('');
@@ -163,7 +168,10 @@ function SignInForm() {
 
       <div className="border-t border-gray-100 bg-gray-50 px-8 py-4 text-center text-sm">
         <span className="text-gray-text">Don&apos;t have an account? </span>
-        <Link href="/register" className="font-medium text-green-dark hover:underline">
+        <Link
+          href={referralCode ? `/register?ref=${referralCode}` : '/register'}
+          className="font-medium text-green-dark hover:underline"
+        >
           Sign up
         </Link>
       </div>
