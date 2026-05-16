@@ -19,4 +19,10 @@ export interface WidgetConfig {
   return_url: string;
   cancel_url: string;
   booking_reference: string;
+  // Payer pre-fill — sourced from the owning user. Any field the user
+  // row doesn't have is null and must be omitted from the widget config
+  // rather than passed as a literal undefined.
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
 }

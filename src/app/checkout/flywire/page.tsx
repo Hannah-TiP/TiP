@@ -23,6 +23,7 @@ import Script from 'next/script';
 import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
+import { buildFlywireInitiateConfig } from '@/lib/flywire-config';
 import type { WidgetConfig } from '@/types/payment';
 import type { Trip, TripVersion } from '@/types/trip';
 
@@ -166,25 +167,12 @@ function FlywireCheckoutContent() {
     if (typeof window === 'undefined' || !window.FlywirePayment) return;
 
     try {
-      // `currency` is intentionally NOT passed: it isn't a documented
-      // FlywirePayment.initiate() parameter — Flywire derives currency
-      // from the portal (PARSC = KRW). `requestPayerInfo: true` makes
-      // the widget collect payer details (firstName/lastName/email/etc.)
-      // itself; without it AND without pre-filled payer fields, Flywire
-      // bails with "Your payer information is not valid" before
-      // rendering the form. Pre-filling from the logged-in user is the
-      // better UX once we have proper account-level data wired through.
-      window.FlywirePayment.initiate({
-        env: FLYWIRE_ENV,
-        recipientCode: config.portal_code,
-        amount: parseFloat(config.amount),
-        callbackUrl: config.callback_url,
-        callbackId: config.callback_id,
-        callbackVersion: config.callback_version,
-        returnUrl: config.return_url,
-        recipientFields: { booking_reference: config.booking_reference },
-        requestPayerInfo: true,
-      });
+      // Config-building is factored into ``buildFlywireInitiateConfig``
+      // so the snake_case → camelCase mapping (and the pre-fill
+      // omit-when-null rule) can be unit-tested without spinning up
+      // the page component. ``requestPayerInfo: true`` keeps the widget
+      // collecting phone/address even when name/email come pre-filled.
+      window.FlywirePayment.initiate(buildFlywireInitiateConfig({ env: FLYWIRE_ENV, config }));
       setWidgetMounted(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to initialise checkout widget';
