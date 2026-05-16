@@ -11,6 +11,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/concierge-human-takeover.spec.ts',
   '**/quotes.spec.ts',
   '**/checkout.spec.ts',
+  '**/search-prefill-concierge.spec.ts',
 ];
 
 export default defineConfig({

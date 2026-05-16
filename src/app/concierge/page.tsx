@@ -14,6 +14,11 @@ import { apiClient } from '@/lib/api-client';
 import { createTripChatSession } from '@/lib/ai-chat-utils';
 import { getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
 import { logChatResponse } from '@/lib/debug-log';
+import {
+  buildPrefillSeedMessage,
+  buildPrefillTripVersion,
+  parseSearchPrefill,
+} from '@/lib/search-prefill';
 import type {
   AIChatMessage,
   AIChatSessionMetadata,
@@ -65,7 +70,7 @@ function ConciergeContent() {
   const { data: session, status } = useSession();
   const isAuthenticated = !!session;
   const authLoading = status === 'loading';
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { isPreview } = usePreviewMode();
 
   const [rawSessions, setRawSessions] = useState<AIChatSessionWithTrip[]>([]);
@@ -92,7 +97,13 @@ function ConciergeContent() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push('/sign-in?redirect=/concierge');
+      // Preserve the current path + query so the prefill flow resumes
+      // after sign-in. `window` is safe here — this effect is client-only.
+      const fullPath =
+        typeof window !== 'undefined'
+          ? window.location.pathname + window.location.search
+          : '/concierge';
+      router.push(`/sign-in?redirect=${encodeURIComponent(fullPath)}`);
     }
   }, [authLoading, isAuthenticated, router]);
 
@@ -184,6 +195,45 @@ function ConciergeContent() {
         if (cancelled) return;
 
         setRawSessions(fetchedSessions);
+
+        // Prefill flow takes precedence over both trip_id resume and
+        // last-active-session restore: every click on the homepage
+        // SearchBar ALWAYS spins up a brand-new chat session pre-filled
+        // with the user's search values.
+        const prefill = parseSearchPrefill(searchParams);
+        if (prefill) {
+          try {
+            const version = buildPrefillTripVersion(prefill);
+            const { session: createdSession } = await createTripChatSession(version);
+            if (cancelled) return;
+
+            const refreshed = await apiClient.listChatSessions();
+            if (cancelled) return;
+            setRawSessions(refreshed);
+            await hydrateTripDetail(createdSession.trip_id);
+            await selectSession(createdSession.id, refreshed);
+
+            // Strip the query so a refresh doesn't re-fire the prefill flow.
+            router.replace('/concierge', { scroll: false });
+
+            // `t` from useLanguage is narrowed to a literal-union of
+            // known keys; cast widens it for the helper (which has its
+            // own key constants).
+            const seedMessage = buildPrefillSeedMessage(
+              prefill,
+              t as (key: string) => string,
+              lang,
+            );
+            if (seedMessage) {
+              await handleSendMessage(seedMessage, createdSession);
+            }
+            return;
+          } catch (err) {
+            console.error('[Concierge] Failed to consume prefill:', err);
+            setError('Failed to start your search. Please try again.');
+            // Fall through to default bootstrap so the user isn't stranded.
+          }
+        }
 
         const tripIdParam = searchParams.get('trip_id');
         const actionParam = searchParams.get('action');
