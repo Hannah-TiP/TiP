@@ -183,6 +183,10 @@ const CIRCLES: Circle[] = [
             kr: '프라이빗 스테이 크레딧 — 스테이당 최대 $500, 도착 전 취향 설계',
           },
           {
+            en: 'The Seventh Night — on bookings of seven or more nights at any TiP partner hotel, the seventh night is on us.',
+            kr: '일곱 번째 밤 — TiP 파트너 호텔에서 7박 이상 투숙 시, 일곱 번째 밤은 무료로 제공됩니다.',
+          },
+          {
             en: 'The Empty Room Guarantee — twice a year, your room secured at any TiP partner hotel even when sold out',
             kr: '엠프티 룸 개런티 — 연 2회, 매진된 파트너 호텔도 객실 확보',
           },
