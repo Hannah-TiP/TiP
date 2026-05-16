@@ -22,7 +22,10 @@ export async function middleware(request: NextRequest) {
 
   if (isProtectedRoute && !isLoggedIn) {
     const url = new URL('/sign-in', request.url);
-    url.searchParams.set('redirect', pathname);
+    // Preserve query string so flows like SearchBar → /concierge?prefill=1&...
+    // survive the round-trip through sign-in.
+    const target = request.nextUrl.search ? `${pathname}${request.nextUrl.search}` : pathname;
+    url.searchParams.set('redirect', target);
     return NextResponse.redirect(url);
   }
   if (isAuthRoute && isLoggedIn) {
