@@ -72,6 +72,9 @@ describe('apiClient.getWidgetConfig', () => {
       return_url: 'https://www.example.com/quotes/42?paid=1',
       cancel_url: 'https://www.example.com/quotes/42?cancelled=1',
       booking_reference: '99',
+      first_name: 'Ada',
+      last_name: 'Lovelace',
+      email: 'ada@example.com',
     };
     mockFetch.mockResolvedValueOnce(mockResponse({ data: cfg }));
 
