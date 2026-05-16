@@ -97,15 +97,14 @@ function ConciergeContent() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      // Preserve the current path + query so the prefill flow resumes
-      // after sign-in. `window` is safe here — this effect is client-only.
-      const fullPath =
-        typeof window !== 'undefined'
-          ? window.location.pathname + window.location.search
-          : '/concierge';
+      // Read params from the Next.js router state (not window.location) —
+      // during an App Router transition the DOM URL can briefly trail the
+      // route state, dropping the prefill query string on the redirect.
+      const queryString = searchParams.toString();
+      const fullPath = queryString ? `/concierge?${queryString}` : '/concierge';
       router.push(`/sign-in?redirect=${encodeURIComponent(fullPath)}`);
     }
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, router, searchParams]);
 
   // While the chat is in human mode (admin has taken over), poll the message
   // history every second so admin replies surface in near-real-time. AI mode
