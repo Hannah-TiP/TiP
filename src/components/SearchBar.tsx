@@ -22,16 +22,15 @@ export default function SearchBar() {
   };
 
   const handleSearch = () => {
-    // Validate that destination is selected
-    if (!destination) {
-      alert('Please select a destination');
-      return;
-    }
-
-    // Build search query parameters
+    // Destination is optional — if missing, the concierge AI will ask for it.
+    // Build the prefill query params for /concierge.
     const params = new URLSearchParams();
-    params.set('cityId', destination.id.toString());
-    params.set('city', destination.name);
+    params.set('prefill', '1');
+
+    if (destination) {
+      params.set('cityId', destination.id.toString());
+      params.set('city', destination.name);
+    }
 
     if (dates.checkIn) params.set('checkIn', dates.checkIn);
     if (dates.checkOut) params.set('checkOut', dates.checkOut);
@@ -42,8 +41,9 @@ export default function SearchBar() {
     if (tripType) params.set('tripType', tripType);
     if (travelStyle) params.set('travelStyle', travelStyle);
 
-    // Navigate to search results page
-    router.push(`/search?${params.toString()}`);
+    // Route to the AI concierge, which picks up the prefill and creates a
+    // new chat session seeded with these search values.
+    router.push(`/concierge?${params.toString()}`);
   };
 
   return (

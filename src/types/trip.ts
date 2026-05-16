@@ -89,6 +89,54 @@ export interface TripDay {
   items: TripPlanItem[];
 }
 
+/**
+ * TripPreference — discriminated union mirroring the backend v2 schema in
+ * `v2/data_model/schemas/trip_preferences.py`. The pre-fill flow from
+ * SearchBar uses `PurposePreference` and `CustomPreference` (for
+ * `destination_city_ids`) to seed a new TripVersion.
+ */
+export interface DepartureCityPreference {
+  type: 'departure_city';
+  city_name: string;
+  city_id?: number | null;
+}
+export interface FlightClassPreference {
+  type: 'flight_class';
+  value: string;
+}
+export interface BudgetPreference {
+  type: 'budget';
+  amount?: number | null;
+  currency?: string;
+  level?: string | null;
+}
+export interface AccommodationPreference {
+  type: 'accommodation';
+  value: string;
+}
+export interface PurposePreference {
+  type: 'purpose';
+  value: string;
+}
+export interface ServiceTypePreference {
+  type: 'service_type';
+  value: string;
+}
+export interface CustomPreference {
+  type: 'custom';
+  key: string;
+  value: string;
+  label?: string | null;
+}
+export type TripPreference =
+  | DepartureCityPreference
+  | FlightClassPreference
+  | BudgetPreference
+  | AccommodationPreference
+  | PurposePreference
+  | ServiceTypePreference
+  | CustomPreference;
+
 export interface TripVersion {
   id?: number | null;
   trip_id: number;
@@ -101,6 +149,7 @@ export interface TripVersion {
   adults: number;
   kids: number;
   plan?: TripDay[] | null;
+  trip_preferences?: TripPreference[] | null;
   schema_version: number;
   created_at?: string | null;
   updated_at?: string | null;
