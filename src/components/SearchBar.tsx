@@ -148,13 +148,13 @@ export default function SearchBar() {
           </span>
         </div>
 
-        {/* Search Button */}
+        {/* Plan My Trip Button — routes to the AI concierge with prefill */}
         <button
           className="ml-auto mr-3 flex h-12 items-center gap-2 rounded-lg bg-green-dark px-6 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
           onClick={handleSearch}
         >
           <span className="icon-lucide">&#xe8b6;</span>
-          Search
+          Plan My Trip
         </button>
       </div>
 
