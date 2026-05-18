@@ -117,5 +117,11 @@
   "hotel.booking_error_generic": "Could not start your reservation. Please try again.",
   "hotel.trust_secure": "Secure payment",
   "hotel.trust_cancel": "Free cancellation",
-  "hotel.trust_support": "Korean support"
+  "hotel.trust_support": "Korean support",
+  "more_dreams.activities_overline": "EXTRAORDINARY EXPERIENCES",
+  "more_dreams.activities_title": "Activities & Experiences",
+  "more_dreams.signature_overline": "SIGNATURE JOURNEYS",
+  "more_dreams.signature_title": "Signature Journeys",
+  "more_dreams.restaurants_overline": "FINE DINING",
+  "more_dreams.restaurants_title": "Curated Restaurants"
 }

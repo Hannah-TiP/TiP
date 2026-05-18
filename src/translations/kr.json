@@ -117,5 +117,11 @@
   "hotel.booking_error_generic": "예약을 시작하지 못했습니다. 다시 시도해 주세요.",
   "hotel.trust_secure": "보안 결제",
   "hotel.trust_cancel": "무료 취소",
-  "hotel.trust_support": "한국어 지원"
+  "hotel.trust_support": "한국어 지원",
+  "more_dreams.activities_overline": "특별한 경험",
+  "more_dreams.activities_title": "액티비티 & 경험",
+  "more_dreams.signature_overline": "시그니처 여정",
+  "more_dreams.signature_title": "시그니처 여정",
+  "more_dreams.restaurants_overline": "파인 다이닝",
+  "more_dreams.restaurants_title": "큐레이션 레스토랑"
 }

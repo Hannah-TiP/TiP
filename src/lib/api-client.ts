@@ -1,6 +1,6 @@
 import type { User, UpdateProfileData } from '@/types/auth';
 import type { Hotel } from '@/types/hotel';
-import type { Activity } from '@/types/activity';
+import type { Activity, ActivityKind } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
 import type { City, Country, Region } from '@/types/location';
 import type { Trip, CreateTripFromHotelResponse, TripVersion } from '@/types/trip';
@@ -191,12 +191,14 @@ class ApiClient {
   async getActivities(params?: {
     city_id?: number;
     category?: string;
+    kind?: ActivityKind;
     language?: string;
     include_draft?: boolean;
   }): Promise<Activity[]> {
     const searchParams = new URLSearchParams();
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
     if (params?.category) searchParams.set('category', params.category);
+    if (params?.kind) searchParams.set('kind', params.kind);
     if (params?.language) searchParams.set('language', params.language);
     if (params?.include_draft) searchParams.set('include_draft', 'true');
 
