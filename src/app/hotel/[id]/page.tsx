@@ -1,31 +1,19 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Footer from '@/components/Footer';
 import WishlistButton from '@/components/WishlistButton';
-import HeroGallery from '@/components/hotel/HeroGallery';
-import HotelBreadcrumb from '@/components/hotel/HotelBreadcrumb';
 import StickyBookingBar from '@/components/hotel/StickyBookingBar';
 import BookingCard from '@/components/hotel/BookingCard';
-import SectionTitle from '@/components/hotel/SectionTitle';
-import RoomGrid from '@/components/hotel/RoomGrid';
-import AmenityGrid from '@/components/hotel/AmenityGrid';
-import LocationSection from '@/components/hotel/LocationSection';
-import ReviewsPlaceholder from '@/components/hotel/ReviewsPlaceholder';
-import FaqAccordion from '@/components/hotel/FaqAccordion';
+import HotelDetailContent from '@/components/hotel/HotelDetailContent';
 import { apiClient } from '@/lib/api-client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useHotelBooking } from '@/hooks/useHotelBooking';
 import { getLocalizedText } from '@/types/common';
-import { getHotelImages, type Hotel } from '@/types/hotel';
-
-interface KeyFact {
-  label: string;
-  value: string;
-}
+import { type Hotel } from '@/types/hotel';
 
 const DEFAULT_ADULTS = 2;
 const DEFAULT_KIDS = 0;
@@ -128,11 +116,6 @@ export default function HotelDetailPage() {
     router.replace(`/hotel/${slug}`);
   }, [sessionStatus, hotel, searchParams, reserve, askConcierge, submitRequest, router, slug]);
 
-  const hotelImages = useMemo(
-    () => (hotel ? getHotelImages(hotel) : ['/placeholder.jpg']),
-    [hotel],
-  );
-
   if (isLoading) {
     return (
       <main className="min-h-screen bg-background">
@@ -165,11 +148,6 @@ export default function HotelDetailPage() {
   }
 
   const hotelName = getLocalizedText(hotel.name) || hotel.slug;
-  const address = getLocalizedText(hotel.address);
-  const overview = getLocalizedText(hotel.overview);
-  const rooms = hotel.rooms ?? [];
-  const features = hotel.features ?? [];
-  const faqs = hotel.faqs ?? [];
 
   const tipBenefits = (() => {
     const programBenefits = (hotel.benefits ?? []).flatMap((program) =>
@@ -183,12 +161,6 @@ export default function HotelDetailPage() {
       t('hotel.booking_benefit_4'),
     ];
   })();
-
-  const keyFacts: KeyFact[] = [
-    hotel.star_rating ? { label: t('hotel.fact_star_rating'), value: hotel.star_rating } : null,
-    hotel.check_in_time ? { label: t('hotel.fact_check_in'), value: hotel.check_in_time } : null,
-    hotel.check_out_time ? { label: t('hotel.fact_check_out'), value: hotel.check_out_time } : null,
-  ].filter((fact): fact is KeyFact => fact !== null);
 
   const handleSubmitRequest = () => submitRequest(checkIn, checkOut, adults, kids);
   const handleAskConcierge = () => askConcierge(checkIn || undefined, checkOut || undefined);
@@ -209,136 +181,38 @@ export default function HotelDetailPage() {
     if (dateError || apiError) clearErrors();
   };
 
-  const showLocationSection = !!hotel.geo || !!address;
-  const showOverviewSection = overview.length > 0 || keyFacts.length > 0;
-
   return (
     <main className="min-h-screen bg-background">
-      <HotelBreadcrumb hotelName={hotelName} cityLabel={address || undefined} />
-
-      <div className="relative">
-        <HeroGallery
-          images={hotelImages}
-          hotelName={hotelName}
-          subtitle={address || undefined}
-          starRating={hotel.star_rating}
-          showTipCertified={hotel.status === 'published'}
-          tipCertifiedLabel={t('hotel.tip_certified')}
-        />
-        <div className="absolute right-6 top-6 z-20">
-          <WishlistButton hotelId={hotel.id} size="lg" />
-        </div>
-      </div>
-
-      <StickyBookingBar
-        perksLabel={t('hotel.tip_exclusive_perks')}
-        perksSubtitle={t('hotel.exclusive_perks_subtitle')}
-        ctaLabel={t('hotel.submit_request_cta')}
-        onReserveClick={handleSubmitRequest}
+      <HotelDetailContent
+        hotel={hotel}
+        heroOverlay={<WishlistButton hotelId={hotel.id} size="lg" />}
+        stickyBar={
+          <StickyBookingBar
+            perksLabel={t('hotel.tip_exclusive_perks')}
+            perksSubtitle={t('hotel.exclusive_perks_subtitle')}
+            ctaLabel={t('hotel.submit_request_cta')}
+            onReserveClick={handleSubmitRequest}
+          />
+        }
+        sidebar={
+          <BookingCard
+            hotelName={hotelName}
+            benefits={tipBenefits}
+            checkIn={checkIn}
+            checkOut={checkOut}
+            adults={adults}
+            kids={kids}
+            onCheckInChange={handleCheckInChange}
+            onCheckOutChange={handleCheckOutChange}
+            onAdultsChange={handleAdultsChange}
+            onKidsChange={handleKidsChange}
+            onSubmitRequest={handleSubmitRequest}
+            onAskConcierge={handleAskConcierge}
+            errorMessage={dateError ?? apiError ?? null}
+            isSubmitting={isSubmitting}
+          />
+        }
       />
-
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-16 px-6 py-16 md:px-10 lg:grid-cols-[1fr_380px]">
-        <div className="min-w-0">
-          {showOverviewSection && (
-            <section aria-labelledby="overview-title" className="mb-14">
-              <SectionTitle
-                id="overview-title"
-                overline={t('hotel.about_overline')}
-                title={t('hotel.about_title')}
-              />
-              {overview && <p className="text-[15px] leading-[1.95] text-gray-text">{overview}</p>}
-
-              {keyFacts.length > 0 && (
-                <div className="mt-8 grid grid-cols-1 gap-px bg-gray-border md:grid-cols-3">
-                  {keyFacts.map((fact) => (
-                    <div key={fact.label} className="bg-gray-light px-4 py-6 text-center">
-                      <span className="block font-primary text-[28px] font-light text-gold">
-                        {fact.value}
-                      </span>
-                      <span className="mt-1 block text-[11px] uppercase tracking-[1.5px] text-gray-text">
-                        {fact.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-
-          {rooms.length > 0 && (
-            <section aria-labelledby="rooms-title" className="mb-14">
-              <SectionTitle
-                id="rooms-title"
-                overline={t('hotel.rooms_overline')}
-                title={t('hotel.rooms_title')}
-              />
-              <RoomGrid rooms={rooms} fallbackImage={hotelImages[0]} />
-            </section>
-          )}
-
-          {features.length > 0 && (
-            <section aria-labelledby="amenities-title" className="mb-14">
-              <SectionTitle
-                id="amenities-title"
-                overline={t('hotel.amenities_overline')}
-                title={t('hotel.amenities_title')}
-              />
-              <AmenityGrid features={features} />
-            </section>
-          )}
-
-          {showLocationSection && (
-            <section aria-labelledby="location-title" className="mb-14">
-              <SectionTitle
-                id="location-title"
-                overline={t('hotel.location_overline')}
-                title={t('hotel.location_title')}
-              />
-              <LocationSection hotelName={hotelName} description={address} geo={hotel.geo} />
-            </section>
-          )}
-
-          <section aria-labelledby="reviews-title" className="mb-14">
-            <SectionTitle
-              id="reviews-title"
-              overline={t('hotel.reviews_overline')}
-              title={t('hotel.reviews_title')}
-            />
-            <ReviewsPlaceholder
-              title={t('hotel.reviews_placeholder_title')}
-              body={t('hotel.reviews_placeholder_body')}
-            />
-          </section>
-
-          {faqs.length > 0 && (
-            <section aria-labelledby="faq-title" className="mb-14">
-              <SectionTitle
-                id="faq-title"
-                overline={t('hotel.faq_overline')}
-                title={t('hotel.faq_title')}
-              />
-              <FaqAccordion faqs={faqs} />
-            </section>
-          )}
-        </div>
-
-        <BookingCard
-          hotelName={hotelName}
-          benefits={tipBenefits}
-          checkIn={checkIn}
-          checkOut={checkOut}
-          adults={adults}
-          kids={kids}
-          onCheckInChange={handleCheckInChange}
-          onCheckOutChange={handleCheckOutChange}
-          onAdultsChange={handleAdultsChange}
-          onKidsChange={handleKidsChange}
-          onSubmitRequest={handleSubmitRequest}
-          onAskConcierge={handleAskConcierge}
-          errorMessage={dateError ?? apiError ?? null}
-          isSubmitting={isSubmitting}
-        />
-      </div>
 
       <Footer />
     </main>

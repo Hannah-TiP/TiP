@@ -187,6 +187,11 @@ class ApiClient {
     return response.data;
   }
 
+  async getHotelById(id: number): Promise<Hotel> {
+    const response = await this.request<{ data: Hotel }>(`/hotels/by-id/${id}`);
+    return response.data;
+  }
+
   // Activity methods
   async getActivities(params?: {
     city_id?: number;

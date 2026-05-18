@@ -83,12 +83,9 @@ describe('WidgetRenderer factory', () => {
     expect(screen.getByText('Ritz Paris')).toBeDefined();
     expect(screen.getByText('Four Seasons')).toBeDefined();
 
+    // Clicking a card now opens a preview modal — it must NOT commit directly.
     fireEvent.click(screen.getByTestId('hotel-card-100'));
-    expect(onSubmit).toHaveBeenCalledWith({
-      widget_id: 'w-4',
-      widget_type: 'hotel_carousel',
-      value: { hotel_id: 100, name: 'Ritz Paris' },
-    });
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it('renders nothing for unknown widget type', () => {
