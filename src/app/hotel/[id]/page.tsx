@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import WishlistButton from '@/components/WishlistButton';
 import HeroGallery from '@/components/hotel/HeroGallery';
@@ -137,7 +136,6 @@ export default function HotelDetailPage() {
   if (isLoading) {
     return (
       <main className="min-h-screen bg-background">
-        <TopBar activeLink="Dream Hotels" />
         <div className="flex items-center justify-center py-40">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
         </div>
@@ -149,7 +147,6 @@ export default function HotelDetailPage() {
   if (error || !hotel) {
     return (
       <main className="min-h-screen bg-background">
-        <TopBar activeLink="Dream Hotels" />
         <div className="flex flex-col items-center justify-center py-40">
           <h1 className="font-primary text-[42px] italic text-green-dark">
             {t('hotel.not_found_title')}
@@ -217,8 +214,6 @@ export default function HotelDetailPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <TopBar activeLink="Dream Hotels" />
-
       <HotelBreadcrumb hotelName={hotelName} cityLabel={address || undefined} />
 
       <div className="relative">

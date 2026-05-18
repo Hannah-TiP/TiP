@@ -18,14 +18,6 @@ vi.mock('next-auth/react', () => ({
   useSession: () => ({ status: 'unauthenticated', data: null }),
 }));
 
-vi.mock('@/components/TopBar', () => ({
-  default: () => <div>TopBar</div>,
-}));
-
-vi.mock('@/components/SubNav', () => ({
-  default: () => <div>SubNav</div>,
-}));
-
 vi.mock('@/components/Footer', () => ({
   default: () => <div>Footer</div>,
 }));

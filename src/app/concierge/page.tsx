@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import TopBar from '@/components/TopBar';
 import MessageList from '@/components/ai-chat/MessageList';
 import ChatInput from '@/components/ai-chat/ChatInput';
 import ConversationSidebar, {
@@ -509,9 +508,7 @@ function ConciergeContent() {
   }
 
   return (
-    <div className="h-screen bg-white flex flex-col">
-      <TopBar activeLink="Concierge" />
-
+    <div className="flex min-h-0 flex-1 flex-col bg-white">
       {error && (
         <div className="bg-red-50 border-b border-red-200 px-[60px] py-3">
           <div className="flex items-center justify-between">

@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import TopBar from '@/components/TopBar';
-import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import CityAutocomplete from '@/components/CityAutocomplete';
@@ -117,9 +115,6 @@ export default function MyProfile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopBar activeLink="My Page" />
-      <SubNav activeTab="My Profile" />
-
       <section className="max-w-4xl mx-auto px-6 mt-8 mb-16">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Account Settings</h1>
 

@@ -1,6 +1,5 @@
 'use client';
 
-import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import Image from 'next/image';
 
@@ -58,8 +57,6 @@ const articles = [
 export default function InsightsPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <TopBar activeLink="Insights" />
-
       {/* Hero */}
       <section className="px-16 pt-16 pb-12">
         <p className="font-inter text-xs tracking-[3px] uppercase text-[#1E3D2F]/50 mb-3">

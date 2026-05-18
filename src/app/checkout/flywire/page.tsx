@@ -20,7 +20,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Script from 'next/script';
-import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
 import { buildFlywireInitiateConfig } from '@/lib/flywire-config';
@@ -49,7 +48,6 @@ export default function FlywireCheckoutPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-gray-50">
-          <TopBar activeLink="My Page" />
           <div className="max-w-3xl mx-auto px-6 mt-8 space-y-4 animate-pulse">
             <div className="h-8 w-2/3 bg-gray-200 rounded" />
             <div className="h-[480px] bg-gray-200 rounded-2xl" />
@@ -183,7 +181,6 @@ function FlywireCheckoutContent() {
   if (sessionStatus === 'loading' || (sessionStatus === 'authenticated' && loading)) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <TopBar activeLink="My Page" />
         <div className="max-w-3xl mx-auto px-6 mt-8 space-y-4 animate-pulse">
           <div className="h-8 w-2/3 bg-gray-200 rounded" />
           <div className="h-[480px] bg-gray-200 rounded-2xl" />
@@ -196,7 +193,6 @@ function FlywireCheckoutContent() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <TopBar activeLink="My Page" />
         <div className="max-w-3xl mx-auto px-6 mt-8 text-center py-20">
           <p className="text-gray-700 text-base mb-4">{error}</p>
           <Link
@@ -213,8 +209,6 @@ function FlywireCheckoutContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopBar activeLink="My Page" />
-
       {SCRIPT_URL && (
         <Script
           src={SCRIPT_URL}

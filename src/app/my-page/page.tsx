@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import TopBar from '@/components/TopBar';
-import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
 import { getTripsWithVersions, type TripWithVersion } from '@/lib/trip-utils';
 
@@ -217,9 +215,6 @@ export default function MyPageUpcomingTravels() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopBar activeLink="My Page" />
-      <SubNav activeTab="Upcoming Travels" />
-
       {loading && <LoadingSkeleton />}
       {!loading && trips.length === 0 && <EmptyState />}
 

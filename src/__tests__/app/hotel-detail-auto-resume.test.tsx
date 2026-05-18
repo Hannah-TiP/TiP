@@ -55,7 +55,6 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-vi.mock('@/components/TopBar', () => ({ default: () => <div>TopBar</div> }));
 vi.mock('@/components/Footer', () => ({ default: () => <div>Footer</div> }));
 vi.mock('@/components/WishlistButton', () => ({ default: () => <button>Wishlist</button> }));
 

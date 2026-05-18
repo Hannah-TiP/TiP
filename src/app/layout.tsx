@@ -3,6 +3,7 @@ import './globals.css';
 import { SessionProvider } from 'next-auth/react';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { UserProvider } from '@/contexts/UserContext';
+import Header from '@/components/Header';
 
 export const metadata: Metadata = {
   title: 'TiP - Luxury Travel Concierge',
@@ -31,7 +32,12 @@ export default function RootLayout({
       <body className="h-full antialiased font-secondary">
         <SessionProvider>
           <LanguageProvider>
-            <UserProvider>{children}</UserProvider>
+            <UserProvider>
+              <div className="flex min-h-screen flex-col">
+                <Header />
+                {children}
+              </div>
+            </UserProvider>
           </LanguageProvider>
         </SessionProvider>
       </body>
