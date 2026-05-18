@@ -38,7 +38,12 @@ function activityFixture(item: { id: number; slug: string; name: string }, kind:
     kind,
     status: 'published',
     name: { en: item.name, kr: item.name },
-    images: [{ original: 'https://placehold.co/600x400' }],
+    images: [
+      {
+        original:
+          'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=400&fit=crop',
+      },
+    ],
     schema_version: 1,
   };
 }
