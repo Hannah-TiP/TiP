@@ -3,8 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import TopBar from '@/components/TopBar';
-import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
 import {
   collectTripDocuments,
@@ -220,8 +218,6 @@ export default function TripDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <TopBar activeLink="My Page" />
-        <SubNav activeTab="Upcoming Travels" />
         <div className="max-w-7xl mx-auto px-6 mt-8 space-y-4 animate-pulse">
           <div className="h-56 bg-gray-200 rounded-2xl" />
           <div className="grid grid-cols-4 gap-5">
@@ -237,8 +233,6 @@ export default function TripDetailPage() {
   if (error || !tripWithVersion) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <TopBar activeLink="My Page" />
-        <SubNav activeTab="Upcoming Travels" />
         <div className="max-w-7xl mx-auto px-6 mt-8 text-center py-20 text-gray-500">
           <p>{error ?? 'Trip not found.'}</p>
           <Link
@@ -261,9 +255,6 @@ export default function TripDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopBar activeLink="My Page" />
-      <SubNav activeTab="Upcoming Travels" />
-
       {showCancelDialog && (
         <CancelTripDialog
           onConfirm={handleCancelTrip}

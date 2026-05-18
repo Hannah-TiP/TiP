@@ -239,48 +239,8 @@ function DreamHotelsContent() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#1E3D2F]/60 via-[#1E3D2F]/70 to-[#1E3D2F]/90" />
 
-        {/* Nav */}
-        <nav className="relative z-10 flex h-16 items-center justify-between px-[60px]">
-          <Link href="/">
-            <Image
-              src="/bible_TIP_profil_400x400px.svg"
-              alt="TiP"
-              width={36}
-              height={36}
-              className="h-9"
-              style={{ filter: 'brightness(0) invert(1)' }}
-            />
-          </Link>
-          <div className="flex items-center gap-8">
-            <Link
-              href="/dream-hotels"
-              className="text-[11px] font-semibold tracking-[2px] text-white"
-            >
-              DREAM HOTELS
-            </Link>
-            <Link
-              href="/more-dreams"
-              className="text-[11px] font-medium tracking-[2px] text-white/70 hover:text-white"
-            >
-              MORE DREAMS
-            </Link>
-            <Link
-              href="/insights"
-              className="text-[11px] font-medium tracking-[2px] text-white/70 hover:text-white"
-            >
-              INSIGHTS
-            </Link>
-            <Link
-              href="/my-page"
-              className="text-[11px] font-medium tracking-[2px] text-white/70 hover:text-white"
-            >
-              MY PAGE
-            </Link>
-          </div>
-        </nav>
-
         {/* Hero Content */}
-        <div className="relative z-10 flex h-[calc(100%-64px)] flex-col items-center justify-center text-center">
+        <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
             CURATED COLLECTION
           </span>

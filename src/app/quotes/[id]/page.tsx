@@ -4,7 +4,6 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
 import { tripDayNumber } from '@/lib/trip-utils';
@@ -528,7 +527,6 @@ export default function QuoteDetailPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-gray-50">
-          <TopBar activeLink="My Page" />
           <div className="max-w-7xl mx-auto px-6 mt-8 space-y-4 animate-pulse">
             <div className="h-56 bg-gray-200 rounded-2xl" />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -685,7 +683,6 @@ function QuoteDetailContent() {
   if (sessionStatus === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <TopBar activeLink="My Page" />
         <div className="max-w-7xl mx-auto px-6 mt-8 space-y-4 animate-pulse">
           <div className="h-56 bg-gray-200 rounded-2xl" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -700,7 +697,6 @@ function QuoteDetailContent() {
   if (error || !bundle) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <TopBar activeLink="My Page" />
         <div className="max-w-7xl mx-auto px-6 mt-8 text-center py-20 text-gray-500">
           <p>{error ?? 'Quote not found.'}</p>
           <Link
@@ -719,8 +715,6 @@ function QuoteDetailContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopBar activeLink="My Page" />
-
       <div className="max-w-7xl mx-auto px-6 mt-8 mb-16 space-y-6">
         <Link href="/my-page" className="text-sm text-gray-500 hover:text-gray-900 inline-block">
           ← My Trips

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import TopBar from '@/components/TopBar';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
 import { getImageUrl, getLocalizedText } from '@/types/common';
@@ -40,7 +39,6 @@ export default function ActivityDetailPage() {
   if (isLoading) {
     return (
       <main className="min-h-screen bg-background">
-        <TopBar activeLink="More Dreams" />
         <div className="flex items-center justify-center py-40">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
         </div>
@@ -52,7 +50,6 @@ export default function ActivityDetailPage() {
   if (error || !activity) {
     return (
       <main className="min-h-screen bg-background">
-        <TopBar activeLink="More Dreams" />
         <div className="flex flex-col items-center justify-center py-40">
           <h1 className="font-primary text-[42px] italic text-green-dark">Activity Not Found</h1>
           <p className="mt-4 text-gray-text">
@@ -80,8 +77,6 @@ export default function ActivityDetailPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <TopBar activeLink="More Dreams" />
-
       {/* Hero */}
       <section className="relative h-[560px] w-full overflow-hidden">
         <Image

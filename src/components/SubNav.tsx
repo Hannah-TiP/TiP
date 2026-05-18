@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import type { SubNavKey } from '@/lib/header-config';
 
 interface SubNavProps {
-  activeTab: string;
+  activeTab: SubNavKey;
 }
 
-const tabs = [
+const tabs: { label: SubNavKey; href: string }[] = [
   { label: 'Upcoming Travels', href: '/my-page' },
   { label: 'Travel History', href: '/my-page/travel-history' },
   { label: 'Membership', href: '/my-page/membership' },
@@ -18,30 +19,18 @@ const tabs = [
 
 export default function SubNav({ activeTab }: SubNavProps) {
   return (
-    <nav
-      className="flex items-center bg-white"
-      style={{
-        padding: '0 40px',
-        borderBottom: '1px solid #E8E7E5',
-      }}
-    >
+    <nav className="flex items-center border-b border-gray-border bg-white px-10">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.label;
         return (
           <Link
             key={tab.label}
             href={tab.href}
-            className="flex items-center"
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: 14,
-              fontWeight: isActive ? 700 : 500,
-              color: isActive ? '#1E3D2F' : '#999999',
-              textDecoration: 'none',
-              padding: '14px 20px',
-              borderBottom: isActive ? '2px solid #1E3D2F' : '2px solid transparent',
-              whiteSpace: 'nowrap',
-            }}
+            className={`flex items-center whitespace-nowrap border-b-2 px-5 py-[14px] text-[14px] no-underline transition-colors ${
+              isActive
+                ? 'border-green-dark font-bold text-green-dark'
+                : 'border-transparent font-medium text-[#999999] hover:text-green-dark'
+            }`}
           >
             {tab.label}
           </Link>

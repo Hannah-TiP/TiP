@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import TopBar from '@/components/TopBar';
-import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { apiClient } from '@/lib/api-client';
@@ -76,8 +74,6 @@ export default function MyReferralsPage() {
 
   return (
     <>
-      <TopBar activeLink="My Page" />
-      <SubNav activeTab="Referrals" />
       <main className="min-h-[80vh] bg-[#FAF9F7]">
         <section className="max-w-4xl mx-auto px-6 py-16">
           <div className="text-center mb-10">

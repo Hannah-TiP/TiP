@@ -5,13 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import SearchBar from '@/components/SearchBar';
 import SubscribePopup from '@/components/SubscribePopup';
-import { useSession, signOut } from 'next-auth/react';
-
-const mainNavLinks = [
-  { label: 'DREAM HOTELS', href: '/dream-hotels' },
-  { label: 'MORE DREAMS', href: '/more-dreams' },
-  { label: 'INSIGHTS', href: '/insights' },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const elevateCards = [
   {
@@ -183,10 +177,9 @@ const membershipCircles: MembershipCircle[] = [
 ];
 
 export default function HomePage() {
-  const { data: session } = useSession();
-  const isAuthenticated = !!session;
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   const [showSubscribe, setShowSubscribe] = useState(false);
-  const [lang, setLang] = useState<'EN' | 'KR'>('EN');
 
   return (
     <main className="min-h-screen bg-black">
@@ -204,85 +197,25 @@ export default function HomePage() {
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/40 to-black/70" />
 
-        {/* Top Bar */}
-        <div
-          className="relative z-10 flex h-[50px] items-center justify-between px-10"
-          style={{ background: 'rgba(0,0,0,0.3)' }}
-        >
+        {/* Contact strip — sits just below the centralized overlay header */}
+        <div className="relative z-10 mt-[64px] flex h-[50px] items-center justify-between bg-black/30 px-10">
           <div className="flex items-center gap-6">
             <span className="text-[12px] font-medium text-white/70">support@tip-ai.com</span>
             <span className="text-[12px] text-white/50">|</span>
             <span className="text-[12px] font-medium text-white/70">+82 2-1234-5678</span>
           </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setLang(lang === 'EN' ? 'KR' : 'EN')}
-              className="text-[12px] font-medium text-white/70 transition-colors hover:text-white"
-            >
-              {lang === 'EN' ? 'EN' : 'KR'} | {lang === 'EN' ? 'KR' : 'EN'}
-            </button>
-            <span className="text-white/30">|</span>
-            <button
-              onClick={() => setShowSubscribe(true)}
-              className="text-[12px] font-medium text-white/70 transition-colors hover:text-white"
-            >
-              SUBSCRIBE
-            </button>
-          </div>
+          <button
+            onClick={() => setShowSubscribe(true)}
+            className="text-[12px] font-medium text-white/70 transition-colors hover:text-white"
+          >
+            SUBSCRIBE
+          </button>
         </div>
-
-        {/* Nav Bar */}
-        <nav className="relative z-10 flex h-[80px] items-center justify-between px-10">
-          <Link href="/">
-            <Image
-              src="/bible_TIP_profil_400x400px.svg"
-              alt="TiP"
-              className="h-10"
-              width={40}
-              height={40}
-              style={{ filter: 'brightness(0) invert(1)' }}
-            />
-          </Link>
-          <div className="flex items-center gap-10">
-            {mainNavLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="text-[11px] font-medium tracking-[2px] text-white/80 transition-colors hover:text-white"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          <div className="flex items-center gap-6">
-            <Link
-              href="/my-page"
-              className="text-[11px] font-medium tracking-[2px] text-white/80 transition-colors hover:text-white"
-            >
-              MY PAGE
-            </Link>
-            {isAuthenticated ? (
-              <button
-                onClick={() => signOut({ callbackUrl: '/' })}
-                className="rounded-full border border-white/30 px-5 py-2 text-[11px] font-medium tracking-[1px] text-white transition-colors hover:bg-white/10"
-              >
-                LOG OUT
-              </button>
-            ) : (
-              <Link
-                href="/sign-in"
-                className="rounded-full border border-white/30 px-5 py-2 text-[11px] font-medium tracking-[1px] text-white transition-colors hover:bg-white/10"
-              >
-                SIGN IN
-              </Link>
-            )}
-          </div>
-        </nav>
 
         {/* Hero Content */}
         <div
           className="relative z-10 flex flex-col items-start justify-end px-[100px] pb-[180px]"
-          style={{ height: 'calc(100% - 130px)' }}
+          style={{ height: 'calc(100% - 114px)' }}
         >
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
             LUXURY TRAVEL REIMAGINED
@@ -429,13 +362,13 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-              {lang === 'EN' ? 'TIP MEMBERSHIP' : 'TIP 멤버십'}
+              {isEn ? 'TIP MEMBERSHIP' : 'TIP 멤버십'}
             </span>
             <h2 className="mt-3 font-primary text-[42px] italic leading-tight text-green-dark md:text-[52px]">
               Les Quatre Cercles
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-gray-text">
-              {lang === 'EN'
+              {isEn
                 ? 'Four circles. Each opens differently. Every stay is recognized, every preference remembered.'
                 : '네 개의 원, 각기 다른 방식으로 열립니다. 모든 스테이는 특별하게 기억되고, 모든 취향은 섬세하게 반영됩니다.'}
             </p>
@@ -458,12 +391,12 @@ export default function HomePage() {
                 >
                   {isRecommended && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gold px-4 py-1 text-[10px] font-semibold uppercase tracking-[3px] text-white">
-                      {lang === 'EN' ? 'Recommended' : '추천'}
+                      {isEn ? 'Recommended' : '추천'}
                     </span>
                   )}
                   {isPrivate && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gold px-4 py-1 text-[10px] font-semibold uppercase tracking-[3px] text-white">
-                      {lang === 'EN' ? 'By Invitation' : '초대 전용'}
+                      {isEn ? 'By Invitation' : '초대 전용'}
                     </span>
                   )}
 
@@ -480,7 +413,7 @@ export default function HomePage() {
                       isPrivate ? 'text-white/70' : 'text-gray-text'
                     }`}
                   >
-                    {circle.tagline[lang === 'EN' ? 'en' : 'kr']}
+                    {circle.tagline[isEn ? 'en' : 'kr']}
                   </p>
 
                   <div
@@ -493,14 +426,14 @@ export default function HomePage() {
                         isPrivate ? 'text-white' : 'text-green-dark'
                       }`}
                     >
-                      {circle.price[lang === 'EN' ? 'en' : 'kr']}
+                      {circle.price[isEn ? 'en' : 'kr']}
                     </p>
                     <p
                       className={`mt-1 text-[11px] leading-relaxed ${
                         isPrivate ? 'text-white/60' : 'text-gray-text'
                       }`}
                     >
-                      {circle.qualifying[lang === 'EN' ? 'en' : 'kr']}
+                      {circle.qualifying[isEn ? 'en' : 'kr']}
                     </p>
                   </div>
 
@@ -517,7 +450,7 @@ export default function HomePage() {
                             isPrivate ? 'text-white/80' : 'text-gray-text'
                           }`}
                         >
-                          {benefit[lang === 'EN' ? 'en' : 'kr']}
+                          {benefit[isEn ? 'en' : 'kr']}
                         </span>
                       </li>
                     ))}
@@ -533,7 +466,7 @@ export default function HomePage() {
                           : 'border border-green-dark/30 text-green-dark'
                     }`}
                   >
-                    {circle.cta[lang === 'EN' ? 'en' : 'kr']}
+                    {circle.cta[isEn ? 'en' : 'kr']}
                   </Link>
                 </div>
               );
@@ -541,9 +474,7 @@ export default function HomePage() {
           </div>
 
           <p className="mt-12 text-center font-primary text-[18px] italic text-green-dark/70">
-            {lang === 'EN'
-              ? 'Every circle brings you closer.'
-              : '모든 서클은 당신을 더 가까이 불러옵니다.'}
+            {isEn ? 'Every circle brings you closer.' : '모든 서클은 당신을 더 가까이 불러옵니다.'}
           </p>
         </div>
       </section>

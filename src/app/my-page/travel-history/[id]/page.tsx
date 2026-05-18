@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import TopBar from '@/components/TopBar';
-import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
 import type { TripPlanItem } from '@/types/trip';
 import {
@@ -88,8 +86,6 @@ export default function TravelHistoryTripDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <TopBar activeLink="My Page" />
-        <SubNav activeTab="Travel History" />
         <div className="max-w-5xl mx-auto px-6 mt-8 space-y-4 animate-pulse">
           <div className="h-48 bg-gray-200 rounded-2xl" />
           <div className="h-6 bg-gray-200 rounded w-1/3" />
@@ -102,8 +98,6 @@ export default function TravelHistoryTripDetailPage() {
   if (error || !tripWithVersion) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <TopBar activeLink="My Page" />
-        <SubNav activeTab="Travel History" />
         <div className="max-w-5xl mx-auto px-6 mt-8 text-center py-20 text-gray-500">
           <p>{error ?? 'Trip not found.'}</p>
           <Link
@@ -132,9 +126,6 @@ export default function TravelHistoryTripDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopBar activeLink="My Page" />
-      <SubNav activeTab="Travel History" />
-
       <div className="max-w-5xl mx-auto px-6 mt-8 mb-16">
         <Link
           href="/my-page/travel-history"

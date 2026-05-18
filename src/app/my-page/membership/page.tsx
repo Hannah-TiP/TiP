@@ -1,8 +1,6 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import TopBar from '@/components/TopBar';
-import SubNav from '@/components/SubNav';
 import Footer from '@/components/Footer';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -297,9 +295,6 @@ export default function Membership() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopBar activeLink="My Page" />
-      <SubNav activeTab="Membership" />
-
       <section className="mx-auto max-w-6xl px-6 py-12">
         {/* Header */}
         <div className="text-center">

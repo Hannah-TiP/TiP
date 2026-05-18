@@ -45,7 +45,6 @@ vi.mock('@/hooks/usePreviewMode', () => ({
 
 // Heavy chat / sidebar components are out of scope — we only care about
 // what the prefill effect does to the API surface.
-vi.mock('@/components/TopBar', () => ({ default: () => <div>TopBar</div> }));
 vi.mock('@/components/ai-chat/MessageList', () => ({ default: () => <div>MessageList</div> }));
 vi.mock('@/components/ai-chat/ChatInput', () => ({ default: () => <div>ChatInput</div> }));
 vi.mock('@/components/ai-chat/ConversationSidebar', () => ({
