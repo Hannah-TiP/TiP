@@ -141,7 +141,7 @@ describe('SearchBar.handleSearch', () => {
     clickFieldByText('TRAVEL STYLE');
     fireEvent.click(screen.getByText('Pick style'));
 
-    fireEvent.click(screen.getByRole('button', { name: /search/i }));
+    fireEvent.click(screen.getByRole('button', { name: /plan my trip/i }));
 
     expect(pushMock).toHaveBeenCalledTimes(1);
     const pushedUrl: string = pushMock.mock.calls[0][0];
@@ -164,7 +164,7 @@ describe('SearchBar.handleSearch', () => {
 
     // Submit immediately without picking any field. Defaults are
     // tripType=Leisure, adults=2, children=0 (per the SearchBar state).
-    fireEvent.click(screen.getByRole('button', { name: /search/i }));
+    fireEvent.click(screen.getByRole('button', { name: /plan my trip/i }));
 
     expect(pushMock).toHaveBeenCalledTimes(1);
     const pushedUrl: string = pushMock.mock.calls[0][0];
@@ -187,7 +187,7 @@ describe('SearchBar.handleSearch', () => {
     clickFieldByText('DESTINATION');
     fireEvent.click(screen.getByText('Pick Paris'));
 
-    fireEvent.click(screen.getByRole('button', { name: /search/i }));
+    fireEvent.click(screen.getByRole('button', { name: /plan my trip/i }));
 
     const pushedUrl: string = pushMock.mock.calls[0][0];
     const params = new URLSearchParams(pushedUrl.split('?')[1] ?? '');

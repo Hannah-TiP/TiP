@@ -40,7 +40,7 @@ test.describe('SearchBar → unauthed redirect preserves prefill params', () => 
 
     await page.getByText('DESTINATION', { exact: true }).click();
     await page.getByText('Paris').click();
-    await page.getByRole('button', { name: /search/i }).click();
+    await page.getByRole('button', { name: /plan my trip/i }).click();
 
     await page.waitForURL(/\/sign-in/, { timeout: 15_000 });
 
