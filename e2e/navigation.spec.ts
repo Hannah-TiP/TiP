@@ -97,4 +97,129 @@ test.describe('Centralized header — variants & active state', () => {
     await expect(page.locator('header')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'DREAM HOTELS' })).toHaveCount(0);
   });
+
+  // Regression guard for bXg8zTMG / PR #58: the centralized-header refactor
+  // once dropped /concierge's viewport-bounded height, producing a page-level
+  // scrollbar and breaking the internal chat scroll (fixed via the concierge
+  // root's `h-[calc(100vh-3.5rem-1px)]`). This asserts the BEHAVIOR (no
+  // document-level scroll) rather than the className, so it survives a
+  // refactor that keeps the outcome but changes the implementation.
+  test.describe('concierge viewport-bounded height (no page scrollbar)', () => {
+    // /concierge is auth-gated: src/app/concierge/page.tsx returns null when
+    // `!isAuthenticated`, so without the stored session the page renders
+    // nothing (or redirects) and the no-scroll assertion would pass trivially
+    // against the wrong surface. Reuse the same global-setup auth state +
+    // skip-guard the authed SubNav case uses — do NOT hand-roll a login.
+    const TRIP_ID = 9997;
+    const SESSION_UUID = 'sess-uuid-scroll-guard';
+    const session = {
+      id: 1,
+      user_id: 1,
+      trip_id: TRIP_ID,
+      status: 'ai',
+      session_id: SESSION_UUID,
+      schema_version: 1,
+      last_message_at: new Date().toISOString(),
+    };
+    const trip = { id: TRIP_ID, status: 'draft', current_trip_version_id: 1 };
+    const tripVersion = {
+      id: 1,
+      trip_id: TRIP_ID,
+      title: 'Paris Trip',
+      start_date: null,
+      end_date: null,
+      adults: 0,
+      kids: 0,
+      plan: [],
+    };
+    // A long conversation is what makes the regression observable: with the
+    // pre-fix root the un-bounded chat column grows past the viewport and the
+    // *document* scrolls (the inner MessageList `overflow-y-auto` never
+    // engages). With the fixed `h-[calc(100vh-3.5rem-1px)]` root the column
+    // is viewport-bounded so MessageList scrolls internally and the document
+    // does not. An empty chat cannot reproduce it (nothing to overflow).
+    const conversation = Array.from({ length: 40 }, (_, i) => ({
+      id: i + 1,
+      user_id: 1,
+      trip_id: TRIP_ID,
+      role: i % 2 === 0 ? 'user' : 'assistant',
+      message_type: 'text',
+      content: `Message ${i + 1}. ` + 'The quick brown fox jumps over the lazy dog. '.repeat(8),
+      widgets: [],
+    }));
+
+    test.skip(
+      !fs.existsSync(AUTH_STATE_PATH),
+      'auth storage state not found (global-setup did not run); skipping concierge scroll guard',
+    );
+    test.use({ storageState: AUTH_STATE_PATH });
+
+    test('/concierge fits the viewport with one header and visible chat content', async ({
+      page,
+      context,
+    }) => {
+      // Mock only the chat/trip bootstrap surface so the chat content area
+      // renders deterministically against the local stack regardless of the
+      // seeded backend state — the assertion is about layout, not data.
+      await context.route('**/api/ai-chat/sessions', (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: [{ session, trip }] }),
+        }),
+      );
+      await context.route(`**/api/trip/${TRIP_ID}`, (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: trip }),
+        }),
+      );
+      await context.route(`**/api/trip/${TRIP_ID}/current-version`, (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: tripVersion }),
+        }),
+      );
+      await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: conversation }),
+        }),
+      );
+
+      await page.goto('/concierge');
+
+      // The chat input only renders once the page has authed, bootstrapped,
+      // and laid out the chat area — so its visibility proves we are NOT on
+      // a loading spinner, an error page, /sign-in, or a 0-height shell that
+      // could make the no-scroll assertion pass for the wrong reason.
+      const chatInput = page.getByPlaceholder(/ask your concierge/i);
+      await expect(chatInput).toBeVisible({ timeout: 15_000 });
+
+      // The seeded conversation must have rendered into the chat area — this
+      // is the content that overflows the document under the regression.
+      await expect(page.getByText('Message 1.', { exact: false }).first()).toBeVisible();
+
+      // Exactly one centralized <header> (the bXg8zTMG invariant).
+      await expect(page.locator('header')).toHaveCount(1);
+      await expect(page.locator('header').first()).toBeVisible();
+
+      // BEHAVIORAL assertion: the document does not scroll even with a long
+      // conversation rendered. The +2 tolerates sub-pixel / border rounding
+      // (the concierge root subtracts a 1px header border). The bXg8zTMG
+      // regression makes the chat column grow past the viewport so
+      // scrollHeight far exceeds clientHeight and this fails.
+      const overflow = await page.evaluate(() => {
+        const el = document.documentElement;
+        return {
+          scrollHeight: el.scrollHeight,
+          clientHeight: el.clientHeight,
+        };
+      });
+      expect(overflow.scrollHeight).toBeLessThanOrEqual(overflow.clientHeight + 2);
+    });
+  });
 });
