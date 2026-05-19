@@ -120,8 +120,14 @@
   "hotel.trust_support": "Korean support",
   "more_dreams.activities_overline": "EXTRAORDINARY EXPERIENCES",
   "more_dreams.activities_title": "Activities & Experiences",
-  "more_dreams.signature_overline": "SIGNATURE JOURNEYS",
-  "more_dreams.signature_title": "Signature Journeys",
   "more_dreams.restaurants_overline": "FINE DINING",
-  "more_dreams.restaurants_title": "Curated Restaurants"
+  "more_dreams.restaurants_title": "Curated Restaurants",
+  "signature_journeys.hero_overline": "BY INVITATION",
+  "signature_journeys.hero_title": "Signature Journeys",
+  "signature_journeys.hero_subtitle": "An exclusive portfolio of the world's most extraordinary voyages — private yachts, jets, and cruises curated for the rare few.",
+  "signature_journeys.section_overline": "THE COLLECTION",
+  "signature_journeys.section_title": "Signature Journeys",
+  "signature_journeys.section_subtitle": "Each journey is a once-in-a-lifetime expedition, designed end to end by our concierge team.",
+  "signature_journeys.cta_title": "Reserve Your Signature Journey",
+  "signature_journeys.cta_subtitle": "These voyages are limited and book far in advance — tell us your dream and we'll secure your place."
 }

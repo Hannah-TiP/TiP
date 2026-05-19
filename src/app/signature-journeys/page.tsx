@@ -5,31 +5,28 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import PreviewBanner from '@/components/PreviewBanner';
-import DraftBadge from '@/components/DraftBadge';
 import ActivityCard from '@/components/ActivityCard';
 import { apiClient } from '@/lib/api-client';
 import { usePreviewMode } from '@/hooks/usePreviewMode';
-import { getImageUrl, getLocalizedText } from '@/types/common';
-import type { Activity } from '@/types/activity';
-import type { Restaurant } from '@/types/restaurant';
+import { getLocalizedText } from '@/types/common';
+import { useLanguage } from '@/contexts/LanguageContext';
+import type { Activity, ActivityKind } from '@/types/activity';
 import type { City } from '@/types/location';
 
 /**
- * Defensive default: if an activity's `kind` is missing/null from the API
- * (should never happen post backend-PR), treat it as a local experience so
- * it still falls into "Activities & Experiences" rather than being silently
- * dropped. Signature journeys (kind=package) now live on their own
- * /signature-journeys page, so anything that isn't a package belongs here.
+ * Defensive default: the API is the source of truth for `kind`, but if a
+ * package item ever arrives without one we still want it shown here rather
+ * than silently dropped (mirrors the same guard /more-dreams uses).
  */
-function isLocalExperience(activity: Activity): boolean {
-  return activity.kind !== 'package';
+function resolveKind(activity: Activity): ActivityKind {
+  return activity.kind === 'package' ? 'package' : 'local_experience';
 }
 
-function MoreDreamsContent() {
-  const [localExperiences, setLocalExperiences] = useState<Activity[]>([]);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+function SignatureJourneysContent() {
+  const [signatureJourneys, setSignatureJourneys] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { isPreview } = usePreviewMode();
+  const { t } = useLanguage();
 
   // Filter state
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
@@ -46,20 +43,18 @@ function MoreDreamsContent() {
     async function loadData() {
       try {
         setIsLoading(true);
-        const [localExpData, restaurantData, cityData] = await Promise.all([
+        const [packageData, cityData] = await Promise.all([
           apiClient.getActivities({
             language: 'en',
-            kind: 'local_experience',
+            kind: 'package',
             include_draft: isPreview,
           }),
-          apiClient.getRestaurants({ language: 'en', include_draft: isPreview }),
           apiClient.getCities('en'),
         ]);
         // Defensive client-side filter: backend filtering is the source of
-        // truth, but if any package items leak into the local_experience
-        // bucket, drop them — packages now live on /signature-journeys.
-        setLocalExperiences(localExpData.filter(isLocalExperience));
-        setRestaurants(restaurantData);
+        // truth, but if any items leak through with a different kind, this
+        // makes sure the grid only shows signature journeys.
+        setSignatureJourneys(packageData.filter((a) => resolveKind(a) === 'package'));
         setCities(cityData);
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -94,15 +89,10 @@ function MoreDreamsContent() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredLocalExperiences = useMemo(() => {
-    if (!selectedCity) return localExperiences;
-    return localExperiences.filter((a) => a.city_id === selectedCity.id);
-  }, [localExperiences, selectedCity]);
-
-  const filteredRestaurants = useMemo(() => {
-    if (!selectedCity) return restaurants;
-    return restaurants.filter((r) => r.city_id === selectedCity.id);
-  }, [restaurants, selectedCity]);
+  const filteredSignatureJourneys = useMemo(() => {
+    if (!selectedCity) return signatureJourneys;
+    return signatureJourneys.filter((a) => a.city_id === selectedCity.id);
+  }, [signatureJourneys, selectedCity]);
 
   const filteredCities = cities.filter((c) =>
     getLocalizedText(c.name).toLowerCase().includes(citySearch.toLowerCase()),
@@ -112,8 +102,6 @@ function MoreDreamsContent() {
     return new Map(cities.map((city) => [city.id, getLocalizedText(city.name)]));
   }, [cities]);
 
-  const hasAnyResults = filteredLocalExperiences.length > 0 || filteredRestaurants.length > 0;
-
   return (
     <main className={`min-h-screen bg-gray-light ${isPreview ? 'pt-10' : ''}`}>
       <PreviewBanner />
@@ -121,8 +109,8 @@ function MoreDreamsContent() {
       {/* Hero */}
       <section className="relative h-[720px] w-full overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&h=900&fit=crop"
-          alt="More Dreams hero"
+          src="https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?w=1920&h=900&fit=crop"
+          alt="Signature Journeys hero"
           fill
           sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
@@ -132,14 +120,13 @@ function MoreDreamsContent() {
         {/* Hero Content */}
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
-            CURATED COLLECTION
+            {t('signature_journeys.hero_overline')}
           </span>
           <h1 className="font-primary text-[64px] font-normal italic leading-tight text-white">
-            More Dreams
+            {t('signature_journeys.hero_title')}
           </h1>
           <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-white/60">
-            Discover extraordinary activities and exquisite restaurants, hand-selected across our
-            curated destinations.
+            {t('signature_journeys.hero_subtitle')}
           </p>
         </div>
       </section>
@@ -243,13 +230,13 @@ function MoreDreamsContent() {
 
         {selectedCity && (
           <p className="mt-3 text-[13px] text-gray-text">
-            Showing {filteredLocalExperiences.length} activities and {filteredRestaurants.length}{' '}
-            restaurants in {getLocalizedText(selectedCity.name)}
+            Showing {filteredSignatureJourneys.length} signature journeys in{' '}
+            {getLocalizedText(selectedCity.name)}
           </p>
         )}
       </section>
 
-      {/* Loading state — shared across all sections */}
+      {/* Loading state */}
       {isLoading && (
         <section className="bg-gray-light px-20 py-20">
           <div className="flex items-center justify-center py-20">
@@ -258,14 +245,14 @@ function MoreDreamsContent() {
         </section>
       )}
 
-      {/* Empty-everything state — shown only when filter excludes all sections */}
-      {!isLoading && !hasAnyResults && (
-        <section className="bg-gray-light px-20 py-20" data-testid="more-dreams-empty">
+      {/* Empty state — shown when the filter excludes everything */}
+      {!isLoading && filteredSignatureJourneys.length === 0 && (
+        <section className="bg-gray-light px-20 py-20" data-testid="signature-journeys-empty">
           <div className="py-20 text-center">
             <p className="text-gray-text">
               {selectedCity
-                ? 'Nothing found for this destination yet.'
-                : 'No experiences available at the moment.'}
+                ? 'No signature journeys for this destination yet.'
+                : 'No signature journeys available at the moment.'}
             </p>
             {selectedCity && (
               <button
@@ -279,76 +266,33 @@ function MoreDreamsContent() {
         </section>
       )}
 
-      {/* Activities & Experiences Section — hidden when empty */}
-      {!isLoading && filteredLocalExperiences.length > 0 && (
-        <section className="bg-gray-light px-20 py-20" data-testid="section-activities-experiences">
+      {/* Signature Journeys grid — merchandised for a small, premium set.
+          Three columns + a centered max-width container keep four items
+          feeling intentional rather than a sparse four-column row. */}
+      {!isLoading && filteredSignatureJourneys.length > 0 && (
+        <section className="bg-gray-light px-20 py-20" data-testid="section-signature-journeys">
           <div className="mb-12 text-center">
             <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-              EXTRAORDINARY EXPERIENCES
+              {t('signature_journeys.section_overline')}
             </span>
             <h2 className="mt-3 font-primary text-[42px] italic text-green-dark">
-              Activities &amp; Experiences
+              {t('signature_journeys.section_title')}
             </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-gray-text">
+              {t('signature_journeys.section_subtitle')}
+            </p>
           </div>
 
-          <div className="grid grid-cols-4 gap-6">
-            {filteredLocalExperiences.map((activity) => (
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredSignatureJourneys.map((activity) => (
               <ActivityCard
                 key={activity.id}
                 activity={activity}
-                variant="standard"
+                variant="signature"
                 cityName={
                   activity.city_id ? (cityNameById.get(activity.city_id) ?? undefined) : undefined
                 }
               />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Restaurants Section — unchanged */}
-      {!isLoading && filteredRestaurants.length > 0 && (
-        <section className="bg-white px-20 py-20" data-testid="section-restaurants">
-          <div className="mb-12 text-center">
-            <span className="text-[11px] font-semibold tracking-[4px] text-gold">FINE DINING</span>
-            <h2 className="mt-3 font-primary text-[42px] italic text-green-dark">
-              Curated Restaurants
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-4 gap-6">
-            {filteredRestaurants.map((restaurant) => (
-              <Link
-                key={restaurant.id}
-                href={`/restaurant/${restaurant.slug}`}
-                className={`group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg ${
-                  restaurant.status === 'draft' ? 'ring-2 ring-amber-400' : ''
-                }`}
-              >
-                <div className="relative h-56 overflow-hidden">
-                  <Image
-                    src={getImageUrl(restaurant.images?.[0])}
-                    alt={getLocalizedText(restaurant.name)}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 25vw"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
-                    RESTAURANT
-                  </div>
-                  <DraftBadge status={restaurant.status} />
-                </div>
-                <div className="p-5">
-                  <h3 className="font-primary text-[18px] font-semibold text-green-dark">
-                    {getLocalizedText(restaurant.name)}
-                  </h3>
-                  {restaurant.city_id && cityNameById.get(restaurant.city_id) && (
-                    <p className="mt-1 text-[13px] text-gray-text">
-                      {cityNameById.get(restaurant.city_id)}
-                    </p>
-                  )}
-                </div>
-              </Link>
             ))}
           </div>
         </section>
@@ -361,11 +305,10 @@ function MoreDreamsContent() {
             PERSONAL CONCIERGE
           </span>
           <h2 className="mt-3 font-primary text-[42px] italic text-[#FAF5EF]">
-            Let TiP Curate Your Perfect Voyage
+            {t('signature_journeys.cta_title')}
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[16px] leading-relaxed text-white/50">
-            From extraordinary experiences to exquisite dining — tell us your dream and we&apos;ll
-            craft the journey.
+            {t('signature_journeys.cta_subtitle')}
           </p>
           <Link
             href="/concierge"
@@ -381,10 +324,10 @@ function MoreDreamsContent() {
   );
 }
 
-export default function MoreDreamsPage() {
+export default function SignatureJourneysPage() {
   return (
     <Suspense>
-      <MoreDreamsContent />
+      <SignatureJourneysContent />
     </Suspense>
   );
 }

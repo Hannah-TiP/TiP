@@ -65,8 +65,48 @@ describe('Header — auth controls render exactly once', () => {
     render(<Header />);
     expect(screen.getAllByText('DREAM HOTELS')).toHaveLength(1);
     expect(screen.getAllByText('MORE DREAMS')).toHaveLength(1);
+    expect(screen.getAllByText('SIGNATURE JOURNEYS')).toHaveLength(1);
     expect(screen.getAllByText('INSIGHTS')).toHaveLength(1);
     expect(screen.getAllByText('CONCIERGE')).toHaveLength(1);
+  });
+
+  it('orders the nav: Dream Hotels, More Dreams, Signature Journeys, Insights, Concierge', () => {
+    sessionRef.current = { data: null };
+    render(<Header />);
+    const nav = screen.getByRole('navigation');
+    const labels = Array.from(
+      nav.querySelectorAll(
+        'a[href^="/dream-hotels"], a[href^="/more-dreams"], a[href^="/signature-journeys"], a[href^="/insights"], a[href^="/concierge"]',
+      ),
+    ).map((a) => a.textContent);
+    expect(labels).toEqual([
+      'DREAM HOTELS',
+      'MORE DREAMS',
+      'SIGNATURE JOURNEYS',
+      'INSIGHTS',
+      'CONCIERGE',
+    ]);
+  });
+
+  it('points the Signature Journeys link at /signature-journeys', () => {
+    sessionRef.current = { data: null };
+    render(<Header />);
+    const link = screen.getByText('SIGNATURE JOURNEYS').closest('a');
+    expect(link?.getAttribute('href')).toBe('/signature-journeys');
+  });
+});
+
+describe('Header — Signature Journeys active state', () => {
+  it('highlights Signature Journeys on /signature-journeys (overlay variant)', () => {
+    pathnameRef.current = '/signature-journeys';
+    sessionRef.current = { data: null };
+    render(<Header />);
+    const link = screen.getByText('SIGNATURE JOURNEYS');
+    // overlay active state = solid white + semibold
+    expect(link.className).toContain('text-white');
+    expect(link.className).toContain('font-semibold');
+    // sibling nav items are not in their active state
+    expect(screen.getByText('MORE DREAMS').className).toContain('text-white/70');
   });
 });
 

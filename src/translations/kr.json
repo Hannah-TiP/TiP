@@ -120,8 +120,14 @@
   "hotel.trust_support": "한국어 지원",
   "more_dreams.activities_overline": "특별한 경험",
   "more_dreams.activities_title": "액티비티 & 경험",
-  "more_dreams.signature_overline": "시그니처 여정",
-  "more_dreams.signature_title": "시그니처 여정",
   "more_dreams.restaurants_overline": "파인 다이닝",
-  "more_dreams.restaurants_title": "큐레이션 레스토랑"
+  "more_dreams.restaurants_title": "큐레이션 레스토랑",
+  "signature_journeys.hero_overline": "초대 전용",
+  "signature_journeys.hero_title": "시그니처 여정",
+  "signature_journeys.hero_subtitle": "프라이빗 요트, 제트기, 크루즈 등 세계에서 가장 특별한 여정만을 엄선한 독점 컬렉션입니다.",
+  "signature_journeys.section_overline": "컬렉션",
+  "signature_journeys.section_title": "시그니처 여정",
+  "signature_journeys.section_subtitle": "각 여정은 컨시어지 팀이 처음부터 끝까지 설계한 일생에 한 번뿐인 여행입니다.",
+  "signature_journeys.cta_title": "당신의 시그니처 여정을 예약하세요",
+  "signature_journeys.cta_subtitle": "이 여정은 한정되어 있으며 사전 예약이 필요합니다 — 꿈을 말씀해 주시면 자리를 확보해 드립니다."
 }

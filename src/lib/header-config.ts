@@ -13,7 +13,13 @@
 export type HeaderVariant = 'overlay' | 'app' | 'none';
 
 /** Primary-nav link keys. Matches the labels rendered by Header. */
-export type NavKey = 'dream-hotels' | 'more-dreams' | 'insights' | 'concierge' | 'my-page';
+export type NavKey =
+  | 'dream-hotels'
+  | 'more-dreams'
+  | 'signature-journeys'
+  | 'insights'
+  | 'concierge'
+  | 'my-page';
 
 /** SubNav tab keys (labels rendered by SubNav, only on /my-page/**). */
 export type SubNavKey =
@@ -38,7 +44,7 @@ export interface HeaderConfig {
 const NO_HEADER_PREFIXES = ['/sign-in', '/register', '/forgot-password', '/onboarding'];
 
 /** Routes (and their subpaths) that use the transparent overlay variant. */
-const OVERLAY_PATHS = ['/', '/dream-hotels', '/more-dreams'];
+const OVERLAY_PATHS = ['/', '/dream-hotels', '/more-dreams', '/signature-journeys'];
 
 function normalize(pathname: string): string {
   if (pathname.length > 1 && pathname.endsWith('/')) {
@@ -98,7 +104,9 @@ export function resolveHeaderConfig(rawPathname: string): HeaderConfig {
         ? 'dream-hotels'
         : pathname === '/more-dreams'
           ? 'more-dreams'
-          : null;
+          : pathname === '/signature-journeys'
+            ? 'signature-journeys'
+            : null;
     return { variant: 'overlay', activeNav, subNav: null };
   }
 
@@ -118,6 +126,9 @@ export function resolveHeaderConfig(rawPathname: string): HeaderConfig {
   if (isPathOrSubpath(pathname, '/more-dreams')) {
     return { variant: 'app', activeNav: 'more-dreams', subNav: null };
   }
+  if (isPathOrSubpath(pathname, '/signature-journeys')) {
+    return { variant: 'app', activeNav: 'signature-journeys', subNav: null };
+  }
   if (isPathOrSubpath(pathname, '/insights')) {
     return { variant: 'app', activeNav: 'insights', subNav: null };
   }
@@ -129,6 +140,11 @@ export function resolveHeaderConfig(rawPathname: string): HeaderConfig {
   if (isPathOrSubpath(pathname, '/hotel')) {
     return { variant: 'app', activeNav: 'dream-hotels', subNav: null };
   }
+  // Accepted tradeoff: signature journeys (kind=package) and local
+  // experiences share one detail route (/activity/[id]). The pathname carries
+  // no `kind`, so this can't tell a package detail from a local-experience
+  // one — both highlight More Dreams. We deliberately do NOT add a separate
+  // /signature-journeys/[id] route just to recover the parent highlight.
   if (isPathOrSubpath(pathname, '/restaurant') || isPathOrSubpath(pathname, '/activity')) {
     return { variant: 'app', activeNav: 'more-dreams', subNav: null };
   }
