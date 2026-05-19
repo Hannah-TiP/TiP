@@ -25,6 +25,10 @@ function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [error, setError] = useState('');
+  // The email is already a registered account. We surface a "sign in /
+  // reset password" panel instead of issuing a verification code — see
+  // handleSendCode for why.
+  const [accountExists, setAccountExists] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSuccess = async (response: CredentialResponse) => {
@@ -85,6 +89,7 @@ function RegisterForm() {
     }
 
     setError('');
+    setAccountExists(false);
     setIsLoading(true);
 
     try {
@@ -93,6 +98,14 @@ function RegisterForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code_type: 'register' }),
       });
+      // 409 = this email already has an account. The backend deliberately
+      // refuses to issue a code here: the old flow let it through and then
+      // failed at register(), which the UI showed on the code screen so a
+      // correct code looked "wrong". Route the user to sign-in / reset.
+      if (res.status === 409) {
+        setAccountExists(true);
+        return;
+      }
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.message || 'Failed to send verification code');
@@ -137,6 +150,15 @@ function RegisterForm() {
           ...(referralCode ? { referral_code: referralCode } : {}),
         }),
       });
+      // Defense-in-depth: if a code was somehow already in flight for an
+      // existing email, register() still rejects with 409 — show the same
+      // sign-in / reset panel rather than a "registration failed" error.
+      if (res.status === 409) {
+        setStep('email');
+        setAccountExists(true);
+        setIsLoading(false);
+        return;
+      }
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.message || 'Registration failed');
@@ -172,7 +194,45 @@ function RegisterForm() {
           credit will be applied when you join.
         </div>
       )}
-      {step === 'email' ? (
+      {step === 'email' && accountExists ? (
+        <div className="flex flex-col gap-5 p-8" data-testid="account-exists-panel">
+          <h2 className="text-center text-[20px] font-semibold text-green-dark">Sign up</h2>
+
+          <div className="rounded-lg bg-gold/10 p-4 text-center text-sm">
+            <p className="font-medium text-green-dark">This email is already registered.</p>
+            <p className="mt-1 text-gray-text">
+              Sign in instead, or reset your password if you&apos;ve forgotten it.
+            </p>
+          </div>
+
+          <Link
+            href={`/sign-in?email=${encodeURIComponent(email)}`}
+            className="flex h-12 w-full items-center justify-center rounded-lg bg-green-dark text-white"
+          >
+            Sign in
+          </Link>
+
+          <Link
+            href={`/forgot-password?email=${encodeURIComponent(email)}`}
+            className="flex h-12 w-full items-center justify-center rounded-lg border border-green-dark text-green-dark"
+          >
+            Reset password
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => {
+              setAccountExists(false);
+              setEmail('');
+              setPassword('');
+              setConfirmPassword('');
+            }}
+            className="text-sm text-green-dark hover:underline"
+          >
+            Use a different email
+          </button>
+        </div>
+      ) : step === 'email' ? (
         <div className="flex flex-col gap-6 p-8">
           <h2 className="text-center text-[20px] font-semibold text-green-dark">Sign up</h2>
 

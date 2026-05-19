@@ -13,7 +13,9 @@ const DEFAULT_REDIRECT = '/my-page';
 
 function SignInForm() {
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState('');
+  // Pre-fill the email when arriving from the signup screen's "account
+  // already exists" panel (it links here with ?email=).
+  const [email, setEmail] = useState(searchParams.get('email') ?? '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
