@@ -8,11 +8,16 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import SubNav from '@/components/SubNav';
 import { resolveHeaderConfig, type NavKey } from '@/lib/header-config';
 
-const navLinks: { key: NavKey; label: string; href: string }[] = [
+// `protected: true` disables Link prefetch on auth-gated routes. Prefetching
+// them would race with the user's actual click: middleware redirects the
+// prefetch to /sign-in?redirect=<pathname> (no query) and Next.js caches that
+// redirect, so a later router.push('/concierge?prefill=...') uses the cached
+// unparameterized redirect — dropping the prefill query on its way to sign-in.
+const navLinks: { key: NavKey; label: string; href: string; protected?: boolean }[] = [
   { key: 'dream-hotels', label: 'DREAM HOTELS', href: '/dream-hotels' },
   { key: 'more-dreams', label: 'MORE DREAMS', href: '/more-dreams' },
   { key: 'insights', label: 'INSIGHTS', href: '/insights' },
-  { key: 'concierge', label: 'CONCIERGE', href: '/concierge' },
+  { key: 'concierge', label: 'CONCIERGE', href: '/concierge', protected: true },
 ];
 
 /**
@@ -68,6 +73,7 @@ export default function Header() {
             <Link
               key={link.key}
               href={link.href}
+              prefetch={link.protected ? false : undefined}
               className={navItemClass(config.activeNav === link.key)}
             >
               {link.label}
