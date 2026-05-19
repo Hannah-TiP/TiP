@@ -1,10 +1,13 @@
 import type { Image, MultiLanguageString, Policy } from '@/types/common';
 
+export type ActivityKind = 'local_experience' | 'package';
+
 export interface Activity {
   id: number;
   slug: string;
   city_id?: number | null;
   category?: string | null;
+  kind?: ActivityKind | null;
   status: 'draft' | 'published' | 'archived';
   name?: MultiLanguageString | null;
   description?: MultiLanguageString | null;
