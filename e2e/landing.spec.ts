@@ -27,4 +27,12 @@ test.describe('Landing page', () => {
     await expect(page.getByRole('heading', { name: 'Confidence', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Cénacle', exact: true })).toBeVisible();
   });
+
+  test('does not render the removed subscribe feature', async ({ page }) => {
+    // The home contact/subscribe strip used to render a "SUBSCRIBE" button that
+    // opened a "Stay Inspired" popup. Both have been removed; if either re-appears
+    // anywhere in the DOM, this test must fail.
+    await expect(page.getByText('SUBSCRIBE', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Stay Inspired')).toHaveCount(0);
+  });
 });
