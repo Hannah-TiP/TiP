@@ -1,12 +1,16 @@
 import { test, expect, type Route } from '@playwright/test';
 
 /**
- * Smoke-tests the /more-dreams sections split.
+ * Smoke-tests the /more-dreams page after Signature Journeys was promoted to
+ * its own top-level /signature-journeys tab (task RfR_dnQU).
  *
- * Strategy: intercept the /api/activities call and respond with fixture data
- * keyed by ?kind=. This keeps the test deterministic against any backend
- * (preview, prod, local) and lets us assert the 4 known signature-journey
- * packages render only under the Signature Journeys section.
+ * More Dreams must now show ONLY:
+ *   - Activities & Experiences (kind=local_experience)
+ *   - Curated Restaurants
+ * and must NOT render a Signature Journeys section nor request kind=package.
+ *
+ * Strategy: intercept /api/activities and respond by ?kind=. If the page ever
+ * regresses and requests kind=package, we fail it explicitly.
  *
  * The 4 known packages (kind=package in production):
  *   - The Ritz-Carlton Yacht
@@ -48,12 +52,17 @@ function activityFixture(item: { id: number; slug: string; name: string }, kind:
   };
 }
 
-test.describe('/more-dreams sections split', () => {
+test.describe('/more-dreams — Activities + Restaurants only (no Signature Journeys)', () => {
+  let packageRequested = false;
+
   test.beforeEach(async ({ page }) => {
+    packageRequested = false;
     await page.route('**/api/activities**', async (route: Route) => {
       const url = new URL(route.request().url());
       const kind = url.searchParams.get('kind');
       if (kind === 'package') {
+        // If More Dreams ever requests packages again this flag fails the test.
+        packageRequested = true;
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -73,7 +82,6 @@ test.describe('/more-dreams sections split', () => {
         });
         return;
       }
-      // Fallback — should not be hit if the page filters by kind correctly.
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -81,8 +89,6 @@ test.describe('/more-dreams sections split', () => {
       });
     });
 
-    // Restaurants + cities still proxy through to backend, but stub them too
-    // so the test doesn't depend on backend reachability.
     await page.route('**/api/restaurants**', async (route: Route) => {
       await route.fulfill({
         status: 200,
@@ -100,57 +106,40 @@ test.describe('/more-dreams sections split', () => {
     });
   });
 
-  test('renders both activity-section headlines with at least one card each', async ({ page }) => {
-    await page.goto('/more-dreams');
-
-    // Heading 2: Activities & Experiences
-    await expect(
-      page.getByRole('heading', { level: 2, name: /Activities & Experiences/i }),
-    ).toBeVisible();
-
-    // Heading 2: Signature Journeys
-    await expect(
-      page.getByRole('heading', { level: 2, name: /^Signature Journeys$/i }),
-    ).toBeVisible();
-
-    // At least one card per section (via testid set on ActivityCard)
-    const standardCards = page.locator('[data-testid="activity-card-standard"]');
-    await expect(standardCards.first()).toBeVisible();
-    expect(await standardCards.count()).toBeGreaterThan(0);
-
-    const signatureCards = page.locator('[data-testid="activity-card-signature"]');
-    await expect(signatureCards.first()).toBeVisible();
-    expect(await signatureCards.count()).toBeGreaterThan(0);
-  });
-
-  test('the 4 known packages appear under Signature Journeys and NOT under Activities & Experiences', async ({
+  test('renders Activities & Experiences but NOT a Signature Journeys section', async ({
     page,
   }) => {
     await page.goto('/more-dreams');
 
-    // Sections scoped by data-testid.
-    const activitiesSection = page.locator('[data-testid="section-activities-experiences"]');
-    const signatureSection = page.locator('[data-testid="section-signature-journeys"]');
+    await expect(
+      page.getByRole('heading', { level: 2, name: /Activities & Experiences/i }),
+    ).toBeVisible();
 
-    await expect(activitiesSection).toBeVisible();
-    await expect(signatureSection).toBeVisible();
+    const standardCards = page.locator('[data-testid="activity-card-standard"]');
+    await expect(standardCards.first()).toBeVisible();
+    expect(await standardCards.count()).toBeGreaterThan(0);
 
-    for (const pkg of PACKAGES) {
-      // Each package is rendered inside the Signature Journeys section.
-      await expect(signatureSection.getByText(pkg.name, { exact: true })).toBeVisible();
-      // And NOT inside the Activities & Experiences section.
-      await expect(activitiesSection.getByText(pkg.name, { exact: true })).toHaveCount(0);
-    }
+    // No Signature Journeys section, heading, signature cards, or gold pills.
+    await expect(page.locator('[data-testid="section-signature-journeys"]')).toHaveCount(0);
+    await expect(
+      page.getByRole('heading', { level: 2, name: /^Signature Journeys$/i }),
+    ).toHaveCount(0);
+    await expect(page.locator('[data-testid="activity-card-signature"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="activity-pill-signature"]')).toHaveCount(0);
+
+    // And the page never asked the API for kind=package.
+    expect(packageRequested).toBe(false);
   });
 
-  test('signature journey cards use the gold accent pill', async ({ page }) => {
+  test('none of the 4 known packages appear anywhere on More Dreams', async ({ page }) => {
     await page.goto('/more-dreams');
 
-    await page.waitForSelector('[data-testid="activity-pill-signature"]');
-    const pill = page.locator('[data-testid="activity-pill-signature"]').first();
-    await expect(pill).toBeVisible();
-    // The card pill carries `bg-gold` (Tailwind utility for #C4956A).
-    await expect(pill).toHaveClass(/bg-gold/);
-    await expect(pill).toHaveText('SIGNATURE JOURNEY');
+    await expect(
+      page.getByRole('heading', { level: 2, name: /Activities & Experiences/i }),
+    ).toBeVisible();
+
+    for (const pkg of PACKAGES) {
+      await expect(page.getByText(pkg.name, { exact: true })).toHaveCount(0);
+    }
   });
 });

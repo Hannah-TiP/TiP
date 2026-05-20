@@ -107,12 +107,9 @@ const paris: City = {
   schema_version: 1,
 };
 
-describe('MoreDreamsPage — sections split', () => {
-  it('renders both activity-section titles + restaurants when all three have data', async () => {
-    vi.mocked(apiClient.getActivities).mockImplementation(async (params) => {
-      if (params?.kind === 'package') return [signatureJourney];
-      return [localExperience];
-    });
+describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journeys)', () => {
+  it('renders the Activities & Experiences + Curated Restaurants titles', async () => {
+    vi.mocked(apiClient.getActivities).mockResolvedValue([localExperience]);
     vi.mocked(apiClient.getRestaurants).mockResolvedValue([restaurant]);
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
@@ -121,91 +118,68 @@ describe('MoreDreamsPage — sections split', () => {
     expect(
       await screen.findByRole('heading', { level: 2, name: /Activities & Experiences/i }),
     ).toBeTruthy();
-    expect(screen.getByRole('heading', { level: 2, name: /^Signature Journeys$/i })).toBeTruthy();
     expect(screen.getByRole('heading', { level: 2, name: /Curated Restaurants/i })).toBeTruthy();
   });
 
-  it('calls getActivities twice — once per kind', async () => {
-    vi.mocked(apiClient.getActivities).mockImplementation(async (params) => {
-      if (params?.kind === 'package') return [signatureJourney];
-      return [localExperience];
-    });
+  it('never renders a Signature Journeys section on More Dreams', async () => {
+    vi.mocked(apiClient.getActivities).mockResolvedValue([localExperience]);
+    vi.mocked(apiClient.getRestaurants).mockResolvedValue([restaurant]);
+    vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
+
+    const { container } = render(<MoreDreamsPage />);
+
+    await screen.findByRole('heading', { level: 2, name: /Activities & Experiences/i });
+
+    expect(screen.queryByRole('heading', { level: 2, name: /^Signature Journeys$/i })).toBeNull();
+    expect(container.querySelector('[data-testid="section-signature-journeys"]')).toBeNull();
+    expect(screen.queryByTestId('activity-pill-signature')).toBeNull();
+  });
+
+  it('calls getActivities exactly once with kind=local_experience (no package fetch)', async () => {
+    vi.mocked(apiClient.getActivities).mockResolvedValue([localExperience]);
     vi.mocked(apiClient.getRestaurants).mockResolvedValue([]);
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
     render(<MoreDreamsPage />);
 
     await waitFor(() => {
-      expect(vi.mocked(apiClient.getActivities).mock.calls.length).toBe(2);
+      expect(vi.mocked(apiClient.getActivities).mock.calls.length).toBe(1);
     });
 
-    const callKinds = vi
-      .mocked(apiClient.getActivities)
-      .mock.calls.map((call) => call[0]?.kind)
-      .sort();
-    expect(callKinds).toEqual(['local_experience', 'package']);
+    const calls = vi.mocked(apiClient.getActivities).mock.calls;
+    expect(calls[0]?.[0]?.kind).toBe('local_experience');
+    // No call ever requests kind=package from More Dreams.
+    expect(calls.some((c) => c[0]?.kind === 'package')).toBe(false);
   });
 
-  it('hides Signature Journeys section when its API call returns empty', async () => {
-    vi.mocked(apiClient.getActivities).mockImplementation(async (params) => {
-      if (params?.kind === 'package') return [];
-      return [localExperience];
-    });
+  it('renders the standard (neutral) pill — never the gold signature pill', async () => {
+    vi.mocked(apiClient.getActivities).mockResolvedValue([localExperience]);
     vi.mocked(apiClient.getRestaurants).mockResolvedValue([]);
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
     render(<MoreDreamsPage />);
 
-    // Wait for the Activities section to appear first
-    expect(
-      await screen.findByRole('heading', { level: 2, name: /Activities & Experiences/i }),
-    ).toBeTruthy();
-
-    // Signature Journeys heading should not render (section is hidden when empty)
-    expect(screen.queryByRole('heading', { level: 2, name: /^Signature Journeys$/i })).toBeNull();
-  });
-
-  it('hides Activities & Experiences section when its API call returns empty', async () => {
-    vi.mocked(apiClient.getActivities).mockImplementation(async (params) => {
-      if (params?.kind === 'package') return [signatureJourney];
-      return [];
-    });
-    vi.mocked(apiClient.getRestaurants).mockResolvedValue([]);
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
-
-    render(<MoreDreamsPage />);
-
-    expect(
-      await screen.findByRole('heading', { level: 2, name: /^Signature Journeys$/i }),
-    ).toBeTruthy();
-    expect(
-      screen.queryByRole('heading', { level: 2, name: /Activities & Experiences/i }),
-    ).toBeNull();
-  });
-
-  it('renders package cards with the gold accent variant pill', async () => {
-    vi.mocked(apiClient.getActivities).mockImplementation(async (params) => {
-      if (params?.kind === 'package') return [signatureJourney];
-      return [localExperience];
-    });
-    vi.mocked(apiClient.getRestaurants).mockResolvedValue([]);
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
-
-    render(<MoreDreamsPage />);
-
-    await screen.findByRole('heading', { level: 2, name: /^Signature Journeys$/i });
-
-    const signaturePill = screen.getByTestId('activity-pill-signature');
-    expect(signaturePill).toBeTruthy();
-    // Gold accent — bg-gold class — is what distinguishes package cards.
-    expect(signaturePill.className).toContain('bg-gold');
-    expect(signaturePill.textContent).toBe('SIGNATURE JOURNEY');
+    await screen.findByRole('heading', { level: 2, name: /Activities & Experiences/i });
 
     const standardPill = screen.getByTestId('activity-pill-standard');
-    expect(standardPill).toBeTruthy();
-    // Standard cards keep the neutral white pill — no gold accent.
-    expect(standardPill.className).not.toContain('bg-gold');
     expect(standardPill.className).toContain('bg-white/90');
+    expect(standardPill.className).not.toContain('bg-gold');
+    expect(screen.queryByTestId('activity-pill-signature')).toBeNull();
+  });
+
+  it('defensively drops any package items that leak into the local_experience bucket', async () => {
+    // Backend is the source of truth, but assert the page never surfaces a
+    // package on More Dreams even if one leaks into the local_experience call.
+    vi.mocked(apiClient.getActivities).mockResolvedValue([localExperience, signatureJourney]);
+    vi.mocked(apiClient.getRestaurants).mockResolvedValue([]);
+    vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
+
+    render(<MoreDreamsPage />);
+
+    await screen.findByRole('heading', { level: 2, name: /Activities & Experiences/i });
+
+    expect(screen.getByText('Paris Private Boat Tour')).toBeTruthy();
+    expect(screen.queryByText('The Ritz-Carlton Yacht')).toBeNull();
   });
 
   it('treats activities with missing kind as local_experience (defensive)', async () => {
@@ -216,11 +190,7 @@ describe('MoreDreamsPage — sections split', () => {
       kind: null,
       name: { en: 'No Kind Activity', kr: '' },
     };
-    // Simulate backend response that put a kindless item in the local_experience bucket.
-    vi.mocked(apiClient.getActivities).mockImplementation(async (params) => {
-      if (params?.kind === 'package') return [];
-      return [noKindActivity];
-    });
+    vi.mocked(apiClient.getActivities).mockResolvedValue([noKindActivity]);
     vi.mocked(apiClient.getRestaurants).mockResolvedValue([]);
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
@@ -229,7 +199,6 @@ describe('MoreDreamsPage — sections split', () => {
     expect(
       await screen.findByRole('heading', { level: 2, name: /Activities & Experiences/i }),
     ).toBeTruthy();
-    // The kindless activity renders under Activities & Experiences.
     expect(screen.getByText('No Kind Activity')).toBeTruthy();
   });
 });

@@ -16,6 +16,7 @@ import { resolveHeaderConfig, type NavKey } from '@/lib/header-config';
 const navLinks: { key: NavKey; label: string; href: string; protected?: boolean }[] = [
   { key: 'dream-hotels', label: 'DREAM HOTELS', href: '/dream-hotels' },
   { key: 'more-dreams', label: 'MORE DREAMS', href: '/more-dreams' },
+  { key: 'signature-journeys', label: 'SIGNATURE JOURNEYS', href: '/signature-journeys' },
   { key: 'insights', label: 'INSIGHTS', href: '/insights' },
   { key: 'concierge', label: 'CONCIERGE', href: '/concierge', protected: true },
 ];
@@ -47,10 +48,10 @@ export default function Header() {
 
   const navItemClass = (active: boolean) =>
     isOverlay
-      ? `text-[11px] tracking-[2px] transition-colors ${
+      ? `whitespace-nowrap text-[11px] tracking-[2px] transition-colors ${
           active ? 'font-semibold text-white' : 'font-medium text-white/70 hover:text-white'
         }`
-      : `text-[11px] font-medium tracking-[2px] transition-colors ${
+      : `whitespace-nowrap text-[11px] font-medium tracking-[2px] transition-colors ${
           active ? 'text-green-dark' : 'text-green-dark/50 hover:text-green-dark'
         }`;
 
@@ -68,7 +69,7 @@ export default function Header() {
           />
         </Link>
 
-        <nav className="flex items-center gap-8">
+        <nav className="flex items-center gap-6">
           {navLinks.map((link) => (
             <Link
               key={link.key}

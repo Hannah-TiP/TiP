@@ -26,6 +26,22 @@ describe('resolveHeaderConfig — marketing overlay pages', () => {
     });
   });
 
+  it('uses overlay variant on /signature-journeys and highlights Signature Journeys', () => {
+    expect(resolveHeaderConfig('/signature-journeys')).toEqual({
+      variant: 'overlay',
+      activeNav: 'signature-journeys',
+      subNav: null,
+    });
+  });
+
+  it('normalizes a trailing slash on /signature-journeys', () => {
+    expect(resolveHeaderConfig('/signature-journeys/')).toEqual({
+      variant: 'overlay',
+      activeNav: 'signature-journeys',
+      subNav: null,
+    });
+  });
+
   it('normalizes a trailing slash on a marketing path', () => {
     expect(resolveHeaderConfig('/dream-hotels/')).toEqual({
       variant: 'overlay',
@@ -104,7 +120,7 @@ describe('resolveHeaderConfig — detail / checkout parent-section highlight', (
     });
   });
 
-  it('/activity/* highlights More Dreams', () => {
+  it('/activity/* highlights More Dreams (accepted tradeoff: shared detail route, even for kind=package)', () => {
     expect(resolveHeaderConfig('/activity/24')).toEqual({
       variant: 'app',
       activeNav: 'more-dreams',
