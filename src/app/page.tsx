@@ -1,10 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import SearchBar from '@/components/SearchBar';
-import SubscribePopup from '@/components/SubscribePopup';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const elevateCards = [
@@ -179,7 +177,6 @@ const membershipCircles: MembershipCircle[] = [
 export default function HomePage() {
   const { lang } = useLanguage();
   const isEn = lang === 'en';
-  const [showSubscribe, setShowSubscribe] = useState(false);
 
   return (
     <main className="min-h-screen bg-black">
@@ -197,25 +194,10 @@ export default function HomePage() {
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/40 to-black/70" />
 
-        {/* Contact strip — sits just below the centralized overlay header */}
-        <div className="relative z-10 mt-[64px] flex h-[50px] items-center justify-between bg-black/30 px-10">
-          <div className="flex items-center gap-6">
-            <span className="text-[12px] font-medium text-white/70">support@tip-ai.com</span>
-            <span className="text-[12px] text-white/50">|</span>
-            <span className="text-[12px] font-medium text-white/70">+82 2-1234-5678</span>
-          </div>
-          <button
-            onClick={() => setShowSubscribe(true)}
-            className="text-[12px] font-medium text-white/70 transition-colors hover:text-white"
-          >
-            SUBSCRIBE
-          </button>
-        </div>
-
-        {/* Hero Content */}
+        {/* Hero Content — sits beneath the 64px centralized overlay header */}
         <div
-          className="relative z-10 flex flex-col items-start justify-end px-[100px] pb-[180px]"
-          style={{ height: 'calc(100% - 114px)' }}
+          className="relative z-10 mt-[64px] flex flex-col items-start justify-end px-[100px] pb-[180px]"
+          style={{ height: 'calc(100% - 64px)' }}
         >
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
             LUXURY TRAVEL REIMAGINED
@@ -557,9 +539,6 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-
-      {/* Modals */}
-      <SubscribePopup isOpen={showSubscribe} onClose={() => setShowSubscribe(false)} />
     </main>
   );
 }
