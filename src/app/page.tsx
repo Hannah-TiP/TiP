@@ -497,7 +497,7 @@ export default function HomePage() {
               <div>
                 <h4 className="text-[13px] font-semibold text-white/60">Company</h4>
                 <div className="mt-4 flex flex-col gap-3">
-                  <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
+                  <Link href="/about" className="text-[13px] text-white/40 hover:text-white/70">
                     About Us
                   </Link>
                   <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">

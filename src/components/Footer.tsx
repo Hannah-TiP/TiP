@@ -3,9 +3,27 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-const exploreLinks = ['Dream Hotels', 'Insights', 'Itinerary', 'Concierge'];
-const companyLinks = ['About Us', 'Careers', 'Press', 'Blog'];
-const supportLinks = ['Help Center', 'Contact Us', 'Privacy Policy', 'Terms of Service'];
+type FooterLink = { label: string; href: string };
+
+// `href: '#'` marks a stub link; wire it up when the destination page lands.
+const exploreLinks: FooterLink[] = [
+  { label: 'Dream Hotels', href: '#' },
+  { label: 'Insights', href: '#' },
+  { label: 'Itinerary', href: '#' },
+  { label: 'Concierge', href: '#' },
+];
+const companyLinks: FooterLink[] = [
+  { label: 'About Us', href: '/about' },
+  { label: 'Careers', href: '#' },
+  { label: 'Press', href: '#' },
+  { label: 'Blog', href: '#' },
+];
+const supportLinks: FooterLink[] = [
+  { label: 'Help Center', href: '#' },
+  { label: 'Contact Us', href: '#' },
+  { label: 'Privacy Policy', href: '#' },
+  { label: 'Terms of Service', href: '#' },
+];
 
 export default function Footer() {
   return (
@@ -71,7 +89,7 @@ export default function Footer() {
   );
 }
 
-function FooterColumn({ title, items }: { title: string; items: string[] }) {
+function FooterColumn({ title, items }: { title: string; items: FooterLink[] }) {
   return (
     <div className="flex flex-col" style={{ gap: 12 }}>
       <span
@@ -86,8 +104,8 @@ function FooterColumn({ title, items }: { title: string; items: string[] }) {
       </span>
       {items.map((item) => (
         <Link
-          key={item}
-          href="#"
+          key={item.label}
+          href={item.href}
           style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: 13,
@@ -96,7 +114,7 @@ function FooterColumn({ title, items }: { title: string; items: string[] }) {
             textDecoration: 'none',
           }}
         >
-          {item}
+          {item.label}
         </Link>
       ))}
     </div>
