@@ -136,7 +136,10 @@ describe('SignatureJourneysPage', () => {
     });
     expect(vi.mocked(apiClient.getActivities).mock.calls[0]?.[0]?.kind).toBe('package');
 
-    expect(screen.getByText('The Ritz-Carlton Yacht')).toBeTruthy();
+    // findByText waits for the async getActivities() data to render — the
+    // mock call resolving above does not guarantee React has re-rendered
+    // the cards yet, which made the synchronous getByText flaky under CI load.
+    expect(await screen.findByText('The Ritz-Carlton Yacht')).toBeTruthy();
     expect(screen.getByText('Four Seasons Yachts')).toBeTruthy();
 
     // All cards use the signature (gold) variant pill.
@@ -153,9 +156,11 @@ describe('SignatureJourneysPage', () => {
 
     render(<SignatureJourneysPage />);
 
+    // findByRole above only waits for the static page heading, which renders
+    // before getActivities() resolves — findByText waits for the actual card.
     await screen.findByRole('heading', { level: 1, name: /Signature Journeys/i });
 
-    expect(screen.getByText('The Ritz-Carlton Yacht')).toBeTruthy();
+    expect(await screen.findByText('The Ritz-Carlton Yacht')).toBeTruthy();
     expect(screen.queryByText('Paris Private Boat Tour')).toBeNull();
   });
 
