@@ -2,13 +2,10 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SearchBar from '@/components/SearchBar';
 
-// Capture pushes against next/navigation so we can assert the final URL
-// SearchBar navigates to.
-const pushMock = vi.fn();
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: pushMock }),
-}));
+// SearchBar performs a full navigation (window.location.assign), not
+// router.push — see the comment in handleSearch — so capture assign() to
+// assert the final URL.
+const assignMock = vi.fn();
 
 // The dropdowns are out of scope here — keep them tiny so the test can
 // drive the underlying state via injected event handlers. Each replacement
@@ -109,11 +106,15 @@ vi.mock('@/components/TravelStyleDropdown', () => ({
 }));
 
 beforeEach(() => {
-  pushMock.mockReset();
+  assignMock.mockReset();
+  // jsdom's window.location.assign is non-configurable, so stub the whole
+  // location global with a spreadable copy plus our mock assign().
+  vi.stubGlobal('location', { ...window.location, assign: assignMock });
 });
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 function clickFieldByText(text: string) {
@@ -143,11 +144,11 @@ describe('SearchBar.handleSearch', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /plan my trip/i }));
 
-    expect(pushMock).toHaveBeenCalledTimes(1);
-    const pushedUrl: string = pushMock.mock.calls[0][0];
-    expect(pushedUrl.startsWith('/concierge?')).toBe(true);
+    expect(assignMock).toHaveBeenCalledTimes(1);
+    const navigatedUrl: string = assignMock.mock.calls[0][0];
+    expect(navigatedUrl.startsWith('/concierge?')).toBe(true);
 
-    const params = new URLSearchParams(pushedUrl.split('?')[1] ?? '');
+    const params = new URLSearchParams(navigatedUrl.split('?')[1] ?? '');
     expect(params.get('prefill')).toBe('1');
     expect(params.get('cityId')).toBe('7');
     expect(params.get('city')).toBe('Paris');
@@ -166,11 +167,11 @@ describe('SearchBar.handleSearch', () => {
     // tripType=Leisure, adults=2, children=0 (per the SearchBar state).
     fireEvent.click(screen.getByRole('button', { name: /plan my trip/i }));
 
-    expect(pushMock).toHaveBeenCalledTimes(1);
-    const pushedUrl: string = pushMock.mock.calls[0][0];
-    expect(pushedUrl.startsWith('/concierge?')).toBe(true);
+    expect(assignMock).toHaveBeenCalledTimes(1);
+    const navigatedUrl: string = assignMock.mock.calls[0][0];
+    expect(navigatedUrl.startsWith('/concierge?')).toBe(true);
 
-    const params = new URLSearchParams(pushedUrl.split('?')[1] ?? '');
+    const params = new URLSearchParams(navigatedUrl.split('?')[1] ?? '');
     expect(params.get('prefill')).toBe('1');
     expect(params.get('cityId')).toBeNull();
     expect(params.get('city')).toBeNull();
@@ -189,8 +190,8 @@ describe('SearchBar.handleSearch', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /plan my trip/i }));
 
-    const pushedUrl: string = pushMock.mock.calls[0][0];
-    const params = new URLSearchParams(pushedUrl.split('?')[1] ?? '');
+    const navigatedUrl: string = assignMock.mock.calls[0][0];
+    const params = new URLSearchParams(navigatedUrl.split('?')[1] ?? '');
     expect(params.has('checkIn')).toBe(false);
     expect(params.has('checkOut')).toBe(false);
   });

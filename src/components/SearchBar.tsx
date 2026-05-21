@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import DatePickerDropdown from './DatePickerDropdown';
 import GuestsDropdown from './GuestsDropdown';
 import DestinationDropdown from './DestinationDropdown';
@@ -9,7 +8,6 @@ import TripTypeDropdown from './TripTypeDropdown';
 import TravelStyleDropdown from './TravelStyleDropdown';
 
 export default function SearchBar() {
-  const router = useRouter();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [destination, setDestination] = useState<{ id: number; name: string } | null>(null);
   const [dates, setDates] = useState({ checkIn: '', checkOut: '' });
@@ -43,7 +41,16 @@ export default function SearchBar() {
 
     // Route to the AI concierge, which picks up the prefill and creates a
     // new chat session seeded with these search values.
-    router.push(`/concierge?${params.toString()}`);
+    //
+    // Use a full navigation, not router.push(): an unauthenticated visitor
+    // is bounced through middleware to /sign-in, and Next.js's client
+    // router cache may hold a prefetched bare `/concierge` redirect (no
+    // query) from an in-viewport <Link href="/concierge">. router.push()
+    // matches that cache entry by pathname and reuses the unparameterized
+    // redirect, dropping the prefill on the way to sign-in. A full
+    // navigation always re-runs middleware against this exact URL, so the
+    // prefill survives the round-trip.
+    window.location.assign(`/concierge?${params.toString()}`);
   };
 
   return (
