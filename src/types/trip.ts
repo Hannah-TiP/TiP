@@ -160,6 +160,11 @@ export interface Trip {
   user_id: number;
   status: TripStatus | string;
   current_trip_version_id?: number | null;
+  // Derived field: id of the single SENT quote for this trip, if any. The
+  // backend enforces "at most one SENT quote per trip" via a Postgres
+  // partial unique index, so this is unambiguous. The concierge right
+  // pane uses it to surface a "Complete Payment" CTA when set.
+  active_quote_id?: number | null;
   schema_version: number;
   created_at?: string | null;
   updated_at?: string | null;

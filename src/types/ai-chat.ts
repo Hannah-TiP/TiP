@@ -2,7 +2,7 @@ import type { Trip, TripVersion } from '@/types/trip';
 
 export type AIChatSessionStatus = 'ai' | 'human';
 export type AIChatMessageRole = 'user' | 'assistant' | 'human_assistant' | 'system';
-export type AIChatMessageType = 'text' | 'audio';
+export type AIChatMessageType = 'text' | 'audio' | 'quote_sent';
 
 export interface NumberStepperField {
   key: string;
@@ -69,11 +69,26 @@ export interface AIChatHotelCarouselWidget {
   hotels: HotelCarouselItem[];
 }
 
+/**
+ * Concierge-emitted card linking the user to a freshly sent quote. Posted
+ * as a side effect of the admin send-quote flow (not LLM-emitted).
+ * `was_resent` is true when the same SENT quote is re-dispatched or when
+ * a new quote supersedes an earlier SENT one for the same trip.
+ */
+export interface AIChatQuoteSentWidget {
+  widget_id: string;
+  widget_type: 'quote_sent';
+  quote_id: number;
+  sent_at: string;
+  was_resent: boolean;
+}
+
 export type AIChatWidget =
   | AIChatDateRangePickerWidget
   | AIChatNumberStepperWidget
   | AIChatOptionSelectorWidget
-  | AIChatHotelCarouselWidget;
+  | AIChatHotelCarouselWidget
+  | AIChatQuoteSentWidget;
 
 export interface AIChatDateRangePickerWidgetResponse {
   widget_id: string;
