@@ -5,6 +5,7 @@ import DateRangePicker from './DateRangePicker';
 import NumberStepper from './NumberStepper';
 import OptionSelector from './OptionSelector';
 import HotelCarousel from './HotelCarousel';
+import QuoteSent from './QuoteSent';
 
 export interface WidgetRendererProps {
   block: AIChatWidget;
@@ -22,6 +23,8 @@ export default function WidgetRenderer({ block, onSubmit, disabled }: WidgetRend
       return <OptionSelector widget={block} onSubmit={onSubmit} disabled={disabled} />;
     case 'hotel_carousel':
       return <HotelCarousel widget={block} onSubmit={onSubmit} disabled={disabled} />;
+    case 'quote_sent':
+      return <QuoteSent widget={block} disabled={disabled} />;
     default:
       return null;
   }

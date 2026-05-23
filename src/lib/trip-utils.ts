@@ -1,18 +1,23 @@
 import { apiClient } from '@/lib/api-client';
+import type { Quote } from '@/types/quote';
 import type { Trip, TripDocument, TripPlanItem, TripVersion } from '@/types/trip';
 
 export interface TripWithVersion {
   trip: Trip;
   currentVersion: TripVersion | null;
+  // The single active (SENT) quote for the trip, if any. Comes through
+  // `GET /trip/{id}` as `TripWithActiveQuote` -- we surface it on the FE
+  // bundle so the concierge right pane can render a payment CTA.
+  activeQuote: Quote | null;
 }
 
 export async function getTripWithVersion(id: number): Promise<TripWithVersion> {
-  const [trip, currentVersion] = await Promise.all([
+  const [bundle, currentVersion] = await Promise.all([
     apiClient.getTripById(id),
     apiClient.getCurrentTripVersion(id).catch(() => null),
   ]);
 
-  return { trip, currentVersion };
+  return { trip: bundle.trip, currentVersion, activeQuote: bundle.active_quote };
 }
 
 export async function getTripsWithVersions(params?: {
@@ -28,6 +33,10 @@ export async function getTripsWithVersions(params?: {
       currentVersion: trip.current_trip_version_id
         ? await apiClient.getCurrentTripVersion(trip.id).catch(() => null)
         : null,
+      // `GET /trips` returns bare Trip rows (list shape). Don't fan out N+1
+      // active-quote lookups here -- the concierge right pane fetches the
+      // bundle for the *active* trip only via getTripWithVersion above.
+      activeQuote: null,
     })),
   );
 }

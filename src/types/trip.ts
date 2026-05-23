@@ -1,5 +1,6 @@
 import type { AIChatSessionMetadata } from '@/types/ai-chat';
 import type { GeoPoint } from '@/types/common';
+import type { Quote } from '@/types/quote';
 
 export type TripStatus =
   | 'draft'
@@ -163,6 +164,17 @@ export interface Trip {
   schema_version: number;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+/**
+ * Response shape of `GET /api/v2/trips/{id}` — the trip joined with its
+ * single active (SENT) quote, if any. The Trip schema stays 1:1 with its
+ * DB columns; the derived quote lives here on the composite, not on Trip.
+ * Mirrors backend `TripWithActiveQuote`.
+ */
+export interface TripWithActiveQuote {
+  trip: Trip;
+  active_quote: Quote | null;
 }
 
 export interface CreateTripFromHotelResponse {

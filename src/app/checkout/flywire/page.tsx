@@ -24,7 +24,7 @@ import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
 import { buildFlywireInitiateConfig } from '@/lib/flywire-config';
 import type { WidgetConfig } from '@/types/payment';
-import type { Trip, TripVersion } from '@/types/trip';
+import type { TripVersion, TripWithActiveQuote } from '@/types/trip';
 
 const SCRIPT_URL = process.env.NEXT_PUBLIC_FLYWIRE_SCRIPT_URL ?? '';
 const FLYWIRE_ENV = process.env.NEXT_PUBLIC_FLYWIRE_ENV ?? 'demo';
@@ -112,7 +112,7 @@ function FlywireCheckoutContent() {
             const [, tripVersion] = (await Promise.all([
               apiClient.getTripById(bundle.quote.trip_id).catch(() => null),
               apiClient.getCurrentTripVersion(bundle.quote.trip_id).catch(() => null),
-            ])) as [Trip | null, TripVersion | null];
+            ])) as [TripWithActiveQuote | null, TripVersion | null];
             if (!cancelled && tripVersion?.title) {
               setTripTitle(tripVersion.title);
             }

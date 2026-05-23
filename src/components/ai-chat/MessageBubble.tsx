@@ -132,28 +132,32 @@ export default function MessageBubble({
             Concierge Team
           </div>
         )}
-        <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4">
-          {message.message_type === 'text' && (
-            <p className="font-inter text-sm text-gray-800 whitespace-pre-wrap">
-              {renderMarkdown(message.content ?? '')}
-            </p>
-          )}
-          {message.message_type === 'audio' && message.media_url && (
-            <div className="w-full">
-              <audio controls className="w-full">
-                <source src={message.media_url} />
-                Your browser does not support the audio element.
-              </audio>
-            </div>
-          )}
-        </div>
-        {widgets.length > 0 && onWidgetSubmit && (
-          <div className="mt-2 space-y-2">
+        {/* The text/audio bubble. Skipped for structured messages (e.g.
+           `quote_sent`) where the widget itself is the entire message. */}
+        {message.message_type !== 'quote_sent' && (
+          <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4">
+            {message.message_type === 'text' && (
+              <p className="font-inter text-sm text-gray-800 whitespace-pre-wrap">
+                {renderMarkdown(message.content ?? '')}
+              </p>
+            )}
+            {message.message_type === 'audio' && message.media_url && (
+              <div className="w-full">
+                <audio controls className="w-full">
+                  <source src={message.media_url} />
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            )}
+          </div>
+        )}
+        {widgets.length > 0 && (
+          <div className={message.message_type === 'quote_sent' ? '' : 'mt-2 space-y-2'}>
             {widgets.map((widget) => (
               <WidgetRenderer
                 key={widget.widget_id}
                 block={widget}
-                onSubmit={onWidgetSubmit}
+                onSubmit={onWidgetSubmit ?? (() => {})}
                 disabled={widgetsDisabled}
               />
             ))}

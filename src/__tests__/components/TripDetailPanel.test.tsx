@@ -39,6 +39,7 @@ function makeTripWithVersion(plan: TripDay[]): TripWithVersion {
       plan,
       schema_version: 1,
     },
+    activeQuote: null,
   };
 }
 
