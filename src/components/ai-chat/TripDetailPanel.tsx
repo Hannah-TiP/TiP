@@ -391,20 +391,19 @@ export default function TripDetailPanel({
 
             {/* Complete Payment CTA — when the trip is waiting on user payment
                and there is an active (SENT) quote on the backend. */}
-            {tripDetail.trip.status === 'waiting-for-payment' &&
-              tripDetail.trip.active_quote_id != null && (
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <p className="font-inter text-xs text-gray-500 mb-3">
-                    {t('chat.complete_payment_hint')}
-                  </p>
-                  <Link
-                    href={`/quotes/${tripDetail.trip.active_quote_id}`}
-                    className="block w-full py-2.5 bg-[#1E3D2F] text-white text-sm font-medium text-center rounded-full hover:bg-[#2a5240] transition-colors"
-                  >
-                    {t('chat.complete_payment')}
-                  </Link>
-                </div>
-              )}
+            {tripDetail.trip.status === 'waiting-for-payment' && tripDetail.activeQuote && (
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <p className="font-inter text-xs text-gray-500 mb-3">
+                  {t('chat.complete_payment_hint')}
+                </p>
+                <Link
+                  href={`/quotes/${tripDetail.activeQuote.id}`}
+                  className="block w-full py-2.5 bg-[#1E3D2F] text-white text-sm font-medium text-center rounded-full hover:bg-[#2a5240] transition-colors"
+                >
+                  {t('chat.complete_payment')}
+                </Link>
+              </div>
+            )}
           </div>
         )}
 

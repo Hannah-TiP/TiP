@@ -588,12 +588,12 @@ function QuoteDetailContent() {
         if (cancelled) return;
         setBundle(data);
         try {
-          const [t, v] = await Promise.all([
+          const [tripBundle, v] = await Promise.all([
             apiClient.getTripById(data.quote.trip_id),
             apiClient.getCurrentTripVersion(data.quote.trip_id),
           ]);
           if (!cancelled) {
-            setTrip(t);
+            setTrip(tripBundle.trip);
             setTripVersion(v);
           }
         } catch {

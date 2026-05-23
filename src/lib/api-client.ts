@@ -3,7 +3,12 @@ import type { Hotel } from '@/types/hotel';
 import type { Activity, ActivityKind } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
 import type { City, Country, Region } from '@/types/location';
-import type { Trip, CreateTripFromHotelResponse, TripVersion } from '@/types/trip';
+import type {
+  Trip,
+  CreateTripFromHotelResponse,
+  TripVersion,
+  TripWithActiveQuote,
+} from '@/types/trip';
 import type { QuoteWithVersion } from '@/types/quote';
 import type { CheckoutSessionResponse, WidgetConfig } from '@/types/payment';
 import type {
@@ -281,8 +286,8 @@ class ApiClient {
     return response.data;
   }
 
-  async getTripById(id: number): Promise<Trip> {
-    const response = await this.request<{ data: Trip }>(`/trip/${id}`);
+  async getTripById(id: number): Promise<TripWithActiveQuote> {
+    const response = await this.request<{ data: TripWithActiveQuote }>(`/trip/${id}`);
     return response.data;
   }
 
