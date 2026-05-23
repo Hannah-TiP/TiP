@@ -233,6 +233,14 @@ jobs:
     needs: [build-and-push-docker]
     if: needs.build-and-push-docker.outputs.environment == 'preview'
     environment: preview
+    # Serialize preview deploys: two jobs SSH'ing into the same EC2 host
+    # at the same time race on `docker image prune` (Docker daemon rejects
+    # "a prune operation is already running"), failing one of the deploys
+    # even though its container started fine. Queue instead of cancelling
+    # so every merge to `develop` still produces a deploy.
+    concurrency:
+      group: deploy-preview
+      cancel-in-progress: false
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -273,7 +281,11 @@ jobs:
             docker rm tip-customer-preview || true
             docker run -d --name tip-customer-preview --restart unless-stopped \
               -p 9200:3000 --env-file ~/.env.tip.preview ${TAG}
-            docker image prune -f
+            # Housekeeping only — never fail the deploy because of it.
+            # The Docker daemon serializes prune ops globally and rejects
+            # concurrent ones with a non-zero exit; the container itself
+            # is already running by the time we get here.
+            docker image prune -f || true
           ENDSSH
 
       - name: Health check (12 x 10s = 2min)
@@ -324,6 +336,12 @@ jobs:
     needs: [build-and-push-docker]
     if: needs.build-and-push-docker.outputs.environment == 'production'
     environment: production
+    # Serialize production deploys for the same Docker-prune-race reason
+    # as preview. Don't cancel in-progress — a production rollout that's
+    # mid-health-check must finish before the next one starts.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -364,7 +382,9 @@ jobs:
             docker rm tip-customer-production || true
             docker run -d --name tip-customer-production --restart unless-stopped \
               -p 9201:3000 --env-file ~/.env.tip.production ${TAG}
-            docker image prune -f
+            # Housekeeping only — never fail the deploy because of it.
+            # See preview deploy for the prune-race rationale.
+            docker image prune -f || true
           ENDSSH
 
       - name: Health check (12 x 10s = 2min)
