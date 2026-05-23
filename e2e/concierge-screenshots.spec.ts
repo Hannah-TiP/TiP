@@ -65,7 +65,8 @@ async function mockTripAndSession(
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ data: baseTrip }),
+      // GET /trip/{id} returns the TripWithActiveQuote bundle now, not bare Trip.
+      body: JSON.stringify({ data: { trip: baseTrip, active_quote: null } }),
     }),
   );
   await context.route(`**/api/trip/${TRIP_ID}/current-version`, (route) =>
@@ -398,7 +399,8 @@ test.describe('Concierge visual captures', () => {
       route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ data: baseTrip }),
+        // GET /trip/{id} returns the TripWithActiveQuote bundle now, not bare Trip.
+        body: JSON.stringify({ data: { trip: baseTrip, active_quote: null } }),
       }),
     );
     await context.route(`**/api/trip/${TRIP_ID}/current-version`, (route) =>

@@ -54,7 +54,8 @@ test.describe('Concierge chat message flow', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ data: baseTrip }),
+        // GET /trip/{id} returns the TripWithActiveQuote bundle now, not bare Trip.
+        body: JSON.stringify({ data: { trip: baseTrip, active_quote: null } }),
       });
     });
 
@@ -245,7 +246,8 @@ test.describe('Concierge Your Itinerary panel — detailed plan view', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ data: baseTrip }),
+        // GET /trip/{id} returns the TripWithActiveQuote bundle now, not bare Trip.
+        body: JSON.stringify({ data: { trip: baseTrip, active_quote: null } }),
       });
     });
 
