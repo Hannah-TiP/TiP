@@ -98,7 +98,8 @@ test.describe('SearchBar → Concierge prefill (authed)', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ data: createdTrip }),
+        // GET /trip/{id} returns the TripWithActiveQuote bundle now, not bare Trip.
+        body: JSON.stringify({ data: { trip: createdTrip, active_quote: null } }),
       });
     });
 

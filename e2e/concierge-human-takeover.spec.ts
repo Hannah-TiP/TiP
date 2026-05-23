@@ -52,7 +52,8 @@ test.describe('Concierge chat takeover -- customer-facing surface', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ data: baseTrip }),
+        // GET /trip/{id} returns the TripWithActiveQuote bundle now, not bare Trip.
+        body: JSON.stringify({ data: { trip: baseTrip, active_quote: null } }),
       });
     });
 
@@ -143,7 +144,8 @@ test.describe('Concierge chat takeover -- customer-facing surface', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ data: baseTrip }),
+        // GET /trip/{id} returns the TripWithActiveQuote bundle now, not bare Trip.
+        body: JSON.stringify({ data: { trip: baseTrip, active_quote: null } }),
       });
     });
 

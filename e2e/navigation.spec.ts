@@ -172,7 +172,8 @@ test.describe('Centralized header — variants & active state', () => {
         route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ data: trip }),
+          // GET /trip/{id} returns the TripWithActiveQuote bundle now, not bare Trip.
+          body: JSON.stringify({ data: { trip, active_quote: null } }),
         }),
       );
       await context.route(`**/api/trip/${TRIP_ID}/current-version`, (route) =>
