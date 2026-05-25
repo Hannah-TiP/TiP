@@ -7,6 +7,7 @@ const AUTH_STATE_PATH = path.join(__dirname, 'e2e', '.auth', 'user.json');
 const AUTH_REQUIRED_SPECS = [
   '**/concierge-converse.spec.ts',
   '**/concierge-screenshots.spec.ts',
+  '**/concierge-request-human.spec.ts',
   '**/cancel-trip.spec.ts',
   '**/concierge-human-takeover.spec.ts',
   '**/quotes.spec.ts',
