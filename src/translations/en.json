@@ -135,5 +135,17 @@
   "signature_journeys.section_title": "Signature Journeys",
   "signature_journeys.section_subtitle": "Each journey is a once-in-a-lifetime expedition, designed end to end by our concierge team.",
   "signature_journeys.cta_title": "Reserve Your Signature Journey",
-  "signature_journeys.cta_subtitle": "These voyages are limited and book far in advance — tell us your dream and we'll secure your place."
+  "signature_journeys.cta_subtitle": "These voyages are limited and book far in advance — tell us your dream and we'll secure your place.",
+  "guests.title": "Guests",
+  "guests.adults": "Adults",
+  "guests.adults_age": "Ages 13 or above",
+  "guests.children": "Children",
+  "guests.children_age": "Ages 2-12",
+  "guests.done": "Done",
+  "widget.stepper_select": "Select values",
+  "widget.stepper_confirm": "Submit",
+  "widget.stepper_sent": "Sent",
+  "widget.date_picker_title": "Select dates",
+  "widget.date_picker_placeholder": "Choose dates",
+  "widget.date_picker_confirm": "Confirm dates"
 }

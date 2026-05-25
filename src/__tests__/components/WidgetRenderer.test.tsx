@@ -2,6 +2,15 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import WidgetRenderer from '@/components/ai-chat/widgets/WidgetRenderer';
 import type { AIChatWidget } from '@/types/ai-chat';
+import enTranslations from '@/translations/en.json';
+
+vi.mock('@/contexts/LanguageContext', () => ({
+  useLanguage: () => ({
+    t: (key: string) => (enTranslations as Record<string, string>)[key] ?? key,
+    lang: 'en',
+    setLang: () => {},
+  }),
+}));
 
 afterEach(() => {
   cleanup();
