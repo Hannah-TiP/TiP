@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { AIChatNumberStepperWidget, AIChatWidgetResponse } from '@/types/ai-chat';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
   widget: AIChatNumberStepperWidget;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function NumberStepper({ widget, onSubmit, disabled }: Props) {
+  const { t } = useLanguage();
   const fields = widget.fields ?? [];
   const [values, setValues] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
@@ -44,7 +46,7 @@ export default function NumberStepper({ widget, onSubmit, disabled }: Props) {
 
   return (
     <div className="mt-3 border border-gray-200 rounded-lg p-3 bg-white">
-      <p className="font-inter text-xs text-gray-500 mb-3">Select values</p>
+      <p className="font-inter text-xs text-gray-500 mb-3">{t('widget.stepper_select')}</p>
       <div className="space-y-2">
         {fields.map((field) => (
           <div key={field.key} className="flex items-center justify-between gap-3">
@@ -86,7 +88,7 @@ export default function NumberStepper({ widget, onSubmit, disabled }: Props) {
           className="px-4 py-2 bg-[#1E3D2F] text-white text-sm rounded-full hover:bg-[#2a5240] disabled:opacity-50"
           data-testid="stepper-submit"
         >
-          {submitted ? 'Sent' : 'Confirm'}
+          {submitted ? t('widget.stepper_sent') : t('widget.stepper_confirm')}
         </button>
       </div>
     </div>

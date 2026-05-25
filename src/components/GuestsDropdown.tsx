@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface GuestsDropdownProps {
   adults: number;
@@ -11,6 +12,7 @@ interface GuestsDropdownProps {
 
 export default function GuestsDropdown({ adults, kids, onChange, onClose }: GuestsDropdownProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -28,13 +30,13 @@ export default function GuestsDropdown({ adults, kids, onChange, onClose }: Gues
       className="absolute left-[360px] top-full z-50 mt-2 rounded-xl bg-white p-6 shadow-xl"
       style={{ width: 320 }}
     >
-      <h3 className="mb-4 text-[15px] font-semibold text-green-dark">Guests</h3>
+      <h3 className="mb-4 text-[15px] font-semibold text-green-dark">{t('guests.title')}</h3>
 
       {/* Adults */}
       <div className="flex items-center justify-between border-b border-gray-100 py-4">
         <div>
-          <p className="text-[14px] font-medium text-green-dark">Adults</p>
-          <p className="text-[12px] text-gray-500">Ages 13 or above</p>
+          <p className="text-[14px] font-medium text-green-dark">{t('guests.adults')}</p>
+          <p className="text-[12px] text-gray-500">{t('guests.adults_age')}</p>
         </div>
         <div className="flex items-center gap-4">
           <button
@@ -60,8 +62,8 @@ export default function GuestsDropdown({ adults, kids, onChange, onClose }: Gues
       {/* Children */}
       <div className="flex items-center justify-between py-4">
         <div>
-          <p className="text-[14px] font-medium text-green-dark">Children</p>
-          <p className="text-[12px] text-gray-500">Ages 2-12</p>
+          <p className="text-[14px] font-medium text-green-dark">{t('guests.children')}</p>
+          <p className="text-[12px] text-gray-500">{t('guests.children_age')}</p>
         </div>
         <div className="flex items-center gap-4">
           <button
@@ -87,7 +89,7 @@ export default function GuestsDropdown({ adults, kids, onChange, onClose }: Gues
         onClick={onClose}
         className="mt-4 w-full rounded-lg bg-green-dark py-3 text-[13px] font-semibold text-white hover:opacity-90"
       >
-        Done
+        {t('guests.done')}
       </button>
     </div>
   );
