@@ -8,6 +8,7 @@ import ConversationSidebar, {
   type ConciergeSession,
 } from '@/components/ai-chat/ConversationSidebar';
 import TripDetailPanel from '@/components/ai-chat/TripDetailPanel';
+import RequestHumanCTA from '@/components/ai-chat/RequestHumanCTA';
 import { useSession } from 'next-auth/react';
 import { apiClient } from '@/lib/api-client';
 import { createTripChatSession } from '@/lib/ai-chat-utils';
@@ -573,6 +574,24 @@ function ConciergeContent() {
             pendingMessage={pendingMessage}
             onWidgetSubmit={handleWidgetSubmit}
           />
+          {activeSession && (
+            <RequestHumanCTA
+              sessionStatus={activeSession.session.status}
+              tripId={activeSession.session.trip_id}
+              onRequested={async () => {
+                try {
+                  const [refreshedBundles, history] = await Promise.all([
+                    apiClient.listChatSessions(),
+                    apiClient.getChatHistory(activeSession.session.trip_id),
+                  ]);
+                  setRawSessions(refreshedBundles);
+                  setMessages(history);
+                } catch (err) {
+                  console.error('[Concierge] Failed to refresh after human request:', err);
+                }
+              }}
+            />
+          )}
           {activeSession?.session.status === 'human' && (
             <div
               className="bg-[#FFF7E6] border-t border-[#FFD591] px-[60px] py-3 flex items-center gap-2"

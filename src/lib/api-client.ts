@@ -20,6 +20,7 @@ import type {
   AIChatMessageType,
   SendAIChatMessageRequest,
   SendAIChatMessageResponse,
+  RequestHumanResponse,
   S3UploadCredentialsResponse,
 } from '@/types/ai-chat';
 import type { DestinationSuggestion } from '@/types/destination';
@@ -443,6 +444,14 @@ class ApiClient {
       `/ai-chat/trips/${tripId}/messages`,
     );
     return response.data ?? [];
+  }
+
+  async requestHumanConcierge(tripId: number): Promise<RequestHumanResponse> {
+    const response = await this.request<{ data: RequestHumanResponse }>(
+      `/ai-chat/trips/${tripId}/request-human`,
+      { method: 'POST' },
+    );
+    return response.data;
   }
 
   // S3 Direct Upload Methods
