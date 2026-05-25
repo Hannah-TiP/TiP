@@ -29,9 +29,6 @@ export default function AmenityGrid({ features }: AmenityGridProps) {
           const photoBearing = hasPhotos(feature);
 
           if (photoBearing) {
-            const thumbUrl = getImageUrl(feature.images![0]);
-            const photoCount = feature.images!.length;
-
             return (
               <li key={`${feature.feature_type}-${index}`}>
                 <button
@@ -40,14 +37,10 @@ export default function AmenityGrid({ features }: AmenityGridProps) {
                   className="flex w-full flex-col items-center gap-2 border border-gray-border bg-white px-3 py-5 text-center transition-colors hover:border-gold hover:bg-gray-light"
                   data-testid={`amenity-photo-button-${index}`}
                 >
-                  <div className="relative h-8 w-8 overflow-hidden rounded">
-                    <Image src={thumbUrl} alt={name} fill sizes="32px" className="object-cover" />
-                  </div>
+                  {feature.icon && <span className="text-[22px] text-gold">{feature.icon}</span>}
                   <span className="text-[13px] tracking-[0.5px] text-gray-text">{name}</span>
-                  <span className="text-[11px] tracking-[0.3px] text-gold">
-                    {photoCount > 1
-                      ? `+${photoCount - 1} ${t('hotel.amenity_photos')}`
-                      : t('hotel.amenity_view_photos')}
+                  <span className="text-[11px] tracking-[0.5px] uppercase text-gold">
+                    {t('hotel.amenity_view_photos')}
                   </span>
                 </button>
               </li>

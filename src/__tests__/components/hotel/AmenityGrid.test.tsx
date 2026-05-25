@@ -90,6 +90,8 @@ describe('AmenityGrid', () => {
     expect(button).toBeTruthy();
     expect(button.tagName).toBe('BUTTON');
     expect(screen.getByText('Airport Transfer')).toBeTruthy();
+    expect(screen.getByText('🚗')).toBeTruthy();
+    expect(screen.getByText('View photos')).toBeTruthy();
 
     // Modal should not be open yet
     expect(screen.queryByTestId('modal-backdrop')).toBeNull();
@@ -112,16 +114,14 @@ describe('AmenityGrid', () => {
     expect(button).toBeTruthy();
     expect(button.tagName).toBe('BUTTON');
     expect(screen.getByText('Spa')).toBeTruthy();
-    // Should show "+2 photos" badge (3 images, so +2)
-    expect(screen.getByText('+2 photos')).toBeTruthy();
+    expect(screen.getByText('♨️')).toBeTruthy();
 
     // Click to open modal
     fireEvent.click(button);
 
     expect(screen.getByTestId('modal-backdrop')).toBeTruthy();
-    // All 3 images should be rendered in the modal
     const images = screen.getAllByRole('img');
-    expect(images.length).toBe(4); // 1 thumbnail + 3 modal images
+    expect(images.length).toBe(3);
   });
 
   it('modal closes on ESC key', () => {
