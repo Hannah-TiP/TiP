@@ -144,5 +144,8 @@
   "guests.done": "Done",
   "widget.stepper_select": "Select values",
   "widget.stepper_confirm": "Submit",
-  "widget.stepper_sent": "Sent"
+  "widget.stepper_sent": "Sent",
+  "widget.date_picker_title": "Select dates",
+  "widget.date_picker_placeholder": "Choose dates",
+  "widget.date_picker_confirm": "Confirm dates"
 }

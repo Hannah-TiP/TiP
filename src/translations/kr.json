@@ -144,5 +144,8 @@
   "guests.done": "완료",
   "widget.stepper_select": "값 선택",
   "widget.stepper_confirm": "제출",
-  "widget.stepper_sent": "전송됨"
+  "widget.stepper_sent": "전송됨",
+  "widget.date_picker_title": "날짜 선택",
+  "widget.date_picker_placeholder": "날짜를 선택하세요",
+  "widget.date_picker_confirm": "날짜 확인"
 }

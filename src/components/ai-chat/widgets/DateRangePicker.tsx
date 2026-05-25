@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import DatePickerDropdown from '@/components/DatePickerDropdown';
 import type { AIChatDateRangePickerWidget, AIChatWidgetResponse } from '@/types/ai-chat';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
   widget: AIChatDateRangePickerWidget;
@@ -19,6 +20,7 @@ function formatLabel(date: string | null): string {
 }
 
 export default function DateRangePicker({ widget, onSubmit, disabled }: Props) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
@@ -36,7 +38,7 @@ export default function DateRangePicker({ widget, onSubmit, disabled }: Props) {
 
   return (
     <div className="mt-3 border border-gray-200 rounded-lg p-3 bg-white">
-      <p className="font-inter text-xs text-gray-500 mb-2">Select dates</p>
+      <p className="font-inter text-xs text-gray-500 mb-2">{t('widget.date_picker_title')}</p>
 
       <div className="relative inline-block">
         <button
@@ -48,7 +50,7 @@ export default function DateRangePicker({ widget, onSubmit, disabled }: Props) {
         >
           {checkIn && checkOut
             ? `${formatLabel(checkIn)} – ${formatLabel(checkOut)}`
-            : 'Choose dates'}
+            : t('widget.date_picker_placeholder')}
         </button>
         {open && (
           <div className="absolute z-50 mt-2">
@@ -74,7 +76,7 @@ export default function DateRangePicker({ widget, onSubmit, disabled }: Props) {
           className="px-4 py-2 bg-[#1E3D2F] text-white text-sm rounded-full hover:bg-[#2a5240] disabled:opacity-50"
           data-testid="date-range-submit"
         >
-          {submitted ? 'Sent' : 'Confirm dates'}
+          {submitted ? t('widget.stepper_sent') : t('widget.date_picker_confirm')}
         </button>
       </div>
     </div>
