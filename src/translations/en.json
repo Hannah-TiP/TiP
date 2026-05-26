@@ -149,5 +149,10 @@
   "widget.stepper_sent": "Sent",
   "widget.date_picker_title": "Select dates",
   "widget.date_picker_placeholder": "Choose dates",
-  "widget.date_picker_confirm": "Confirm dates"
+  "widget.date_picker_confirm": "Confirm dates",
+  "chat.request_human_cta": "Request human concierge",
+  "chat.request_human_modal_title": "Talk to a real concierge",
+  "chat.request_human_modal_body": "Your conversation will be handed over to a human concierge. The AI assistant will be paused until the concierge hands the chat back. A concierge may not be available immediately.",
+  "chat.request_human_modal_confirm": "Confirm",
+  "chat.request_human_modal_cancel": "Cancel"
 }

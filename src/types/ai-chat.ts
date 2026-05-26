@@ -207,6 +207,11 @@ export interface PendingMessage {
   sent_at: string;
 }
 
+export interface RequestHumanResponse {
+  session: AIChatSessionMetadata;
+  assistant_message: AIChatMessage | null;
+}
+
 export interface S3UploadCredentialsResponse {
   success?: boolean;
   code?: number;
