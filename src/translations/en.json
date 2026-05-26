@@ -121,6 +121,8 @@
   "hotel.booking_error_check_in_in_past": "Check-in cannot be in the past.",
   "hotel.booking_error_adults_required": "Please specify at least one adult traveler.",
   "hotel.booking_error_generic": "Could not start your reservation. Please try again.",
+  "hotel.amenity_view_photos": "View photos",
+  "hotel.amenity_photos_label": "photos",
   "hotel.trust_secure": "Secure payment",
   "hotel.trust_cancel": "Free cancellation",
   "hotel.trust_support": "Korean support",
