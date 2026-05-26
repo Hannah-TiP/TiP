@@ -1,13 +1,25 @@
 // Mirrors tip-backend/v2/data_model/schemas/stay_credit.py
 // Mirrors v2/data_model/enums.py::StayCreditSource / StayCreditStatus.
 
-export type StayCreditSource = 'welcome' | 'birthday' | 'referral' | 'manual';
+export type StayCreditSource =
+  | 'welcome'
+  | 'birthday'
+  | 'referral'
+  | 'manual'
+  | 'payment_points'
+  | 'first_trip_cashback'
+  | 'review_reward'
+  | 'gift';
 
 export const STAY_CREDIT_SOURCE_LABELS: Record<StayCreditSource, { en: string; kr: string }> = {
   welcome: { en: 'Welcome', kr: '환영' },
   birthday: { en: 'Birthday', kr: '생일' },
   referral: { en: 'Referral', kr: '추천' },
   manual: { en: 'Concierge', kr: '컨시어지' },
+  payment_points: { en: 'Payment Points', kr: '결제 적립' },
+  first_trip_cashback: { en: 'First Trip Cashback', kr: '첫 여행 캐시백' },
+  review_reward: { en: 'Review Reward', kr: '리뷰 보상' },
+  gift: { en: 'Gift', kr: '선물' },
 };
 
 export type StayCreditStatus = 'issued' | 'redeemed' | 'expired' | 'revoked';
@@ -32,6 +44,7 @@ export interface StayCredit {
   revoked_at?: string | null;
   granted_by_admin_id?: number | null;
   referral_id?: number | null;
+  source_ref?: string | null;
   notes?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
