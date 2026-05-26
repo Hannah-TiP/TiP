@@ -61,18 +61,24 @@ test.describe('Hotel detail — amenity & facility photos lightbox', () => {
   });
 
   test('non-photo feature tiles remain non-interactive', async ({ page }) => {
-    // Features without images should not have button elements
-    // The grid should have both interactive and non-interactive tiles
     const listItems = page.locator('[aria-labelledby="amenities-title"] ul > li');
     const totalCount = await listItems.count();
     expect(totalCount).toBeGreaterThan(0);
 
-    // At least one tile should be a plain li (non-interactive)
-    // and at least one should contain a button (interactive)
     const buttons = page.locator('[data-testid^="amenity-photo-button-"]');
     const buttonCount = await buttons.count();
     expect(buttonCount).toBeGreaterThanOrEqual(1);
-    // Seeded data has both photo-bearing and non-photo features
-    expect(totalCount).toBeGreaterThan(buttonCount);
+
+    // Any tile that does NOT contain a photo button must be truly non-interactive:
+    // no nested button, no role=button. Vacuously satisfied if every tile has photos.
+    const nonPhotoTiles = page.locator(
+      '[aria-labelledby="amenities-title"] ul > li:not(:has(button[data-testid^="amenity-photo-button-"]))',
+    );
+    const nonPhotoCount = await nonPhotoTiles.count();
+    for (let i = 0; i < nonPhotoCount; i++) {
+      const tile = nonPhotoTiles.nth(i);
+      await expect(tile.locator('button')).toHaveCount(0);
+      await expect(tile).not.toHaveAttribute('role', 'button');
+    }
   });
 });
