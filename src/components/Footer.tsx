@@ -2,8 +2,14 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { OPEN_COOKIE_SETTINGS_EVENT } from '@/components/CookieConsentBanner';
 
-type FooterLink = { label: string; href: string };
+type FooterLink = {
+  label: string;
+  href: string;
+  /** When true, dispatches a custom event instead of navigating. */
+  event?: boolean;
+};
 
 // `href: '#'` marks a stub link; wire it up when the destination page lands.
 const exploreLinks: FooterLink[] = [
@@ -21,8 +27,9 @@ const companyLinks: FooterLink[] = [
 const supportLinks: FooterLink[] = [
   { label: 'Help Center', href: '#' },
   { label: 'Contact Us', href: '#' },
-  { label: 'Privacy Policy', href: '#' },
-  { label: 'Terms of Service', href: '#' },
+  { label: 'Privacy Policy', href: '/privacy-policy' },
+  { label: 'Terms of Service', href: '/terms-of-service' },
+  { label: 'Cookie Settings', href: '#', event: true },
 ];
 
 export default function Footer() {
@@ -102,21 +109,43 @@ function FooterColumn({ title, items }: { title: string; items: FooterLink[] }) 
       >
         {title}
       </span>
-      {items.map((item) => (
-        <Link
-          key={item.label}
-          href={item.href}
-          style={{
-            fontFamily: "'Inter', sans-serif",
-            fontSize: 13,
-            fontWeight: 400,
-            color: 'rgba(255,255,255,0.4)',
-            textDecoration: 'none',
-          }}
-        >
-          {item.label}
-        </Link>
-      ))}
+      {items.map((item) =>
+        item.event ? (
+          <button
+            key={item.label}
+            type="button"
+            onClick={() => window.dispatchEvent(new Event(OPEN_COOKIE_SETTINGS_EVENT))}
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 13,
+              fontWeight: 400,
+              color: 'rgba(255,255,255,0.4)',
+              textDecoration: 'none',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+          >
+            {item.label}
+          </button>
+        ) : (
+          <Link
+            key={item.label}
+            href={item.href}
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 13,
+              fontWeight: 400,
+              color: 'rgba(255,255,255,0.4)',
+              textDecoration: 'none',
+            }}
+          >
+            {item.label}
+          </Link>
+        ),
+      )}
     </div>
   );
 }
