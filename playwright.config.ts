@@ -15,6 +15,40 @@ const AUTH_REQUIRED_SPECS = [
   '**/search-prefill-concierge.spec.ts',
 ];
 
+// Specs that deliberately test the cookie-consent banner from a blank state.
+// They manage localStorage themselves so must NOT get pre-set consent.
+const COOKIE_CONSENT_SPECS = ['**/cookie-consent.spec.ts'];
+
+// Pre-accepted cookie consent injected into localStorage for all other specs
+// so the fixed-position banner does not intercept pointer events.
+const COOKIE_CONSENT_STATE = {
+  cookies: [] as {
+    name: string;
+    value: string;
+    domain: string;
+    path: string;
+    expires: number;
+    httpOnly: boolean;
+    secure: boolean;
+    sameSite: 'Strict' | 'Lax' | 'None';
+  }[],
+  origins: [
+    {
+      origin: 'http://localhost:3000',
+      localStorage: [
+        {
+          name: 'tip-cookie-consent',
+          value: JSON.stringify({
+            analytics: true,
+            marketing: true,
+            timestamp: '2026-01-01T00:00:00Z',
+          }),
+        },
+      ],
+    },
+  ],
+};
+
 export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
@@ -28,8 +62,8 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: AUTH_REQUIRED_SPECS,
-      use: { browserName: 'chromium' },
+      testIgnore: [...AUTH_REQUIRED_SPECS, ...COOKIE_CONSENT_SPECS],
+      use: { browserName: 'chromium', storageState: COOKIE_CONSENT_STATE },
     },
     {
       name: 'chromium-authed',
@@ -38,6 +72,11 @@ export default defineConfig({
         browserName: 'chromium',
         storageState: AUTH_STATE_PATH,
       },
+    },
+    {
+      name: 'chromium-cookie-consent',
+      testMatch: COOKIE_CONSENT_SPECS,
+      use: { browserName: 'chromium' },
     },
   ],
   // Start local server when not testing against a deployed URL

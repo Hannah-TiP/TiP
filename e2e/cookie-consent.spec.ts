@@ -2,13 +2,13 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Cookie consent banner', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear consent storage before each test so banner is shown fresh.
-    await page.goto('/');
+    // Use /about rather than / so the search-bar overlay does not cover the banner.
+    await page.goto('/about');
     await page.evaluate(() => localStorage.removeItem('tip-cookie-consent'));
   });
 
   test('banner appears on first visit and disappears after accepting', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/about');
 
     const banner = page.getByTestId('cookie-consent-banner');
     await expect(banner).toBeVisible();
@@ -20,7 +20,7 @@ test.describe('Cookie consent banner', () => {
   });
 
   test('banner does not reappear after accepting and reloading', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/about');
 
     await page.getByTestId('cookie-accept-all').click();
     await expect(page.getByTestId('cookie-consent-banner')).not.toBeVisible();
@@ -33,7 +33,7 @@ test.describe('Cookie consent banner', () => {
   });
 
   test('Manage Preferences opens the modal with category toggles', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/about');
 
     const banner = page.getByTestId('cookie-consent-banner');
     await expect(banner).toBeVisible();
@@ -50,7 +50,7 @@ test.describe('Cookie consent banner', () => {
   });
 
   test('saving custom preferences hides banner and persists', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/about');
 
     // Open preferences
     await page.getByText('Manage Preferences').click();
@@ -81,16 +81,18 @@ test.describe('Legal pages', () => {
     await page.goto('/privacy-policy');
     await expect(page).toHaveURL(/privacy-policy/);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Privacy Policy');
-    await expect(page.getByText('Information We Collect')).toBeVisible();
-    await expect(page.getByText('Cookies and Tracking Technologies')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Information We Collect' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Cookies and Tracking Technologies' }),
+    ).toBeVisible();
   });
 
   test('terms of service page renders content', async ({ page }) => {
     await page.goto('/terms-of-service');
     await expect(page).toHaveURL(/terms-of-service/);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Terms of Service');
-    await expect(page.getByText('Eligibility')).toBeVisible();
-    await expect(page.getByText('Bookings and Payments')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Eligibility' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Bookings and Payments' })).toBeVisible();
   });
 });
 

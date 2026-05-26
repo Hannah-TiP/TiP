@@ -38,6 +38,13 @@ export default async function globalSetup(config: FullConfig) {
   const page = await context.newPage();
 
   await page.goto('/sign-in');
+
+  // Dismiss the cookie consent banner so it doesn't intercept clicks.
+  const acceptBtn = page.getByTestId('cookie-accept-all');
+  if (await acceptBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await acceptBtn.click();
+  }
+
   await page.getByPlaceholder(/email/i).fill(E2E_EMAIL);
   await page.getByPlaceholder(/password/i).fill(E2E_PASSWORD);
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
