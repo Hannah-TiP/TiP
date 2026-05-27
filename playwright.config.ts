@@ -3,6 +3,8 @@ import path from 'node:path';
 
 const AUTH_STATE_PATH = path.join(__dirname, 'e2e', '.auth', 'user.json');
 
+const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:3000';
+
 // Specs that require an authenticated session (run with stored storageState).
 const AUTH_REQUIRED_SPECS = [
   '**/concierge-converse.spec.ts',
@@ -20,7 +22,10 @@ const AUTH_REQUIRED_SPECS = [
 const COOKIE_CONSENT_SPECS = ['**/cookie-consent.spec.ts'];
 
 // Pre-accepted cookie consent injected into localStorage for all other specs
-// so the fixed-position banner does not intercept pointer events.
+// so the fixed-position banner does not intercept pointer events. The origin
+// must match the actual test target — Playwright only applies localStorage
+// from the storage state to matching origins, so a hardcoded localhost origin
+// is silently ignored when running against a deployed URL.
 const COOKIE_CONSENT_STATE = {
   cookies: [] as {
     name: string;
@@ -34,7 +39,7 @@ const COOKIE_CONSENT_STATE = {
   }[],
   origins: [
     {
-      origin: 'http://localhost:3000',
+      origin: new URL(BASE_URL).origin,
       localStorage: [
         {
           name: 'tip-cookie-consent',
@@ -55,7 +60,7 @@ export default defineConfig({
   retries: 1,
   globalSetup: require.resolve('./e2e/global-setup.ts'),
   use: {
-    baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
+    baseURL: BASE_URL,
     headless: true,
     screenshot: 'only-on-failure',
   },
