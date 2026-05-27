@@ -4,6 +4,7 @@ import { SessionProvider } from 'next-auth/react';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { UserProvider } from '@/contexts/UserContext';
 import Header from '@/components/Header';
+import CookieConsentBanner from '@/components/CookieConsentBanner';
 
 export const metadata: Metadata = {
   title: 'TiP - Luxury Travel Concierge',
@@ -37,6 +38,7 @@ export default function RootLayout({
                 <Header />
                 {children}
               </div>
+              <CookieConsentBanner />
             </UserProvider>
           </LanguageProvider>
         </SessionProvider>
