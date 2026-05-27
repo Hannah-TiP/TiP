@@ -225,6 +225,11 @@ class ApiClient {
     return response.data;
   }
 
+  async getActivityById(id: number): Promise<Activity> {
+    const response = await this.request<{ data: Activity }>(`/activities/by-id/${id}`);
+    return response.data;
+  }
+
   // Restaurant methods
   async getRestaurants(params?: {
     city_id?: number;
@@ -245,6 +250,11 @@ class ApiClient {
 
   async getRestaurantBySlug(slug: string): Promise<Restaurant> {
     const response = await this.request<{ data: Restaurant }>(`/restaurants/${slug}`);
+    return response.data;
+  }
+
+  async getRestaurantById(id: number): Promise<Restaurant> {
+    const response = await this.request<{ data: Restaurant }>(`/restaurants/by-id/${id}`);
     return response.data;
   }
 

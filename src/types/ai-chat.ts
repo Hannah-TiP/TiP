@@ -35,6 +35,16 @@ export interface HotelCarouselValue {
   name?: string | null;
 }
 
+export interface ActivityCarouselValue {
+  activity_id?: number | null;
+  name?: string | null;
+}
+
+export interface RestaurantCarouselValue {
+  restaurant_id?: number | null;
+  name?: string | null;
+}
+
 export interface AIChatDateRangePickerWidget {
   widget_id: string;
   widget_type: 'date_range_picker';
@@ -69,6 +79,39 @@ export interface AIChatHotelCarouselWidget {
   hotels: HotelCarouselItem[];
 }
 
+export interface ActivityCarouselItem {
+  id: number;
+  name: string | null;
+  city_id?: number | null;
+  city_name?: string | null;
+  image_url: string | null;
+  description: string | null;
+  category: string | null;
+  kind: string | null;
+}
+
+export interface AIChatActivityCarouselWidget {
+  widget_id: string;
+  widget_type: 'activity_carousel';
+  activities: ActivityCarouselItem[];
+}
+
+export interface RestaurantCarouselItem {
+  id: number;
+  name: string | null;
+  city_id?: number | null;
+  city_name?: string | null;
+  image_url: string | null;
+  description: string | null;
+  recognitions: string[];
+}
+
+export interface AIChatRestaurantCarouselWidget {
+  widget_id: string;
+  widget_type: 'restaurant_carousel';
+  restaurants: RestaurantCarouselItem[];
+}
+
 /**
  * Concierge-emitted card linking the user to a freshly sent quote. Posted
  * as a side effect of the admin send-quote flow (not LLM-emitted).
@@ -88,6 +131,8 @@ export type AIChatWidget =
   | AIChatNumberStepperWidget
   | AIChatOptionSelectorWidget
   | AIChatHotelCarouselWidget
+  | AIChatActivityCarouselWidget
+  | AIChatRestaurantCarouselWidget
   | AIChatQuoteSentWidget;
 
 export interface AIChatDateRangePickerWidgetResponse {
@@ -114,11 +159,25 @@ export interface AIChatHotelCarouselWidgetResponse {
   value: HotelCarouselValue;
 }
 
+export interface AIChatActivityCarouselWidgetResponse {
+  widget_id: string;
+  widget_type: 'activity_carousel';
+  value: ActivityCarouselValue;
+}
+
+export interface AIChatRestaurantCarouselWidgetResponse {
+  widget_id: string;
+  widget_type: 'restaurant_carousel';
+  value: RestaurantCarouselValue;
+}
+
 export type AIChatWidgetResponse =
   | AIChatDateRangePickerWidgetResponse
   | AIChatNumberStepperWidgetResponse
   | AIChatOptionSelectorWidgetResponse
-  | AIChatHotelCarouselWidgetResponse;
+  | AIChatHotelCarouselWidgetResponse
+  | AIChatActivityCarouselWidgetResponse
+  | AIChatRestaurantCarouselWidgetResponse;
 
 export interface AIChatSessionMetadata {
   id: number;
