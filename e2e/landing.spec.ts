@@ -12,7 +12,7 @@ test.describe('Landing page', () => {
     await expect(
       page.getByRole('link', { name: 'MORE DREAMS', exact: true }).first(),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'INSIGHTS', exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'ABOUT', exact: true }).first()).toBeVisible();
   });
 
   test('displays hero section with CTA buttons', async ({ page }) => {

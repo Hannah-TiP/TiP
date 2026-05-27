@@ -41,7 +41,7 @@ describe('Header — render gating', () => {
 
 describe('Header — auth controls render exactly once', () => {
   beforeEach(() => {
-    pathnameRef.current = '/insights';
+    pathnameRef.current = '/about';
   });
 
   it('logged-out: shows a single SIGN IN, no MY PAGE / LOGOUT', () => {
@@ -66,24 +66,24 @@ describe('Header — auth controls render exactly once', () => {
     expect(screen.getAllByText('DREAM HOTELS')).toHaveLength(1);
     expect(screen.getAllByText('MORE DREAMS')).toHaveLength(1);
     expect(screen.getAllByText('SIGNATURE JOURNEYS')).toHaveLength(1);
-    expect(screen.getAllByText('INSIGHTS')).toHaveLength(1);
+    expect(screen.getAllByText('ABOUT')).toHaveLength(1);
     expect(screen.getAllByText('CONCIERGE')).toHaveLength(1);
   });
 
-  it('orders the nav: Dream Hotels, More Dreams, Signature Journeys, Insights, Concierge', () => {
+  it('orders the nav: Dream Hotels, More Dreams, Signature Journeys, About, Concierge', () => {
     sessionRef.current = { data: null };
     render(<Header />);
     const nav = screen.getByRole('navigation');
     const labels = Array.from(
       nav.querySelectorAll(
-        'a[href^="/dream-hotels"], a[href^="/more-dreams"], a[href^="/signature-journeys"], a[href^="/insights"], a[href^="/concierge"]',
+        'a[href^="/dream-hotels"], a[href^="/more-dreams"], a[href^="/signature-journeys"], a[href^="/about"], a[href^="/concierge"]',
       ),
     ).map((a) => a.textContent);
     expect(labels).toEqual([
       'DREAM HOTELS',
       'MORE DREAMS',
       'SIGNATURE JOURNEYS',
-      'INSIGHTS',
+      'ABOUT',
       'CONCIERGE',
     ]);
   });

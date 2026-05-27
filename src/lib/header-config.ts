@@ -17,7 +17,7 @@ export type NavKey =
   | 'dream-hotels'
   | 'more-dreams'
   | 'signature-journeys'
-  | 'insights'
+  | 'about'
   | 'concierge'
   | 'my-page';
 
@@ -129,8 +129,8 @@ export function resolveHeaderConfig(rawPathname: string): HeaderConfig {
   if (isPathOrSubpath(pathname, '/signature-journeys')) {
     return { variant: 'app', activeNav: 'signature-journeys', subNav: null };
   }
-  if (isPathOrSubpath(pathname, '/insights')) {
-    return { variant: 'app', activeNav: 'insights', subNav: null };
+  if (isPathOrSubpath(pathname, '/about')) {
+    return { variant: 'app', activeNav: 'about', subNav: null };
   }
   if (isPathOrSubpath(pathname, '/concierge')) {
     return { variant: 'app', activeNav: 'concierge', subNav: null };

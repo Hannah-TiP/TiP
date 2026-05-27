@@ -486,8 +486,8 @@ export default function HomePage() {
                   >
                     Dream Hotels
                   </Link>
-                  <Link href="/insights" className="text-[13px] text-white/40 hover:text-white/70">
-                    Insights
+                  <Link href="/about" className="text-[13px] text-white/40 hover:text-white/70">
+                    About
                   </Link>
                   <Link href="/concierge" className="text-[13px] text-white/40 hover:text-white/70">
                     Concierge

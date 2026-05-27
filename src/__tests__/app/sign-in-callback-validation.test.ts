@@ -23,7 +23,7 @@ describe('isSafeRedirectPath', () => {
     });
 
     it('accepts paths with hash fragments', () => {
-      expect(isSafeRedirectPath('/insights#section-2')).toBe(true);
+      expect(isSafeRedirectPath('/about#section-2')).toBe(true);
     });
   });
 

@@ -78,10 +78,10 @@ describe('resolveHeaderConfig — no-header (auth + onboarding) routes', () => {
 });
 
 describe('resolveHeaderConfig — section landing pages (app variant)', () => {
-  it('highlights Insights on /insights', () => {
-    expect(resolveHeaderConfig('/insights')).toEqual({
+  it('highlights About on /about', () => {
+    expect(resolveHeaderConfig('/about')).toEqual({
       variant: 'app',
-      activeNav: 'insights',
+      activeNav: 'about',
       subNav: null,
     });
   });
