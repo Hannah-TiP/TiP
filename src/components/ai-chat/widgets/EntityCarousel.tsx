@@ -97,7 +97,7 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
     <>
       <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3">
         <p className="font-inter mb-3 text-xs text-gray-500">
-          Select {entityLabel === 'Hotel' ? 'a' : 'an'} {entityLabel.toLowerCase()}
+          Select {/^[aeiou]/i.test(entityLabel) ? 'an' : 'a'} {entityLabel.toLowerCase()}
         </p>
         <div className="flex gap-3 overflow-x-auto pb-1">
           {items.map((item) => {
