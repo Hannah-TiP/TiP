@@ -16,7 +16,7 @@ function hasPhotos(feature: HotelFeature): boolean {
 }
 
 export default function AmenityGrid({ features }: AmenityGridProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [openFeatureIndex, setOpenFeatureIndex] = useState<number | null>(null);
 
   const openFeature = openFeatureIndex !== null ? features[openFeatureIndex] : null;
@@ -25,7 +25,8 @@ export default function AmenityGrid({ features }: AmenityGridProps) {
     <>
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {features.map((feature, index) => {
-          const name = getLocalizedText(feature.name);
+          const name = getLocalizedText(feature.name, lang);
+          const description = getLocalizedText(feature.description, lang);
           const photoBearing = hasPhotos(feature);
 
           if (photoBearing) {
@@ -39,6 +40,9 @@ export default function AmenityGrid({ features }: AmenityGridProps) {
                 >
                   {feature.icon && <span className="text-[22px] text-gold">{feature.icon}</span>}
                   <span className="text-[13px] tracking-[0.5px] text-gray-text">{name}</span>
+                  {description && (
+                    <span className="line-clamp-2 text-[11px] text-gray-text">{description}</span>
+                  )}
                   <span className="text-[11px] tracking-[0.5px] uppercase text-gold">
                     {t('hotel.amenity_view_photos')}
                   </span>
@@ -51,9 +55,13 @@ export default function AmenityGrid({ features }: AmenityGridProps) {
             <li
               key={`${feature.feature_type}-${index}`}
               className="flex flex-col items-center gap-2 border border-gray-border bg-white px-3 py-5 text-center"
+              title={description || undefined}
             >
               {feature.icon && <span className="text-[22px] text-gold">{feature.icon}</span>}
               <span className="text-[13px] tracking-[0.5px] text-gray-text">{name}</span>
+              {description && (
+                <span className="line-clamp-2 text-[11px] text-gray-text">{description}</span>
+              )}
             </li>
           );
         })}
@@ -64,15 +72,20 @@ export default function AmenityGrid({ features }: AmenityGridProps) {
         onClose={() => setOpenFeatureIndex(null)}
         ariaLabel={
           openFeature
-            ? `${getLocalizedText(openFeature.name)} ${t('hotel.amenity_photos_label')}`
+            ? `${getLocalizedText(openFeature.name, lang)} ${t('hotel.amenity_photos_label')}`
             : undefined
         }
       >
         {openFeature && (
           <div className="p-6 pt-12">
             <h2 className="mb-6 font-primary text-2xl font-light text-green-dark">
-              {getLocalizedText(openFeature.name)}
+              {getLocalizedText(openFeature.name, lang)}
             </h2>
+            {getLocalizedText(openFeature.description, lang) && (
+              <p className="mb-6 text-sm text-gray-text">
+                {getLocalizedText(openFeature.description, lang)}
+              </p>
+            )}
             <div
               className={
                 openFeature.images!.length === 1 ? '' : 'grid grid-cols-1 gap-4 md:grid-cols-2'
@@ -85,7 +98,7 @@ export default function AmenityGrid({ features }: AmenityGridProps) {
                 >
                   <Image
                     src={getImageUrl(image)}
-                    alt={`${getLocalizedText(openFeature.name)} ${imgIndex + 1}`}
+                    alt={`${getLocalizedText(openFeature.name, lang)} ${imgIndex + 1}`}
                     fill
                     sizes={
                       openFeature.images!.length === 1
