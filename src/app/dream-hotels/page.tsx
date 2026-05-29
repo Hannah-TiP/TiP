@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import HotelMap from '@/components/HotelMap';
 import PreviewBanner from '@/components/PreviewBanner';
 import DraftBadge from '@/components/DraftBadge';
+import EntityRatingBadge from '@/components/reviews/EntityRatingBadge';
 import { apiClient } from '@/lib/api-client';
 import { usePreviewMode } from '@/hooks/usePreviewMode';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -575,6 +576,7 @@ function DreamHotelsContent() {
                   <p className="mt-1 text-[13px] text-gray-text">
                     {getLocalizedText(hotel.address)}
                   </p>
+                  <EntityRatingBadge entityType="hotel" entityId={hotel.id} className="mt-2" />
                 </div>
               </Link>
             ))}

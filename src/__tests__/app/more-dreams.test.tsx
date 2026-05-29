@@ -55,6 +55,10 @@ vi.mock('@/lib/api-client', () => ({
     getActivities: vi.fn(),
     getRestaurants: vi.fn(),
     getCities: vi.fn(),
+    getReviewsByEntity: vi.fn().mockResolvedValue({
+      reviews: [],
+      aggregate: { average_rating: null, review_count: 0 },
+    }),
   },
 }));
 

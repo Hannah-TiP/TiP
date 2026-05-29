@@ -1,125 +1,150 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import type { TripPlanItem } from '@/types/trip';
-import { getTripReviewableItems, getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
+import ReviewSessionItem from '@/components/reviews/ReviewSessionItem';
+import { apiClient } from '@/lib/api-client';
+import {
+  getTripReviewableItems,
+  getTripWithVersion,
+  toReviewableEntities,
+  type ReviewableEntity,
+  type TripWithVersion,
+} from '@/lib/trip-utils';
+import { loadDrafts } from '@/lib/review-drafts';
+import type { Review } from '@/types/review';
 
-const categoryLabel: Record<'hotel' | 'activity', string> = {
-  hotel: 'Hotel',
-  activity: 'Activity',
-};
+interface SessionState {
+  trip: TripWithVersion;
+  entities: ReviewableEntity[];
+  userId: number;
+  /** Map of "entityType:entityId" -> the current user's existing review. */
+  reviewsByEntity: Record<string, Review | null>;
+}
 
-const categoryColor: Record<'hotel' | 'activity', string> = {
-  hotel: 'bg-purple-100 text-purple-700',
-  activity: 'bg-green-100 text-green-700',
-};
+function entityKey(entity: ReviewableEntity): string {
+  return `${entity.entityType}:${entity.entityId}`;
+}
 
-function ReviewCard({ item }: { item: TripPlanItem }) {
-  const category = item.item_type === 'hotel' ? 'hotel' : 'activity';
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-center gap-3 mb-4">
-        <span className={`text-xs px-2 py-0.5 rounded font-medium ${categoryColor[category]}`}>
-          {categoryLabel[category]}
-        </span>
-        <h3 className="font-semibold text-gray-900">{item.title || categoryLabel[category]}</h3>
-      </div>
-      <p className="text-sm text-gray-500">
-        Review submission for v2 itinerary items is not wired yet. This page will come back once the
-        v2 review flow is migrated.
-      </p>
-    </div>
-  );
+async function findUserReview(entity: ReviewableEntity, userId: number): Promise<Review | null> {
+  try {
+    const list = await apiClient.getReviewsByEntity(entity.entityType, entity.entityId);
+    const match = list.reviews.find((r) => r.author.id === userId && r.review.deleted_at == null);
+    return match?.review ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export default function ReviewsPage() {
   const { id } = useParams<{ id: string }>();
-  const [tripWithVersion, setTripWithVersion] = useState<TripWithVersion | null>(null);
+  const tripId = Number(id);
+  const [state, setState] = useState<SessionState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const load = useCallback(async () => {
+    if (!tripId) return;
+    try {
+      setError(null);
+      const [trip, user] = await Promise.all([getTripWithVersion(tripId), apiClient.getProfile()]);
+      const entities = toReviewableEntities(getTripReviewableItems(trip.currentVersion));
+      const reviews = await Promise.all(entities.map((e) => findUserReview(e, user.id)));
+      const reviewsByEntity: Record<string, Review | null> = {};
+      entities.forEach((e, i) => {
+        reviewsByEntity[entityKey(e)] = reviews[i];
+      });
+      setState({ trip, entities, userId: user.id, reviewsByEntity });
+    } catch {
+      setError('Failed to load trip details.');
+    } finally {
+      setLoading(false);
+    }
+  }, [tripId]);
+
   useEffect(() => {
-    if (!id) return;
-
-    const load = async () => {
-      try {
-        setTripWithVersion(await getTripWithVersion(Number(id)));
-      } catch {
-        setError('Failed to load trip details.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     load();
-  }, [id]);
+  }, [load]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-6 mt-8 space-y-4 animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3" />
+        <div className="mx-auto mt-8 max-w-4xl space-y-4 px-6 animate-pulse">
+          <div className="h-8 w-1/3 rounded bg-gray-200" />
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-48 bg-gray-200 rounded-xl" />
+            <div key={i} className="h-48 rounded-xl bg-gray-200" />
           ))}
         </div>
       </div>
     );
   }
 
-  if (error || !tripWithVersion) {
+  if (error || !state) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-6 mt-8 text-center py-20 text-gray-500">
+        <div className="mx-auto mt-8 max-w-4xl px-6 py-20 text-center text-gray-500">
           <p>{error ?? 'Trip not found.'}</p>
           <Link
-            href="/my-page"
-            className="mt-4 inline-block text-[#1E3D2F] hover:underline text-sm"
+            href="/my-page/travel-history"
+            className="mt-4 inline-block text-sm text-[#1E3D2F] hover:underline"
           >
-            ← Back to My Trips
+            ← Back to Travel History
           </Link>
         </div>
       </div>
     );
   }
 
-  const { trip, currentVersion } = tripWithVersion;
-  const destination = currentVersion?.title?.trim() || 'New Trip';
-  const reviewableItems = getTripReviewableItems(currentVersion);
+  const { trip, entities, reviewsByEntity } = state;
+  const destination = trip.currentVersion?.title?.trim() || 'Your Trip';
+  const drafts = loadDrafts(tripId);
+  const submittedCount = entities.filter((e) => reviewsByEntity[entityKey(e)]).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-6 mt-8 mb-16">
+      <div className="mx-auto mt-8 mb-16 max-w-4xl px-6">
         <Link
-          href={`/my-page/travel-history/${trip.id}`}
-          className="text-sm text-gray-500 hover:text-gray-900 mb-6 inline-block"
+          href={`/my-page/travel-history/${trip.trip.id}`}
+          className="mb-6 inline-block text-sm text-gray-500 hover:text-gray-900"
         >
           ← Back to Trip
         </Link>
 
         <div className="mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Review Your Experience</h1>
-            <p className="text-gray-500">{destination}</p>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Review Your Experience</h1>
+          <p className="text-gray-500">{destination}</p>
+          {entities.length > 0 && (
+            <p className="mt-2 text-sm text-gray-500">
+              {submittedCount} of {entities.length} reviewed
+            </p>
+          )}
         </div>
 
-        {reviewableItems.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        {entities.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
             <p className="text-gray-500">
-              There are no reviewable v2 itinerary items yet, or the v2 review flow has not been
-              migrated for this trip.
+              There are no TiP-listed hotels, restaurants, or activities to review on this trip.
             </p>
           </div>
         ) : (
           <div className="space-y-5">
-            {reviewableItems.map((item, index) => (
-              <ReviewCard key={`${item.item_type}-${index}`} item={item} />
-            ))}
+            {entities.map((entity) => {
+              const key = entityKey(entity);
+              const existing = reviewsByEntity[key] ?? null;
+              // Item with a saved draft but no submitted review re-mounts when
+              // the draft state needs to surface; keyed on entity + review id.
+              return (
+                <ReviewSessionItem
+                  key={`${key}:${(existing?.id ?? drafts[key]) ? 'd' : 'n'}`}
+                  tripId={tripId}
+                  entity={entity}
+                  existingReview={existing}
+                  onChanged={load}
+                />
+              );
+            })}
           </div>
         )}
       </div>

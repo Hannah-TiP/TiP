@@ -1,6 +1,49 @@
 import { apiClient } from '@/lib/api-client';
 import type { Quote } from '@/types/quote';
 import type { Trip, TripDocument, TripPlanItem, TripVersion } from '@/types/trip';
+import type { ReviewEntityType } from '@/types/review';
+
+/**
+ * A TiP-DB-backed itinerary item that can be reviewed, flattened to the
+ * fields the review session needs: the entity type/id (the review target)
+ * plus a display title. Free-text items without an entity id are excluded
+ * upstream by `getTripReviewableItems`.
+ */
+export interface ReviewableEntity {
+  entityType: ReviewEntityType;
+  entityId: number;
+  title: string;
+}
+
+export function toReviewableEntities(items: TripPlanItem[]): ReviewableEntity[] {
+  const entities: ReviewableEntity[] = [];
+  for (const item of items) {
+    if (item.item_type === 'hotel' && item.hotel_id) {
+      entities.push({ entityType: 'hotel', entityId: item.hotel_id, title: item.title || 'Hotel' });
+    } else if (item.item_type === 'restaurant' && item.restaurant_id) {
+      entities.push({
+        entityType: 'restaurant',
+        entityId: item.restaurant_id,
+        title: item.title || 'Restaurant',
+      });
+    } else if (item.item_type === 'activity' && item.activity_id) {
+      entities.push({
+        entityType: 'activity',
+        entityId: item.activity_id,
+        title: item.title || 'Activity',
+      });
+    }
+  }
+  // De-duplicate: an entity can appear on multiple itinerary days but maps
+  // to a single (user, trip, item) review.
+  const seen = new Set<string>();
+  return entities.filter((e) => {
+    const key = `${e.entityType}:${e.entityId}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 export interface TripWithVersion {
   trip: Trip;

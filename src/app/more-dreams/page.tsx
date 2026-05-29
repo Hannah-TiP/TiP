@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import PreviewBanner from '@/components/PreviewBanner';
 import DraftBadge from '@/components/DraftBadge';
 import ActivityCard from '@/components/ActivityCard';
+import EntityRatingBadge from '@/components/reviews/EntityRatingBadge';
 import { apiClient } from '@/lib/api-client';
 import { usePreviewMode } from '@/hooks/usePreviewMode';
 import { getImageUrl, getLocalizedText } from '@/types/common';
@@ -347,6 +348,11 @@ function MoreDreamsContent() {
                       {cityNameById.get(restaurant.city_id)}
                     </p>
                   )}
+                  <EntityRatingBadge
+                    entityType="restaurant"
+                    entityId={restaurant.id}
+                    className="mt-2"
+                  />
                 </div>
               </Link>
             ))}

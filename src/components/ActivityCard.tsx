@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import DraftBadge from '@/components/DraftBadge';
+import EntityRatingBadge from '@/components/reviews/EntityRatingBadge';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Activity } from '@/types/activity';
 
@@ -53,6 +54,7 @@ export default function ActivityCard({ activity, variant, cityName }: ActivityCa
           {getLocalizedText(activity.name)}
         </h3>
         {cityName && <p className="mt-1 text-[13px] text-gray-text">{cityName}</p>}
+        <EntityRatingBadge entityType="activity" entityId={activity.id} className="mt-2" />
       </div>
     </Link>
   );

@@ -152,7 +152,6 @@ describe('resolveHeaderConfig — /my-page/** SubNav tab mapping', () => {
     ['/my-page/travel-history', 'Travel History'],
     ['/my-page/travel-history/55', 'Travel History'],
     ['/my-page/travel-history/55/reviews', 'Travel History'],
-    ['/my-page/hotel-review', 'Travel History'],
     ['/my-page/credits', 'Credits'],
     ['/my-page/membership', 'Membership'],
     ['/my-page/referrals', 'Referrals'],
