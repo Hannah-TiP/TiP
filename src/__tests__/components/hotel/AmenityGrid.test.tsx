@@ -55,6 +55,37 @@ const facilityWithImages: HotelFeature = {
   ],
 };
 
+const featureWithDescription: HotelFeature = {
+  feature_type: 'amenity',
+  name: { en: 'Complimentary Breakfast', kr: '무료 조식' },
+  description: {
+    en: 'Freshly prepared daily with local ingredients',
+    kr: '매일 신선한 현지 재료로 준비',
+  },
+  icon: '🍳',
+};
+
+const photoFeatureWithDescription: HotelFeature = {
+  feature_type: 'facility',
+  name: { en: 'Infinity Pool', kr: '인피니티 풀' },
+  description: {
+    en: 'Heated outdoor pool with panoramic city views',
+    kr: '탁 트인 도시 전망의 온수 야외 수영장',
+  },
+  icon: '🏊',
+  images: [
+    { original: 'https://example.com/pool1.jpg' },
+    { original: 'https://example.com/pool2.jpg' },
+  ],
+};
+
+const featureWithNullDescription: HotelFeature = {
+  feature_type: 'amenity',
+  name: { en: 'Free WiFi', kr: '무료 와이파이' },
+  description: null,
+  icon: '📶',
+};
+
 describe('AmenityGrid', () => {
   it('renders one item per feature, including icon and localized name', () => {
     const features: HotelFeature[] = [
@@ -138,5 +169,78 @@ describe('AmenityGrid', () => {
 
     // Modal should be closed
     expect(screen.queryByTestId('modal-backdrop')).toBeNull();
+  });
+
+  it('renders description in non-photo tile when description is present', () => {
+    render(<AmenityGrid features={[featureWithDescription]} />);
+
+    expect(screen.getByText('Complimentary Breakfast')).toBeTruthy();
+    expect(screen.getByText('Freshly prepared daily with local ingredients')).toBeTruthy();
+  });
+
+  it('non-photo tile has title attribute with full description for tooltip', () => {
+    render(<AmenityGrid features={[featureWithDescription]} />);
+
+    const tile = screen.getByText('Complimentary Breakfast').closest('li');
+    expect(tile).toBeTruthy();
+    expect(tile!.getAttribute('title')).toBe('Freshly prepared daily with local ingredients');
+  });
+
+  it('renders description in photo-bearing tile when description is present', () => {
+    render(<AmenityGrid features={[photoFeatureWithDescription]} />);
+
+    expect(screen.getByText('Infinity Pool')).toBeTruthy();
+    expect(screen.getByText('Heated outdoor pool with panoramic city views')).toBeTruthy();
+  });
+
+  it('shows full description in modal for photo-bearing feature', () => {
+    render(<AmenityGrid features={[photoFeatureWithDescription]} />);
+
+    const button = screen.getByTestId('amenity-photo-button-0');
+    fireEvent.click(button);
+
+    expect(screen.getByTestId('modal-dialog')).toBeTruthy();
+    // Modal should show the description as a paragraph
+    const modalDialog = screen.getByTestId('modal-dialog');
+    const descriptionParagraph = modalDialog.querySelector('p');
+    expect(descriptionParagraph).toBeTruthy();
+    expect(descriptionParagraph!.textContent).toBe('Heated outdoor pool with panoramic city views');
+  });
+
+  it('omits description element when description is null', () => {
+    render(<AmenityGrid features={[featureWithNullDescription]} />);
+
+    expect(screen.getByText('Free WiFi')).toBeTruthy();
+    expect(screen.getByText('📶')).toBeTruthy();
+    // The tile should not contain any description-like span beyond the name
+    const tile = screen.getByText('Free WiFi').closest('li');
+    expect(tile).toBeTruthy();
+    expect(tile!.getAttribute('title')).toBeNull();
+    // Only one span inside: the icon and the name
+    const spans = tile!.querySelectorAll('span');
+    expect(spans.length).toBe(2); // icon + name, no description span
+  });
+
+  it('omits description element when description field is undefined', () => {
+    render(<AmenityGrid features={[featureWithoutImages]} />);
+
+    // featureWithoutImages has no description field
+    const tile = screen.getByText('Breakfast Included').closest('li');
+    expect(tile).toBeTruthy();
+    expect(tile!.getAttribute('title')).toBeNull();
+    const spans = tile!.querySelectorAll('span');
+    expect(spans.length).toBe(2); // icon + name, no description span
+  });
+
+  it('modal omits description paragraph when feature has no description', () => {
+    render(<AmenityGrid features={[facilityWithImages]} />);
+
+    const button = screen.getByTestId('amenity-photo-button-0');
+    fireEvent.click(button);
+
+    expect(screen.getByTestId('modal-dialog')).toBeTruthy();
+    const modalDialog = screen.getByTestId('modal-dialog');
+    const descriptionParagraph = modalDialog.querySelector('p');
+    expect(descriptionParagraph).toBeNull();
   });
 });
