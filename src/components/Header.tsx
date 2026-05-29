@@ -17,7 +17,7 @@ const navLinks: { key: NavKey; label: string; href: string; protected?: boolean 
   { key: 'dream-hotels', label: 'DREAM HOTELS', href: '/dream-hotels' },
   { key: 'more-dreams', label: 'MORE DREAMS', href: '/more-dreams' },
   { key: 'signature-journeys', label: 'SIGNATURE JOURNEYS', href: '/signature-journeys' },
-  { key: 'insights', label: 'INSIGHTS', href: '/insights' },
+  { key: 'about', label: 'ABOUT', href: '/about' },
   { key: 'concierge', label: 'CONCIERGE', href: '/concierge', protected: true },
 ];
 

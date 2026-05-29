@@ -120,7 +120,7 @@ test.describe('/signature-journeys', () => {
       'DREAM HOTELS',
       'MORE DREAMS',
       'SIGNATURE JOURNEYS',
-      'INSIGHTS',
+      'ABOUT',
       'CONCIERGE',
     ]) {
       await expect(header.getByRole('link', { name: label, exact: true })).toHaveCount(1);

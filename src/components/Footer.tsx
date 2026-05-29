@@ -14,7 +14,6 @@ type FooterLink = {
 // `href: '#'` marks a stub link; wire it up when the destination page lands.
 const exploreLinks: FooterLink[] = [
   { label: 'Dream Hotels', href: '#' },
-  { label: 'Insights', href: '#' },
   { label: 'Itinerary', href: '#' },
   { label: 'Concierge', href: '#' },
 ];

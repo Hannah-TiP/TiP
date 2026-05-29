@@ -25,9 +25,9 @@ test.describe('Page navigation', () => {
     await expect(page).toHaveURL(/register/);
   });
 
-  test('insights page loads', async ({ page }) => {
-    await page.goto('/insights');
-    await expect(page).toHaveURL(/insights/);
+  test('about page loads', async ({ page }) => {
+    await page.goto('/about');
+    await expect(page).toHaveURL(/about/);
   });
 });
 
@@ -53,17 +53,15 @@ test.describe('Centralized header — variants & active state', () => {
     await expect(page.getByRole('link', { name: 'Upcoming Travels' })).toHaveCount(0);
   });
 
-  test('app page (/insights) shows the standard light header bar', async ({ page }) => {
-    await page.goto('/insights');
+  test('app page (/about) shows the standard light header bar', async ({ page }) => {
+    await page.goto('/about');
     // Exactly one centralized <header> on the page (no per-page TopBar).
     await expect(page.locator('header')).toHaveCount(1);
     const header = page.locator('header').first();
     await expect(header).toBeVisible();
     await expect(header).toHaveClass(/bg-white/);
     await expect(header).not.toHaveClass(/bg-transparent/);
-    // Scope to the header: the Footer "Explore" column also has an
-    // "Insights" link, so an unscoped substring name match counts 2.
-    await expect(header.getByRole('link', { name: 'INSIGHTS', exact: true })).toHaveCount(1);
+    await expect(header.getByRole('link', { name: 'ABOUT', exact: true })).toHaveCount(1);
     await expect(page.getByRole('link', { name: 'Upcoming Travels' })).toHaveCount(0);
   });
 
