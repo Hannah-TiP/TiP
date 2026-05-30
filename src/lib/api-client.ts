@@ -28,8 +28,10 @@ import type {
   ClaimReferralResponse,
   EligibleCredit,
   MyReferralsResponse,
+  RedeemPromoCodeResponse,
   StayCredit,
 } from '@/types/stay-credit';
+import { REDEEM_ERROR_CODE_MAP, RedeemPromoCodeError } from '@/types/stay-credit';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -111,6 +113,35 @@ class ApiClient {
   async getMyReferrals(): Promise<MyReferralsResponse> {
     const response = await this.request<{ data: MyReferralsResponse }>('/me/referrals');
     return response.data;
+  }
+
+  // Redeem an admin-created promo/campaign code, crediting the redeemer's
+  // wallet. On failure throws a RedeemPromoCodeError carrying a distinct
+  // code so the UI can show the right localized message.
+  async redeemPromoCode(code: string): Promise<RedeemPromoCodeResponse> {
+    const response = await fetch(`${this.baseUrl}/me/credits/redeem-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ code }),
+    });
+
+    const payload = await response
+      .json()
+      .catch(() => ({}) as { code?: number; message?: string; data?: RedeemPromoCodeResponse });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      }
+      const mapped = payload.code ? REDEEM_ERROR_CODE_MAP[payload.code] : undefined;
+      throw new RedeemPromoCodeError(
+        mapped ?? 'generic',
+        payload.message || 'Could not redeem this code.',
+      );
+    }
+
+    return payload.data as RedeemPromoCodeResponse;
   }
 
   async claimReferral(code: string): Promise<ClaimReferralResponse> {

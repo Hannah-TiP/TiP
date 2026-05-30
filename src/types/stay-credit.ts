@@ -9,7 +9,8 @@ export type StayCreditSource =
   | 'payment_points'
   | 'first_trip_cashback'
   | 'review_reward'
-  | 'gift';
+  | 'gift'
+  | 'promo_code_redemption';
 
 export const STAY_CREDIT_SOURCE_LABELS: Record<StayCreditSource, { en: string; kr: string }> = {
   welcome: { en: 'Welcome', kr: '환영' },
@@ -20,6 +21,7 @@ export const STAY_CREDIT_SOURCE_LABELS: Record<StayCreditSource, { en: string; k
   first_trip_cashback: { en: 'First Trip Cashback', kr: '첫 여행 캐시백' },
   review_reward: { en: 'Review Reward', kr: '리뷰 보상' },
   gift: { en: 'Gift', kr: '선물' },
+  promo_code_redemption: { en: 'Promo Code', kr: '프로모션 코드' },
 };
 
 export type StayCreditStatus = 'issued' | 'redeemed' | 'expired' | 'revoked';
@@ -86,4 +88,42 @@ export interface ClaimReferralResponse {
 export interface EligibleCredit extends StayCredit {
   converted_amount: string;
   converted_currency: string;
+}
+
+// Mirrors tip-backend/v2/data_model/schemas/promo_code.py::RedeemPromoCodeResponse.
+export interface RedeemPromoCodeResponse {
+  // credit_amount is a NUMERIC serialized as a string in the JSON envelope.
+  credited_amount: string;
+  currency: string;
+  credit_id: number;
+}
+
+// Distinct body_code values returned by POST /me/credits/redeem-code on
+// failure (mirrors tip-backend/v2/api/me_credit.py::_REDEEM_ERRORS). The UI
+// switches on this to pick the right i18n message.
+export type RedeemPromoCodeErrorCode =
+  | 'unknown'
+  | 'inactive'
+  | 'expired'
+  | 'max_reached'
+  | 'already_redeemed'
+  | 'generic';
+
+export const REDEEM_ERROR_CODE_MAP: Record<number, RedeemPromoCodeErrorCode> = {
+  4041: 'unknown',
+  4001: 'inactive',
+  4002: 'expired',
+  4003: 'max_reached',
+  4004: 'already_redeemed',
+};
+
+// Thrown by apiClient.redeemPromoCode so the caller can map the code to a
+// localized message.
+export class RedeemPromoCodeError extends Error {
+  code: RedeemPromoCodeErrorCode;
+  constructor(code: RedeemPromoCodeErrorCode, message: string) {
+    super(message);
+    this.name = 'RedeemPromoCodeError';
+    this.code = code;
+  }
 }

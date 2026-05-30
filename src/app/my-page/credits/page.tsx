@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Footer from '@/components/Footer';
+import RedeemCodeSection from '@/components/credits/RedeemCodeSection';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { apiClient } from '@/lib/api-client';
 import {
@@ -60,29 +61,27 @@ export default function MyCreditsPage() {
   const [credits, setCredits] = useState<StayCredit[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const loadCredits = useCallback(() => {
+    return apiClient
+      .getMyCredits()
+      .then((rows) => {
+        setCredits(rows);
+        setLoading(false);
+      })
+      .catch((err: Error) => {
+        setError(err.message || 'Could not load credits.');
+        setLoading(false);
+      });
+  }, []);
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/sign-in');
       return;
     }
     if (status !== 'authenticated') return;
-    let cancelled = false;
-    apiClient
-      .getMyCredits()
-      .then((rows) => {
-        if (cancelled) return;
-        setCredits(rows);
-        setLoading(false);
-      })
-      .catch((err: Error) => {
-        if (cancelled) return;
-        setError(err.message || 'Could not load credits.');
-        setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [status, router]);
+    loadCredits();
+  }, [status, router, loadCredits]);
 
   const balance = sumIssuedCents(credits);
 
@@ -122,6 +121,9 @@ export default function MyCreditsPage() {
                 : '주요 통화의 크레딧이 표시됩니다. 크레딧은 현금으로 교환할 수 없습니다.'}
             </div>
           </div>
+
+          {/* Redeem a code */}
+          <RedeemCodeSection onRedeemed={loadCredits} />
 
           {/* History */}
           <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
