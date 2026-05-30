@@ -223,27 +223,6 @@ export default function BookingCard({
         >
           {t('hotel.booking_concierge_cta')}
         </button>
-
-        <ul className="mt-6 flex justify-center gap-6 text-[11px] text-gray-text">
-          <li className="flex flex-col items-center gap-1">
-            <span aria-hidden="true" className="text-[18px]">
-              🔒
-            </span>
-            <span>{t('hotel.trust_secure')}</span>
-          </li>
-          <li className="flex flex-col items-center gap-1">
-            <span aria-hidden="true" className="text-[18px]">
-              ↩
-            </span>
-            <span>{t('hotel.trust_cancel')}</span>
-          </li>
-          <li className="flex flex-col items-center gap-1">
-            <span aria-hidden="true" className="text-[18px]">
-              💬
-            </span>
-            <span>{t('hotel.trust_support')}</span>
-          </li>
-        </ul>
       </div>
     </aside>
   );
