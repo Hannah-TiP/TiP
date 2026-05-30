@@ -1,4 +1,4 @@
-import { test, type Page, type BrowserContext } from '@playwright/test';
+import { test, type Page, type BrowserContext, type APIRequestContext } from '@playwright/test';
 import path from 'node:path';
 
 // SMA-55: Hotel benefits panel inside the concierge hotel-preview modal, and
@@ -51,7 +51,33 @@ function outPath(name: string): string {
   return path.join(SCREENSHOT_DIR, name);
 }
 
-async function mockSessionAndCarousel(context: BrowserContext, hotelIds: number[]) {
+// Hotel database ids differ per environment (local seed vs deployed staging), so
+// resolve them by stable slug at runtime instead of hardcoding. The `request`
+// fixture is an APIRequestContext independent of context.route mocks and inherits
+// Playwright's baseURL, so it hits the same backend the browser uses.
+async function resolveHotelIds(
+  request: APIRequestContext,
+): Promise<{ amanId: number; parkId: number }> {
+  const fetchId = async (slug: string) => {
+    const res = await request.get(`/api/hotels/${slug}`);
+    if (!res.ok())
+      throw new Error(`Failed to resolve hotel id for "${slug}": HTTP ${res.status()}`);
+    const body = await res.json();
+    const id = body?.data?.id ?? body?.id;
+    if (typeof id !== 'number')
+      throw new Error(
+        `No numeric id for "${slug}" in response: ${JSON.stringify(body).slice(0, 200)}`,
+      );
+    return id;
+  };
+  const [amanId, parkId] = await Promise.all([fetchId('aman-tokyo'), fetchId('park-hyatt-tokyo')]);
+  return { amanId, parkId };
+}
+
+async function mockSessionAndCarousel(
+  context: BrowserContext,
+  hotels: { id: number; name: string }[],
+) {
   await context.route('**/api/ai-chat/sessions', (route) =>
     route.fulfill({
       status: 200,
@@ -98,9 +124,9 @@ async function mockSessionAndCarousel(context: BrowserContext, hotelIds: number[
               {
                 widget_type: 'hotel_carousel',
                 widget_id: 'hotels-sma55',
-                hotels: hotelIds.map((id) => ({
+                hotels: hotels.map(({ id, name }) => ({
                   id,
-                  name: id === 1 ? 'Aman Tokyo' : 'Park Hyatt Tokyo',
+                  name,
                   image_url: null,
                   overview: null,
                   benefits: [],
@@ -117,13 +143,13 @@ async function mockSessionAndCarousel(context: BrowserContext, hotelIds: number[
   });
 }
 
-async function openCarousel(page: Page) {
+async function openCarousel(page: Page, waitForId: number) {
   await page.goto('/concierge');
   const input = page.getByPlaceholder(/ask your concierge/i);
   await input.waitFor({ state: 'visible', timeout: 15_000 });
   await input.fill('Show me hotels in Tokyo');
   await input.press('Enter');
-  await page.getByTestId('hotel-card-1').waitFor({ timeout: 15_000 });
+  await page.getByTestId(`hotel-card-${waitForId}`).waitFor({ timeout: 15_000 });
 }
 
 test.describe('SMA-55 hotel benefits', () => {
@@ -132,11 +158,16 @@ test.describe('SMA-55 hotel benefits', () => {
   test('modal shows benefits panel for a hotel WITH benefits (desktop)', async ({
     page,
     context,
+    request,
   }) => {
+    const { amanId, parkId } = await resolveHotelIds(request);
     await page.setViewportSize({ width: 1280, height: 900 });
-    await mockSessionAndCarousel(context, [1, 2]);
-    await openCarousel(page);
-    await page.getByTestId('hotel-card-1').click();
+    await mockSessionAndCarousel(context, [
+      { id: amanId, name: 'Aman Tokyo' },
+      { id: parkId, name: 'Park Hyatt Tokyo' },
+    ]);
+    await openCarousel(page, amanId);
+    await page.getByTestId(`hotel-card-${amanId}`).click();
     // Wait for real backend detail to load and the benefits header to render.
     const header = page.getByText(/TiP exclusive benefits included/i);
     await header.waitFor({ timeout: REAL_BACKEND_TIMEOUT });
@@ -148,11 +179,16 @@ test.describe('SMA-55 hotel benefits', () => {
   test('modal shows benefits panel for a hotel WITH benefits (mobile)', async ({
     page,
     context,
+    request,
   }) => {
+    const { amanId, parkId } = await resolveHotelIds(request);
     await page.setViewportSize({ width: 390, height: 844 });
-    await mockSessionAndCarousel(context, [1, 2]);
-    await openCarousel(page);
-    await page.getByTestId('hotel-card-1').click();
+    await mockSessionAndCarousel(context, [
+      { id: amanId, name: 'Aman Tokyo' },
+      { id: parkId, name: 'Park Hyatt Tokyo' },
+    ]);
+    await openCarousel(page, amanId);
+    await page.getByTestId(`hotel-card-${amanId}`).click();
     const header = page.getByText(/TiP exclusive benefits included/i);
     await header.waitFor({ timeout: REAL_BACKEND_TIMEOUT });
     await header.scrollIntoViewIfNeeded();
@@ -160,13 +196,21 @@ test.describe('SMA-55 hotel benefits', () => {
     await page.screenshot({ path: outPath('modal-benefits-mobile.png'), fullPage: false });
   });
 
-  test('modal shows NO benefits block for a hotel without benefits', async ({ page, context }) => {
+  test('modal shows NO benefits block for a hotel without benefits', async ({
+    page,
+    context,
+    request,
+  }) => {
+    const { amanId, parkId } = await resolveHotelIds(request);
     await page.setViewportSize({ width: 1280, height: 900 });
-    await mockSessionAndCarousel(context, [1, 2]);
-    await openCarousel(page);
-    await page.getByTestId('hotel-card-2').click();
+    await mockSessionAndCarousel(context, [
+      { id: amanId, name: 'Aman Tokyo' },
+      { id: parkId, name: 'Park Hyatt Tokyo' },
+    ]);
+    await openCarousel(page, amanId);
+    await page.getByTestId(`hotel-card-${parkId}`).click();
     // Modal content loads (cancel button is part of the detail footer). The
-    // confirm button only renders after the real getHotelById(2) fetch resolves.
+    // confirm button only renders after the real getHotelById(parkId) fetch resolves.
     await page.getByTestId('hotel-preview-confirm').waitFor({ timeout: REAL_BACKEND_TIMEOUT });
     await page.waitForTimeout(500);
     const benefitsCount = await page.getByText(/TiP exclusive benefits included/i).count();
