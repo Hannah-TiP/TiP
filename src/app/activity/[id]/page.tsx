@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import Footer from '@/components/Footer';
+import EntityReviews from '@/components/reviews/EntityReviews';
 import { apiClient } from '@/lib/api-client';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Activity } from '@/types/activity';
@@ -164,6 +165,21 @@ export default function ActivityDetailPage() {
               </div>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* Reviews */}
+      <section className="bg-white px-20 py-20">
+        <div className="mx-auto max-w-3xl">
+          <div className="mb-8 text-center">
+            <span className="text-[11px] font-semibold tracking-[4px] text-gold">
+              GUEST REVIEWS
+            </span>
+            <h2 className="mt-3 font-primary text-[38px] italic text-green-dark">
+              What Travelers Say
+            </h2>
+          </div>
+          <EntityReviews entityType="activity" entityId={activity.id} />
         </div>
       </section>
 

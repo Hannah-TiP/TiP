@@ -3,7 +3,18 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import { getTripsWithVersions, type TripWithVersion } from '@/lib/trip-utils';
+import { apiClient } from '@/lib/api-client';
+import {
+  getTripReviewableItems,
+  getTripsWithVersions,
+  toReviewableEntities,
+  type TripWithVersion,
+} from '@/lib/trip-utils';
+
+interface TripReviewStatus {
+  reviewed: number;
+  total: number;
+}
 
 function getNights(startDate?: string, endDate?: string): number | null {
   if (!startDate || !endDate) return null;
@@ -21,6 +32,7 @@ function formatDateRange(startDate?: string, endDate?: string): string {
 
 export default function TravelHistory() {
   const [trips, setTrips] = useState<TripWithVersion[]>([]);
+  const [reviewStatus, setReviewStatus] = useState<Record<number, TripReviewStatus>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +42,36 @@ export default function TravelHistory() {
         const loaded = await getTripsWithVersions();
         const completed = loaded.filter(({ trip }) => trip.status === 'travel-completed');
         setTrips(completed);
+
+        // Best-effort per-trip review status badges. A single profile lookup,
+        // then one by-entity fetch per reviewable item (the by-entity endpoint
+        // is the only way to derive "did I review this" — there is no
+        // list-my-reviews endpoint).
+        try {
+          const user = await apiClient.getProfile();
+          const statuses = await Promise.all(
+            completed.map(async ({ trip, currentVersion }) => {
+              const entities = toReviewableEntities(getTripReviewableItems(currentVersion));
+              if (entities.length === 0) return null;
+              const lists = await Promise.all(
+                entities.map((e) =>
+                  apiClient.getReviewsByEntity(e.entityType, e.entityId).catch(() => null),
+                ),
+              );
+              const reviewed = lists.filter((list) =>
+                list?.reviews.some((r) => r.author.id === user.id && r.review.deleted_at == null),
+              ).length;
+              return { tripId: trip.id, status: { reviewed, total: entities.length } };
+            }),
+          );
+          const map: Record<number, TripReviewStatus> = {};
+          for (const entry of statuses) {
+            if (entry) map[entry.tripId] = entry.status;
+          }
+          setReviewStatus(map);
+        } catch {
+          // Leave badges absent on failure.
+        }
       } catch {
         setError('Failed to load travel history.');
       } finally {
@@ -95,6 +137,7 @@ export default function TravelHistory() {
               const nights = getNights(startDate, endDate);
               const adults = item.currentVersion?.adults ?? 0;
               const kids = item.currentVersion?.kids ?? 0;
+              const status = reviewStatus[item.trip.id];
 
               return (
                 <div
@@ -131,7 +174,22 @@ export default function TravelHistory() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end mt-4">
+                    <div className="flex items-center justify-between mt-4">
+                      {status ? (
+                        <span
+                          className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                            status.reviewed === status.total
+                              ? 'text-green-700 bg-green-100'
+                              : 'text-amber-700 bg-amber-100'
+                          }`}
+                        >
+                          {status.reviewed === status.total
+                            ? 'All reviewed'
+                            : `${status.reviewed}/${status.total} reviewed`}
+                        </span>
+                      ) : (
+                        <span />
+                      )}
                       <Link
                         href={`/my-page/travel-history/${item.trip.id}`}
                         className="text-sm font-medium text-[#1E3D2F] hover:underline"
