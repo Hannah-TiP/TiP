@@ -98,6 +98,14 @@ describe('BookingCard', () => {
     expect(screen.queryByText(/TiP exclusive benefits/i)).toBeNull();
   });
 
+  it('does not render the trust badges row (SMA-63)', () => {
+    renderCard();
+
+    expect(screen.queryByText(/secure payment/i)).toBeNull();
+    expect(screen.queryByText(/free cancellation/i)).toBeNull();
+    expect(screen.queryByText(/korean support/i)).toBeNull();
+  });
+
   it('renders the error message inline when one is provided', () => {
     renderCard({ errorMessage: 'Please select both check-in and check-out dates.' });
 
