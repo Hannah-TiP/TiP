@@ -9,6 +9,7 @@ import AmenityGrid from '@/components/hotel/AmenityGrid';
 import LocationSection from '@/components/hotel/LocationSection';
 import ReviewsPlaceholder from '@/components/hotel/ReviewsPlaceholder';
 import FaqAccordion from '@/components/hotel/FaqAccordion';
+import HotelBenefits from '@/components/hotel/HotelBenefits';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getLocalizedText } from '@/types/common';
 import { getHotelImages, type Hotel } from '@/types/hotel';
@@ -110,6 +111,10 @@ export default function HotelDetailContent({
                 </div>
               )}
             </section>
+          )}
+
+          {!sidebar && hotel.benefits && hotel.benefits.length > 0 && (
+            <HotelBenefits benefits={hotel.benefits} />
           )}
 
           {rooms.length > 0 && (
