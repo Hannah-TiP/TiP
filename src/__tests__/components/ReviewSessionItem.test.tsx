@@ -1,24 +1,8 @@
-import { cleanup, render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen, fireEvent } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ReviewableEntity } from '@/lib/trip-utils';
 import type { Review } from '@/types/review';
-
-const createReview = vi.fn();
-const updateReview = vi.fn();
-const deleteReview = vi.fn();
-
-vi.mock('@/lib/api-client', () => ({
-  apiClient: {
-    createReview: (...a: unknown[]) => createReview(...a),
-    updateReview: (...a: unknown[]) => updateReview(...a),
-    deleteReview: (...a: unknown[]) => deleteReview(...a),
-  },
-}));
-
-import { installMockLocalStorage } from '@/__tests__/helpers/mock-local-storage';
-import ReviewSessionItem from '@/components/reviews/ReviewSessionItem';
-
-installMockLocalStorage();
+import ReviewSessionItem, { type ReviewItemValue } from '@/components/reviews/ReviewSessionItem';
 
 const entity: ReviewableEntity = { entityType: 'hotel', entityId: 10, title: 'Aman Tokyo' };
 
@@ -40,95 +24,108 @@ function makeReview(overrides: Partial<Review> = {}): Review {
   };
 }
 
+const emptyValue: ReviewItemValue = { rating: 0, comment: '', skipped: false };
+
+function renderItem(props: Partial<React.ComponentProps<typeof ReviewSessionItem>> = {}) {
+  return render(
+    <ReviewSessionItem
+      entity={entity}
+      existingReview={null}
+      value={emptyValue}
+      onRatingChange={vi.fn()}
+      onCommentChange={vi.fn()}
+      onSkipToggle={vi.fn()}
+      onDelete={vi.fn()}
+      isDeleting={false}
+      error={null}
+      {...props}
+    />,
+  );
+}
+
 afterEach(cleanup);
-beforeEach(() => {
-  createReview.mockReset();
-  updateReview.mockReset();
-  deleteReview.mockReset();
-  window.localStorage.clear();
-});
 
 describe('ReviewSessionItem', () => {
-  it('shows the not-reviewed form and submits a new review', async () => {
-    createReview.mockResolvedValue({});
-    const onChanged = vi.fn();
+  it('has no per-item submit/save button', () => {
+    renderItem();
+    expect(screen.queryByText('Submit Review')).toBeNull();
+    expect(screen.queryByText('Save Changes')).toBeNull();
+  });
 
-    render(
-      <ReviewSessionItem tripId={3} entity={entity} existingReview={null} onChanged={onChanged} />,
-    );
-
-    expect(screen.getByText('Not Reviewed')).toBeTruthy();
+  it('emits rating and comment changes (controlled)', () => {
+    const onRatingChange = vi.fn();
+    const onCommentChange = vi.fn();
+    renderItem({ onRatingChange, onCommentChange });
 
     fireEvent.click(screen.getByLabelText('Rating for Aman Tokyo: 4 stars'));
+    expect(onRatingChange).toHaveBeenCalledWith(4);
+
     fireEvent.change(screen.getByPlaceholderText('Share your experience at Aman Tokyo...'), {
       target: { value: 'Great' },
     });
-    fireEvent.click(screen.getByText('Submit Review'));
-
-    await waitFor(() => expect(createReview).toHaveBeenCalled());
-    expect(createReview).toHaveBeenCalledWith({
-      trip_id: 3,
-      entity_type: 'hotel',
-      entity_id: 10,
-      rating: 4,
-      comment: 'Great',
-    });
-    expect(onChanged).toHaveBeenCalled();
+    expect(onCommentChange).toHaveBeenCalledWith('Great');
   });
 
-  it('blocks submit without a rating', () => {
-    render(
-      <ReviewSessionItem tripId={3} entity={entity} existingReview={null} onChanged={vi.fn()} />,
-    );
+  it('shows a Skip toggle and an Unskip + Skipped pill when skipped', () => {
+    const onSkipToggle = vi.fn();
+    const { rerender } = renderItem({ onSkipToggle });
 
-    fireEvent.click(screen.getByText('Submit Review'));
+    const skipBtn = screen.getByText('Skip');
+    fireEvent.click(skipBtn);
+    expect(onSkipToggle).toHaveBeenCalled();
 
-    expect(createReview).not.toHaveBeenCalled();
-    expect(screen.getByText('Please choose a star rating.')).toBeTruthy();
-  });
-
-  it('surfaces a server rejection (e.g. verified-stay gate)', async () => {
-    createReview.mockRejectedValue(new Error('You must have a completed stay to review'));
-
-    render(
-      <ReviewSessionItem tripId={3} entity={entity} existingReview={null} onChanged={vi.fn()} />,
-    );
-
-    fireEvent.click(screen.getByLabelText('Rating for Aman Tokyo: 5 stars'));
-    fireEvent.click(screen.getByText('Submit Review'));
-
-    expect(await screen.findByText('You must have a completed stay to review')).toBeTruthy();
-  });
-
-  it('renders a submitted review with Edit / Delete actions', () => {
-    render(
+    rerender(
       <ReviewSessionItem
-        tripId={3}
         entity={entity}
-        existingReview={makeReview()}
-        onChanged={vi.fn()}
+        existingReview={null}
+        value={{ ...emptyValue, skipped: true }}
+        onRatingChange={vi.fn()}
+        onCommentChange={vi.fn()}
+        onSkipToggle={onSkipToggle}
+        onDelete={vi.fn()}
+        isDeleting={false}
+        error={null}
       />,
     );
+    expect(screen.getByText('Unskip')).toBeTruthy();
+    expect(screen.getByText('Skipped')).toBeTruthy();
+  });
+
+  it('renders an existing review as an editable form with a Delete control', () => {
+    const onDelete = vi.fn();
+    renderItem({
+      existingReview: makeReview(),
+      value: { rating: 5, comment: 'Wonderful stay', skipped: false },
+      onDelete,
+    });
 
     expect(screen.getByText('Submitted')).toBeTruthy();
-    expect(screen.getByText('Wonderful stay')).toBeTruthy();
-    expect(screen.getByText('Edit')).toBeTruthy();
-    expect(screen.getByText('Delete')).toBeTruthy();
+    // Pre-seeded form (editable inline) — no separate "Edit" step needed.
+    expect(
+      (screen.getByPlaceholderText(/Share your experience/) as HTMLTextAreaElement).value,
+    ).toBe('Wonderful stay');
+    const del = screen.getByText('Delete');
+    fireEvent.click(del);
+    expect(onDelete).toHaveBeenCalled();
+    expect(screen.queryByText('Submit Review')).toBeNull();
+    expect(screen.queryByText('Save Changes')).toBeNull();
   });
 
-  it('renders a locked review with no edit controls', () => {
-    render(
-      <ReviewSessionItem
-        tripId={3}
-        entity={entity}
-        existingReview={makeReview({ locked_at: '2026-02-01T00:00:00Z' })}
-        onChanged={vi.fn()}
-      />,
-    );
+  it('renders a locked review read-only with no controls', () => {
+    renderItem({
+      existingReview: makeReview({ locked_at: '2026-02-01T00:00:00Z' }),
+      value: { rating: 5, comment: 'Wonderful stay', skipped: false },
+    });
 
     expect(screen.getByText('Locked')).toBeTruthy();
-    expect(screen.queryByText('Edit')).toBeNull();
     expect(screen.queryByText('Delete')).toBeNull();
+    expect(screen.queryByText('Skip')).toBeNull();
+    expect(screen.queryByRole('radiogroup')).toBeNull();
     expect(screen.getByText(/30-day edit window has closed/)).toBeTruthy();
+  });
+
+  it('surfaces a per-item error', () => {
+    renderItem({ error: 'You must have a completed stay to review' });
+    expect(screen.getByText('You must have a completed stay to review')).toBeTruthy();
   });
 });

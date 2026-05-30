@@ -6,9 +6,14 @@ export interface ReviewDraft {
 }
 
 type DraftMap = Record<string, ReviewDraft>;
+type SkipMap = Record<string, true>;
 
 function storageKey(tripId: number): string {
   return `tip-review-drafts:${tripId}`;
+}
+
+function skipStorageKey(tripId: number): string {
+  return `tip-review-skips:${tripId}`;
 }
 
 function entityKey(entityType: ReviewEntityType, entityId: number): string {
@@ -67,4 +72,53 @@ export function clearDraft(tripId: number, entityType: ReviewEntityType, entityI
   const drafts = readAll(tripId);
   delete drafts[entityKey(entityType, entityId)];
   writeAll(tripId, drafts);
+}
+
+function readSkips(tripId: number): SkipMap {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(skipStorageKey(tripId));
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as SkipMap) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeSkips(tripId: number, skips: SkipMap): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (Object.keys(skips).length === 0) {
+      window.localStorage.removeItem(skipStorageKey(tripId));
+    } else {
+      window.localStorage.setItem(skipStorageKey(tripId), JSON.stringify(skips));
+    }
+  } catch {
+    // Storage unavailable (private mode / quota) — skips simply won't persist.
+  }
+}
+
+export function loadSkips(tripId: number): SkipMap {
+  return readSkips(tripId);
+}
+
+export function isSkipped(tripId: number, entityType: ReviewEntityType, entityId: number): boolean {
+  return readSkips(tripId)[entityKey(entityType, entityId)] === true;
+}
+
+export function setSkipped(
+  tripId: number,
+  entityType: ReviewEntityType,
+  entityId: number,
+  skipped: boolean,
+): void {
+  const skips = readSkips(tripId);
+  const key = entityKey(entityType, entityId);
+  if (skipped) {
+    skips[key] = true;
+  } else {
+    delete skips[key];
+  }
+  writeSkips(tripId, skips);
 }

@@ -1,21 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import StarRating from '@/components/reviews/StarRating';
-import { apiClient } from '@/lib/api-client';
-import { clearDraft, getDraft, saveDraft } from '@/lib/review-drafts';
 import type { ReviewableEntity } from '@/lib/trip-utils';
 import type { Review } from '@/types/review';
 
 export type ReviewItemStatus = 'not-reviewed' | 'draft' | 'submitted' | 'locked';
 
+export interface ReviewItemValue {
+  rating: number;
+  comment: string;
+  skipped: boolean;
+}
+
 interface ReviewSessionItemProps {
-  tripId: number;
   entity: ReviewableEntity;
   /** The current user's existing review for this entity, if any. */
   existingReview: Review | null;
-  /** Called after a successful submit/update/delete so the page can refresh status. */
-  onChanged: () => void;
+  /** Controlled form value (owned by the session page). */
+  value: ReviewItemValue;
+  onRatingChange: (rating: number) => void;
+  onCommentChange: (comment: string) => void;
+  onSkipToggle: () => void;
+  /** Delete is a distinct destructive action, kept per-item. */
+  onDelete: () => void;
+  /** Whether the parent is currently deleting this item's review. */
+  isDeleting: boolean;
+  /** Per-item error surfaced after the trip-level submit (or delete). */
+  error: string | null;
 }
 
 const TYPE_LABEL: Record<ReviewableEntity['entityType'], string> = {
@@ -30,11 +41,11 @@ const TYPE_BADGE_COLOR: Record<ReviewableEntity['entityType'], string> = {
   activity: 'bg-green-100 text-green-700',
 };
 
-function statusOf(existingReview: Review | null, hasDraft: boolean): ReviewItemStatus {
+function statusOf(existingReview: Review | null, value: ReviewItemValue): ReviewItemStatus {
   if (existingReview) {
     return existingReview.locked_at ? 'locked' : 'submitted';
   }
-  return hasDraft ? 'draft' : 'not-reviewed';
+  return value.rating > 0 || value.comment.trim() !== '' ? 'draft' : 'not-reviewed';
 }
 
 const STATUS_PILL: Record<ReviewItemStatus, { label: string; className: string }> = {
@@ -45,109 +56,29 @@ const STATUS_PILL: Record<ReviewItemStatus, { label: string; className: string }
 };
 
 export default function ReviewSessionItem({
-  tripId,
   entity,
   existingReview,
-  onChanged,
+  value,
+  onRatingChange,
+  onCommentChange,
+  onSkipToggle,
+  onDelete,
+  isDeleting,
+  error,
 }: ReviewSessionItemProps) {
-  const [editing, setEditing] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const isLocked = !!existingReview?.locked_at;
-  const draft = !existingReview ? getDraft(tripId, entity.entityType, entity.entityId) : null;
-  const status = statusOf(existingReview, !!draft);
-
-  // Seed the form: from the existing review (when editing) or the saved draft.
-  useEffect(() => {
-    if (existingReview) {
-      setRating(existingReview.rating);
-      setComment(existingReview.comment ?? '');
-    } else {
-      const d = getDraft(tripId, entity.entityType, entity.entityId);
-      setRating(d?.rating ?? 0);
-      setComment(d?.comment ?? '');
-    }
-    // Re-seed whenever the underlying review identity changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [existingReview?.id, tripId, entity.entityType, entity.entityId]);
-
-  const persistDraft = (nextRating: number, nextComment: string) => {
-    if (existingReview) return;
-    if (nextRating === 0 && nextComment.trim() === '') {
-      clearDraft(tripId, entity.entityType, entity.entityId);
-    } else {
-      saveDraft(tripId, entity.entityType, entity.entityId, {
-        rating: nextRating,
-        comment: nextComment,
-      });
-    }
-  };
-
-  const handleRatingChange = (next: number) => {
-    setRating(next);
-    persistDraft(next, comment);
-  };
-
-  const handleCommentChange = (next: string) => {
-    setComment(next);
-    persistDraft(rating, next);
-  };
-
-  const handleSubmit = async () => {
-    if (rating < 1) {
-      setError('Please choose a star rating.');
-      return;
-    }
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      if (existingReview) {
-        await apiClient.updateReview(existingReview.id, {
-          rating,
-          comment: comment.trim() || null,
-        });
-      } else {
-        await apiClient.createReview({
-          trip_id: tripId,
-          entity_type: entity.entityType,
-          entity_id: entity.entityId,
-          rating,
-          comment: comment.trim() || null,
-        });
-        clearDraft(tripId, entity.entityType, entity.entityId);
-      }
-      setEditing(false);
-      onChanged();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit your review.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!existingReview) return;
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      await apiClient.deleteReview(existingReview.id);
-      setEditing(false);
-      onChanged();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete your review.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const pill = STATUS_PILL[status];
-  const showForm = !existingReview || editing;
+  const { skipped } = value;
+  const status = statusOf(existingReview, value);
+  const pill = skipped
+    ? { label: 'Skipped', className: 'bg-gray-200 text-gray-500' }
+    : STATUS_PILL[status];
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6">
+    <div
+      className={`rounded-xl border border-gray-200 bg-white p-6 transition ${
+        skipped ? 'opacity-50' : ''
+      }`}
+    >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span
@@ -162,47 +93,23 @@ export default function ReviewSessionItem({
         </span>
       </div>
 
-      {/* Submitted / locked summary */}
-      {existingReview && !editing && (
+      {isLocked ? (
         <div>
-          <StarRating value={existingReview.rating} size="md" />
-          {existingReview.comment && (
-            <p className="mt-3 text-sm leading-relaxed text-gray-600">{existingReview.comment}</p>
+          <StarRating value={existingReview!.rating} size="md" />
+          {existingReview!.comment && (
+            <p className="mt-3 text-sm leading-relaxed text-gray-600">{existingReview!.comment}</p>
           )}
-          {isLocked ? (
-            <p className="mt-4 text-xs text-gray-400">
-              This review is locked — the 30-day edit window has closed.
-            </p>
-          ) : (
-            <div className="mt-4 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                className="text-sm font-medium text-[#1E3D2F] hover:underline"
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isSubmitting}
-                className="text-sm font-medium text-red-600 hover:underline disabled:opacity-50"
-              >
-                Delete
-              </button>
-            </div>
-          )}
+          <p className="mt-4 text-xs text-gray-400">
+            This review is locked — the 30-day edit window has closed.
+          </p>
         </div>
-      )}
-
-      {/* Editable form */}
-      {showForm && (
+      ) : (
         <div>
           <div className="mb-4">
             <p className="mb-2 text-sm font-medium text-gray-700">Your Rating</p>
             <StarRating
-              value={rating}
-              onChange={handleRatingChange}
+              value={value.rating}
+              onChange={onRatingChange}
               size="lg"
               label={`Rating for ${entity.title}`}
             />
@@ -210,34 +117,32 @@ export default function ReviewSessionItem({
           <div className="mb-4">
             <p className="mb-2 text-sm font-medium text-gray-700">Your Review (optional)</p>
             <textarea
-              value={comment}
-              onChange={(e) => handleCommentChange(e.target.value)}
+              value={value.comment}
+              onChange={(e) => onCommentChange(e.target.value)}
+              disabled={skipped}
               placeholder={`Share your experience at ${entity.title}...`}
               rows={4}
-              className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#1E3D2F] focus:outline-none focus:ring-2 focus:ring-[#1E3D2F]/20"
+              className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#1E3D2F] focus:outline-none focus:ring-2 focus:ring-[#1E3D2F]/20 disabled:bg-gray-50"
             />
           </div>
-          <div className="flex items-center justify-end gap-3">
-            {editing && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditing(false);
-                  setError(null);
-                }}
-                className="text-sm font-medium text-gray-500 hover:underline"
-              >
-                Cancel
-              </button>
-            )}
+          <div className="flex items-center justify-end gap-4">
             <button
               type="button"
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="rounded-lg bg-[#1E3D2F] px-6 py-2.5 text-sm text-white transition hover:bg-[#163024] disabled:opacity-50"
+              onClick={onSkipToggle}
+              className="text-sm font-medium text-gray-500 hover:underline"
             >
-              {isSubmitting ? 'Saving…' : existingReview ? 'Save Changes' : 'Submit Review'}
+              {skipped ? 'Unskip' : 'Skip'}
             </button>
+            {existingReview && (
+              <button
+                type="button"
+                onClick={onDelete}
+                disabled={isDeleting}
+                className="text-sm font-medium text-red-600 hover:underline disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting…' : 'Delete'}
+              </button>
+            )}
           </div>
         </div>
       )}
