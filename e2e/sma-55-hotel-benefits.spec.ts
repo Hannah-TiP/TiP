@@ -210,7 +210,7 @@ test.describe('SMA-55 hotel benefits', () => {
     await openCarousel(page, amanId);
     await page.getByTestId(`hotel-card-${parkId}`).click();
     // Modal content loads (cancel button is part of the detail footer). The
-    // confirm button only renders after the real getHotelById(2) fetch resolves.
+    // confirm button only renders after the real getHotelById(parkId) fetch resolves.
     await page.getByTestId('hotel-preview-confirm').waitFor({ timeout: REAL_BACKEND_TIMEOUT });
     await page.waitForTimeout(500);
     const benefitsCount = await page.getByText(/TiP exclusive benefits included/i).count();
