@@ -14,6 +14,16 @@ const SESSION_UUID = 'sess-uuid-sma55';
 const TRIP_ID = 9990;
 const SCREENSHOT_DIR = '/tmp/tip-screenshots/feat/sma-55-hotel-benefits';
 
+// This spec runs against the freshly-deployed preview immediately after the
+// deploy-preview job. The card click and the public page both fetch the REAL
+// backend (`/api/hotels/by-id/{id}` and `/api/hotels/{slug}`), and that first
+// uncached call goes browser -> cold Next.js server -> cold backend -> DB. A
+// cold round-trip can exceed the default 15s budget (it did on run 26692134099,
+// failing both the initial attempt and the retry), so waits that depend on a
+// real backend response get a more generous budget. Waits served from the
+// mocked chat/carousel responses keep the default 15s.
+const REAL_BACKEND_TIMEOUT = 30_000;
+
 const baseSession = {
   id: 1,
   user_id: 1,
@@ -129,7 +139,7 @@ test.describe('SMA-55 hotel benefits', () => {
     await page.getByTestId('hotel-card-1').click();
     // Wait for real backend detail to load and the benefits header to render.
     const header = page.getByText(/TiP exclusive benefits included/i);
-    await header.waitFor({ timeout: 15_000 });
+    await header.waitFor({ timeout: REAL_BACKEND_TIMEOUT });
     await header.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
     await page.screenshot({ path: outPath('modal-benefits-desktop.png'), fullPage: false });
@@ -144,7 +154,7 @@ test.describe('SMA-55 hotel benefits', () => {
     await openCarousel(page);
     await page.getByTestId('hotel-card-1').click();
     const header = page.getByText(/TiP exclusive benefits included/i);
-    await header.waitFor({ timeout: 15_000 });
+    await header.waitFor({ timeout: REAL_BACKEND_TIMEOUT });
     await header.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
     await page.screenshot({ path: outPath('modal-benefits-mobile.png'), fullPage: false });
@@ -155,8 +165,9 @@ test.describe('SMA-55 hotel benefits', () => {
     await mockSessionAndCarousel(context, [1, 2]);
     await openCarousel(page);
     await page.getByTestId('hotel-card-2').click();
-    // Modal content loads (cancel button is part of the detail footer).
-    await page.getByTestId('hotel-preview-confirm').waitFor({ timeout: 15_000 });
+    // Modal content loads (cancel button is part of the detail footer). The
+    // confirm button only renders after the real getHotelById(2) fetch resolves.
+    await page.getByTestId('hotel-preview-confirm').waitFor({ timeout: REAL_BACKEND_TIMEOUT });
     await page.waitForTimeout(500);
     const benefitsCount = await page.getByText(/TiP exclusive benefits included/i).count();
     test.info().annotations.push({
@@ -178,7 +189,7 @@ test.describe('SMA-55 hotel benefits', () => {
     await page
       .getByText(/TiP exclusive benefits included/i)
       .first()
-      .waitFor({ timeout: 15_000 });
+      .waitFor({ timeout: REAL_BACKEND_TIMEOUT });
     const headerCount = await page.getByText(/TiP exclusive benefits included/i).count();
     test.info().annotations.push({
       type: 'public-benefits-header-count',
