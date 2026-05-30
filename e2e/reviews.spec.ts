@@ -45,9 +45,11 @@ test.describe('Post-trip review session', () => {
     await expect(page.getByRole('radiogroup').first()).toBeVisible({ timeout: 15_000 });
     const statusPills = page.getByText(/Not Reviewed|Submitted|Locked|Draft|Skipped/);
     await expect(statusPills.first()).toBeVisible();
-    // A single trip-level submit button (not a per-item one).
-    await expect(page.getByRole('button', { name: 'Submit Reviews' })).toHaveCount(1);
-    await expect(page.getByRole('button', { name: 'Submit Review' })).toHaveCount(0);
+    // A single trip-level submit button (not a per-item one). Use exact names:
+    // a non-exact "Submit Review" match would also match the plural trip-level
+    // "Submit Reviews" button and give a false positive.
+    await expect(page.getByRole('button', { name: 'Submit Reviews', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Submit Review', exact: true })).toHaveCount(0);
   });
 
   test('rate items then submit with the single trip-level button', async ({ page }) => {
