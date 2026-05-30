@@ -99,10 +99,6 @@ function writeSkips(tripId: number, skips: SkipMap): void {
   }
 }
 
-export function loadSkips(tripId: number): SkipMap {
-  return readSkips(tripId);
-}
-
 export function isSkipped(tripId: number, entityType: ReviewEntityType, entityId: number): boolean {
   return readSkips(tripId)[entityKey(entityType, entityId)] === true;
 }
