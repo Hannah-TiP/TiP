@@ -60,3 +60,26 @@ export function reviewAuthorDisplayName(author: ReviewAuthor): string {
   const name = [author.first_name, author.last_name].filter(Boolean).join(' ').trim();
   return name || 'TiP Traveler';
 }
+
+/**
+ * Returns the short badge label for an aggregate (e.g. "4.5") when the entity
+ * has at least one visible review, or `null` when it has none / no aggregate.
+ */
+export function formatRatingBadge(aggregate: ReviewAggregate | undefined): string | null {
+  if (!aggregate || aggregate.review_count <= 0 || aggregate.average_rating === null) {
+    return null;
+  }
+  return aggregate.average_rating.toFixed(1);
+}
+
+/**
+ * Returns the InfoWindow review summary (e.g. "4.5 ★ (12 reviews)") when the
+ * entity has at least one visible review, or `null` otherwise.
+ */
+export function formatReviewSummary(aggregate: ReviewAggregate | undefined): string | null {
+  const badge = formatRatingBadge(aggregate);
+  if (badge === null || !aggregate) return null;
+  const count = aggregate.review_count;
+  const noun = count === 1 ? 'review' : 'reviews';
+  return `${badge} ★ (${count} ${noun})`;
+}

@@ -15,6 +15,7 @@ import { getLocalizedText } from '@/types/common';
 import { getHotelImages, type Hotel } from '@/types/hotel';
 import WishlistButton from '@/components/WishlistButton';
 import type { DestinationSuggestion } from '@/types/destination';
+import type { ReviewAggregate } from '@/types/review';
 
 const partners = [
   'VIRTUOSO',
@@ -56,6 +57,7 @@ type DropdownType = 'type' | null;
 
 function DreamHotelsContent() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [reviewAggregates, setReviewAggregates] = useState<Record<number, ReviewAggregate>>({});
 
   const [isLoading, setIsLoading] = useState(true);
   const { isPreview } = usePreviewMode();
@@ -170,6 +172,34 @@ function DreamHotelsContent() {
     });
   }, [destinationFilter, selectedStarRating, debouncedSearch, fetchHotels]);
 
+  // Fetch review aggregates for the visible hotels in a single batched call.
+  // Runs separately from the hotel fetch so the map renders immediately;
+  // badges appear when this data arrives.
+  useEffect(() => {
+    const hotelIds = hotels.map((hotel) => hotel.id);
+    if (hotelIds.length === 0) {
+      setReviewAggregates({});
+      return;
+    }
+
+    let cancelled = false;
+    async function fetchAggregates() {
+      try {
+        const aggregates = await apiClient.getReviewAggregates('hotel', hotelIds);
+        if (!cancelled) {
+          setReviewAggregates(aggregates);
+        }
+      } catch (error) {
+        console.error('Failed to load review aggregates:', error);
+      }
+    }
+
+    fetchAggregates();
+    return () => {
+      cancelled = true;
+    };
+  }, [hotels]);
+
   // Close dropdown / suggestion panel on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -266,7 +296,7 @@ function DreamHotelsContent() {
             </div>
           </div>
         ) : (
-          <HotelMap hotels={hotels} />
+          <HotelMap hotels={hotels} reviewAggregates={reviewAggregates} />
         )}
 
         {/* Hotel Name Search */}

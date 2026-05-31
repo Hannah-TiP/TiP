@@ -6,9 +6,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getLocalizedText } from '@/types/common';
 import { Hotel, getHotelCoordinates, getHotelImages } from '@/types/hotel';
+import { formatRatingBadge, formatReviewSummary, type ReviewAggregate } from '@/types/review';
 
 interface HotelMapProps {
   hotels: Hotel[];
+  reviewAggregates?: Record<number, ReviewAggregate>;
 }
 
 const mapContainerStyle = {
@@ -35,7 +37,7 @@ const mapOptions = {
   // Configure map styling in Google Cloud Console instead
 };
 
-export default function HotelMap({ hotels }: HotelMapProps) {
+export default function HotelMap({ hotels, reviewAggregates }: HotelMapProps) {
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
@@ -91,18 +93,49 @@ export default function HotelMap({ hotels }: HotelMapProps) {
       .filter((item) => item.coordinates !== null);
 
     hotelsWithCoordinates.forEach(({ hotel, coordinates }) => {
-      // Create custom marker element
+      // Wrapper holds the gold dot plus an optional review badge.
       const markerElement = document.createElement('div');
       markerElement.className = 'custom-marker';
       markerElement.style.cssText = `
+        position: relative;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 0.2s;
+      `;
+
+      const dotElement = document.createElement('div');
+      dotElement.style.cssText = `
         width: 16px;
         height: 16px;
         border-radius: 50%;
         background-color: #C4956A;
         border: 2px solid #1E3D2F;
-        cursor: pointer;
-        transition: transform 0.2s;
+        flex-shrink: 0;
       `;
+      markerElement.appendChild(dotElement);
+
+      const badgeLabel = formatRatingBadge(reviewAggregates?.[hotel.id]);
+      if (badgeLabel !== null) {
+        const badgeElement = document.createElement('span');
+        badgeElement.style.cssText = `
+          margin-left: 4px;
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
+          padding: 1px 6px;
+          border-radius: 9999px;
+          background-color: #C4956A;
+          color: #1E3D2F;
+          border: 1px solid #1E3D2F;
+          font-size: 11px;
+          font-weight: 600;
+          line-height: 1.4;
+          white-space: nowrap;
+        `;
+        badgeElement.textContent = `${badgeLabel} ★`;
+        markerElement.appendChild(badgeElement);
+      }
 
       markerElement.addEventListener('mouseenter', () => {
         markerElement.style.transform = 'scale(1.2)';
@@ -170,7 +203,7 @@ export default function HotelMap({ hotels }: HotelMapProps) {
       });
       markersRef.current = [];
     };
-  }, [map, hotels, selectedHotel]);
+  }, [map, hotels, selectedHotel, reviewAggregates]);
 
   if (loadError) {
     return (
@@ -230,6 +263,11 @@ export default function HotelMap({ hotels }: HotelMapProps) {
               {selectedHotel.star_rating && (
                 <p className="mt-1 text-[11px] font-medium text-gold">
                   {'★'.repeat(parseInt(selectedHotel.star_rating))}
+                </p>
+              )}
+              {formatReviewSummary(reviewAggregates?.[selectedHotel.id]) && (
+                <p className="mt-1 text-[12px] font-medium text-green-dark">
+                  {formatReviewSummary(reviewAggregates?.[selectedHotel.id])}
                 </p>
               )}
             </Link>

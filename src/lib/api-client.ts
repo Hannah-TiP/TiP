@@ -34,6 +34,7 @@ import type {
 import { REDEEM_ERROR_CODE_MAP, RedeemPromoCodeError } from '@/types/stay-credit';
 import type {
   CreateReview,
+  ReviewAggregate,
   ReviewEntityType,
   ReviewListResponse,
   ReviewWithAuthor,
@@ -613,6 +614,21 @@ class ApiClient {
   ): Promise<ReviewListResponse> {
     const response = await this.request<{ data: ReviewListResponse }>(
       `/reviews/by-entity/${entityType}/${entityId}`,
+    );
+    return response.data;
+  }
+
+  async getReviewAggregates(
+    entityType: ReviewEntityType,
+    entityIds: number[],
+  ): Promise<Record<number, ReviewAggregate>> {
+    if (entityIds.length === 0) return {};
+    const searchParams = new URLSearchParams({
+      entity_type: entityType,
+      entity_ids: entityIds.join(','),
+    });
+    const response = await this.request<{ data: Record<number, ReviewAggregate> }>(
+      `/reviews/aggregates?${searchParams.toString()}`,
     );
     return response.data;
   }
