@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Footer from '@/components/Footer';
 import RedeemCodeSection from '@/components/credits/RedeemCodeSection';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -10,6 +11,7 @@ import { apiClient } from '@/lib/api-client';
 import {
   STAY_CREDIT_SOURCE_LABELS,
   STAY_CREDIT_STATUS_LABELS,
+  tripIdFromCredit,
   type StayCredit,
 } from '@/types/stay-credit';
 
@@ -145,50 +147,61 @@ export default function MyCreditsPage() {
               </div>
             ) : (
               <div className="mt-6 divide-y divide-gray-100">
-                {credits.map((credit) => (
-                  <div key={credit.id} className="py-5 grid grid-cols-12 gap-4 items-center">
-                    <div className="col-span-3 font-primary text-[22px] italic text-[#1E3D2F]">
-                      {formatAmount(credit.amount_cents, credit.currency)}
-                    </div>
-                    <div className="col-span-3 text-[14px]">
-                      <div className="font-medium text-gray-900">
-                        {STAY_CREDIT_SOURCE_LABELS[credit.source][en ? 'en' : 'kr']}
+                {credits.map((credit) => {
+                  const linkedTripId = tripIdFromCredit(credit);
+                  return (
+                    <div key={credit.id} className="py-5 grid grid-cols-12 gap-4 items-center">
+                      <div className="col-span-3 font-primary text-[22px] italic text-[#1E3D2F]">
+                        {formatAmount(credit.amount_cents, credit.currency)}
                       </div>
-                      <div className="text-[12px] text-gray-500">
-                        {formatDate(credit.created_at, en ? 'en-US' : 'ko-KR')}
+                      <div className="col-span-3 text-[14px]">
+                        <div className="font-medium text-gray-900">
+                          {STAY_CREDIT_SOURCE_LABELS[credit.source][en ? 'en' : 'kr']}
+                        </div>
+                        <div className="text-[12px] text-gray-500">
+                          {formatDate(credit.created_at, en ? 'en-US' : 'ko-KR')}
+                        </div>
+                        {linkedTripId !== null && (
+                          <Link
+                            href={`/my-page/travel-history/${linkedTripId}`}
+                            className="mt-1 inline-block text-[12px] font-medium text-[#C4956A] hover:underline"
+                          >
+                            {en ? 'View trip →' : '여행 보기 →'}
+                          </Link>
+                        )}
                       </div>
-                    </div>
-                    <div className="col-span-2">
-                      <span
-                        className={`inline-block rounded-full px-3 py-1 text-[11px] font-semibold ${
-                          STATUS_PILL[credit.status]
-                        }`}
-                      >
-                        {STAY_CREDIT_STATUS_LABELS[credit.status][en ? 'en' : 'kr']}
-                      </span>
-                    </div>
-                    <div className="col-span-2 text-[12px] text-gray-500">
-                      {credit.expires_at ? (
-                        <>
-                          <span className="block uppercase tracking-wider text-[10px] text-gray-400">
-                            {en ? 'Expires' : '만료'}
-                          </span>
-                          {formatDate(credit.expires_at, en ? 'en-US' : 'ko-KR')}
-                        </>
-                      ) : (
-                        <span className="italic text-gray-400">
-                          {en ? 'No expiry' : '만료 없음'}
+                      <div className="col-span-2">
+                        <span
+                          className={`inline-block rounded-full px-3 py-1 text-[11px] font-semibold ${
+                            STATUS_PILL[credit.status]
+                          }`}
+                        >
+                          {STAY_CREDIT_STATUS_LABELS[credit.status][en ? 'en' : 'kr']}
                         </span>
-                      )}
+                      </div>
+                      <div className="col-span-2 text-[12px] text-gray-500">
+                        {credit.expires_at ? (
+                          <>
+                            <span className="block uppercase tracking-wider text-[10px] text-gray-400">
+                              {en ? 'Expires' : '만료'}
+                            </span>
+                            {formatDate(credit.expires_at, en ? 'en-US' : 'ko-KR')}
+                          </>
+                        ) : (
+                          <span className="italic text-gray-400">
+                            {en ? 'No expiry' : '만료 없음'}
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        className="col-span-2 text-[12px] text-gray-500 truncate"
+                        title={credit.notes ?? undefined}
+                      >
+                        {credit.notes || '—'}
+                      </div>
                     </div>
-                    <div
-                      className="col-span-2 text-[12px] text-gray-500 truncate"
-                      title={credit.notes ?? undefined}
-                    >
-                      {credit.notes || '—'}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

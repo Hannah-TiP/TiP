@@ -14,6 +14,7 @@ import {
   tripDayNumber,
   type TripWithVersion,
 } from '@/lib/trip-utils';
+import { STAY_CREDIT_SOURCE_LABELS, creditsForTrip, type StayCredit } from '@/types/stay-credit';
 
 const ITEM_LABELS: Record<TripPlanItem['item_type'], string> = {
   flight: 'Flight',
@@ -64,12 +65,17 @@ function formatTime(dateStr?: string | null): string | undefined {
   });
 }
 
+function formatCredit(amountCents: number, currency: string): string {
+  return `${currency} ${(amountCents / 100).toFixed(2)}`;
+}
+
 export default function TravelHistoryTripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [tripWithVersion, setTripWithVersion] = useState<TripWithVersion | null>(null);
   const [reviewStatus, setReviewStatus] = useState<{ reviewed: number; total: number } | null>(
     null,
   );
+  const [tripCredits, setTripCredits] = useState<StayCredit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +87,13 @@ export default function TravelHistoryTripDetailPage() {
         const tripId = Number(id);
         const loaded = await getTripWithVersion(tripId);
         setTripWithVersion(loaded);
+
+        try {
+          const allCredits = await apiClient.getMyCredits();
+          setTripCredits(creditsForTrip(allCredits, tripId));
+        } catch {
+          setTripCredits([]);
+        }
 
         const entities = toReviewableEntities(getTripReviewableItems(loaded.currentVersion));
         if (entities.length > 0) {
@@ -150,6 +163,9 @@ export default function TravelHistoryTripDetailPage() {
   const activitiesCount = plan
     .flatMap((day) => day.items)
     .filter((item) => item.item_type === 'activity').length;
+
+  const creditsCurrency = tripCredits[0]?.currency ?? null;
+  const creditsTotalCents = tripCredits.reduce((acc, c) => acc + c.amount_cents, 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -283,6 +299,36 @@ export default function TravelHistoryTripDetailPage() {
                   className="inline-block rounded-full bg-[#1E3D2F] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#2a5240]"
                 >
                   Review Your Experience
+                </Link>
+              </div>
+            )}
+
+            {tripCredits.length > 0 && creditsCurrency && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <h3 className="mb-3 font-semibold text-gray-900">Credits earned from this trip</h3>
+                <div className="space-y-2">
+                  {tripCredits.map((credit) => (
+                    <div key={credit.id} className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">
+                        {STAY_CREDIT_SOURCE_LABELS[credit.source].en}
+                      </span>
+                      <span className="font-medium text-[#1E3D2F]">
+                        {formatCredit(credit.amount_cents, credit.currency)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3 text-sm">
+                  <span className="font-semibold text-gray-900">Total</span>
+                  <span className="font-primary text-lg italic text-[#1E3D2F]">
+                    {formatCredit(creditsTotalCents, creditsCurrency)}
+                  </span>
+                </div>
+                <Link
+                  href="/my-page/credits"
+                  className="mt-3 inline-block text-xs font-medium text-[#C4956A] hover:underline"
+                >
+                  View all credits →
                 </Link>
               </div>
             )}

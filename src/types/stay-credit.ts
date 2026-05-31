@@ -17,8 +17,8 @@ export const STAY_CREDIT_SOURCE_LABELS: Record<StayCreditSource, { en: string; k
   birthday: { en: 'Birthday', kr: '생일' },
   referral: { en: 'Referral', kr: '추천' },
   manual: { en: 'Concierge', kr: '컨시어지' },
-  payment_points: { en: 'Payment Points', kr: '결제 적립' },
-  first_trip_cashback: { en: 'First Trip Cashback', kr: '첫 여행 캐시백' },
+  payment_points: { en: 'Trip cashback — 2%', kr: '결제 적립 — 2%' },
+  first_trip_cashback: { en: 'First-trip bonus — 3%', kr: '첫 여행 보너스 — 3%' },
   review_reward: { en: 'Review Reward', kr: '리뷰 보상' },
   gift: { en: 'Gift', kr: '선물' },
   promo_code_redemption: { en: 'Promo Code', kr: '프로모션 코드' },
@@ -50,6 +50,25 @@ export interface StayCredit {
   notes?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+// Trip-linked credits (post-trip cashback) carry their trip id either on the
+// `trip_id` field or encoded in `source_ref` as `trip:{id}:...` (the grant
+// service sets source_ref but the CreateStayCredit DTO has no trip_id, so
+// today only source_ref is populated). Resolve either form to a numeric id.
+export function tripIdFromCredit(credit: StayCredit): number | null {
+  if (credit.trip_id != null) return credit.trip_id;
+  const ref = credit.source_ref;
+  if (!ref) return null;
+  const match = /^trip:(\d+):/.exec(ref);
+  if (!match) return null;
+  const id = Number(match[1]);
+  return Number.isFinite(id) ? id : null;
+}
+
+// Filter a credit ledger to the credits earned from a given trip.
+export function creditsForTrip(credits: StayCredit[], tripId: number): StayCredit[] {
+  return credits.filter((c) => tripIdFromCredit(c) === tripId);
 }
 
 // Mirrors tip-backend/v2/data_model/schemas/referral.py::Referral.
