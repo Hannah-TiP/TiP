@@ -104,6 +104,30 @@ describe('ApiClient review methods', () => {
     );
   });
 
+  it('getReviewAggregates batches all ids into a single call and unwraps data', async () => {
+    const aggregates = {
+      5: { average_rating: 4.5, review_count: 12 },
+      9: { average_rating: 3.0, review_count: 2 },
+    };
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: aggregates }));
+
+    const result = await apiClient.getReviewAggregates('hotel', [5, 9, 11]);
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/reviews/aggregates?entity_type=hotel&entity_ids=5%2C9%2C11',
+      expect.objectContaining({ credentials: 'include' }),
+    );
+    expect(result).toEqual(aggregates);
+  });
+
+  it('getReviewAggregates short-circuits to {} for an empty id list (no fetch)', async () => {
+    const result = await apiClient.getReviewAggregates('hotel', []);
+
+    expect(result).toEqual({});
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   it('surfaces the backend error message on a duplicate (409)', async () => {
     mockFetch.mockResolvedValueOnce(
       mockResponse({ message: 'You have already reviewed this item' }, 409),
