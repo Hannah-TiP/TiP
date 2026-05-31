@@ -149,5 +149,17 @@
   "chat.request_human_modal_title": "Talk to a real concierge",
   "chat.request_human_modal_body": "Your conversation will be handed over to a human concierge. The AI assistant will be paused until the concierge hands the chat back. A concierge may not be available immediately.",
   "chat.request_human_modal_confirm": "Confirm",
-  "chat.request_human_modal_cancel": "Cancel"
+  "chat.request_human_modal_cancel": "Cancel",
+  "credits.redeem_title": "Redeem a code",
+  "credits.redeem_subtitle": "Have a campaign or event code? Enter it below to add the credit to your wallet.",
+  "credits.redeem_placeholder": "Enter your code",
+  "credits.redeem_button": "Redeem",
+  "credits.redeem_submitting": "Redeeming…",
+  "credits.redeem_success": "{amount} added to your wallet.",
+  "credits.redeem_error_unknown": "This code doesn't exist. Please check it and try again.",
+  "credits.redeem_error_inactive": "This code is no longer active.",
+  "credits.redeem_error_expired": "This code has expired.",
+  "credits.redeem_error_max_reached": "This code has reached its redemption limit.",
+  "credits.redeem_error_already_redeemed": "You've already redeemed this code.",
+  "credits.redeem_error_generic": "Could not redeem this code. Please try again."
 }

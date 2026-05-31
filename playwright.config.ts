@@ -17,6 +17,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/search-prefill-concierge.spec.ts',
   '**/reviews.spec.ts',
   '**/sma-55-hotel-benefits.spec.ts',
+  '**/redeem-code.spec.ts',
 ];
 
 // Specs that deliberately test the cookie-consent banner from a blank state.
