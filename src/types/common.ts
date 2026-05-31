@@ -13,6 +13,13 @@ export interface Policy {
   description: MultiLanguageString;
 }
 
+export interface CropRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface Image {
   original: string;
   w128?: string | null;
@@ -20,6 +27,7 @@ export interface Image {
   w800?: string | null;
   w1200?: string | null;
   alt?: MultiLanguageString | null;
+  crop?: CropRect | null;
 }
 
 export function getLocalizedText(

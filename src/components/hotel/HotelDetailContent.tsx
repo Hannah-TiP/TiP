@@ -12,7 +12,7 @@ import FaqAccordion from '@/components/hotel/FaqAccordion';
 import HotelBenefits from '@/components/hotel/HotelBenefits';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getLocalizedText } from '@/types/common';
-import { getHotelImages, type Hotel } from '@/types/hotel';
+import { getHotelHeroImages, type Hotel } from '@/types/hotel';
 
 interface KeyFact {
   label: string;
@@ -46,7 +46,7 @@ export default function HotelDetailContent({
 }: HotelDetailContentProps) {
   const { t } = useLanguage();
 
-  const hotelImages = useMemo(() => getHotelImages(hotel), [hotel]);
+  const hotelImages = useMemo(() => getHotelHeroImages(hotel), [hotel]);
   const hotelName = getLocalizedText(hotel.name) || hotel.slug;
   const address = getLocalizedText(hotel.address);
   const overview = getLocalizedText(hotel.overview);
@@ -124,7 +124,7 @@ export default function HotelDetailContent({
                 overline={t('hotel.rooms_overline')}
                 title={t('hotel.rooms_title')}
               />
-              <RoomGrid rooms={rooms} fallbackImage={hotelImages[0]} />
+              <RoomGrid rooms={rooms} fallbackImage={hotelImages[0].url} />
             </section>
           )}
 

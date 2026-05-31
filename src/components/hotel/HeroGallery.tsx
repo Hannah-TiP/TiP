@@ -1,9 +1,10 @@
 'use client';
 
-import Image from 'next/image';
+import CroppedImage from '@/components/hotel/CroppedImage';
+import type { HotelHeroImage } from '@/types/hotel';
 
 interface HeroGalleryProps {
-  images: string[];
+  images: HotelHeroImage[];
   hotelName: string;
   subtitle?: string;
   starRating?: string | null;
@@ -37,34 +38,31 @@ export default function HeroGallery({
     <section className="relative h-[60vh] min-h-[440px] w-full overflow-hidden md:h-[80vh]">
       <div className="grid h-full grid-cols-1 gap-1 md:grid-cols-[2fr_1fr] md:grid-rows-2">
         <div className="relative md:row-span-2">
-          <Image
-            src={heroImage}
+          <CroppedImage
+            src={heroImage.url}
+            crop={heroImage.crop}
             alt={hotelName}
-            fill
             sizes="(max-width: 768px) 100vw, 66vw"
-            className="object-cover"
             priority
           />
         </div>
         {secondImage && (
           <div className="relative hidden md:block">
-            <Image
-              src={secondImage}
+            <CroppedImage
+              src={secondImage.url}
+              crop={secondImage.crop}
               alt={`${hotelName} interior`}
-              fill
               sizes="33vw"
-              className="object-cover"
             />
           </div>
         )}
         {thirdImage && (
           <div className="relative hidden md:block">
-            <Image
-              src={thirdImage}
+            <CroppedImage
+              src={thirdImage.url}
+              crop={thirdImage.crop}
               alt={`${hotelName} detail`}
-              fill
               sizes="33vw"
-              className="object-cover"
             />
           </div>
         )}
