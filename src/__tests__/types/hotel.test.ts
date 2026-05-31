@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getImageUrl, getLocalizedText } from '@/types/common';
-import { getHotelCoordinates, getHotelExternalLink, getHotelImages } from '@/types/hotel';
+import {
+  getHotelCoordinates,
+  getHotelExternalLink,
+  getHotelHeroImages,
+  getHotelImages,
+} from '@/types/hotel';
 import type { Hotel } from '@/types/hotel';
 
 describe('getLocalizedText', () => {
@@ -94,6 +99,36 @@ describe('getHotelImages', () => {
     expect(getHotelImages(hotel)).toEqual([
       'https://bucket.s3.amazonaws.com/a.jpg',
       'https://bucket.s3.amazonaws.com/b.jpg',
+    ]);
+  });
+});
+
+describe('getHotelHeroImages', () => {
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_S3_ENDPOINT', 'https://bucket.s3.amazonaws.com');
+  });
+
+  const baseHotel: Hotel = {
+    id: 1,
+    slug: 'aman-tokyo',
+    status: 'published',
+    city_id: 1,
+    schema_version: 1,
+  };
+
+  it('returns a full-frame placeholder when no images', () => {
+    expect(getHotelHeroImages(baseHotel)).toEqual([{ url: '/placeholder.jpg' }]);
+  });
+
+  it('threads the normalized crop through resolved hero images', () => {
+    const crop = { x: 0.1, y: 0.2, width: 0.5, height: 0.25 };
+    const hotel = {
+      ...baseHotel,
+      images: [{ original: 'a.jpg', crop }, { original: 'b.jpg' }],
+    };
+    expect(getHotelHeroImages(hotel)).toEqual([
+      { url: 'https://bucket.s3.amazonaws.com/a.jpg', crop },
+      { url: 'https://bucket.s3.amazonaws.com/b.jpg', crop: null },
     ]);
   });
 });

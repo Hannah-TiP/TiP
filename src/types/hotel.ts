@@ -1,4 +1,10 @@
-import { getImageUrl, type GeoPoint, type Image, type MultiLanguageString } from '@/types/common';
+import {
+  getImageUrl,
+  type CropRect,
+  type GeoPoint,
+  type Image,
+  type MultiLanguageString,
+} from '@/types/common';
 
 export type HotelStatus = 'draft' | 'published' | 'archived';
 export type HotelStarRating = '1' | '2' | '3' | '4' | '5';
@@ -101,6 +107,26 @@ export function getHotelImages(hotel: Hotel): string[] {
     return ['/placeholder.jpg'];
   }
   return hotel.images.map((image) => getImageUrl(image));
+}
+
+export interface HotelHeroImage {
+  url: string;
+  crop?: CropRect | null;
+}
+
+/**
+ * Resolved hero images carrying the normalized crop rectangle so the crop can
+ * be applied at render time (HeroGallery). Falls back to a full-frame
+ * placeholder when the hotel has no images.
+ */
+export function getHotelHeroImages(hotel: Hotel): HotelHeroImage[] {
+  if (!hotel.images || hotel.images.length === 0) {
+    return [{ url: '/placeholder.jpg' }];
+  }
+  return hotel.images.map((image) => ({
+    url: getImageUrl(image),
+    crop: image.crop ?? null,
+  }));
 }
 
 export function getHotelCoordinates(hotel: Hotel): GeoPoint | null {
