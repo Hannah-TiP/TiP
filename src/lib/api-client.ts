@@ -32,6 +32,13 @@ import type {
   StayCredit,
 } from '@/types/stay-credit';
 import { REDEEM_ERROR_CODE_MAP, RedeemPromoCodeError } from '@/types/stay-credit';
+import type {
+  CreateReview,
+  ReviewEntityType,
+  ReviewListResponse,
+  ReviewWithAuthor,
+  UpdateReview,
+} from '@/types/review';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -595,6 +602,44 @@ class ApiClient {
 
   async removeFromWishlist(hotelId: number): Promise<void> {
     await this.request(`/wishlist/${hotelId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Review methods
+  async getReviewsByEntity(
+    entityType: ReviewEntityType,
+    entityId: number,
+  ): Promise<ReviewListResponse> {
+    const response = await this.request<{ data: ReviewListResponse }>(
+      `/reviews/by-entity/${entityType}/${entityId}`,
+    );
+    return response.data;
+  }
+
+  async getReview(reviewId: number): Promise<ReviewWithAuthor> {
+    const response = await this.request<{ data: ReviewWithAuthor }>(`/reviews/${reviewId}`);
+    return response.data;
+  }
+
+  async createReview(payload: CreateReview): Promise<ReviewWithAuthor> {
+    const response = await this.request<{ data: ReviewWithAuthor }>('/reviews', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return response.data;
+  }
+
+  async updateReview(reviewId: number, payload: UpdateReview): Promise<ReviewWithAuthor> {
+    const response = await this.request<{ data: ReviewWithAuthor }>(`/reviews/${reviewId}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    return response.data;
+  }
+
+  async deleteReview(reviewId: number): Promise<void> {
+    await this.request(`/reviews/${reviewId}`, {
       method: 'DELETE',
     });
   }

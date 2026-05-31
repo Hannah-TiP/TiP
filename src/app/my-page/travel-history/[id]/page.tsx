@@ -4,10 +4,13 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import { apiClient } from '@/lib/api-client';
 import type { TripPlanItem } from '@/types/trip';
 import {
   collectTripDocuments,
+  getTripReviewableItems,
   getTripWithVersion,
+  toReviewableEntities,
   tripDayNumber,
   type TripWithVersion,
 } from '@/lib/trip-utils';
@@ -64,6 +67,9 @@ function formatTime(dateStr?: string | null): string | undefined {
 export default function TravelHistoryTripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [tripWithVersion, setTripWithVersion] = useState<TripWithVersion | null>(null);
+  const [reviewStatus, setReviewStatus] = useState<{ reviewed: number; total: number } | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,7 +78,27 @@ export default function TravelHistoryTripDetailPage() {
 
     const load = async () => {
       try {
-        setTripWithVersion(await getTripWithVersion(Number(id)));
+        const tripId = Number(id);
+        const loaded = await getTripWithVersion(tripId);
+        setTripWithVersion(loaded);
+
+        const entities = toReviewableEntities(getTripReviewableItems(loaded.currentVersion));
+        if (entities.length > 0) {
+          try {
+            const user = await apiClient.getProfile();
+            const lists = await Promise.all(
+              entities.map((e) =>
+                apiClient.getReviewsByEntity(e.entityType, e.entityId).catch(() => null),
+              ),
+            );
+            const reviewed = lists.filter((list) =>
+              list?.reviews.some((r) => r.author.id === user.id && r.review.deleted_at == null),
+            ).length;
+            setReviewStatus({ reviewed, total: entities.length });
+          } catch {
+            setReviewStatus({ reviewed: 0, total: entities.length });
+          }
+        }
       } catch {
         setError('Failed to load trip details.');
       } finally {
@@ -111,7 +137,8 @@ export default function TravelHistoryTripDetailPage() {
     );
   }
 
-  const { currentVersion } = tripWithVersion;
+  const { trip, currentVersion } = tripWithVersion;
+  const isCompleted = trip.status === 'travel-completed';
   const title = currentVersion?.title?.trim() || 'New Trip';
   const startDate = currentVersion?.start_date || undefined;
   const endDate = currentVersion?.end_date || undefined;
@@ -243,6 +270,23 @@ export default function TravelHistoryTripDetailPage() {
           </div>
 
           <div className="space-y-5">
+            {isCompleted && reviewStatus && reviewStatus.total > 0 && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <h3 className="mb-2 font-semibold text-gray-900">Review Your Experience</h3>
+                <p className="mb-3 text-sm text-gray-500">
+                  {reviewStatus.reviewed === reviewStatus.total
+                    ? 'You have reviewed every item from this trip. Thank you!'
+                    : `${reviewStatus.reviewed} of ${reviewStatus.total} reviewed — share your impressions of the rest.`}
+                </p>
+                <Link
+                  href={`/my-page/travel-history/${trip.id}/reviews`}
+                  className="inline-block rounded-full bg-[#1E3D2F] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#2a5240]"
+                >
+                  Review Your Experience
+                </Link>
+              </div>
+            )}
+
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <h3 className="font-semibold text-gray-900 mb-4">Trip Summary</h3>
               <div className="grid grid-cols-2 gap-3">

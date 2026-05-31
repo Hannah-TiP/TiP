@@ -7,7 +7,7 @@ import SectionTitle from '@/components/hotel/SectionTitle';
 import RoomGrid from '@/components/hotel/RoomGrid';
 import AmenityGrid from '@/components/hotel/AmenityGrid';
 import LocationSection from '@/components/hotel/LocationSection';
-import ReviewsPlaceholder from '@/components/hotel/ReviewsPlaceholder';
+import EntityReviews from '@/components/reviews/EntityReviews';
 import FaqAccordion from '@/components/hotel/FaqAccordion';
 import HotelBenefits from '@/components/hotel/HotelBenefits';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -156,10 +156,7 @@ export default function HotelDetailContent({
               overline={t('hotel.reviews_overline')}
               title={t('hotel.reviews_title')}
             />
-            <ReviewsPlaceholder
-              title={t('hotel.reviews_placeholder_title')}
-              body={t('hotel.reviews_placeholder_body')}
-            />
+            <EntityReviews entityType="hotel" entityId={hotel.id} />
           </section>
 
           {faqs.length > 0 && (

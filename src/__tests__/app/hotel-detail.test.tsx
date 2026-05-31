@@ -62,6 +62,10 @@ vi.mock('@/components/WishlistButton', () => ({
 vi.mock('@/lib/api-client', () => ({
   apiClient: {
     getHotelBySlug: vi.fn(),
+    getReviewsByEntity: vi.fn().mockResolvedValue({
+      reviews: [],
+      aggregate: { average_rating: null, review_count: 0 },
+    }),
   },
 }));
 
@@ -135,8 +139,8 @@ describe('HotelDetailPage', () => {
     expect(screen.getByText('Spa')).toBeTruthy();
     expect(screen.getByText('Pool')).toBeTruthy();
 
-    // Reviews placeholder
-    expect(screen.getByText('Reviews coming soon')).toBeTruthy();
+    // Reviews section (shared EntityReviews — empty state for a hotel with no reviews)
+    expect(await screen.findByText('No reviews yet')).toBeTruthy();
 
     // FAQ
     expect(screen.getByText('Check-in time?')).toBeTruthy();
@@ -161,8 +165,8 @@ describe('HotelDetailPage', () => {
     });
     expect(screen.queryByText('Spa')).toBeNull();
     expect(screen.queryByText('Check-in time?')).toBeNull();
-    // Reviews placeholder still shows (always render section heading)
-    expect(screen.getByText('Reviews coming soon')).toBeTruthy();
+    // Reviews section still renders (its own data/empty state)
+    expect(await screen.findByText('No reviews yet')).toBeTruthy();
   });
 
   it('hides the overview section entirely when no overview text and no key facts exist', async () => {

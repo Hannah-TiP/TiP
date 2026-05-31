@@ -63,10 +63,8 @@ function isPathOrSubpath(pathname: string, prefix: string): boolean {
  * Mapping:
  *  - /my-page and /my-page/trip/*           -> Upcoming Travels
  *  - /my-page/travel-history*               -> Travel History
- *  - /my-page/hotel-review                  -> Travel History
- *      (hotel-review is the legacy post-trip review surface; it lives under
- *       the Travel History journey, so it highlights that tab — matches the
- *       per-page activeTab it used before centralization)
+ *      (includes the post-trip review session at
+ *       /my-page/travel-history/[id]/reviews)
  *  - /my-page/credits                       -> Credits
  *  - /my-page/membership                    -> Membership
  *  - /my-page/referrals                     -> Referrals
@@ -76,7 +74,6 @@ function isPathOrSubpath(pathname: string, prefix: string): boolean {
  */
 function resolveMyPageTab(pathname: string): SubNavKey {
   if (isPathOrSubpath(pathname, '/my-page/travel-history')) return 'Travel History';
-  if (isPathOrSubpath(pathname, '/my-page/hotel-review')) return 'Travel History';
   if (isPathOrSubpath(pathname, '/my-page/credits')) return 'Credits';
   if (isPathOrSubpath(pathname, '/my-page/membership')) return 'Membership';
   if (isPathOrSubpath(pathname, '/my-page/referrals')) return 'Referrals';

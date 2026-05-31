@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import PasswordInput from '@/components/PasswordInput';
 
 function ForgotPasswordForm() {
   const searchParams = useSearchParams();
@@ -121,8 +122,7 @@ function ForgotPasswordForm() {
             className="w-full rounded-lg border border-gray-200 px-4 py-3 text-center"
           />
 
-          <input
-            type="password"
+          <PasswordInput
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="New password"
@@ -131,8 +131,7 @@ function ForgotPasswordForm() {
             className="w-full rounded-lg border border-gray-200 px-4 py-3"
           />
 
-          <input
-            type="password"
+          <PasswordInput
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Confirm new password"
