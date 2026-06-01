@@ -68,6 +68,8 @@ test.describe('Trip-linked credits on /my-page/credits', () => {
     );
 
     // The welcome credit has no trip linkage, so it shows no View trip link.
-    await expect(page.getByText('Welcome')).toBeVisible();
+    // Match the credit-row label exactly so it doesn't collide with the page's
+    // "Welcome gifts, birthday credits…" intro copy.
+    await expect(page.getByText('Welcome', { exact: true })).toBeVisible();
   });
 });
