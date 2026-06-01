@@ -4,6 +4,9 @@ import { test, expect } from '@playwright/test';
 // chromium-authed project. We mock the backend proxy route so the test is
 // deterministic and doesn't depend on seeded credits.
 
+// Each trip yields a single post-trip credit: the user's first trip (55) earns
+// the 3% first-trip bonus, and a later trip (66) earns the 2% trip cashback. No
+// single trip carries both.
 const TRIP_LINKED_CREDITS = [
   {
     id: 101,
@@ -12,7 +15,7 @@ const TRIP_LINKED_CREDITS = [
     status: 'issued',
     amount_cents: 2000,
     currency: 'USD',
-    source_ref: 'trip:55:payment_2pct',
+    source_ref: 'trip:66:payment_2pct',
     created_at: '2026-05-01T00:00:00Z',
   },
   {
@@ -53,10 +56,16 @@ test.describe('Trip-linked credits on /my-page/credits', () => {
     await expect(page.getByText('Trip cashback — 2%')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('First-trip bonus — 3%')).toBeVisible();
 
-    // Both trip-linked credits link to the trip's travel-history page.
+    // Both trip-linked credits link to their respective travel-history pages —
+    // the first-trip bonus to trip 55 and the trip cashback to trip 66.
     const viewTripLinks = page.getByRole('link', { name: /View trip/i });
     await expect(viewTripLinks).toHaveCount(2);
-    await expect(viewTripLinks.first()).toHaveAttribute('href', '/my-page/travel-history/55');
+    const hrefs = await viewTripLinks.evaluateAll((links) =>
+      links.map((l) => l.getAttribute('href')),
+    );
+    expect(new Set(hrefs)).toEqual(
+      new Set(['/my-page/travel-history/55', '/my-page/travel-history/66']),
+    );
 
     // The welcome credit has no trip linkage, so it shows no View trip link.
     await expect(page.getByText('Welcome')).toBeVisible();

@@ -42,8 +42,10 @@ describe('tripIdFromCredit', () => {
 
 describe('creditsForTrip', () => {
   it('returns only credits linked to the given trip', () => {
+    // Each trip yields a single post-trip credit, so trip 10 has just the 3%
+    // first-trip bonus here; the 2% cashback belongs to a later trip (11).
     const credits: StayCredit[] = [
-      makeCredit({ id: 1, source_ref: 'trip:10:payment_2pct', amount_cents: 2000 }),
+      makeCredit({ id: 1, source_ref: 'trip:11:payment_2pct', amount_cents: 2000 }),
       makeCredit({
         id: 2,
         source: 'first_trip_cashback',
@@ -54,7 +56,7 @@ describe('creditsForTrip', () => {
       makeCredit({ id: 4, source: 'welcome', source_ref: null }),
     ];
     const result = creditsForTrip(credits, 10);
-    expect(result.map((c) => c.id)).toEqual([1, 2]);
+    expect(result.map((c) => c.id)).toEqual([2]);
   });
 
   it('returns an empty array when no credit matches', () => {
