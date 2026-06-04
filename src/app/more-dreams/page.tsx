@@ -327,11 +327,7 @@ function MoreDreamsContent() {
             ))}
           </div>
 
-          <div
-            ref={activitiesSentinel}
-            data-testid="activities-sentinel"
-            aria-hidden="true"
-          />
+          <div ref={activitiesSentinel} data-testid="activities-sentinel" aria-hidden="true" />
           {activitiesLoadingMore && (
             <div
               data-testid="activities-loading-more"
@@ -403,11 +399,7 @@ function MoreDreamsContent() {
             ))}
           </div>
 
-          <div
-            ref={restaurantsSentinel}
-            data-testid="restaurants-sentinel"
-            aria-hidden="true"
-          />
+          <div ref={restaurantsSentinel} data-testid="restaurants-sentinel" aria-hidden="true" />
           {restaurantsLoadingMore && (
             <div
               data-testid="restaurants-loading-more"

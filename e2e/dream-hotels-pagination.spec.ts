@@ -96,15 +96,15 @@ test.describe('/dream-hotels — pagination + infinite scroll (SMA-73)', () => {
     await expect(page.getByRole('heading', { name: 'Dream Hotels' })).toBeVisible();
 
     // Page 1 rendered, map hidden.
-    await expect(page.getByText('Stub Hotel 1')).toBeVisible();
+    await expect(page.getByText('Stub Hotel 1', { exact: true })).toBeVisible();
     await expect(page.locator('[data-testid="hotel-map"]')).toHaveCount(0);
     // Page-2-only hotel not yet present.
-    await expect(page.getByText('Stub Hotel 25')).toHaveCount(0);
+    await expect(page.getByText('Stub Hotel 25', { exact: true })).toHaveCount(0);
 
     // Scroll the sentinel into view → page 2 loads and appends.
     await page.locator('[data-testid="infinite-sentinel"]').scrollIntoViewIfNeeded();
 
-    await expect(page.getByText('Stub Hotel 25')).toBeVisible();
+    await expect(page.getByText('Stub Hotel 25', { exact: true })).toBeVisible();
     await expect(page.locator('[data-testid="no-more-results"]')).toBeVisible();
   });
 
