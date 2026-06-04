@@ -48,7 +48,16 @@ async function stubRoutes(
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ data: HOTELS }),
+      body: JSON.stringify({
+        data: {
+          items: HOTELS,
+          total: HOTELS.length,
+          per_page: 24,
+          current_page: 1,
+          last_page: 1,
+          has_more: false,
+        },
+      }),
     });
   });
 

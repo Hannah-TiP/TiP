@@ -10,10 +10,14 @@ import ActivityCard from '@/components/ActivityCard';
 import EntityRatingBadge from '@/components/reviews/EntityRatingBadge';
 import { apiClient } from '@/lib/api-client';
 import { usePreviewMode } from '@/hooks/usePreviewMode';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useInfiniteList } from '@/lib/use-infinite-list';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Activity } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
 import type { City } from '@/types/location';
+
+const MORE_DREAMS_PER_PAGE = 12;
 
 /**
  * Defensive default: if an activity's `kind` is missing/null from the API
@@ -27,9 +31,7 @@ function isLocalExperience(activity: Activity): boolean {
 }
 
 function MoreDreamsContent() {
-  const [localExperiences, setLocalExperiences] = useState<Activity[]>([]);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { t } = useLanguage();
   const { isPreview } = usePreviewMode();
 
   // Filter state
@@ -39,50 +41,76 @@ function MoreDreamsContent() {
   const [openDropdown, setOpenDropdown] = useState<'destination' | null>(null);
   const [citySearch, setCitySearch] = useState('');
   const [cities, setCities] = useState<City[]>([]);
-  const [citiesLoading, setCitiesLoading] = useState(false);
+  const [citiesLoading, setCitiesLoading] = useState(true);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setIsLoading(true);
-        const [localExpData, restaurantData, cityData] = await Promise.all([
-          apiClient.getActivities({
-            language: 'en',
-            kind: 'local_experience',
-            include_draft: isPreview,
-          }),
-          apiClient.getRestaurants({ language: 'en', include_draft: isPreview }),
-          apiClient.getCities('en'),
-        ]);
+  const cityId = selectedCity?.id;
+
+  // Activities & Restaurants each get their own server-side-paginated infinite
+  // list. The city filter is now a `city_id` query param (NOT a client-side
+  // filter); selecting a city changes the dependency arrays below so both lists
+  // reset to page 1 and re-fetch.
+  const {
+    items: localExperiences,
+    total: activitiesTotal,
+    hasMore: activitiesHasMore,
+    isLoading: activitiesLoading,
+    isLoadingMore: activitiesLoadingMore,
+    sentinelRef: activitiesSentinel,
+  } = useInfiniteList<Activity>(
+    (page) =>
+      apiClient
+        .getActivities({
+          language: 'en',
+          kind: 'local_experience',
+          include_draft: isPreview,
+          city_id: cityId,
+          page,
+          per_page: MORE_DREAMS_PER_PAGE,
+        })
         // Defensive client-side filter: backend filtering is the source of
         // truth, but if any package items leak into the local_experience
         // bucket, drop them — packages now live on /signature-journeys.
-        setLocalExperiences(localExpData.filter(isLocalExperience));
-        setRestaurants(restaurantData);
-        setCities(cityData);
-      } catch (error) {
-        console.error('Failed to load data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+        .then((result) => ({ ...result, items: result.items.filter(isLocalExperience) })),
+    [isPreview, cityId],
+  );
 
-    loadData();
-  }, [isPreview]);
+  const {
+    items: restaurants,
+    total: restaurantsTotal,
+    hasMore: restaurantsHasMore,
+    isLoading: restaurantsLoading,
+    isLoadingMore: restaurantsLoadingMore,
+    sentinelRef: restaurantsSentinel,
+  } = useInfiniteList<Restaurant>(
+    (page) =>
+      apiClient.getRestaurants({
+        language: 'en',
+        include_draft: isPreview,
+        city_id: cityId,
+        page,
+        per_page: MORE_DREAMS_PER_PAGE,
+      }),
+    [isPreview, cityId],
+  );
 
-  // Load cities when dropdown opens
+  // Load cities for the destination dropdown once on mount.
   useEffect(() => {
-    if (openDropdown === 'destination' && cities.length === 0) {
-      setCitiesLoading(true);
-      apiClient
-        .getCities('en')
-        .then(setCities)
-        .catch(() => {})
-        .finally(() => setCitiesLoading(false));
-    }
-  }, [openDropdown, cities.length]);
+    let cancelled = false;
+    apiClient
+      .getCities('en')
+      .then((data) => {
+        if (!cancelled) setCities(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setCitiesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -95,15 +123,7 @@ function MoreDreamsContent() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredLocalExperiences = useMemo(() => {
-    if (!selectedCity) return localExperiences;
-    return localExperiences.filter((a) => a.city_id === selectedCity.id);
-  }, [localExperiences, selectedCity]);
-
-  const filteredRestaurants = useMemo(() => {
-    if (!selectedCity) return restaurants;
-    return restaurants.filter((r) => r.city_id === selectedCity.id);
-  }, [restaurants, selectedCity]);
+  const isLoading = activitiesLoading || restaurantsLoading;
 
   const filteredCities = cities.filter((c) =>
     getLocalizedText(c.name).toLowerCase().includes(citySearch.toLowerCase()),
@@ -113,7 +133,7 @@ function MoreDreamsContent() {
     return new Map(cities.map((city) => [city.id, getLocalizedText(city.name)]));
   }, [cities]);
 
-  const hasAnyResults = filteredLocalExperiences.length > 0 || filteredRestaurants.length > 0;
+  const hasAnyResults = localExperiences.length > 0 || restaurants.length > 0;
 
   return (
     <main className={`min-h-screen bg-gray-light ${isPreview ? 'pt-10' : ''}`}>
@@ -244,14 +264,16 @@ function MoreDreamsContent() {
 
         {selectedCity && (
           <p className="mt-3 text-[13px] text-gray-text">
-            Showing {filteredLocalExperiences.length} activities and {filteredRestaurants.length}{' '}
-            restaurants in {getLocalizedText(selectedCity.name)}
+            Showing {activitiesTotal} activities and {restaurantsTotal} restaurants in{' '}
+            {getLocalizedText(selectedCity.name)}
           </p>
         )}
       </section>
 
-      {/* Loading state — shared across all sections */}
-      {isLoading && (
+      {/* Initial loading state — shown only on the very first load (before
+          either grid has any items). Subsequent page loads use the per-grid
+          "Loading more..." footers. */}
+      {isLoading && !hasAnyResults && (
         <section className="bg-gray-light px-20 py-20">
           <div className="flex items-center justify-center py-20">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
@@ -281,7 +303,7 @@ function MoreDreamsContent() {
       )}
 
       {/* Activities & Experiences Section — hidden when empty */}
-      {!isLoading && filteredLocalExperiences.length > 0 && (
+      {localExperiences.length > 0 && (
         <section className="bg-gray-light px-20 py-20" data-testid="section-activities-experiences">
           <div className="mb-12 text-center">
             <span className="text-[11px] font-semibold tracking-[4px] text-gold">
@@ -293,7 +315,7 @@ function MoreDreamsContent() {
           </div>
 
           <div className="grid grid-cols-4 gap-6">
-            {filteredLocalExperiences.map((activity) => (
+            {localExperiences.map((activity) => (
               <ActivityCard
                 key={activity.id}
                 activity={activity}
@@ -304,11 +326,34 @@ function MoreDreamsContent() {
               />
             ))}
           </div>
+
+          <div
+            ref={activitiesSentinel}
+            data-testid="activities-sentinel"
+            aria-hidden="true"
+          />
+          {activitiesLoadingMore && (
+            <div
+              data-testid="activities-loading-more"
+              className="flex items-center justify-center gap-3 pt-10 text-[13px] text-gray-text"
+            >
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
+              {t('discover.loading_more')}
+            </div>
+          )}
+          {!activitiesHasMore && !activitiesLoadingMore && (
+            <p
+              data-testid="activities-no-more"
+              className="pt-10 text-center text-[13px] text-gray-text"
+            >
+              {t('discover.no_more_results')}
+            </p>
+          )}
         </section>
       )}
 
-      {/* Restaurants Section — unchanged */}
-      {!isLoading && filteredRestaurants.length > 0 && (
+      {/* Restaurants Section */}
+      {restaurants.length > 0 && (
         <section className="bg-white px-20 py-20" data-testid="section-restaurants">
           <div className="mb-12 text-center">
             <span className="text-[11px] font-semibold tracking-[4px] text-gold">FINE DINING</span>
@@ -318,7 +363,7 @@ function MoreDreamsContent() {
           </div>
 
           <div className="grid grid-cols-4 gap-6">
-            {filteredRestaurants.map((restaurant) => (
+            {restaurants.map((restaurant) => (
               <Link
                 key={restaurant.id}
                 href={`/restaurant/${restaurant.slug}`}
@@ -357,6 +402,29 @@ function MoreDreamsContent() {
               </Link>
             ))}
           </div>
+
+          <div
+            ref={restaurantsSentinel}
+            data-testid="restaurants-sentinel"
+            aria-hidden="true"
+          />
+          {restaurantsLoadingMore && (
+            <div
+              data-testid="restaurants-loading-more"
+              className="flex items-center justify-center gap-3 pt-10 text-[13px] text-gray-text"
+            >
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
+              {t('discover.loading_more')}
+            </div>
+          )}
+          {!restaurantsHasMore && !restaurantsLoadingMore && (
+            <p
+              data-testid="restaurants-no-more"
+              className="pt-10 text-center text-[13px] text-gray-text"
+            >
+              {t('discover.no_more_results')}
+            </p>
+          )}
         </section>
       )}
 

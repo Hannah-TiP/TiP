@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
     const starRating = searchParams.get('star_rating');
     const q = searchParams.get('q');
     const includeDraft = searchParams.get('include_draft');
+    const page = searchParams.get('page');
+    const perPage = searchParams.get('per_page');
 
     if (cityId) backendSearchParams.set('city_id', cityId);
     if (countryId) backendSearchParams.set('country_id', countryId);
@@ -20,6 +22,8 @@ export async function GET(request: NextRequest) {
     if (starRating) backendSearchParams.set('star_rating', starRating);
     if (q) backendSearchParams.set('q', q);
     if (includeDraft === 'true') backendSearchParams.set('include_draft', 'true');
+    if (page) backendSearchParams.set('page', page);
+    if (perPage) backendSearchParams.set('per_page', perPage);
 
     const query = backendSearchParams.toString();
     const backendUrl = `${API_BASE_URL}/api/v2/hotels${query ? `?${query}` : ''}`;

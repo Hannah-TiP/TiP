@@ -1,3 +1,5 @@
+import type { PaginatedData, PaginatedResult } from '@/types/common';
+import { toPaginatedResult } from '@/types/common';
 import type { User, UpdateProfileData } from '@/types/auth';
 import type { Hotel } from '@/types/hotel';
 import type { Activity, ActivityKind } from '@/types/activity';
@@ -209,7 +211,9 @@ class ApiClient {
     q?: string;
     language?: string;
     include_draft?: boolean;
-  }): Promise<Hotel[]> {
+    page?: number;
+    per_page?: number;
+  }): Promise<PaginatedResult<Hotel>> {
     const searchParams = new URLSearchParams();
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
     if (params?.country_id !== undefined)
@@ -219,12 +223,14 @@ class ApiClient {
     if (params?.q) searchParams.set('q', params.q);
     if (params?.language) searchParams.set('language', params.language);
     if (params?.include_draft) searchParams.set('include_draft', 'true');
+    if (params?.page !== undefined) searchParams.set('page', params.page.toString());
+    if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
 
     const query = searchParams.toString();
     const endpoint = `/hotels${query ? `?${query}` : ''}`;
 
-    const response = await this.request<{ data: Hotel[] }>(endpoint);
-    return response.data;
+    const response = await this.request<{ data: PaginatedData<Hotel> }>(endpoint);
+    return toPaginatedResult(response.data);
   }
 
   async getHotelBySlug(slug: string): Promise<Hotel> {
@@ -244,19 +250,23 @@ class ApiClient {
     kind?: ActivityKind;
     language?: string;
     include_draft?: boolean;
-  }): Promise<Activity[]> {
+    page?: number;
+    per_page?: number;
+  }): Promise<PaginatedResult<Activity>> {
     const searchParams = new URLSearchParams();
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
     if (params?.category) searchParams.set('category', params.category);
     if (params?.kind) searchParams.set('kind', params.kind);
     if (params?.language) searchParams.set('language', params.language);
     if (params?.include_draft) searchParams.set('include_draft', 'true');
+    if (params?.page !== undefined) searchParams.set('page', params.page.toString());
+    if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
 
     const query = searchParams.toString();
     const endpoint = `/activities${query ? `?${query}` : ''}`;
 
-    const response = await this.request<{ data: Activity[] }>(endpoint);
-    return response.data;
+    const response = await this.request<{ data: PaginatedData<Activity> }>(endpoint);
+    return toPaginatedResult(response.data);
   }
 
   async getActivityBySlug(slug: string): Promise<Activity> {
@@ -274,17 +284,21 @@ class ApiClient {
     city_id?: number;
     language?: string;
     include_draft?: boolean;
-  }): Promise<Restaurant[]> {
+    page?: number;
+    per_page?: number;
+  }): Promise<PaginatedResult<Restaurant>> {
     const searchParams = new URLSearchParams();
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
     if (params?.language) searchParams.set('language', params.language);
     if (params?.include_draft) searchParams.set('include_draft', 'true');
+    if (params?.page !== undefined) searchParams.set('page', params.page.toString());
+    if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
 
     const query = searchParams.toString();
     const endpoint = `/restaurants${query ? `?${query}` : ''}`;
 
-    const response = await this.request<{ data: Restaurant[] }>(endpoint);
-    return response.data;
+    const response = await this.request<{ data: PaginatedData<Restaurant> }>(endpoint);
+    return toPaginatedResult(response.data);
   }
 
   async getRestaurantBySlug(slug: string): Promise<Restaurant> {

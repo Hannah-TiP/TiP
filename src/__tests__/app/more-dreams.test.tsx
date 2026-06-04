@@ -4,13 +4,38 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import MoreDreamsPage from '@/app/more-dreams/page';
 import { apiClient } from '@/lib/api-client';
+import en from '@/translations/en.json';
 import type { Activity } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
 import type { City } from '@/types/location';
+import type { PaginatedResult } from '@/types/common';
+
+function page<T>(items: T[]): PaginatedResult<T> {
+  return { items, hasMore: false, total: items.length, page: 1 };
+}
+
+// jsdom has no IntersectionObserver; the infinite-scroll sentinels need it.
+vi.stubGlobal(
+  'IntersectionObserver',
+  class {
+    observe = vi.fn();
+    disconnect = vi.fn();
+    unobserve = vi.fn();
+    takeRecords = vi.fn();
+  },
+);
 
 vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
+
+vi.mock('@/contexts/LanguageContext', () => ({
+  useLanguage: () => ({
+    lang: 'en' as const,
+    setLang: vi.fn(),
+    t: (key: string) => (en as Record<string, string>)[key] ?? key,
+  }),
 }));
 
 vi.mock('next/image', () => ({
@@ -113,8 +138,8 @@ const paris: City = {
 
 describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journeys)', () => {
   it('renders the Activities & Experiences + Curated Restaurants titles', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue([localExperience]);
-    vi.mocked(apiClient.getRestaurants).mockResolvedValue([restaurant]);
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([localExperience]));
+    vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([restaurant]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
     render(<MoreDreamsPage />);
@@ -126,8 +151,8 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
   });
 
   it('never renders a Signature Journeys section on More Dreams', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue([localExperience]);
-    vi.mocked(apiClient.getRestaurants).mockResolvedValue([restaurant]);
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([localExperience]));
+    vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([restaurant]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
     const { container } = render(<MoreDreamsPage />);
@@ -140,8 +165,8 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
   });
 
   it('calls getActivities exactly once with kind=local_experience (no package fetch)', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue([localExperience]);
-    vi.mocked(apiClient.getRestaurants).mockResolvedValue([]);
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([localExperience]));
+    vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
     render(<MoreDreamsPage />);
@@ -157,8 +182,8 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
   });
 
   it('renders the standard (neutral) pill — never the gold signature pill', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue([localExperience]);
-    vi.mocked(apiClient.getRestaurants).mockResolvedValue([]);
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([localExperience]));
+    vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
     render(<MoreDreamsPage />);
@@ -174,8 +199,8 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
   it('defensively drops any package items that leak into the local_experience bucket', async () => {
     // Backend is the source of truth, but assert the page never surfaces a
     // package on More Dreams even if one leaks into the local_experience call.
-    vi.mocked(apiClient.getActivities).mockResolvedValue([localExperience, signatureJourney]);
-    vi.mocked(apiClient.getRestaurants).mockResolvedValue([]);
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([localExperience, signatureJourney]));
+    vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
     render(<MoreDreamsPage />);
@@ -194,8 +219,8 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
       kind: null,
       name: { en: 'No Kind Activity', kr: '' },
     };
-    vi.mocked(apiClient.getActivities).mockResolvedValue([noKindActivity]);
-    vi.mocked(apiClient.getRestaurants).mockResolvedValue([]);
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([noKindActivity]));
+    vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
     render(<MoreDreamsPage />);

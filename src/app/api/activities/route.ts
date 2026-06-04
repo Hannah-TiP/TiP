@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
     const kind = searchParams.get('kind');
     const language = searchParams.get('language') || 'en';
     const includeDraft = searchParams.get('include_draft');
+    const page = searchParams.get('page');
+    const perPage = searchParams.get('per_page');
 
     if (cityId) backendSearchParams.set('city_id', cityId);
     if (category) backendSearchParams.set('category', category);
@@ -18,6 +20,8 @@ export async function GET(request: NextRequest) {
       backendSearchParams.set('kind', kind);
     }
     if (includeDraft === 'true') backendSearchParams.set('include_draft', 'true');
+    if (page) backendSearchParams.set('page', page);
+    if (perPage) backendSearchParams.set('per_page', perPage);
 
     const query = backendSearchParams.toString();
     const backendUrl = `${API_BASE_URL}/api/v2/activities${query ? `?${query}` : ''}`;

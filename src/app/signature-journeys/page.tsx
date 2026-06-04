@@ -48,13 +48,14 @@ function SignatureJourneysContent() {
             language: 'en',
             kind: 'package',
             include_draft: isPreview,
+            per_page: 100,
           }),
           apiClient.getCities('en'),
         ]);
         // Defensive client-side filter: backend filtering is the source of
         // truth, but if any items leak through with a different kind, this
         // makes sure the grid only shows signature journeys.
-        setSignatureJourneys(packageData.filter((a) => resolveKind(a) === 'package'));
+        setSignatureJourneys(packageData.items.filter((a) => resolveKind(a) === 'package'));
         setCities(cityData);
       } catch (error) {
         console.error('Failed to load data:', error);
