@@ -11,6 +11,7 @@ import EntityRatingBadge from '@/components/reviews/EntityRatingBadge';
 import { apiClient } from '@/lib/api-client';
 import { usePreviewMode } from '@/hooks/usePreviewMode';
 import { useDebounce } from '@/hooks/useDebounce';
+import { shouldShowDreamHotelsMap } from '@/lib/dream-hotels-map';
 import { getLocalizedText } from '@/types/common';
 import { getHotelImages, type Hotel } from '@/types/hotel';
 import WishlistButton from '@/components/WishlistButton';
@@ -229,6 +230,15 @@ function DreamHotelsContent() {
       .slice(0, 8);
   }, [hotels, hotelSearch]);
 
+  // Gate the map: only render once the user has expressed a location/name
+  // signal (hotel-name search OR a selected destination). Star rating alone
+  // does not qualify. Conditional render — NOT CSS-hidden — so Google Maps
+  // never initializes for users who never see it.
+  const shouldShowMap = useMemo(
+    () => shouldShowDreamHotelsMap(debouncedSearch, selectedDestination),
+    [debouncedSearch, selectedDestination],
+  );
+
   const hasActiveFilters = selectedDestination || selectedStarRating || hotelSearch.trim();
 
   const clearFilters = useCallback(() => {
@@ -287,17 +297,26 @@ function DreamHotelsContent() {
 
       {/* Discovery / Map Section */}
       <section className="bg-white">
-        {/* Interactive Map */}
-        {isLoading ? (
-          <div className="flex h-[520px] items-center justify-center bg-[#E8E4D8]">
-            <div className="text-center">
-              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
-              <p className="text-[16px] font-medium text-green-dark">Loading hotels...</p>
+        {/* Interactive Map — only rendered once the user has searched a hotel
+            name or selected a destination. Conditionally mounted (not CSS-hidden)
+            so Google Maps doesn't initialize / hold tiles for users who never
+            see it. */}
+        {shouldShowMap &&
+          (isLoading ? (
+            <div
+              data-testid="map-loading"
+              className="flex h-[520px] items-center justify-center bg-[#E8E4D8]"
+            >
+              <div className="text-center">
+                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
+                <p className="text-[16px] font-medium text-green-dark">Loading hotels...</p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <HotelMap hotels={hotels} reviewAggregates={reviewAggregates} />
-        )}
+          ) : (
+            <div data-testid="hotel-map">
+              <HotelMap hotels={hotels} reviewAggregates={reviewAggregates} />
+            </div>
+          ))}
 
         {/* Hotel Name Search */}
         <div className="px-20 pt-10 pb-0" ref={searchRef}>
@@ -412,6 +431,7 @@ function DreamHotelsContent() {
                     {(destinationSearch || selectedDestination) && (
                       <button
                         onClick={handleClearDestination}
+                        data-testid="clear-destination"
                         className="ml-2 flex-shrink-0 text-gray-400 hover:text-green-dark"
                       >
                         <svg
@@ -541,6 +561,18 @@ function DreamHotelsContent() {
           )}
         </div>
       </section>
+
+      {/* Grid-level loading affordance — shown when the map is hidden so users
+          still get visible feedback during fetches (the in-map spinner is
+          gone when the map isn't rendered). */}
+      {isLoading && !shouldShowMap && (
+        <div
+          data-testid="grid-loading"
+          className="flex items-center justify-center bg-gray-light pt-20"
+        >
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
+        </div>
+      )}
 
       {/* Featured Hotels */}
       <section className="bg-gray-light px-20 py-20">
