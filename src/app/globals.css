@@ -77,3 +77,29 @@ body {
   color: var(--foreground);
   font-family: "Inter", sans-serif;
 }
+
+/* Partner-logo marquee (homepage "Our Partners" section).
+   The track holds the logo list twice back-to-back; translating it -50%
+   loops seamlessly because the second copy lands exactly where the first began. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee 40s linear infinite;
+}
+
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}
