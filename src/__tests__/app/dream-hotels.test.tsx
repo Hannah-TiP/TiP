@@ -106,7 +106,7 @@ function hotel(id: number): Hotel {
 }
 
 describe('DreamHotelsPage — pagination + map gating', () => {
-  it('map-hidden mode: fetches page 1 with per_page=24 and shows the no-more footer', async () => {
+  it('map-hidden mode: fetches page 1 with per_page=50 and shows the no-more footer', async () => {
     vi.mocked(apiClient.getHotels).mockResolvedValue(page([hotel(1), hotel(2)]));
 
     render(<DreamHotelsPage />);
@@ -116,31 +116,41 @@ describe('DreamHotelsPage — pagination + map gating', () => {
     );
 
     const firstCall = vi.mocked(apiClient.getHotels).mock.calls[0][0];
-    expect(firstCall?.per_page).toBe(24);
+    expect(firstCall?.per_page).toBe(50);
     expect(firstCall?.page).toBe(1);
 
     // No search / destination signal → map is not mounted.
     expect(screen.queryByTestId('hotel-map')).toBeNull();
-    // hasMore=false → "No more results" footer present.
+    // hasMore=false → "No more results" footer present (always rendered).
     expect(await screen.findByTestId('no-more-results')).toBeTruthy();
   });
 
-  it('map-hidden mode hides the cap banner regardless of total', async () => {
+  it('never requests a per_page above the backend cap of 50', async () => {
     vi.mocked(apiClient.getHotels).mockResolvedValue(
       page([hotel(1)], { total: 9000, hasMore: true }),
     );
 
     render(<DreamHotelsPage />);
-
     await screen.findByText('Hotel 1');
+
+    // Type a hotel-name search → map becomes visible; pagination is unchanged.
+    const searchInput = screen.getByPlaceholderText('Search hotels by name...');
+    fireEvent.change(searchInput, { target: { value: 'Ritz' } });
+
+    await waitFor(() =>
+      expect(vi.mocked(apiClient.getHotels).mock.calls.some((c) => c[0]?.q === 'Ritz')).toBe(true),
+    );
+
+    for (const [args] of vi.mocked(apiClient.getHotels).mock.calls) {
+      expect(args?.per_page).toBeLessThanOrEqual(50);
+    }
+    // The removed map-cap banner must never render.
     expect(screen.queryByTestId('map-cap-banner')).toBeNull();
   });
 
-  it('map-visible mode (search active): single per_page=500 fetch, shows map + cap banner over 500', async () => {
-    // Initial (empty-search) fetch + the post-search fetch both resolve the
-    // same large page so the cap banner shows once the map is visible.
+  it('map-visible mode (search active): normal pagination, map renders loaded hotels, infinite scroll stays active', async () => {
     vi.mocked(apiClient.getHotels).mockResolvedValue(
-      page([hotel(1)], { total: 742, hasMore: false }),
+      page([hotel(1), hotel(2)], { total: 2, hasMore: false }),
     );
 
     render(<DreamHotelsPage />);
@@ -148,19 +158,22 @@ describe('DreamHotelsPage — pagination + map gating', () => {
       expect(vi.mocked(apiClient.getHotels).mock.calls.length).toBeGreaterThan(0),
     );
 
-    // Type a hotel-name search → map-visible mode.
+    // Type a hotel-name search → map-visible mode (no special fetch carve-out).
     const searchInput = screen.getByPlaceholderText('Search hotels by name...');
     fireEvent.change(searchInput, { target: { value: 'Ritz' } });
 
     await waitFor(() => {
       const calls = vi.mocked(apiClient.getHotels).mock.calls;
-      expect(calls.some((c) => c[0]?.q === 'Ritz' && c[0]?.per_page === 500)).toBe(true);
+      expect(
+        calls.some((c) => c[0]?.q === 'Ritz' && c[0]?.per_page === 50 && c[0]?.page === 1),
+      ).toBe(true);
     });
 
-    // Map mounts and the cap banner appears (742 > 500).
+    // Map mounts and renders the accumulated/loaded hotels; no cap banner.
     expect(await screen.findByTestId('hotel-map')).toBeTruthy();
-    expect(await screen.findByTestId('map-cap-banner')).toBeTruthy();
-    // No infinite-scroll footer in map-visible mode.
-    expect(screen.queryByTestId('no-more-results')).toBeNull();
+    expect(screen.queryByTestId('map-cap-banner')).toBeNull();
+    // Infinite-scroll affordances stay rendered while the map is visible.
+    expect(await screen.findByTestId('infinite-sentinel')).toBeTruthy();
+    expect(await screen.findByTestId('no-more-results')).toBeTruthy();
   });
 });

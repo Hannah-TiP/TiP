@@ -3,11 +3,13 @@ import { test, expect, type Route } from '@playwright/test';
 /**
  * /dream-hotels — server-side pagination + infinite scroll (SMA-73).
  *
- *   - Map-HIDDEN mode (no search, no destination): page 1 fetched on mount;
- *     scrolling the sentinel into view loads page 2 and appends. When the last
- *     page returns has_more=false, the "No more results" footer shows.
- *   - Map-VISIBLE mode (search active): ONE fetch with per_page=500, no infinite
- *     scroll; when total > 500 the cap banner appears.
+ *   - Infinite scroll is always active (per_page=50), whether or not the map is
+ *     rendered: page 1 is fetched on mount; scrolling the sentinel into view
+ *     loads page 2 and appends. When the last page returns has_more=false, the
+ *     "No more results" footer shows.
+ *   - Map-VISIBLE mode (search active): same normal pagination — the map renders
+ *     the loaded hotels and the infinite-scroll sentinel/footer stay active.
+ *     There is NO special single fetch and NO cap banner.
  *
  * Strategy: stub /api/hotels and inspect the `page`/`per_page` query params to
  * serve the right page, so the test is deterministic without a backend.
@@ -63,16 +65,18 @@ test.describe('/dream-hotels — pagination + infinite scroll (SMA-73)', () => {
     await page.route('**/api/hotels**', async (route: Route) => {
       const url = new URL(route.request().url());
       const pageParam = Number(url.searchParams.get('page') ?? '1');
-      const perPage = Number(url.searchParams.get('per_page') ?? '24');
-      // Two pages: page 1 (24 hotels, has_more), page 2 (1 hotel, end).
+      const perPage = Number(url.searchParams.get('per_page') ?? '50');
+      // Guard against a future regression past the backend cap of 50.
+      expect(perPage).toBeLessThanOrEqual(50);
+      // Two pages: page 1 (50 hotels, has_more), page 2 (1 hotel, end).
       if (pageParam === 1) {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify(
             envelope(
-              Array.from({ length: 24 }, (_, i) => hotelFixture(i + 1)),
-              { total: 25, per_page: perPage, current_page: 1, has_more: true },
+              Array.from({ length: 50 }, (_, i) => hotelFixture(i + 1)),
+              { total: 51, per_page: perPage, current_page: 1, has_more: true },
             ),
           ),
         });
@@ -82,8 +86,8 @@ test.describe('/dream-hotels — pagination + infinite scroll (SMA-73)', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify(
-          envelope([hotelFixture(25)], {
-            total: 25,
+          envelope([hotelFixture(51)], {
+            total: 51,
             per_page: perPage,
             current_page: 2,
             has_more: false,
@@ -99,16 +103,16 @@ test.describe('/dream-hotels — pagination + infinite scroll (SMA-73)', () => {
     await expect(page.getByText('Stub Hotel 1', { exact: true })).toBeVisible();
     await expect(page.locator('[data-testid="hotel-map"]')).toHaveCount(0);
     // Page-2-only hotel not yet present.
-    await expect(page.getByText('Stub Hotel 25', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Stub Hotel 51', { exact: true })).toHaveCount(0);
 
     // Scroll the sentinel into view → page 2 loads and appends.
     await page.locator('[data-testid="infinite-sentinel"]').scrollIntoViewIfNeeded();
 
-    await expect(page.getByText('Stub Hotel 25', { exact: true })).toBeVisible();
+    await expect(page.getByText('Stub Hotel 51', { exact: true })).toBeVisible();
     await expect(page.locator('[data-testid="no-more-results"]')).toBeVisible();
   });
 
-  test('map-visible: single per_page=500 fetch + cap banner when total exceeds 500', async ({
+  test('map-visible: normal pagination, map renders loaded hotels, infinite scroll stays active, no banner', async ({
     page,
   }) => {
     let perPageSeen: number | null = null;
@@ -132,13 +136,16 @@ test.describe('/dream-hotels — pagination + infinite scroll (SMA-73)', () => {
     await page.route('**/api/hotels**', async (route: Route) => {
       const url = new URL(route.request().url());
       hotelCallCount += 1;
-      perPageSeen = Number(url.searchParams.get('per_page') ?? '24');
+      perPageSeen = Number(url.searchParams.get('per_page') ?? '50');
+      // The map-visible fetch must use the same capped pagination — never a
+      // single over-cap one-shot.
+      expect(perPageSeen).toBeLessThanOrEqual(50);
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify(
           envelope([hotelFixture(1)], {
-            total: 742,
+            total: 1,
             per_page: perPageSeen,
             current_page: 1,
             has_more: false,
@@ -150,15 +157,17 @@ test.describe('/dream-hotels — pagination + infinite scroll (SMA-73)', () => {
     await page.goto('/dream-hotels');
     await expect(page.getByRole('heading', { name: 'Dream Hotels' })).toBeVisible();
 
-    // Type a hotel-name search → map-visible mode (single per_page=500 fetch).
+    // Type a hotel-name search → map becomes visible; pagination is unchanged.
     await page.getByPlaceholder('Search hotels by name...').fill('Ritz');
 
     await expect(page.locator('[data-testid="hotel-map"]')).toBeVisible();
-    await expect(page.locator('[data-testid="map-cap-banner"]')).toBeVisible();
-    // No infinite-scroll footer in map-visible mode.
-    await expect(page.locator('[data-testid="no-more-results"]')).toHaveCount(0);
+    // The removed cap banner must never render.
+    await expect(page.locator('[data-testid="map-cap-banner"]')).toHaveCount(0);
+    // Infinite-scroll affordances stay active while the map is visible.
+    await expect(page.locator('[data-testid="infinite-sentinel"]')).toHaveCount(1);
+    await expect(page.locator('[data-testid="no-more-results"]')).toBeVisible();
 
-    expect(perPageSeen).toBe(500);
+    expect(perPageSeen).toBe(50);
     expect(hotelCallCount).toBeGreaterThan(0);
   });
 });

@@ -52,7 +52,7 @@ async function stubRoutes(
         data: {
           items: HOTELS,
           total: HOTELS.length,
-          per_page: 24,
+          per_page: 50,
           current_page: 1,
           last_page: 1,
           has_more: false,

@@ -163,6 +163,5 @@
   "credits.redeem_error_already_redeemed": "You've already redeemed this code.",
   "credits.redeem_error_generic": "Could not redeem this code. Please try again.",
   "discover.loading_more": "Loading more...",
-  "discover.no_more_results": "No more results",
-  "discover.map_cap_banner": "Showing first 500 of {total} matches — narrow your filter to see all."
+  "discover.no_more_results": "No more results"
 }

@@ -43,11 +43,8 @@ const STAR_RATING_OPTIONS = [
   { value: '4', label: '4 Star' },
 ];
 
-// Map-hidden infinite scroll page size.
-const HOTELS_PER_PAGE = 24;
-// Map-visible single-shot fetch cap (the map needs every matching pin, but we
-// cap to protect Google Maps + the payload; the banner appears past this).
-const HOTELS_MAP_CAP = 500;
+// Infinite-scroll page size (matches the backend hotels per_page cap).
+const HOTELS_PER_PAGE = 50;
 
 function getDestinationTypeLabel(type: string): string {
   switch (type) {
@@ -152,11 +149,11 @@ function DreamHotelsContent() {
 
   const trimmedSearch = debouncedSearch.trim() || undefined;
 
-  // Map-visible mode fetches every matching result (capped at 500) in one shot
-  // so the map has all pins; map-hidden mode paginates with infinite scroll.
-  // Switching modes OR changing any resettable filter is encoded entirely in
-  // the dependency array below — the hook resets to page 1 and re-fetches,
-  // dropping any in-flight response so stale state never leaks across modes.
+  // Infinite scroll is always active, whether or not the map is rendered. The
+  // map (when shown) renders the accumulated paginated list — as the user
+  // scrolls and more pages load, the pin set grows to match. Changing any
+  // resettable filter is encoded in the dependency array below — the hook
+  // resets to page 1 and re-fetches, dropping any in-flight response.
   const fetchHotelsPage = useCallback(
     (page: number) =>
       apiClient.getHotels({
@@ -167,8 +164,8 @@ function DreamHotelsContent() {
         city_id: destinationFilter.city_id,
         star_rating: selectedStarRating || undefined,
         q: trimmedSearch,
-        page: shouldShowMap ? 1 : page,
-        per_page: shouldShowMap ? HOTELS_MAP_CAP : HOTELS_PER_PAGE,
+        page,
+        per_page: HOTELS_PER_PAGE,
       }),
     [
       isPreview,
@@ -177,13 +174,11 @@ function DreamHotelsContent() {
       destinationFilter.city_id,
       selectedStarRating,
       trimmedSearch,
-      shouldShowMap,
     ],
   );
 
   const {
     items: hotels,
-    total: totalHotels,
     hasMore,
     isLoading,
     isLoadingMore,
@@ -195,12 +190,7 @@ function DreamHotelsContent() {
     destinationFilter.city_id,
     selectedStarRating,
     trimmedSearch,
-    shouldShowMap,
   ]);
-
-  // In map-visible mode we fetch up to HOTELS_MAP_CAP in one request; if more
-  // exist the banner tells the user to narrow their filter.
-  const showMapCapBanner = shouldShowMap && totalHotels > HOTELS_MAP_CAP;
 
   // Fetch review aggregates for the visible hotels in a single batched call.
   // Runs separately from the hotel fetch so the map renders immediately;
@@ -337,17 +327,6 @@ function DreamHotelsContent() {
               <HotelMap hotels={hotels} reviewAggregates={reviewAggregates} />
             </div>
           ))}
-
-        {/* Map-cap banner: map-visible mode fetches at most HOTELS_MAP_CAP
-            results in one shot; beyond that the user must narrow their filter. */}
-        {showMapCapBanner && (
-          <div
-            data-testid="map-cap-banner"
-            className="bg-gold/10 px-20 py-3 text-center text-[13px] font-medium text-green-dark"
-          >
-            {t('discover.map_cap_banner').replace('{total}', totalHotels.toString())}
-          </div>
-        )}
 
         {/* Hotel Name Search */}
         <div className="px-20 pt-10 pb-0" ref={searchRef}>
@@ -676,29 +655,26 @@ function DreamHotelsContent() {
               ))}
             </div>
 
-            {/* Infinite scroll affordances — only in map-hidden mode. */}
-            {!shouldShowMap && (
-              <>
-                {/* Sentinel: triggers the next page ~200px before the bottom. */}
-                <div ref={sentinelRef} data-testid="infinite-sentinel" aria-hidden="true" />
-                {isLoadingMore && (
-                  <div
-                    data-testid="loading-more"
-                    className="flex items-center justify-center gap-3 pt-10 text-[13px] text-gray-text"
-                  >
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
-                    {t('discover.loading_more')}
-                  </div>
-                )}
-                {!hasMore && !isLoadingMore && (
-                  <p
-                    data-testid="no-more-results"
-                    className="pt-10 text-center text-[13px] text-gray-text"
-                  >
-                    {t('discover.no_more_results')}
-                  </p>
-                )}
-              </>
+            {/* Infinite scroll affordances — always active, including while the
+                map is visible (scroll-to-load grows the map's pin set). */}
+            {/* Sentinel: triggers the next page ~200px before the bottom. */}
+            <div ref={sentinelRef} data-testid="infinite-sentinel" aria-hidden="true" />
+            {isLoadingMore && (
+              <div
+                data-testid="loading-more"
+                className="flex items-center justify-center gap-3 pt-10 text-[13px] text-gray-text"
+              >
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
+                {t('discover.loading_more')}
+              </div>
+            )}
+            {!hasMore && !isLoadingMore && (
+              <p
+                data-testid="no-more-results"
+                className="pt-10 text-center text-[13px] text-gray-text"
+              >
+                {t('discover.no_more_results')}
+              </p>
             )}
           </>
         )}
