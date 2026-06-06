@@ -122,7 +122,9 @@ export default function Header() {
           aria-expanded={mobileNavOpen}
           className={hamburgerClass}
         >
-          <span className="icon-menu text-2xl" aria-hidden="true" />
+          <span className="icon-lucide text-2xl" aria-hidden="true">
+            &#xe115;
+          </span>
         </button>
       </header>
 

@@ -79,7 +79,9 @@ export default function MobileNav({ isOpen, onClose, isAuthenticated, activeNav 
             aria-label={t('nav.menu_close')}
             className="flex h-11 w-11 items-center justify-center rounded-full text-green-dark transition-colors hover:bg-gray-light"
           >
-            <span className="icon-x text-xl" aria-hidden="true" />
+            <span className="icon-lucide text-xl" aria-hidden="true">
+              &#xe1b2;
+            </span>
           </button>
         </div>
 
