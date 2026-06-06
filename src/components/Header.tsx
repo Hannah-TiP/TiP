@@ -1,25 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import SubNav from '@/components/SubNav';
-import { resolveHeaderConfig, type NavKey } from '@/lib/header-config';
-
-// `protected: true` disables Link prefetch on auth-gated routes. Prefetching
-// them would race with the user's actual click: middleware redirects the
-// prefetch to /sign-in?redirect=<pathname> (no query) and Next.js caches that
-// redirect, so a later router.push('/concierge?prefill=...') uses the cached
-// unparameterized redirect — dropping the prefill query on its way to sign-in.
-const navLinks: { key: NavKey; label: string; href: string; protected?: boolean }[] = [
-  { key: 'dream-hotels', label: 'DREAM HOTELS', href: '/dream-hotels' },
-  { key: 'more-dreams', label: 'MORE DREAMS', href: '/more-dreams' },
-  { key: 'signature-journeys', label: 'SIGNATURE JOURNEYS', href: '/signature-journeys' },
-  { key: 'about', label: 'ABOUT', href: '/about' },
-  { key: 'concierge', label: 'CONCIERGE', href: '/concierge', protected: true },
-];
+import MobileNav from '@/components/MobileNav';
+import { resolveHeaderConfig } from '@/lib/header-config';
+import { navLinks } from '@/lib/nav-links';
 
 /**
  * The single site header. Mounted once in the root layout, inside the
@@ -32,6 +22,7 @@ export default function Header() {
   const { data: session } = useSession();
   const isAuthenticated = !!session;
   const { lang, setLang, t } = useLanguage();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   if (config.variant === 'none') return null;
 
@@ -41,8 +32,8 @@ export default function Header() {
   // section is the positioning context — page renders no extra top padding).
   // App variant: standard light bar in normal document flow.
   const headerClass = isOverlay
-    ? 'absolute inset-x-0 top-0 z-20 flex h-[64px] items-center justify-between bg-transparent px-[60px]'
-    : 'flex h-14 items-center justify-between border-b border-gray-border bg-white px-10';
+    ? 'absolute inset-x-0 top-0 z-20 flex h-[64px] items-center justify-between bg-transparent px-4 md:px-10 lg:px-[60px]'
+    : 'flex h-14 items-center justify-between border-b border-gray-border bg-white px-4 md:px-10';
 
   const logoStyle = isOverlay ? { filter: 'brightness(0) invert(1)' } : undefined;
 
@@ -54,6 +45,12 @@ export default function Header() {
       : `whitespace-nowrap text-[11px] font-medium tracking-[2px] transition-colors ${
           active ? 'text-green-dark' : 'text-green-dark/50 hover:text-green-dark'
         }`;
+
+  // Hamburger glyph color tracks the variant (white over the hero, dark on the
+  // light app bar). The drawer itself is always a solid light overlay.
+  const hamburgerClass = `flex h-11 w-11 items-center justify-center md:hidden ${
+    isOverlay ? 'text-white' : 'text-green-dark'
+  }`;
 
   return (
     <>
@@ -69,7 +66,7 @@ export default function Header() {
           />
         </Link>
 
-        <nav className="flex items-center gap-6">
+        <nav data-testid="desktop-nav" className="hidden items-center gap-6 md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.key}
@@ -117,7 +114,24 @@ export default function Header() {
             </Link>
           )}
         </nav>
+
+        <button
+          type="button"
+          onClick={() => setMobileNavOpen(true)}
+          aria-label={t('nav.menu_open')}
+          aria-expanded={mobileNavOpen}
+          className={hamburgerClass}
+        >
+          <span className="icon-menu text-2xl" aria-hidden="true" />
+        </button>
       </header>
+
+      <MobileNav
+        isOpen={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        isAuthenticated={isAuthenticated}
+        activeNav={config.activeNav}
+      />
 
       {config.subNav && <SubNav activeTab={config.subNav.active} />}
     </>
