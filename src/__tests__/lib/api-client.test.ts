@@ -75,9 +75,23 @@ describe('register', () => {
   });
 });
 
+function paginatedResponse<T>(items: T[], extra?: Partial<Record<string, unknown>>) {
+  return mockResponse({
+    data: {
+      items,
+      total: items.length,
+      per_page: 24,
+      current_page: 1,
+      last_page: 1,
+      has_more: false,
+      ...extra,
+    },
+  });
+}
+
 describe('getHotels', () => {
   it('builds query params correctly', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse({ data: [] }));
+    mockFetch.mockResolvedValueOnce(paginatedResponse([]));
     await apiClient.getHotels({ city_id: 5, language: 'en' });
 
     const url = mockFetch.mock.calls[0][0] as string;
@@ -85,28 +99,43 @@ describe('getHotels', () => {
     expect(url).toContain('language=en');
   });
 
+  it('forwards page and per_page', async () => {
+    mockFetch.mockResolvedValueOnce(paginatedResponse([]));
+    await apiClient.getHotels({ page: 3, per_page: 24 });
+
+    const url = mockFetch.mock.calls[0][0] as string;
+    expect(url).toContain('page=3');
+    expect(url).toContain('per_page=24');
+  });
+
   it('omits undefined params', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse({ data: [] }));
+    mockFetch.mockResolvedValueOnce(paginatedResponse([]));
     await apiClient.getHotels();
 
     const url = mockFetch.mock.calls[0][0] as string;
     expect(url).not.toContain('city_id');
     expect(url).not.toContain('language');
+    expect(url).not.toContain('page');
   });
 
   it('calls /hotels with no params when none provided', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse({ data: [] }));
+    mockFetch.mockResolvedValueOnce(paginatedResponse([]));
     await apiClient.getHotels();
 
     expect(mockFetch.mock.calls[0][0]).toBe('/api/hotels');
   });
 
-  it('unwraps response.data', async () => {
+  it('maps the envelope to a PaginatedResult', async () => {
     const hotels = [{ id: 1, slug: 'hotel-a', status: 'published', schema_version: 1 }];
-    mockFetch.mockResolvedValueOnce(mockResponse({ data: hotels }));
+    mockFetch.mockResolvedValueOnce(
+      paginatedResponse(hotels, { total: 50, has_more: true, current_page: 1 }),
+    );
 
     const result = await apiClient.getHotels();
-    expect(result).toEqual(hotels);
+    expect(result.items).toEqual(hotels);
+    expect(result.hasMore).toBe(true);
+    expect(result.total).toBe(50);
+    expect(result.page).toBe(1);
   });
 });
 
@@ -124,9 +153,9 @@ describe('getHotelBySlug', () => {
 });
 
 describe('getRestaurants', () => {
-  it('builds only supported query params and unwraps response.data', async () => {
+  it('builds only supported query params and maps the envelope', async () => {
     const restaurants = [{ id: 1, slug: 'noma', status: 'published', schema_version: 1 }];
-    mockFetch.mockResolvedValueOnce(mockResponse({ data: restaurants }));
+    mockFetch.mockResolvedValueOnce(paginatedResponse(restaurants));
 
     const result = await apiClient.getRestaurants({ city_id: 7, language: 'en' });
 
@@ -136,7 +165,16 @@ describe('getRestaurants', () => {
     expect(url).toContain('language=en');
     expect(url).not.toContain('page=');
     expect(url).not.toContain('per_page=');
-    expect(result).toEqual(restaurants);
+    expect(result.items).toEqual(restaurants);
+  });
+
+  it('forwards page and per_page', async () => {
+    mockFetch.mockResolvedValueOnce(paginatedResponse([]));
+    await apiClient.getRestaurants({ city_id: 7, page: 2, per_page: 12 });
+
+    const url = mockFetch.mock.calls[0][0] as string;
+    expect(url).toContain('page=2');
+    expect(url).toContain('per_page=12');
   });
 });
 

@@ -55,10 +55,21 @@ test.describe('/signature-journeys', () => {
       const kind = url.searchParams.get('kind');
       // The page must only ever ask for kind=package.
       expect(kind).toBe('package');
+      const items = PACKAGES.map(activityFixture);
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ data: PACKAGES.map(activityFixture) }),
+        // v2 list endpoints return the standard pagination envelope (SMA-73).
+        body: JSON.stringify({
+          data: {
+            items,
+            total: items.length,
+            per_page: 100,
+            current_page: 1,
+            last_page: 1,
+            has_more: false,
+          },
+        }),
       });
     });
 

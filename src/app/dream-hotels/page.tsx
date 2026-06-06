@@ -11,6 +11,8 @@ import EntityRatingBadge from '@/components/reviews/EntityRatingBadge';
 import { apiClient } from '@/lib/api-client';
 import { usePreviewMode } from '@/hooks/usePreviewMode';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useInfiniteList } from '@/lib/use-infinite-list';
 import { shouldShowDreamHotelsMap } from '@/lib/dream-hotels-map';
 import { getLocalizedText } from '@/types/common';
 import { getHotelImages, type Hotel } from '@/types/hotel';
@@ -41,6 +43,9 @@ const STAR_RATING_OPTIONS = [
   { value: '4', label: '4 Star' },
 ];
 
+// Infinite-scroll page size (matches the backend hotels per_page cap).
+const HOTELS_PER_PAGE = 50;
+
 function getDestinationTypeLabel(type: string): string {
   switch (type) {
     case 'country':
@@ -57,10 +62,9 @@ function getDestinationTypeLabel(type: string): string {
 type DropdownType = 'type' | null;
 
 function DreamHotelsContent() {
-  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const { t } = useLanguage();
   const [reviewAggregates, setReviewAggregates] = useState<Record<number, ReviewAggregate>>({});
 
-  const [isLoading, setIsLoading] = useState(true);
   const { isPreview } = usePreviewMode();
 
   // Filter state
@@ -119,36 +123,6 @@ function DreamHotelsContent() {
     };
   }, [debouncedDestination, selectedDestination]);
 
-  // Fetch hotels with current filters (server-side filtering)
-  const fetchHotels = useCallback(
-    async (params: {
-      country_id?: number;
-      region_id?: number;
-      city_id?: number;
-      star_rating?: string;
-      q?: string;
-    }) => {
-      try {
-        setIsLoading(true);
-        const data = await apiClient.getHotels({
-          language: 'en',
-          include_draft: isPreview,
-          country_id: params.country_id,
-          region_id: params.region_id,
-          city_id: params.city_id,
-          star_rating: params.star_rating || undefined,
-          q: params.q || undefined,
-        });
-        setHotels(data);
-      } catch (error) {
-        console.error('Failed to load hotels:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [isPreview],
-  );
-
   // Build destination filter params from selected destination (ID-based)
   const destinationFilter = useMemo(() => {
     if (!selectedDestination) return {};
@@ -164,14 +138,59 @@ function DreamHotelsContent() {
     }
   }, [selectedDestination]);
 
-  // Re-fetch hotels when filters change (only on selection, not while typing)
-  useEffect(() => {
-    fetchHotels({
-      ...destinationFilter,
-      star_rating: selectedStarRating,
-      q: debouncedSearch.trim() || undefined,
-    });
-  }, [destinationFilter, selectedStarRating, debouncedSearch, fetchHotels]);
+  // Gate the map: only render once the user has expressed a location/name
+  // signal (hotel-name search OR a selected destination). Star rating alone
+  // does not qualify. Conditional render — NOT CSS-hidden — so Google Maps
+  // never initializes for users who never see it.
+  const shouldShowMap = useMemo(
+    () => shouldShowDreamHotelsMap(debouncedSearch, selectedDestination),
+    [debouncedSearch, selectedDestination],
+  );
+
+  const trimmedSearch = debouncedSearch.trim() || undefined;
+
+  // Infinite scroll is always active, whether or not the map is rendered. The
+  // map (when shown) renders the accumulated paginated list — as the user
+  // scrolls and more pages load, the pin set grows to match. Changing any
+  // resettable filter is encoded in the dependency array below — the hook
+  // resets to page 1 and re-fetches, dropping any in-flight response.
+  const fetchHotelsPage = useCallback(
+    (page: number) =>
+      apiClient.getHotels({
+        language: 'en',
+        include_draft: isPreview,
+        country_id: destinationFilter.country_id,
+        region_id: destinationFilter.region_id,
+        city_id: destinationFilter.city_id,
+        star_rating: selectedStarRating || undefined,
+        q: trimmedSearch,
+        page,
+        per_page: HOTELS_PER_PAGE,
+      }),
+    [
+      isPreview,
+      destinationFilter.country_id,
+      destinationFilter.region_id,
+      destinationFilter.city_id,
+      selectedStarRating,
+      trimmedSearch,
+    ],
+  );
+
+  const {
+    items: hotels,
+    hasMore,
+    isLoading,
+    isLoadingMore,
+    sentinelRef,
+  } = useInfiniteList<Hotel>(fetchHotelsPage, [
+    isPreview,
+    destinationFilter.country_id,
+    destinationFilter.region_id,
+    destinationFilter.city_id,
+    selectedStarRating,
+    trimmedSearch,
+  ]);
 
   // Fetch review aggregates for the visible hotels in a single batched call.
   // Runs separately from the hotel fetch so the map renders immediately;
@@ -229,15 +248,6 @@ function DreamHotelsContent() {
       })
       .slice(0, 8);
   }, [hotels, hotelSearch]);
-
-  // Gate the map: only render once the user has expressed a location/name
-  // signal (hotel-name search OR a selected destination). Star rating alone
-  // does not qualify. Conditional render — NOT CSS-hidden — so Google Maps
-  // never initializes for users who never see it.
-  const shouldShowMap = useMemo(
-    () => shouldShowDreamHotelsMap(debouncedSearch, selectedDestination),
-    [debouncedSearch, selectedDestination],
-  );
 
   const hasActiveFilters = selectedDestination || selectedStarRating || hotelSearch.trim();
 
@@ -585,7 +595,7 @@ function DreamHotelsContent() {
           </h2>
         </div>
 
-        {isLoading ? (
+        {isLoading && hotels.length === 0 ? (
           <div className="flex items-center justify-center py-20">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
           </div>
@@ -606,43 +616,67 @@ function DreamHotelsContent() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-4 gap-6">
-            {hotels.map((hotel) => (
-              <Link
-                key={hotel.id}
-                href={`/hotel/${hotel.slug}`}
-                className={`group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg ${
-                  hotel.status === 'draft' ? 'ring-2 ring-amber-400' : ''
-                }`}
+          <>
+            <div className="grid grid-cols-4 gap-6">
+              {hotels.map((hotel) => (
+                <Link
+                  key={hotel.id}
+                  href={`/hotel/${hotel.slug}`}
+                  className={`group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg ${
+                    hotel.status === 'draft' ? 'ring-2 ring-amber-400' : ''
+                  }`}
+                >
+                  <div className="relative h-56 overflow-hidden">
+                    <Image
+                      src={getHotelImages(hotel)[0]}
+                      alt={getLocalizedText(hotel.name)}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 25vw"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
+                      {getHotelTag(hotel)}
+                    </div>
+                    <DraftBadge status={hotel.status} />
+                    <div className="absolute right-3 top-3 z-10">
+                      <WishlistButton hotelId={hotel.id} size="sm" />
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-primary text-[18px] font-semibold text-green-dark">
+                      {getLocalizedText(hotel.name)}
+                    </h3>
+                    <p className="mt-1 text-[13px] text-gray-text">
+                      {getLocalizedText(hotel.address)}
+                    </p>
+                    <EntityRatingBadge entityType="hotel" entityId={hotel.id} className="mt-2" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Infinite scroll affordances — always active, including while the
+                map is visible (scroll-to-load grows the map's pin set). */}
+            {/* Sentinel: triggers the next page ~200px before the bottom. */}
+            <div ref={sentinelRef} data-testid="infinite-sentinel" aria-hidden="true" />
+            {isLoadingMore && (
+              <div
+                data-testid="loading-more"
+                className="flex items-center justify-center gap-3 pt-10 text-[13px] text-gray-text"
               >
-                <div className="relative h-56 overflow-hidden">
-                  <Image
-                    src={getHotelImages(hotel)[0]}
-                    alt={getLocalizedText(hotel.name)}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 25vw"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
-                    {getHotelTag(hotel)}
-                  </div>
-                  <DraftBadge status={hotel.status} />
-                  <div className="absolute right-3 top-3 z-10">
-                    <WishlistButton hotelId={hotel.id} size="sm" />
-                  </div>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-primary text-[18px] font-semibold text-green-dark">
-                    {getLocalizedText(hotel.name)}
-                  </h3>
-                  <p className="mt-1 text-[13px] text-gray-text">
-                    {getLocalizedText(hotel.address)}
-                  </p>
-                  <EntityRatingBadge entityType="hotel" entityId={hotel.id} className="mt-2" />
-                </div>
-              </Link>
-            ))}
-          </div>
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
+                {t('discover.loading_more')}
+              </div>
+            )}
+            {!hasMore && !isLoadingMore && (
+              <p
+                data-testid="no-more-results"
+                className="pt-10 text-center text-[13px] text-gray-text"
+              >
+                {t('discover.no_more_results')}
+              </p>
+            )}
+          </>
         )}
       </section>
 

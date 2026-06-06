@@ -52,6 +52,20 @@ function activityFixture(item: { id: number; slug: string; name: string }, kind:
   };
 }
 
+// The v2 list endpoints return the standard pagination envelope (SMA-73).
+function envelope<T>(items: T[]) {
+  return {
+    data: {
+      items,
+      total: items.length,
+      per_page: 12,
+      current_page: 1,
+      last_page: 1,
+      has_more: false,
+    },
+  };
+}
+
 test.describe('/more-dreams — Activities + Restaurants only (no Signature Journeys)', () => {
   let packageRequested = false;
 
@@ -66,9 +80,7 @@ test.describe('/more-dreams — Activities + Restaurants only (no Signature Jour
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({
-            data: PACKAGES.map((p) => activityFixture(p, 'package')),
-          }),
+          body: JSON.stringify(envelope(PACKAGES.map((p) => activityFixture(p, 'package')))),
         });
         return;
       }
@@ -76,16 +88,16 @@ test.describe('/more-dreams — Activities + Restaurants only (no Signature Jour
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({
-            data: LOCAL_EXPERIENCES.map((p) => activityFixture(p, 'local_experience')),
-          }),
+          body: JSON.stringify(
+            envelope(LOCAL_EXPERIENCES.map((p) => activityFixture(p, 'local_experience'))),
+          ),
         });
         return;
       }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ data: [] }),
+        body: JSON.stringify(envelope([])),
       });
     });
 
@@ -93,7 +105,7 @@ test.describe('/more-dreams — Activities + Restaurants only (no Signature Jour
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ data: [] }),
+        body: JSON.stringify(envelope([])),
       });
     });
 

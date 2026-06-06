@@ -3,6 +3,42 @@ export interface MultiLanguageString {
   kr?: string | null;
 }
 
+/**
+ * Standard server-side pagination envelope. Mirrors the backend
+ * `PaginatedData[T]` Pydantic model (app/schemas/response.py) returned by the
+ * v2 list endpoints (hotels / activities / restaurants).
+ */
+export interface PaginatedData<T> {
+  items: T[];
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
+  has_more: boolean;
+}
+
+/**
+ * Slim, FE-facing projection of a {@link PaginatedData} page — the single shape
+ * the api-client list methods (getHotels / getActivities / getRestaurants)
+ * resolve to. Callers read `.items`; infinite-scroll consumers read `hasMore`
+ * and `page`.
+ */
+export interface PaginatedResult<T> {
+  items: T[];
+  hasMore: boolean;
+  total: number;
+  page: number;
+}
+
+export function toPaginatedResult<T>(data: PaginatedData<T>): PaginatedResult<T> {
+  return {
+    items: data.items,
+    hasMore: data.has_more,
+    total: data.total,
+    page: data.current_page,
+  };
+}
+
 export interface GeoPoint {
   lat: number;
   lng: number;

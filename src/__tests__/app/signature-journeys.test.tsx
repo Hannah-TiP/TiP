@@ -7,6 +7,11 @@ import { apiClient } from '@/lib/api-client';
 import en from '@/translations/en.json';
 import type { Activity } from '@/types/activity';
 import type { City } from '@/types/location';
+import type { PaginatedResult } from '@/types/common';
+
+function page<T>(items: T[]): PaginatedResult<T> {
+  return { items, hasMore: false, total: items.length, page: 1 };
+}
 
 vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
@@ -126,7 +131,7 @@ const rome: City = {
 
 describe('SignatureJourneysPage', () => {
   it('fetches only kind=package and renders the package cards with the gold pill', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue([ritzYacht, fsYacht]);
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([ritzYacht, fsYacht]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
@@ -155,7 +160,7 @@ describe('SignatureJourneysPage', () => {
   });
 
   it('drops any non-package items that leak into the response', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue([ritzYacht, localExperience]);
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([ritzYacht, localExperience]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
     render(<SignatureJourneysPage />);
@@ -169,7 +174,7 @@ describe('SignatureJourneysPage', () => {
   });
 
   it('filters the grid by the selected destination city', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue([ritzYacht, fsYacht]);
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([ritzYacht, fsYacht]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
@@ -191,7 +196,7 @@ describe('SignatureJourneysPage', () => {
   });
 
   it('shows an empty state when the selected city has no journeys', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue([ritzYacht]);
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([ritzYacht]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
@@ -207,7 +212,7 @@ describe('SignatureJourneysPage', () => {
   });
 
   it('renders the page-level empty state when there are no packages at all', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue([]);
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
     render(<SignatureJourneysPage />);
