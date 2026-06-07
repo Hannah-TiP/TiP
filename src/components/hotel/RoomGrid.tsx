@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Modal from '@/components/Modal';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { HotelRoom } from '@/types/hotel';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RoomGridProps {
   rooms: HotelRoom[];
@@ -12,6 +13,7 @@ interface RoomGridProps {
 }
 
 export default function RoomGrid({ rooms, fallbackImage }: RoomGridProps) {
+  const { t } = useLanguage();
   const [openRoomIndex, setOpenRoomIndex] = useState<number | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -79,7 +81,7 @@ export default function RoomGrid({ rooms, fallbackImage }: RoomGridProps) {
                     className="absolute bottom-2 right-2 rounded bg-black/60 px-2 py-1 text-xs text-white transition-colors hover:bg-black/80"
                     data-testid={`room-photo-badge-${index}`}
                   >
-                    View {imageCount} photos
+                    {t('hotel.room_view_photos').replace('{count}', String(imageCount))}
                   </button>
                 )}
               </div>
@@ -129,7 +131,7 @@ export default function RoomGrid({ rooms, fallbackImage }: RoomGridProps) {
                     type="button"
                     onClick={goToPrev}
                     className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
-                    aria-label="Previous image"
+                    aria-label={t('hotel.aria_previous_image')}
                     data-testid="room-photo-prev"
                   >
                     <svg
@@ -149,7 +151,7 @@ export default function RoomGrid({ rooms, fallbackImage }: RoomGridProps) {
                     type="button"
                     onClick={goToNext}
                     className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
-                    aria-label="Next image"
+                    aria-label={t('hotel.aria_next_image')}
                     data-testid="room-photo-next"
                   >
                     <svg

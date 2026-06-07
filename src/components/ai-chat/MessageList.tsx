@@ -84,7 +84,7 @@ export default function MessageList({
       {isLoading && (
         <div className="flex gap-3">
           <div className="h-8 px-3 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0 whitespace-nowrap">
-            Concierge
+            {t('chat.concierge_avatar')}
           </div>
           <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4">
             <div className="flex gap-2">

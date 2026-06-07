@@ -9,6 +9,7 @@ import {
   type ReviewWithAuthor,
 } from '@/types/review';
 import StarRating from '@/components/reviews/StarRating';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const PAGE_SIZE = 5;
 
@@ -25,6 +26,7 @@ function formatDate(dateStr: string | null): string | null {
 }
 
 function ReviewItem({ entry }: { entry: ReviewWithAuthor }) {
+  const { t } = useLanguage();
   const { review, author } = entry;
   const submittedAt = formatDate(review.created_at);
 
@@ -36,7 +38,7 @@ function ReviewItem({ entry }: { entry: ReviewWithAuthor }) {
             {reviewAuthorDisplayName(author)}
           </span>
           <span className="inline-flex items-center gap-1 rounded-full bg-green-dark/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-dark">
-            Verified stay
+            {t('reviews.verified_stay')}
           </span>
         </div>
         {submittedAt && <span className="text-[12px] text-gray-text">{submittedAt}</span>}
@@ -52,19 +54,20 @@ function ReviewItem({ entry }: { entry: ReviewWithAuthor }) {
 }
 
 export default function EntityReviews({ entityType, entityId }: EntityReviewsProps) {
+  const { t } = useLanguage();
   const [data, setData] = useState<ReviewListResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const load = useCallback(async () => {
     try {
       setIsLoading(true);
-      setError(null);
+      setHasError(false);
       const result = await apiClient.getReviewsByEntity(entityType, entityId);
       setData(result);
     } catch {
-      setError('Unable to load reviews right now.');
+      setHasError(true);
     } finally {
       setIsLoading(false);
     }
@@ -85,8 +88,8 @@ export default function EntityReviews({ entityType, entityId }: EntityReviewsPro
     );
   }
 
-  if (error) {
-    return <p className="text-[14px] text-gray-text">{error}</p>;
+  if (hasError) {
+    return <p className="text-[14px] text-gray-text">{t('reviews.load_error')}</p>;
   }
 
   const aggregate = data?.aggregate ?? { average_rating: null, review_count: 0 };
@@ -95,9 +98,9 @@ export default function EntityReviews({ entityType, entityId }: EntityReviewsPro
   if (reviews.length === 0) {
     return (
       <div className="border border-gray-border bg-white p-8 text-center">
-        <p className="font-primary text-[22px] italic text-green-dark">No reviews yet</p>
+        <p className="font-primary text-[22px] italic text-green-dark">{t('reviews.none_title')}</p>
         <p className="mt-3 text-[14px] leading-relaxed text-gray-text">
-          Be the first to share your experience after your stay.
+          {t('reviews.none_subtitle')}
         </p>
       </div>
     );
@@ -115,11 +118,13 @@ export default function EntityReviews({ entityType, entityId }: EntityReviewsPro
         </span>
         <div>
           {average !== null && (
-            <StarRating value={Math.round(average)} size="md" label="Average rating" />
+            <StarRating value={Math.round(average)} size="md" label={t('reviews.average_rating')} />
           )}
           <p className="mt-1 text-[13px] text-gray-text">
             {aggregate.review_count}{' '}
-            {aggregate.review_count === 1 ? 'verified review' : 'verified reviews'}
+            {aggregate.review_count === 1
+              ? t('reviews.verified_review_one')
+              : t('reviews.verified_review_other')}
           </p>
         </div>
       </div>
@@ -137,7 +142,7 @@ export default function EntityReviews({ entityType, entityId }: EntityReviewsPro
             onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
             className="rounded-full border border-green-dark px-6 py-2.5 text-[13px] font-semibold text-green-dark transition-colors hover:bg-green-dark hover:text-white"
           >
-            Load more reviews
+            {t('reviews.load_more')}
           </button>
         </div>
       )}

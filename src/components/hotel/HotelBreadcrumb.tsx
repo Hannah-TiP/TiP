@@ -13,7 +13,7 @@ export default function HotelBreadcrumb({ hotelName, cityLabel }: HotelBreadcrum
 
   return (
     <nav
-      aria-label="Breadcrumb"
+      aria-label={t('hotel.aria_breadcrumb')}
       className="border-b border-gray-border bg-gray-light px-10 py-3 text-[11px] uppercase tracking-[2px] text-gray-text"
     >
       <ol className="mx-auto flex max-w-7xl flex-wrap items-center gap-2">

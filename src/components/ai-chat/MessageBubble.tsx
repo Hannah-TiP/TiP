@@ -3,6 +3,7 @@
 import type { AIChatMessage, AIChatWidgetResponse } from '@/types/ai-chat';
 import WidgetRenderer from './widgets/WidgetRenderer';
 import WidgetResponseDisplay from './WidgetResponseDisplay';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
   hour: '2-digit',
@@ -43,6 +44,7 @@ export default function MessageBubble({
   onWidgetSubmit,
   widgetsDisabled,
 }: MessageBubbleProps) {
+  const { t } = useLanguage();
   const timestamp = formatTimestamp(message.sent_at ?? message.created_at);
   const widgets = message.widgets ?? [];
 
@@ -78,14 +80,14 @@ export default function MessageBubble({
                   <line x1="12" y1="19" x2="12" y2="23" />
                   <line x1="8" y1="23" x2="16" y2="23" />
                 </svg>
-                <span className="font-inter text-xs font-medium">Audio message</span>
+                <span className="font-inter text-xs font-medium">{t('chat.audio_message')}</span>
               </div>
               {message.content && (
                 <p className="font-inter text-sm whitespace-pre-wrap">{message.content}</p>
               )}
               <audio controls className="w-full mt-2">
                 <source src={message.media_url} />
-                Your browser does not support the audio element.
+                {t('chat.audio_unsupported')}
               </audio>
             </div>
           )}
@@ -113,14 +115,14 @@ export default function MessageBubble({
   const avatarClasses = isHumanConcierge
     ? 'w-8 h-8 rounded-full bg-[#C4956A] text-white flex items-center justify-center text-[10px] font-bold shrink-0'
     : 'h-8 px-3 rounded-full bg-[#1E3D2F] text-white flex items-center justify-center text-xs font-bold shrink-0 whitespace-nowrap';
-  const avatarLabel = isHumanConcierge ? 'CT' : 'Concierge';
+  const avatarLabel = isHumanConcierge ? 'CT' : t('chat.concierge_avatar');
 
   return (
     <div
       className="flex gap-3"
       data-testid={isHumanConcierge ? 'message-human-concierge' : undefined}
     >
-      <div className={avatarClasses} title={isHumanConcierge ? 'Concierge Team' : 'AI Concierge'}>
+      <div className={avatarClasses} title={isHumanConcierge ? t('chat.concierge_team') : t('chat.ai_concierge')}>
         {avatarLabel}
       </div>
       <div className="min-w-0 flex-1 max-w-[600px] break-words">
@@ -129,7 +131,7 @@ export default function MessageBubble({
             className="font-inter text-[10px] uppercase tracking-wider text-[#C4956A] font-semibold mb-1 ml-1"
             data-testid="concierge-team-badge"
           >
-            Concierge Team
+            {t('chat.concierge_team')}
           </div>
         )}
         {/* The text/audio bubble. Skipped for structured messages (e.g.
@@ -145,7 +147,7 @@ export default function MessageBubble({
               <div className="w-full">
                 <audio controls className="w-full">
                   <source src={message.media_url} />
-                  Your browser does not support the audio element.
+                  {t('chat.audio_unsupported')}
                 </audio>
               </div>
             )}

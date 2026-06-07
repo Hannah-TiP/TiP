@@ -1,5 +1,7 @@
 'use client';
 
+import { useLanguage } from '@/contexts/LanguageContext';
+
 interface StickyBookingBarProps {
   perksLabel: string;
   perksSubtitle?: string;
@@ -13,11 +15,12 @@ export default function StickyBookingBar({
   ctaLabel,
   onReserveClick,
 }: StickyBookingBarProps) {
+  const { t } = useLanguage();
   return (
     <div
       className="sticky top-0 z-40 flex flex-col items-center gap-3 bg-green-dark px-4 py-4 sm:flex-row sm:justify-between sm:gap-4 md:px-10"
       role="complementary"
-      aria-label="Booking summary"
+      aria-label={t('hotel.aria_booking_summary')}
     >
       <div className="text-center text-white sm:text-left">
         <p className="text-[12px] font-semibold uppercase tracking-[2px] text-gold">{perksLabel}</p>

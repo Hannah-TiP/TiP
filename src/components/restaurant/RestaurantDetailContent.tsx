@@ -3,17 +3,19 @@
 import Image from 'next/image';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Restaurant } from '@/types/restaurant';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RestaurantDetailContentProps {
   restaurant: Restaurant;
 }
 
 export default function RestaurantDetailContent({ restaurant }: RestaurantDetailContentProps) {
+  const { t } = useLanguage();
   const primaryRecognition = restaurant.recognitions?.[0];
   const badge =
     primaryRecognition?.source_type === 'michelin' && primaryRecognition.tier
       ? primaryRecognition.tier.replaceAll('_', ' ').toUpperCase()
-      : 'RESTAURANT';
+      : t('detail.restaurant_badge');
   const name = getLocalizedText(restaurant.name);
   const description = getLocalizedText(restaurant.description);
   const address = restaurant.address ? getLocalizedText(restaurant.address) : null;
@@ -51,7 +53,7 @@ export default function RestaurantDetailContent({ restaurant }: RestaurantDetail
       <section className="bg-white px-10 py-12">
         <div className="mx-auto max-w-4xl">
           <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-            ABOUT THIS RESTAURANT
+            {t('detail.about_restaurant')}
           </span>
           <h2 className="mt-3 font-primary text-[32px] italic leading-snug text-green-dark">
             {name}
@@ -64,7 +66,7 @@ export default function RestaurantDetailContent({ restaurant }: RestaurantDetail
               <p className="font-primary text-[28px] font-semibold text-green-dark">
                 {primaryRecognition.tier?.replaceAll('_', ' ') || primaryRecognition.source_type}
               </p>
-              <p className="text-[12px] text-gray-text">Recognition</p>
+              <p className="text-[12px] text-gray-text">{t('detail.recognition')}</p>
             </div>
           )}
         </div>
@@ -76,17 +78,17 @@ export default function RestaurantDetailContent({ restaurant }: RestaurantDetail
           <div className="mx-auto max-w-4xl">
             <div className="mb-8 text-center">
               <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-                PLAN YOUR VISIT
+                {t('detail.plan_your_visit')}
               </span>
               <h2 className="mt-3 font-primary text-[32px] italic text-green-dark">
-                Practical Information
+                {t('detail.practical_information')}
               </h2>
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {address && (
                 <div className="rounded-xl bg-white p-6 shadow-sm">
                   <span className="text-[11px] font-semibold tracking-[2px] text-gold">
-                    ADDRESS
+                    {t('detail.address')}
                   </span>
                   <p className="mt-3 text-[14px] leading-relaxed text-green-dark">{address}</p>
                 </div>
@@ -94,7 +96,7 @@ export default function RestaurantDetailContent({ restaurant }: RestaurantDetail
               {openingHours && (
                 <div className="rounded-xl bg-white p-6 shadow-sm">
                   <span className="text-[11px] font-semibold tracking-[2px] text-gold">
-                    OPENING HOURS
+                    {t('detail.opening_hours')}
                   </span>
                   <p className="mt-3 text-[14px] leading-relaxed text-green-dark">{openingHours}</p>
                 </div>

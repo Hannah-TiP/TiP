@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Modal from '@/components/Modal';
 import type { AIChatWidgetResponse } from '@/types/ai-chat';
 import { getImageUrl } from '@/types/common';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export interface EntityCarouselItem {
   id: number;
@@ -35,6 +36,7 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
   buildValue,
   testIdPrefix,
 }: EntityCarouselProps<TItem, TEntity>) {
+  const { t } = useLanguage();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [activeName, setActiveName] = useState<string | null>(null);
@@ -56,14 +58,16 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
       })
       .catch(() => {
         if (cancelled) return;
-        setPreviewError(`Could not load ${entityLabel.toLowerCase()} details. Please try again.`);
+        setPreviewError(
+          t('carousel.load_error').replace('{entity}', entityLabel.toLowerCase()),
+        );
         setPreviewLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [activeId, fetchEntity, entityLabel]);
+  }, [activeId, fetchEntity, entityLabel, t]);
 
   function handleCardClick(item: { id: number; name: string | null }) {
     if (disabled || selectedId !== null) return;
@@ -97,7 +101,9 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
     <>
       <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3">
         <p className="font-inter mb-3 text-xs text-gray-500">
-          Select {/^[aeiou]/i.test(entityLabel) ? 'an' : 'a'} {entityLabel.toLowerCase()}
+          {t('carousel.select_prompt')
+            .replace('{article}', /^[aeiou]/i.test(entityLabel) ? 'an' : 'a')
+            .replace('{entity}', entityLabel.toLowerCase())}
         </p>
         <div className="flex gap-3 overflow-x-auto pb-1">
           {items.map((item) => {
@@ -138,7 +144,7 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
-        ariaLabel={activeName ?? `${entityLabel} preview`}
+        ariaLabel={activeName ?? t('carousel.preview_label').replace('{entity}', entityLabel)}
       >
         {previewLoading && (
           <div
@@ -160,7 +166,7 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
               onClick={closeModal}
               className="rounded-full bg-[#1E3D2F] px-6 py-2 text-[13px] font-semibold text-white hover:opacity-90"
             >
-              Close
+              {t('carousel.close')}
             </button>
           </div>
         )}
@@ -175,7 +181,7 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
                 className="rounded-full border border-gray-300 px-6 py-2 text-[13px] font-semibold text-gray-700 hover:bg-gray-50"
                 data-testid={`${testIdPrefix}-preview-cancel`}
               >
-                Cancel
+                {t('carousel.cancel')}
               </button>
               <button
                 type="button"
