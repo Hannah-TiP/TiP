@@ -34,7 +34,7 @@ export default function MessageList({
 
   if (messages.length === 0 && !isLoading && !pendingMessage) {
     return (
-      <div className="flex-1 overflow-y-auto px-[60px] py-[32px] flex items-center justify-center">
+      <div className="flex-1 overflow-y-auto px-4 md:px-[60px] py-[32px] flex items-center justify-center">
         <div className="text-center text-gray-400">
           <p className="font-inter text-sm">{t('chat.no_messages')}</p>
         </div>
@@ -52,7 +52,7 @@ export default function MessageList({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-[60px] py-[32px] space-y-6">
+    <div className="flex-1 overflow-y-auto px-4 md:px-[60px] py-[32px] space-y-6">
       {messages.map((message, index) => {
         const isUser = message.role === 'user';
         const isLastAssistant = !isUser && index === lastAssistantIndex;
@@ -71,7 +71,7 @@ export default function MessageList({
 
       {pendingMessage && (
         <div className="flex flex-col items-end gap-1" data-testid="pending-message">
-          <div className="bg-[#1E3D2F] text-white rounded-2xl rounded-tr-sm px-5 py-4 max-w-[400px]">
+          <div className="bg-[#1E3D2F] text-white rounded-2xl rounded-tr-sm px-5 py-4 max-w-[280px] md:max-w-[400px] break-words">
             {pendingMessage.widget_response ? (
               <WidgetResponseDisplay response={pendingMessage.widget_response} />
             ) : pendingMessage.content ? (

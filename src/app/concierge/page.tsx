@@ -83,6 +83,10 @@ function ConciergeContent() {
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Mobile-only slide-over drawers (< md). On desktop the sidebar and trip
+  // panel live in the flex flow and these flags are inert.
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [mobileTripPanelOpen, setMobileTripPanelOpen] = useState(false);
   const [highlightedFields, setHighlightedFields] = useState<string[]>([]);
   const [highlightToken, setHighlightToken] = useState(0);
   const [pendingMessage, setPendingMessage] = useState<PendingMessage | null>(null);
@@ -94,6 +98,7 @@ function ConciergeContent() {
 
   const activeSession = sessions.find((item) => item.session.id === activeSessionId) ?? null;
   const tripDetail = activeSession?.tripDetail ?? null;
+  const activeTitle = tripDetail?.currentVersion?.title?.trim() || t('chat.new_trip');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -123,6 +128,26 @@ function ConciergeContent() {
     }, 1000);
     return () => window.clearInterval(id);
   }, [isHumanMode, activeTripId]);
+
+  // Lock body scroll while either mobile drawer is open, and close the open
+  // drawer on Escape (mirrors the Modal.tsx pattern).
+  const anyDrawerOpen = mobileSidebarOpen || mobileTripPanelOpen;
+  useEffect(() => {
+    if (!anyDrawerOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setMobileSidebarOpen(false);
+        setMobileTripPanelOpen(false);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [anyDrawerOpen]);
 
   async function hydrateTripDetail(tripId: number): Promise<TripWithVersion | null> {
     try {
@@ -511,7 +536,7 @@ function ConciergeContent() {
   return (
     <div className="flex h-[calc(100vh-3.5rem-1px)] flex-col bg-white">
       {error && (
-        <div className="bg-red-50 border-b border-red-200 px-[60px] py-3">
+        <div className="bg-red-50 border-b border-red-200 px-4 md:px-[60px] py-3">
           <div className="flex items-center justify-between">
             <p className="font-inter text-sm text-red-800">{error}</p>
             <button onClick={() => setError(null)} className="text-red-800 hover:text-red-900">
@@ -535,10 +560,12 @@ function ConciergeContent() {
       )}
 
       <div className="flex flex-1 overflow-hidden">
+        {/* Desktop sidebar — part of the flex flow at >= md only. On mobile it
+            is removed from the flow and surfaced as a slide-over drawer. */}
         {sidebarCollapsed && (
           <button
             onClick={() => setSidebarCollapsed(false)}
-            className="flex items-center justify-center w-8 bg-[#FAFAF8] border-r border-gray-100 hover:bg-gray-100 transition-colors"
+            className="hidden md:flex items-center justify-center w-8 bg-[#FAFAF8] border-r border-gray-100 hover:bg-gray-100 transition-colors"
             title="Expand sidebar"
           >
             <svg
@@ -558,16 +585,79 @@ function ConciergeContent() {
           </button>
         )}
 
-        <ConversationSidebar
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          onSelectSession={(sessionId) => selectSession(sessionId)}
-          onNewChat={handleNewChat}
-          isCollapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(true)}
-        />
+        <div className="hidden md:flex">
+          <ConversationSidebar
+            sessions={sessions}
+            activeSessionId={activeSessionId}
+            onSelectSession={(sessionId) => selectSession(sessionId)}
+            onNewChat={handleNewChat}
+            isCollapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(true)}
+          />
+        </div>
 
-        <div className="flex-1 flex flex-col border-r border-gray-100">
+        <div className="flex-1 flex flex-col border-r border-gray-100 min-w-0">
+          {/* Mobile toolbar (< md): sidebar toggle | active session title | trip-detail toggle */}
+          <div className="flex md:hidden items-center justify-between px-4 py-2 border-b border-gray-100">
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(true)}
+              aria-label={t('chat.open_conversations')}
+              data-testid="mobile-sidebar-toggle"
+              className="flex items-center justify-center min-w-[44px] min-h-[44px] -ml-2 text-gray-600 hover:text-[#1E3D2F] transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" />
+                <line x1="3" y1="12" x2="3.01" y2="12" />
+                <line x1="3" y1="18" x2="3.01" y2="18" />
+              </svg>
+            </button>
+            <span
+              className="font-inter text-sm font-medium text-[#1E3D2F] truncate px-2"
+              data-testid="mobile-toolbar-title"
+            >
+              {activeTitle}
+            </span>
+            <button
+              type="button"
+              onClick={() => setMobileTripPanelOpen(true)}
+              aria-label={t('chat.open_trip_details')}
+              data-testid="mobile-trip-panel-toggle"
+              className="flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2 text-gray-600 hover:text-[#1E3D2F] transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <line x1="10" y1="9" x2="8" y2="9" />
+              </svg>
+            </button>
+          </div>
+
           <MessageList
             messages={messages}
             isLoading={isLoading}
@@ -594,7 +684,7 @@ function ConciergeContent() {
           )}
           {activeSession?.session.status === 'human' && (
             <div
-              className="bg-[#FFF7E6] border-t border-[#FFD591] px-[60px] py-3 flex items-center gap-2"
+              className="bg-[#FFF7E6] border-t border-[#FFD591] px-4 md:px-[60px] py-3 flex items-center gap-2"
               data-testid="human-takeover-banner"
             >
               <span className="font-inter text-xs uppercase tracking-wider text-[#C4956A] font-semibold">
@@ -612,15 +702,127 @@ function ConciergeContent() {
           />
         </div>
 
-        <TripDetailPanel
-          tripDetail={tripDetail}
-          onSubmitTrip={
-            activeSession ? () => handleSendMessage(t('chat.submit_trip_message')) : undefined
-          }
-          isLoading={isLoading}
-          highlightedFields={highlightedFields}
-          highlightToken={highlightToken}
-        />
+        {/* Desktop trip detail panel — flex flow at >= md only. */}
+        <div className="hidden md:flex">
+          <TripDetailPanel
+            tripDetail={tripDetail}
+            onSubmitTrip={
+              activeSession ? () => handleSendMessage(t('chat.submit_trip_message')) : undefined
+            }
+            isLoading={isLoading}
+            highlightedFields={highlightedFields}
+            highlightToken={highlightToken}
+          />
+        </div>
+
+        {/* Mobile sidebar drawer (< md) — slides from the left. */}
+        {mobileSidebarOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-30 bg-black/30 md:hidden"
+              onClick={() => setMobileSidebarOpen(false)}
+              data-testid="mobile-sidebar-backdrop"
+            />
+            <div
+              className="fixed inset-y-0 left-0 z-40 flex w-[280px] max-w-[85%] flex-col bg-[#FAFAF8] shadow-xl transition-transform duration-300 ease-in-out md:hidden translate-x-0"
+              data-testid="mobile-sidebar-drawer"
+            >
+              <div className="flex justify-end px-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setMobileSidebarOpen(false)}
+                  aria-label={t('chat.close_conversations')}
+                  data-testid="mobile-sidebar-close"
+                  className="flex items-center justify-center min-w-[44px] min-h-[44px] text-gray-500 hover:text-gray-800 transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex min-h-0 flex-1 [&>div]:flex-1">
+                <ConversationSidebar
+                  sessions={sessions}
+                  activeSessionId={activeSessionId}
+                  onSelectSession={(sessionId) => {
+                    setMobileSidebarOpen(false);
+                    selectSession(sessionId);
+                  }}
+                  onNewChat={() => {
+                    setMobileSidebarOpen(false);
+                    handleNewChat();
+                  }}
+                  isCollapsed={false}
+                  onToggleCollapse={() => setMobileSidebarOpen(false)}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Mobile trip detail drawer (< md) — slides from the right. */}
+        {mobileTripPanelOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-30 bg-black/30 md:hidden"
+              onClick={() => setMobileTripPanelOpen(false)}
+              data-testid="mobile-trip-panel-backdrop"
+            />
+            <div
+              className="fixed inset-y-0 right-0 z-40 flex w-[85%] max-w-[420px] flex-col bg-[#FAFAF8] shadow-xl transition-transform duration-300 ease-in-out md:hidden translate-x-0"
+              data-testid="mobile-trip-panel-drawer"
+            >
+              <div className="flex justify-end px-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setMobileTripPanelOpen(false)}
+                  aria-label={t('chat.close_trip_details')}
+                  data-testid="mobile-trip-panel-close"
+                  className="flex items-center justify-center min-w-[44px] min-h-[44px] text-gray-500 hover:text-gray-800 transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex min-h-0 flex-1 [&>div]:flex-1">
+                <TripDetailPanel
+                  tripDetail={tripDetail}
+                  onSubmitTrip={
+                    activeSession
+                      ? () => handleSendMessage(t('chat.submit_trip_message'))
+                      : undefined
+                  }
+                  isLoading={isLoading}
+                  highlightedFields={highlightedFields}
+                  highlightToken={highlightToken}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
