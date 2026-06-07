@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { getTripsWithVersions, type TripWithVersion } from '@/lib/trip-utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const STATUS_PRIORITY = [
   'draft',
@@ -72,17 +73,18 @@ function LoadingSkeleton() {
 }
 
 function EmptyState() {
+  const { t } = useLanguage();
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 mt-8 mb-16">
       <div className="text-center py-24">
         <p className="text-5xl mb-6">✈️</p>
-        <h2 className="text-2xl font-bold text-gray-900 mb-3">No upcoming trips</h2>
-        <p className="text-gray-500 mb-8">Let our AI concierge craft your perfect journey.</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-3">{t('my_page.no_upcoming_trips')}</h2>
+        <p className="text-gray-500 mb-8">{t('my_page.no_upcoming_subtitle')}</p>
         <Link
           href="/concierge"
           className="inline-block px-8 py-3 bg-[#1E3D2F] text-white rounded-full text-sm font-medium hover:bg-[#2a5240] transition-colors"
         >
-          Plan a Trip
+          {t('my_page.plan_a_trip')}
         </Link>
       </div>
     </div>
@@ -90,6 +92,7 @@ function EmptyState() {
 }
 
 function HeroCard({ item }: { item: TripWithVersion }) {
+  const { t } = useLanguage();
   const title = item.currentVersion?.title?.trim() || 'New Trip';
   const startDate = item.currentVersion?.start_date || undefined;
   const endDate = item.currentVersion?.end_date || undefined;
@@ -110,7 +113,9 @@ function HeroCard({ item }: { item: TripWithVersion }) {
         </div>
         <div className="flex-1 p-6 md:p-10 text-white flex flex-col justify-center">
           <div className="flex items-center gap-3 mb-2">
-            <p className="text-sm uppercase tracking-widest text-white/60">Featured Trip</p>
+            <p className="text-sm uppercase tracking-widest text-white/60">
+              {t('my_page.featured_trip')}
+            </p>
             <span className={`text-xs font-semibold px-3 py-1 rounded-full ${statusColor}`}>
               {statusLabel}
             </span>
@@ -118,29 +123,29 @@ function HeroCard({ item }: { item: TripWithVersion }) {
           <h1 className="text-2xl md:text-4xl font-bold mb-4">{title}</h1>
           <div className="flex flex-wrap gap-8 text-sm">
             <div>
-              <p className="text-white/50">Dates</p>
+              <p className="text-white/50">{t('my_page.dates')}</p>
               <p className="font-semibold">
                 {formatDate(startDate)} – {formatDate(endDate)}
               </p>
             </div>
             {nights !== null && (
               <div>
-                <p className="text-white/50">Duration</p>
+                <p className="text-white/50">{t('my_page.duration')}</p>
                 <p className="font-semibold">
-                  {nights} {nights === 1 ? 'Night' : 'Nights'}
+                  {nights} {nights === 1 ? t('common.night') : t('common.nights')}
                 </p>
               </div>
             )}
             <div>
-              <p className="text-white/50">Travelers</p>
+              <p className="text-white/50">{t('my_page.travelers')}</p>
               <p className="font-semibold">
-                {adults} {adults === 1 ? 'Adult' : 'Adults'}
-                {kids ? `, ${kids} ${kids === 1 ? 'Kid' : 'Kids'}` : ''}
+                {adults} {adults === 1 ? t('common.adult') : t('common.adults')}
+                {kids ? `, ${kids} ${kids === 1 ? t('common.kid') : t('common.kids')}` : ''}
               </p>
             </div>
             {summary && (
               <div>
-                <p className="text-white/50">Summary</p>
+                <p className="text-white/50">{t('my_page.summary')}</p>
                 <p className="font-semibold">{summary}</p>
               </div>
             )}
@@ -191,6 +196,7 @@ function TripCard({ item }: { item: TripWithVersion }) {
 }
 
 export default function MyPageUpcomingTravels() {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [trips, setTrips] = useState<TripWithVersion[]>([]);
 
@@ -224,7 +230,9 @@ export default function MyPageUpcomingTravels() {
 
           {otherTrips.length > 0 && (
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Other Active Trips</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                {t('my_page.other_active_trips')}
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {otherTrips.map((item) => (
                   <TripCard key={item.trip.id} item={item} />

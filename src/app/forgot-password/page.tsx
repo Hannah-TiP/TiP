@@ -6,8 +6,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import PasswordInput from '@/components/PasswordInput';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 function ForgotPasswordForm() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<'email' | 'reset'>('email');
   // Pre-fill the email when arriving from the signup screen's "account
@@ -32,11 +34,11 @@ function ForgotPasswordForm() {
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || 'Failed to send code');
+        throw new Error(data.message || t('forgot.error_send_failed'));
       }
       setStep('reset');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send code');
+      setError(err instanceof Error ? err.message : t('forgot.error_send_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -45,7 +47,7 @@ function ForgotPasswordForm() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('forgot.error_passwords_mismatch'));
       return;
     }
 
@@ -65,7 +67,7 @@ function ForgotPasswordForm() {
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || 'Password reset failed');
+        throw new Error(data.message || t('forgot.error_reset_failed'));
       }
 
       // Step 2: Sign in via NextAuth to establish the session
@@ -74,11 +76,11 @@ function ForgotPasswordForm() {
         password: newPassword,
         redirect: false,
       });
-      if (result?.error) throw new Error('Failed to sign in after password reset');
+      if (result?.error) throw new Error(t('forgot.error_signin_after_reset'));
 
       window.location.href = '/my-page';
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Password reset failed');
+      setError(err instanceof Error ? err.message : t('forgot.error_reset_failed'));
       setIsLoading(false);
     }
   };
@@ -93,7 +95,7 @@ function ForgotPasswordForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
+            placeholder={t('forgot.email_placeholder')}
             required
             disabled={isLoading}
             className="w-full rounded-lg border border-gray-200 px-4 py-3"
@@ -104,7 +106,7 @@ function ForgotPasswordForm() {
             disabled={isLoading}
             className="h-12 w-full rounded-lg bg-green-dark text-white disabled:opacity-50"
           >
-            {isLoading ? 'Sending code...' : 'Send verification code'}
+            {isLoading ? t('forgot.sending_code') : t('forgot.send_code')}
           </button>
         </form>
       ) : (
@@ -115,7 +117,7 @@ function ForgotPasswordForm() {
             type="text"
             value={verificationCode}
             onChange={(e) => setVerificationCode(e.target.value)}
-            placeholder="Enter 6-digit code"
+            placeholder={t('forgot.code_placeholder')}
             required
             maxLength={6}
             disabled={isLoading}
@@ -125,7 +127,7 @@ function ForgotPasswordForm() {
           <PasswordInput
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="New password"
+            placeholder={t('forgot.new_password_placeholder')}
             required
             disabled={isLoading}
             className="w-full rounded-lg border border-gray-200 px-4 py-3"
@@ -134,7 +136,7 @@ function ForgotPasswordForm() {
           <PasswordInput
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm new password"
+            placeholder={t('forgot.confirm_password_placeholder')}
             required
             disabled={isLoading}
             className="w-full rounded-lg border border-gray-200 px-4 py-3"
@@ -145,14 +147,14 @@ function ForgotPasswordForm() {
             disabled={isLoading}
             className="h-12 w-full rounded-lg bg-green-dark text-white disabled:opacity-50"
           >
-            {isLoading ? 'Resetting...' : 'Reset password'}
+            {isLoading ? t('forgot.resetting') : t('forgot.reset_password')}
           </button>
         </form>
       )}
 
       <div className="border-t border-gray-100 bg-gray-50 px-8 py-4 text-center text-sm">
         <Link href="/sign-in" className="font-medium text-green-dark hover:underline">
-          Back to sign in
+          {t('forgot.back_to_sign_in')}
         </Link>
       </div>
     </div>
@@ -160,13 +162,14 @@ function ForgotPasswordForm() {
 }
 
 export default function ForgotPasswordPage() {
+  const { t } = useLanguage();
   return (
     <main className="flex min-h-screen flex-col bg-gray-light">
       <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-10">
         <Link href="/">
           <Image
             src="/bible_TIP_profil_400x400px.svg"
-            alt="TiP"
+            alt={t('forgot.logo_alt')}
             width={36}
             height={36}
             className="h-9"
@@ -176,8 +179,10 @@ export default function ForgotPasswordPage() {
 
       <div className="flex flex-1 flex-col items-center justify-center px-10">
         <div className="text-center">
-          <h1 className="font-primary text-[48px] italic text-green-dark">Reset your password</h1>
-          <p className="mt-2 text-gray-text">We&apos;ll send you a verification code</p>
+          <h1 className="font-primary text-[48px] italic text-green-dark">
+            {t('forgot.headline')}
+          </h1>
+          <p className="mt-2 text-gray-text">{t('forgot.subtitle')}</p>
         </div>
 
         {/* useSearchParams requires a Suspense boundary in App Router. */}

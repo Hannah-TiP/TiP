@@ -15,6 +15,7 @@ import {
 } from '@/lib/trip-utils';
 import { clearDraft, getDraft, isSkipped, saveDraft, setSkipped } from '@/lib/review-drafts';
 import type { Review } from '@/types/review';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SessionState {
   trip: TripWithVersion;
@@ -57,6 +58,7 @@ function seedValue(
 }
 
 export default function ReviewsPage() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const tripId = Number(id);
   const [state, setState] = useState<SessionState | null>(null);
@@ -87,11 +89,11 @@ export default function ReviewsPage() {
       setValues(nextValues);
       setItemErrors({});
     } catch {
-      setError('Failed to load trip details.');
+      setError(t('review_session.error_load'));
     } finally {
       setLoading(false);
     }
-  }, [tripId]);
+  }, [tripId, t]);
 
   useEffect(() => {
     load();
@@ -252,12 +254,12 @@ export default function ReviewsPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="mx-auto mt-8 max-w-4xl px-4 md:px-6 py-20 text-center text-gray-500">
-          <p>{error ?? 'Trip not found.'}</p>
+          <p>{error ?? t('review_session.error_not_found')}</p>
           <Link
             href="/my-page/travel-history"
             className="mt-4 inline-block text-sm text-[#1E3D2F] hover:underline"
           >
-            ← Back to Travel History
+            {t('trip_detail.back_to_travel_history')}
           </Link>
         </div>
       </div>
@@ -265,7 +267,7 @@ export default function ReviewsPage() {
   }
 
   const { trip, entities, reviewsByEntity } = state;
-  const destination = trip.currentVersion?.title?.trim() || 'Your Trip';
+  const destination = trip.currentVersion?.title?.trim() || t('review_session.your_trip');
   const submittedCount = entities.filter((e) => reviewsByEntity[entityKey(e)]).length;
 
   return (
@@ -275,24 +277,24 @@ export default function ReviewsPage() {
           href={`/my-page/travel-history/${trip.trip.id}`}
           className="mb-6 inline-block text-sm text-gray-500 hover:text-gray-900"
         >
-          ← Back to Trip
+          {t('review_session.back_to_trip')}
         </Link>
 
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Review Your Experience</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('review_session.title')}</h1>
           <p className="text-gray-500">{destination}</p>
           {entities.length > 0 && (
             <p className="mt-2 text-sm text-gray-500">
-              {submittedCount} of {entities.length} reviewed
+              {t('review_session.reviewed_count')
+                .replace('{done}', String(submittedCount))
+                .replace('{total}', String(entities.length))}
             </p>
           )}
         </div>
 
         {entities.length === 0 ? (
           <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
-            <p className="text-gray-500">
-              There are no TiP-listed hotels, restaurants, or activities to review on this trip.
-            </p>
+            <p className="text-gray-500">{t('review_session.no_items')}</p>
           </div>
         ) : (
           <>
@@ -323,12 +325,18 @@ export default function ReviewsPage() {
                 <div className="mb-4 text-sm">
                   {result.succeeded > 0 && (
                     <p className="text-green-700">
-                      {result.succeeded} review{result.succeeded === 1 ? '' : 's'} submitted.
+                      {(result.succeeded === 1
+                        ? t('review_session.submitted_one')
+                        : t('review_session.submitted_other')
+                      ).replace('{n}', String(result.succeeded))}
                     </p>
                   )}
                   {result.failed.length > 0 && (
                     <p className="text-red-600">
-                      Couldn’t submit: {result.failed.join(', ')}. See the items above.
+                      {t('review_session.submit_failed').replace(
+                        '{items}',
+                        result.failed.join(', '),
+                      )}
                     </p>
                   )}
                 </div>
@@ -336,8 +344,11 @@ export default function ReviewsPage() {
               <div className="flex items-center justify-between gap-4">
                 <p className="text-sm text-gray-500">
                   {eligibleEntities.length === 0
-                    ? 'Add a rating to an item to submit your reviews.'
-                    : `${eligibleEntities.length} ready to submit.`}
+                    ? t('review_session.add_rating_hint')
+                    : t('review_session.ready_to_submit').replace(
+                        '{n}',
+                        String(eligibleEntities.length),
+                      )}
                 </p>
                 <button
                   type="button"
@@ -345,7 +356,7 @@ export default function ReviewsPage() {
                   disabled={submitting || eligibleEntities.length === 0}
                   className="rounded-lg bg-[#1E3D2F] px-6 py-2.5 text-sm text-white transition hover:bg-[#163024] disabled:opacity-50"
                 >
-                  {submitting ? 'Submitting…' : 'Submit Reviews'}
+                  {submitting ? t('review_session.submitting') : t('review_session.submit_reviews')}
                 </button>
               </div>
             </div>

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface WishlistButtonProps {
   hotelId: number;
@@ -15,6 +16,7 @@ export default function WishlistButton({
   size = 'md',
 }: WishlistButtonProps) {
   const { wishlistIds, toggleWishlist } = useUser();
+  const { t } = useLanguage();
   const [isAnimating, setIsAnimating] = useState(false);
   const isWishlisted = wishlistIds.has(hotelId);
 
@@ -47,8 +49,8 @@ export default function WishlistButton({
     <button
       onClick={handleClick}
       className={`${sizeClasses[size]} flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all duration-200 shadow-sm hover:shadow-md ${className}`}
-      aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-      title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+      aria-label={isWishlisted ? t('wishlist.remove') : t('wishlist.add')}
+      title={isWishlisted ? t('wishlist.remove') : t('wishlist.add')}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

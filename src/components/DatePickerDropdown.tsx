@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DatePickerDropdownProps {
   checkIn: string;
@@ -35,6 +36,7 @@ export default function DatePickerDropdown({
   onClose,
   mobile = false,
 }: DatePickerDropdownProps) {
+  const { t } = useLanguage();
   const ref = useRef<HTMLDivElement>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -178,9 +180,11 @@ export default function DatePickerDropdown({
           className={`flex-1 rounded-lg border p-3 ${selectingCheckIn ? 'border-green-dark' : 'border-gray-200'}`}
           onClick={() => setSelectingCheckIn(true)}
         >
-          <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">CHECK-IN</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+            {t('date_picker.check_in')}
+          </p>
           <p className="text-[14px] font-medium text-green-dark">
-            {tempCheckIn ? formatDisplayDate(tempCheckIn) : 'Select date'}
+            {tempCheckIn ? formatDisplayDate(tempCheckIn) : t('date_picker.select_date')}
           </p>
         </div>
         <span className="text-gray-300">→</span>
@@ -189,10 +193,10 @@ export default function DatePickerDropdown({
           onClick={() => setSelectingCheckIn(false)}
         >
           <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
-            CHECK-OUT
+            {t('date_picker.check_out')}
           </p>
           <p className="text-[14px] font-medium text-green-dark">
-            {tempCheckOut ? formatDisplayDate(tempCheckOut) : 'Select date'}
+            {tempCheckOut ? formatDisplayDate(tempCheckOut) : t('date_picker.select_date')}
           </p>
         </div>
       </div>
@@ -269,13 +273,13 @@ export default function DatePickerDropdown({
           }}
           className="text-[13px] font-medium text-gray-500 hover:text-gray-700"
         >
-          Clear dates
+          {t('date_picker.clear_dates')}
         </button>
         <button
           onClick={onClose}
           className="rounded-lg bg-green-dark px-6 py-2 text-[13px] font-semibold text-white hover:opacity-90"
         >
-          Done
+          {t('date_picker.done')}
         </button>
       </div>
     </div>

@@ -114,7 +114,7 @@ export default function BookingCard({
   const resolvedBenefitsTitle = benefitsTitle ?? t('hotel.booking_benefits_title');
 
   return (
-    <aside aria-label="Booking card" className="lg:sticky lg:top-24">
+    <aside aria-label={t('hotel.aria_booking_card')} className="lg:sticky lg:top-24">
       <div className="border border-gray-border bg-white p-4 sm:p-7">
         <p className="font-primary text-[22px] italic text-green-dark">
           {t('hotel.booking_card_reserve_title')} {hotelName}

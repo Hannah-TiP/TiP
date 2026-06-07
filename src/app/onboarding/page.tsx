@@ -8,6 +8,7 @@ import { apiClient } from '@/lib/api-client';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import type { User } from '@/types/auth';
 import type { MyReferralsResponse } from '@/types/stay-credit';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const TRAVEL_STYLES = [
   { value: 'Solo Retreat', icon: '\u{1F9D8}', description: 'Peaceful, personal time' },
@@ -50,6 +51,7 @@ function getStartStep(profile: User): number {
 }
 
 function OnboardingFlow() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   // ?ref= is carried through after signup so the referral step can prefill.
@@ -147,7 +149,7 @@ function OnboardingFlow() {
       // Step 5 is saved in handleComplete
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
+      setError(err instanceof Error ? err.message : t('onboarding.error_save_failed'));
       return false;
     } finally {
       setIsSaving(false);
@@ -165,22 +167,22 @@ function OnboardingFlow() {
       });
       router.push('/my-page');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError(err instanceof Error ? err.message : t('onboarding.error_generic'));
       setIsLoading(false);
     }
   }
 
   async function handleNext() {
     if (step === 1 && referralCode && !REFERRAL_CODE_PATTERN.test(referralCode)) {
-      setError('Referral code must be letters and numbers, 4–16 characters.');
+      setError(t('onboarding.error_referral_format'));
       return;
     }
     if (step === 2 && (!firstName.trim() || !lastName.trim())) {
-      setError('Please enter your first and last name');
+      setError(t('onboarding.error_name_required'));
       return;
     }
     if (step === 3 && !cityId) {
-      setError('Please select your city');
+      setError(t('onboarding.error_city_required'));
       return;
     }
     setError('');
@@ -246,7 +248,7 @@ function OnboardingFlow() {
         <Link href="/">
           <Image
             src="/bible_TIP_profil_400x400px.svg"
-            alt="TiP"
+            alt={t('onboarding.logo_alt')}
             className="h-9"
             width={36}
             height={36}
@@ -274,12 +276,12 @@ function OnboardingFlow() {
             <div className="flex flex-col gap-6">
               <div className="text-center">
                 <h1 className="font-primary text-[28px] italic text-green-dark md:text-[36px]">
-                  {referredBy ? "You're invited" : 'Were you invited?'}
+                  {referredBy
+                    ? t('onboarding.invited_title_yes')
+                    : t('onboarding.invited_title_no')}
                 </h1>
                 <p className="mt-2 text-gray-text">
-                  {referredBy
-                    ? 'Welcome to TiP — your stay credit has been added to your account.'
-                    : 'If a TiP member shared a code with you, your stay credit will be applied to your account.'}
+                  {referredBy ? t('onboarding.invited_body_yes') : t('onboarding.invited_body_no')}
                 </p>
               </div>
 
@@ -287,28 +289,28 @@ function OnboardingFlow() {
                 {referredBy ? (
                   <div className="text-center">
                     <span className="text-[11px] font-semibold uppercase tracking-[3px] text-[#C4956A]">
-                      Invitation received
+                      {t('onboarding.invitation_received')}
                     </span>
                     <div className="mt-2 text-sm text-gray-text">
-                      Continue to set up your profile.
+                      {t('onboarding.continue_setup')}
                     </div>
                   </div>
                 ) : (
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                      Referral code (optional)
+                      {t('onboarding.referral_label')}
                     </label>
                     <input
                       type="text"
                       value={referralCode}
                       onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                      placeholder="ABCD1234"
+                      placeholder={t('onboarding.referral_placeholder')}
                       maxLength={16}
                       className={`${inputClass} font-mono tracking-[2px]`}
                       autoFocus
                     />
                     <p className="mt-2 text-xs text-gray-400">
-                      You can skip this step if you don&apos;t have a code.
+                      {t('onboarding.referral_skip_hint')}
                     </p>
                   </div>
                 )}
@@ -321,37 +323,35 @@ function OnboardingFlow() {
             <div className="flex flex-col gap-6">
               <div className="text-center">
                 <h1 className="font-primary text-[28px] italic text-green-dark md:text-[36px]">
-                  Welcome to TiP
+                  {t('onboarding.name_title')}
                 </h1>
-                <p className="mt-2 text-gray-text">
-                  Let&apos;s get to know you so we can personalize your travel experience.
-                </p>
+                <p className="mt-2 text-gray-text">{t('onboarding.name_subtitle')}</p>
               </div>
 
               <div className="mt-4 rounded-xl bg-white p-6 shadow-lg md:p-8">
                 <div className="flex flex-col gap-4">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                      First Name
+                      {t('onboarding.first_name')}
                     </label>
                     <input
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Enter your first name"
+                      placeholder={t('onboarding.first_name_placeholder')}
                       className={inputClass}
                       autoFocus
                     />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                      Last Name
+                      {t('onboarding.last_name')}
                     </label>
                     <input
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Enter your last name"
+                      placeholder={t('onboarding.last_name_placeholder')}
                       className={inputClass}
                     />
                   </div>
@@ -365,22 +365,20 @@ function OnboardingFlow() {
             <div className="flex flex-col gap-6">
               <div className="text-center">
                 <h1 className="font-primary text-[28px] italic text-green-dark md:text-[36px]">
-                  Where do you call home?
+                  {t('onboarding.location_title')}
                 </h1>
-                <p className="mt-2 text-gray-text">
-                  This helps us personalize recommendations around the city you know best.
-                </p>
+                <p className="mt-2 text-gray-text">{t('onboarding.location_subtitle')}</p>
               </div>
 
               <div className="mt-4 rounded-xl bg-white p-6 shadow-lg md:p-8">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                    Home City
+                    {t('onboarding.home_city')}
                   </label>
                   <CityAutocomplete
                     value={cityId}
                     onChange={(id) => setCityId(id)}
-                    placeholder="Search your city..."
+                    placeholder={t('onboarding.city_placeholder')}
                   />
                 </div>
               </div>
@@ -392,24 +390,25 @@ function OnboardingFlow() {
             <div className="flex flex-col gap-6">
               <div className="text-center">
                 <h1 className="font-primary text-[28px] italic text-green-dark md:text-[36px]">
-                  When&apos;s your birthday?
+                  {t('onboarding.birthday_title')}
                 </h1>
                 <p className="mt-2 text-sm leading-relaxed text-gray-text">
-                  Our members receive a special birthday surprise each year. Don&apos;t miss out on
-                  your personalized gift.
+                  {t('onboarding.birthday_subtitle')}
                 </p>
               </div>
 
               <div className="mt-4 rounded-xl bg-white p-6 shadow-lg md:p-8">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700">Month</label>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                      {t('onboarding.month')}
+                    </label>
                     <select
                       value={birthMonth}
                       onChange={(e) => setBirthMonth(e.target.value)}
                       className={selectClass}
                     >
-                      <option value="">Month</option>
+                      <option value="">{t('onboarding.month')}</option>
                       {months.map((m) => (
                         <option key={m} value={m}>
                           {new Date(2000, m - 1).toLocaleString('en', { month: 'long' })}
@@ -418,13 +417,15 @@ function OnboardingFlow() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700">Day</label>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                      {t('onboarding.day')}
+                    </label>
                     <select
                       value={birthDay}
                       onChange={(e) => setBirthDay(e.target.value)}
                       className={selectClass}
                     >
-                      <option value="">Day</option>
+                      <option value="">{t('onboarding.day')}</option>
                       {days.map((d) => (
                         <option key={d} value={d}>
                           {d}
@@ -433,13 +434,15 @@ function OnboardingFlow() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700">Year</label>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                      {t('onboarding.year')}
+                    </label>
                     <select
                       value={birthYear}
                       onChange={(e) => setBirthYear(e.target.value)}
                       className={selectClass}
                     >
-                      <option value="">Year</option>
+                      <option value="">{t('onboarding.year')}</option>
                       {years.map((y) => (
                         <option key={y} value={y}>
                           {y}
@@ -449,7 +452,7 @@ function OnboardingFlow() {
                   </div>
                 </div>
                 <p className="mt-4 text-center text-xs text-gray-400">
-                  This is optional &mdash; but we&apos;d love to celebrate with you.
+                  {t('onboarding.birthday_optional_hint')}
                 </p>
               </div>
             </div>
@@ -460,11 +463,9 @@ function OnboardingFlow() {
             <div className="flex flex-col gap-6">
               <div className="text-center">
                 <h1 className="font-primary text-[28px] italic text-green-dark md:text-[36px]">
-                  How do you love to travel?
+                  {t('onboarding.travel_title')}
                 </h1>
-                <p className="mt-2 text-gray-text">
-                  Pick as many as you like &mdash; we&apos;ll tailor recommendations to your style.
-                </p>
+                <p className="mt-2 text-gray-text">{t('onboarding.travel_subtitle')}</p>
               </div>
 
               <div className="mt-4 rounded-xl bg-white p-6 shadow-lg md:p-8">
@@ -509,7 +510,7 @@ function OnboardingFlow() {
                   onClick={handleBack}
                   className="text-sm font-medium text-gray-text hover:text-green-dark"
                 >
-                  Back
+                  {t('onboarding.back')}
                 </button>
               )}
             </div>
@@ -521,7 +522,7 @@ function OnboardingFlow() {
                   disabled={saving}
                   className="px-6 py-3 text-sm font-medium text-gray-text hover:text-green-dark disabled:opacity-50"
                 >
-                  Skip
+                  {t('onboarding.skip')}
                 </button>
               )}
               <button
@@ -529,7 +530,11 @@ function OnboardingFlow() {
                 disabled={saving}
                 className="h-12 rounded-full bg-green-dark px-8 text-sm font-medium text-white transition hover:bg-[#163024] disabled:opacity-50"
               >
-                {saving ? 'Saving...' : step === TOTAL_STEPS ? 'Get Started' : 'Continue'}
+                {saving
+                  ? t('onboarding.saving')
+                  : step === TOTAL_STEPS
+                    ? t('onboarding.get_started')
+                    : t('onboarding.continue')}
               </button>
             </div>
           </div>

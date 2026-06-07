@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ const FOCUSABLE_SELECTOR =
   'a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export default function Modal({ isOpen, onClose, children, ariaLabel }: ModalProps) {
+  const { t } = useLanguage();
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // ESC to close
@@ -107,7 +109,7 @@ export default function Modal({ isOpen, onClose, children, ariaLabel }: ModalPro
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t('common.close')}
           className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200"
           data-testid="modal-close"
         >

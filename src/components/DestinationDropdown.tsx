@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { getLocalizedText } from '@/types/common';
 import type { City } from '@/types/location';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DestinationDropdownProps {
   value: string;
@@ -19,23 +20,24 @@ export default function DestinationDropdown({
   onClose,
   mobile = false,
 }: DestinationDropdownProps) {
+  const { t } = useLanguage();
   const ref = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState(value);
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   // Fetch cities from API
   useEffect(() => {
     async function fetchCities() {
       try {
         setLoading(true);
-        setError(null);
+        setHasError(false);
         const citiesData = await apiClient.getCities('en');
         setCities(citiesData);
       } catch (err) {
         console.error('Failed to fetch cities:', err);
-        setError('Failed to load destinations');
+        setHasError(true);
       } finally {
         setLoading(false);
       }
@@ -71,7 +73,7 @@ export default function DestinationDropdown({
           <span className="icon-lucide text-gray-400">&#xe8b6;</span>
           <input
             type="text"
-            placeholder="Search destinations..."
+            placeholder={t('destination.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 bg-transparent text-[14px] text-green-dark outline-none placeholder:text-gray-400"
@@ -86,20 +88,20 @@ export default function DestinationDropdown({
           <div className="flex items-center justify-center py-8">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-green-dark border-t-transparent"></div>
           </div>
-        ) : error ? (
+        ) : hasError ? (
           <div className="px-3 py-4 text-center">
-            <p className="text-[13px] text-red-500">{error}</p>
+            <p className="text-[13px] text-red-500">{t('destination.load_error')}</p>
             <button
               onClick={() => window.location.reload()}
               className="mt-2 text-[12px] text-green-dark underline hover:no-underline"
             >
-              Retry
+              {t('destination.retry')}
             </button>
           </div>
         ) : (
           <>
             <p className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-400">
-              Destinations
+              {t('destination.title')}
             </p>
             {filteredDestinations.map((city) => (
               <button
@@ -117,7 +119,7 @@ export default function DestinationDropdown({
             ))}
             {filteredDestinations.length === 0 && !loading && (
               <p className="px-3 py-4 text-center text-[13px] text-gray-500">
-                No destinations found
+                {t('destination.no_results')}
               </p>
             )}
           </>

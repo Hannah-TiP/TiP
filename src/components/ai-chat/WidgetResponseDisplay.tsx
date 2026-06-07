@@ -1,6 +1,7 @@
 'use client';
 
 import type { AIChatWidgetResponse } from '@/types/ai-chat';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface WidgetResponseDisplayProps {
   response: AIChatWidgetResponse;
@@ -25,6 +26,7 @@ function capitalize(str: string): string {
 }
 
 export default function WidgetResponseDisplay({ response }: WidgetResponseDisplayProps) {
+  const { t } = useLanguage();
   switch (response.widget_type) {
     case 'date_range_picker': {
       const start = response.value.start_date ?? null;
@@ -32,7 +34,7 @@ export default function WidgetResponseDisplay({ response }: WidgetResponseDispla
       const label =
         start && end
           ? `${formatDateLabel(start)} \u2013 ${formatDateLabel(end)}`
-          : 'Dates selected';
+          : t('widget.dates_selected');
       return (
         <div className="flex items-center gap-2" data-testid="widget-response-date-range">
           <svg
@@ -61,7 +63,7 @@ export default function WidgetResponseDisplay({ response }: WidgetResponseDispla
       if (entries.length === 0) {
         return (
           <span className="font-inter text-sm" data-testid="widget-response-number-stepper">
-            Travelers selected
+            {t('widget.travelers_selected')}
           </span>
         );
       }
@@ -91,7 +93,8 @@ export default function WidgetResponseDisplay({ response }: WidgetResponseDispla
     case 'hotel_carousel': {
       const hotelId = response.value.hotel_id;
       const hotelName = response.value.name;
-      const label = hotelName ?? (hotelId != null ? `Hotel ${hotelId}` : 'Hotel selected');
+      const label =
+        hotelName ?? (hotelId != null ? `Hotel ${hotelId}` : t('widget.hotel_selected'));
       return (
         <div className="flex items-center gap-2" data-testid="widget-response-hotel-carousel">
           <svg

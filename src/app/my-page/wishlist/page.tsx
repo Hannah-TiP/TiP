@@ -8,6 +8,7 @@ import WishlistButton from '@/components/WishlistButton';
 import { apiClient } from '@/lib/api-client';
 import { getLocalizedText } from '@/types/common';
 import { getHotelImages, type Hotel } from '@/types/hotel';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 function LoadingSkeleton() {
   return (
@@ -23,6 +24,7 @@ function LoadingSkeleton() {
 }
 
 function EmptyState() {
+  const { t } = useLanguage();
   return (
     <div className="mx-auto max-w-7xl px-4 md:px-6 py-12">
       <div className="text-center py-24">
@@ -41,16 +43,14 @@ function EmptyState() {
           />
         </svg>
         <h2 className="mt-6 font-primary text-[32px] italic text-green-dark">
-          Your wishlist is empty
+          {t('wishlist.empty_title')}
         </h2>
-        <p className="mt-3 text-[15px] text-gray-text">
-          Save hotels you love by tapping the heart icon on any hotel.
-        </p>
+        <p className="mt-3 text-[15px] text-gray-text">{t('wishlist.empty_subtitle')}</p>
         <Link
           href="/dream-hotels"
           className="mt-8 inline-block rounded-full bg-green-dark px-8 py-3 text-[13px] font-semibold tracking-wider text-white transition-colors hover:bg-green-dark/90"
         >
-          EXPLORE HOTELS
+          {t('wishlist.explore_hotels')}
         </Link>
       </div>
     </div>
@@ -58,6 +58,7 @@ function EmptyState() {
 }
 
 export default function WishlistPage() {
+  const { t } = useLanguage();
   const [items, setItems] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -78,8 +79,8 @@ export default function WishlistPage() {
   return (
     <main className="min-h-screen bg-gray-light">
       <div className="mx-auto max-w-7xl px-4 md:px-6 pt-8 pb-4">
-        <h1 className="font-primary text-[42px] italic text-green-dark">My Wishlist</h1>
-        <p className="mt-2 text-[15px] text-gray-text">Hotels you have saved for future travels.</p>
+        <h1 className="font-primary text-[42px] italic text-green-dark">{t('wishlist.title')}</h1>
+        <p className="mt-2 text-[15px] text-gray-text">{t('wishlist.subtitle')}</p>
       </div>
 
       {isLoading ? (
@@ -111,7 +112,7 @@ export default function WishlistPage() {
                     </div>
                     {item.star_rating && (
                       <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
-                        {item.star_rating} STAR
+                        {item.star_rating} {t('wishlist.star_unit')}
                       </div>
                     )}
                   </div>

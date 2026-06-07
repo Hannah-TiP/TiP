@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import PasswordInput from '@/components/PasswordInput';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
@@ -16,6 +17,7 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{4,16}$/i;
 
 function RegisterForm() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const rawRef = searchParams?.get('ref') ?? '';
   const referralCode = REFERRAL_CODE_PATTERN.test(rawRef) ? rawRef.toUpperCase() : '';
@@ -49,7 +51,7 @@ function RegisterForm() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || 'Google sign-up failed');
+        throw new Error(data.message || t('register.error_google_failed'));
       }
 
       const { data } = await res.json();
@@ -61,7 +63,7 @@ function RegisterForm() {
       });
 
       if (result?.error) {
-        throw new Error('Failed to establish session');
+        throw new Error(t('register.error_session_failed'));
       }
 
       // Forward the referral code into onboarding so the new step can
@@ -73,7 +75,7 @@ function RegisterForm() {
         ? `/onboarding?ref=${encodeURIComponent(referralCode)}`
         : '/onboarding';
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Google sign-up failed');
+      setError(err instanceof Error ? err.message : t('register.error_google_failed'));
       setIsLoading(false);
     }
   };
@@ -81,11 +83,11 @@ function RegisterForm() {
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('register.error_passwords_mismatch'));
       return;
     }
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('register.error_password_too_short'));
       return;
     }
 
@@ -109,11 +111,11 @@ function RegisterForm() {
       }
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || 'Failed to send verification code');
+        throw new Error(data.message || t('register.error_send_code_failed'));
       }
       setStep('verify');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send verification code');
+      setError(err instanceof Error ? err.message : t('register.error_send_code_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -137,7 +139,7 @@ function RegisterForm() {
       });
       if (!verifyRes.ok) {
         const data = await verifyRes.json();
-        throw new Error(data.message || 'Invalid verification code');
+        throw new Error(data.message || t('register.error_invalid_code'));
       }
 
       // Step 2: Register via backend
@@ -162,7 +164,7 @@ function RegisterForm() {
       }
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || 'Registration failed');
+        throw new Error(data.message || t('register.error_registration_failed'));
       }
 
       // Step 3: Sign in via NextAuth to establish the session
@@ -171,7 +173,7 @@ function RegisterForm() {
         password,
         redirect: false,
       });
-      if (result?.error) throw new Error('Failed to sign in after registration');
+      if (result?.error) throw new Error(t('register.error_signin_after_register'));
 
       // Forward the referral code into onboarding so the new step can
       // prefill it and attempt the claim from there. For email signups the
@@ -182,7 +184,7 @@ function RegisterForm() {
         ? `/onboarding?ref=${encodeURIComponent(referralCode)}`
         : '/onboarding';
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      setError(err instanceof Error ? err.message : t('register.error_registration_failed'));
       setIsLoading(false);
     }
   };
@@ -191,33 +193,34 @@ function RegisterForm() {
     <div className="mt-8 w-full max-w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
       {referralCode && (
         <div className="border-b border-gold/30 bg-gold/10 px-6 py-3 text-center text-sm text-green-dark md:px-8">
-          Invited by <span className="font-mono font-semibold">{referralCode}</span> — your stay
-          credit will be applied when you join.
+          {t('register.invited_by_prefix')}
+          <span className="font-mono font-semibold">{referralCode}</span>
+          {t('register.invited_by_suffix')}
         </div>
       )}
       {step === 'email' && accountExists ? (
         <div className="flex flex-col gap-5 p-6 md:p-8" data-testid="account-exists-panel">
-          <h2 className="text-center text-[20px] font-semibold text-green-dark">Sign up</h2>
+          <h2 className="text-center text-[20px] font-semibold text-green-dark">
+            {t('register.sign_up')}
+          </h2>
 
           <div className="rounded-lg bg-gold/10 p-4 text-center text-sm">
-            <p className="font-medium text-green-dark">This email is already registered.</p>
-            <p className="mt-1 text-gray-text">
-              Sign in instead, or reset your password if you&apos;ve forgotten it.
-            </p>
+            <p className="font-medium text-green-dark">{t('register.account_exists_title')}</p>
+            <p className="mt-1 text-gray-text">{t('register.account_exists_body')}</p>
           </div>
 
           <Link
             href={`/sign-in?email=${encodeURIComponent(email)}`}
             className="flex h-12 w-full items-center justify-center rounded-lg bg-green-dark text-white"
           >
-            Sign in
+            {t('register.sign_in')}
           </Link>
 
           <Link
             href={`/forgot-password?email=${encodeURIComponent(email)}`}
             className="flex h-12 w-full items-center justify-center rounded-lg border border-green-dark text-green-dark"
           >
-            Reset password
+            {t('register.reset_password')}
           </Link>
 
           <button
@@ -230,12 +233,14 @@ function RegisterForm() {
             }}
             className="text-sm text-green-dark hover:underline"
           >
-            Use a different email
+            {t('register.use_different_email')}
           </button>
         </div>
       ) : step === 'email' ? (
         <div className="flex flex-col gap-6 p-6 md:p-8">
-          <h2 className="text-center text-[20px] font-semibold text-green-dark">Sign up</h2>
+          <h2 className="text-center text-[20px] font-semibold text-green-dark">
+            {t('register.sign_up')}
+          </h2>
 
           {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
@@ -244,7 +249,7 @@ function RegisterForm() {
               <div className="flex justify-center">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
-                  onError={() => setError('Google sign-up failed')}
+                  onError={() => setError(t('register.error_google_failed'))}
                   size="large"
                   width="356"
                   text="continue_with"
@@ -253,7 +258,7 @@ function RegisterForm() {
 
               <div className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-gray-200" />
-                <span className="text-xs text-gray-text">or</span>
+                <span className="text-xs text-gray-text">{t('register.or')}</span>
                 <div className="h-px flex-1 bg-gray-200" />
               </div>
             </>
@@ -264,7 +269,7 @@ function RegisterForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              placeholder={t('register.email_placeholder')}
               required
               disabled={isLoading}
               className="w-full rounded-lg border border-gray-200 px-4 py-3"
@@ -273,7 +278,7 @@ function RegisterForm() {
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a password"
+              placeholder={t('register.create_password_placeholder')}
               required
               disabled={isLoading}
               className="w-full rounded-lg border border-gray-200 px-4 py-3"
@@ -282,7 +287,7 @@ function RegisterForm() {
             <PasswordInput
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm password"
+              placeholder={t('register.confirm_password_placeholder')}
               required
               disabled={isLoading}
               className="w-full rounded-lg border border-gray-200 px-4 py-3"
@@ -293,18 +298,19 @@ function RegisterForm() {
               disabled={isLoading}
               className="h-12 w-full rounded-lg bg-green-dark text-white disabled:opacity-50"
             >
-              {isLoading ? 'Sending code...' : 'Send verification code'}
+              {isLoading ? t('register.sending_code') : t('register.send_code')}
             </button>
           </form>
         </div>
       ) : (
         <form onSubmit={handleRegister} className="flex flex-col gap-6 p-6 md:p-8">
           <h2 className="text-center text-[20px] font-semibold text-green-dark">
-            Verify your email
+            {t('register.verify_title')}
           </h2>
 
           <p className="text-center text-sm text-gray-text">
-            We sent a 6-digit code to <strong>{email}</strong>
+            {t('register.code_sent_prefix')}
+            <strong>{email}</strong>
           </p>
 
           {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
@@ -313,7 +319,7 @@ function RegisterForm() {
             type="text"
             value={verificationCode}
             onChange={(e) => setVerificationCode(e.target.value)}
-            placeholder="Enter 6-digit code"
+            placeholder={t('register.code_placeholder')}
             required
             maxLength={6}
             disabled={isLoading}
@@ -325,7 +331,7 @@ function RegisterForm() {
             disabled={isLoading}
             className="h-12 w-full rounded-lg bg-green-dark text-white disabled:opacity-50"
           >
-            {isLoading ? 'Creating account...' : 'Complete registration'}
+            {isLoading ? t('register.creating_account') : t('register.complete_registration')}
           </button>
 
           <button
@@ -333,15 +339,15 @@ function RegisterForm() {
             onClick={() => setStep('email')}
             className="text-sm text-green-dark hover:underline"
           >
-            Change email
+            {t('register.change_email')}
           </button>
         </form>
       )}
 
       <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 text-center text-sm md:px-8">
-        <span className="text-gray-text">Already have an account? </span>
+        <span className="text-gray-text">{t('register.already_have_account')}</span>
         <Link href="/sign-in" className="font-medium text-green-dark hover:underline">
-          Sign in
+          {t('register.sign_in')}
         </Link>
       </div>
     </div>
@@ -349,6 +355,7 @@ function RegisterForm() {
 }
 
 export default function RegisterPage() {
+  const { t } = useLanguage();
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <main className="flex min-h-screen flex-col bg-gray-light">
@@ -356,7 +363,7 @@ export default function RegisterPage() {
           <Link href="/">
             <Image
               src="/bible_TIP_profil_400x400px.svg"
-              alt="TiP"
+              alt={t('register.logo_alt')}
               className="h-9"
               width={36}
               height={36}
@@ -367,11 +374,9 @@ export default function RegisterPage() {
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 md:px-10">
           <div className="text-center">
             <h1 className="font-primary text-[32px] italic text-green-dark md:text-[48px]">
-              Create your account
+              {t('register.headline')}
             </h1>
-            <p className="mt-2 text-gray-text">
-              Start your journey with personalized travel planning
-            </p>
+            <p className="mt-2 text-gray-text">{t('register.subtitle')}</p>
           </div>
 
           {/* useSearchParams requires a Suspense boundary in App Router. */}

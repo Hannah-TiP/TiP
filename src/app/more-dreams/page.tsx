@@ -143,7 +143,7 @@ function MoreDreamsContent() {
       <section className="relative h-[720px] w-full overflow-hidden">
         <Image
           src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&h=900&fit=crop"
-          alt="More Dreams hero"
+          alt={t('more_dreams.hero_alt')}
           fill
           sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
@@ -153,14 +153,13 @@ function MoreDreamsContent() {
         {/* Hero Content */}
         <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
-            CURATED COLLECTION
+            {t('discover.curated_collection')}
           </span>
           <h1 className="font-primary text-[36px] font-normal italic leading-tight text-white md:text-[48px] lg:text-[64px]">
-            More Dreams
+            {t('more_dreams.hero_title')}
           </h1>
           <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-white/60">
-            Discover extraordinary activities and exquisite restaurants, hand-selected across our
-            curated destinations.
+            {t('more_dreams.hero_subtitle')}
           </p>
         </div>
       </section>
@@ -181,10 +180,12 @@ function MoreDreamsContent() {
               }`}
             >
               <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
-                DESTINATION
+                {t('discover.destination_label')}
               </p>
               <p className="text-[14px] font-medium text-green-dark">
-                {selectedCity ? getLocalizedText(selectedCity.name) : 'All destinations'}
+                {selectedCity
+                  ? getLocalizedText(selectedCity.name)
+                  : t('discover.all_destinations')}
               </p>
             </button>
             {openDropdown === 'destination' && (
@@ -192,7 +193,7 @@ function MoreDreamsContent() {
                 <div className="border-b border-gray-100 p-4">
                   <input
                     type="text"
-                    placeholder="Search destinations..."
+                    placeholder={t('discover.search_destinations')}
                     value={citySearch}
                     onChange={(e) => setCitySearch(e.target.value)}
                     className="w-full rounded-lg bg-gray-50 px-4 py-3 text-[14px] text-green-dark outline-none placeholder:text-gray-400"
@@ -215,7 +216,7 @@ function MoreDreamsContent() {
                           !selectedCity ? 'font-semibold text-gold' : 'text-green-dark'
                         }`}
                       >
-                        All destinations
+                        {t('discover.all_destinations')}
                       </button>
                       {filteredCities.map((city) => (
                         <button
@@ -235,7 +236,7 @@ function MoreDreamsContent() {
                       ))}
                       {filteredCities.length === 0 && !citiesLoading && (
                         <p className="px-3 py-4 text-center text-[13px] text-gray-500">
-                          No destinations found
+                          {t('discover.no_destinations')}
                         </p>
                       )}
                     </>
@@ -253,18 +254,19 @@ function MoreDreamsContent() {
               }}
               className="rounded-lg border border-green-dark px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-green-dark hover:text-white"
             >
-              Clear
+              {t('discover.clear')}
             </button>
           ) : (
             <button className="rounded-lg bg-green-dark px-8 py-4 text-[13px] font-semibold text-white">
-              Search
+              {t('discover.search')}
             </button>
           )}
         </div>
 
         {selectedCity && (
           <p className="mt-3 text-[13px] text-gray-text">
-            Showing {activitiesTotal} activities and {restaurantsTotal} restaurants in{' '}
+            {t('more_dreams.showing')} {activitiesTotal} {t('more_dreams.activities_and')}{' '}
+            {restaurantsTotal} {t('more_dreams.restaurants_in')}{' '}
             {getLocalizedText(selectedCity.name)}
           </p>
         )}
@@ -290,15 +292,15 @@ function MoreDreamsContent() {
           <div className="py-20 text-center">
             <p className="text-gray-text">
               {selectedCity
-                ? 'Nothing found for this destination yet.'
-                : 'No experiences available at the moment.'}
+                ? t('more_dreams.empty_nothing_found')
+                : t('more_dreams.empty_no_experiences')}
             </p>
             {selectedCity && (
               <button
                 onClick={() => setSelectedCity(null)}
                 className="mt-4 text-[14px] font-medium text-gold underline hover:no-underline"
               >
-                Clear filter
+                {t('discover.clear_filter')}
               </button>
             )}
           </div>
@@ -313,10 +315,10 @@ function MoreDreamsContent() {
         >
           <div className="mb-12 text-center">
             <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-              EXTRAORDINARY EXPERIENCES
+              {t('more_dreams.experiences_overline')}
             </span>
             <h2 className="mt-3 font-primary text-[28px] italic text-green-dark md:text-[36px] lg:text-[42px]">
-              Activities &amp; Experiences
+              {t('more_dreams.experiences_title')}
             </h2>
           </div>
 
@@ -361,9 +363,11 @@ function MoreDreamsContent() {
           data-testid="section-restaurants"
         >
           <div className="mb-12 text-center">
-            <span className="text-[11px] font-semibold tracking-[4px] text-gold">FINE DINING</span>
+            <span className="text-[11px] font-semibold tracking-[4px] text-gold">
+              {t('more_dreams.fine_dining')}
+            </span>
             <h2 className="mt-3 font-primary text-[28px] italic text-green-dark md:text-[36px] lg:text-[42px]">
-              Curated Restaurants
+              {t('more_dreams.restaurants_title')}
             </h2>
           </div>
 
@@ -385,7 +389,7 @@ function MoreDreamsContent() {
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm">
-                    RESTAURANT
+                    {t('more_dreams.restaurant_badge')}
                   </div>
                   <DraftBadge status={restaurant.status} />
                 </div>
@@ -433,20 +437,19 @@ function MoreDreamsContent() {
       <section className="bg-green-dark px-6 py-16 sm:px-10 lg:px-[100px] lg:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-            PERSONAL CONCIERGE
+            {t('more_dreams.cta_overline')}
           </span>
           <h2 className="mt-3 font-primary text-[28px] italic text-[#FAF5EF] md:text-[36px] lg:text-[42px]">
-            Let TiP Curate Your Perfect Voyage
+            {t('more_dreams.cta_title')}
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[16px] leading-relaxed text-white/50">
-            From extraordinary experiences to exquisite dining — tell us your dream and we&apos;ll
-            craft the journey.
+            {t('more_dreams.cta_body')}
           </p>
           <Link
             href="/concierge"
             className="mt-8 inline-block rounded-lg bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-white/90"
           >
-            Start Planning
+            {t('more_dreams.cta_button')}
           </Link>
         </div>
       </section>

@@ -3,13 +3,15 @@
 import Image from 'next/image';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Activity } from '@/types/activity';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ActivityDetailContentProps {
   activity: Activity;
 }
 
 export default function ActivityDetailContent({ activity }: ActivityDetailContentProps) {
-  const badge = activity.category ? activity.category.toUpperCase() : 'ACTIVITY';
+  const { t } = useLanguage();
+  const badge = activity.category ? activity.category.toUpperCase() : t('detail.activity_badge');
   const heroImage = getImageUrl(activity.images?.[0]);
   const name = getLocalizedText(activity.name);
   const description = activity.description ? getLocalizedText(activity.description) : null;
@@ -48,7 +50,7 @@ export default function ActivityDetailContent({ activity }: ActivityDetailConten
       <section className="bg-white px-10 py-12">
         <div className="mx-auto max-w-4xl">
           <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-            ABOUT THIS EXPERIENCE
+            {t('detail.about_experience')}
           </span>
           <h2 className="mt-3 font-primary text-[32px] italic leading-snug text-green-dark">
             {name}
@@ -61,7 +63,7 @@ export default function ActivityDetailContent({ activity }: ActivityDetailConten
               <p className="font-primary text-[28px] font-semibold text-green-dark">
                 {visitDuration}
               </p>
-              <p className="text-[12px] text-gray-text">Visit Duration</p>
+              <p className="text-[12px] text-gray-text">{t('detail.visit_duration')}</p>
             </div>
           )}
         </div>
@@ -73,17 +75,17 @@ export default function ActivityDetailContent({ activity }: ActivityDetailConten
           <div className="mx-auto max-w-4xl">
             <div className="mb-8 text-center">
               <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-                PLAN YOUR VISIT
+                {t('detail.plan_your_visit')}
               </span>
               <h2 className="mt-3 font-primary text-[32px] italic text-green-dark">
-                Practical Information
+                {t('detail.practical_information')}
               </h2>
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {address && (
                 <div className="rounded-xl bg-white p-6 shadow-sm">
                   <span className="text-[11px] font-semibold tracking-[2px] text-gold">
-                    ADDRESS
+                    {t('detail.address')}
                   </span>
                   <p className="mt-3 text-[14px] leading-relaxed text-green-dark">{address}</p>
                 </div>
@@ -91,7 +93,7 @@ export default function ActivityDetailContent({ activity }: ActivityDetailConten
               {openingHours && (
                 <div className="rounded-xl bg-white p-6 shadow-sm">
                   <span className="text-[11px] font-semibold tracking-[2px] text-gold">
-                    OPENING HOURS
+                    {t('detail.opening_hours')}
                   </span>
                   <p className="mt-3 text-[14px] leading-relaxed text-green-dark">{openingHours}</p>
                 </div>
@@ -99,7 +101,7 @@ export default function ActivityDetailContent({ activity }: ActivityDetailConten
               {visitDuration && (
                 <div className="rounded-xl bg-white p-6 shadow-sm">
                   <span className="text-[11px] font-semibold tracking-[2px] text-gold">
-                    VISIT DURATION
+                    {t('detail.visit_duration_caps')}
                   </span>
                   <p className="mt-3 text-[14px] leading-relaxed text-green-dark">
                     {visitDuration}

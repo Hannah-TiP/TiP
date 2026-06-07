@@ -3,9 +3,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { OPEN_COOKIE_SETTINGS_EVENT } from '@/components/CookieConsentBanner';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+type TranslationKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
 type FooterLink = {
-  label: string;
+  labelKey: TranslationKey;
   href: string;
   /** When true, dispatches a custom event instead of navigating. */
   event?: boolean;
@@ -13,25 +16,27 @@ type FooterLink = {
 
 // `href: '#'` marks a stub link; wire it up when the destination page lands.
 const exploreLinks: FooterLink[] = [
-  { label: 'Dream Hotels', href: '#' },
-  { label: 'Itinerary', href: '#' },
-  { label: 'Concierge', href: '#' },
+  { labelKey: 'footer.link_dream_hotels', href: '/dream-hotels' },
+  { labelKey: 'footer.link_itinerary', href: '#' },
+  { labelKey: 'footer.link_concierge', href: '/concierge' },
 ];
 const companyLinks: FooterLink[] = [
-  { label: 'About Us', href: '/about' },
-  { label: 'Careers', href: '#' },
-  { label: 'Press', href: '#' },
-  { label: 'Blog', href: '#' },
+  { labelKey: 'footer.link_about_us', href: '/about' },
+  { labelKey: 'footer.link_careers', href: '#' },
+  { labelKey: 'footer.link_press', href: '#' },
+  { labelKey: 'footer.link_blog', href: '#' },
 ];
 const supportLinks: FooterLink[] = [
-  { label: 'Help Center', href: '#' },
-  { label: 'Contact Us', href: '#' },
-  { label: 'Privacy Policy', href: '/privacy-policy' },
-  { label: 'Terms of Service', href: '/terms-of-service' },
-  { label: 'Cookie Settings', href: '#', event: true },
+  { labelKey: 'footer.link_help_center', href: '#' },
+  { labelKey: 'footer.link_contact_us', href: '#' },
+  { labelKey: 'footer.link_privacy_policy', href: '/privacy-policy' },
+  { labelKey: 'footer.link_terms_of_service', href: '/terms-of-service' },
+  { labelKey: 'footer.link_cookie_settings', href: '#', event: true },
 ];
 
 export default function Footer() {
+  const { t } = useLanguage();
+
   return (
     <footer className="flex flex-col gap-10 bg-green-footer px-6 py-12 md:px-[100px]">
       {/* Top row — wraps on narrow viewports so the link columns never force
@@ -39,16 +44,16 @@ export default function Footer() {
       <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-8">
         <Image
           src="/bible_TIP_logo_noir.svg"
-          alt="TiP"
+          alt={t('footer.logo_alt')}
           width={120}
           height={40}
           style={{ height: 40, filter: 'brightness(0) invert(1)' }}
         />
 
         <div className="flex flex-wrap gap-x-12 gap-y-8 md:gap-x-20">
-          <FooterColumn title="Explore" items={exploreLinks} />
-          <FooterColumn title="Company" items={companyLinks} />
-          <FooterColumn title="Support" items={supportLinks} />
+          <FooterColumn titleKey="footer.col_explore" items={exploreLinks} />
+          <FooterColumn titleKey="footer.col_company" items={companyLinks} />
+          <FooterColumn titleKey="footer.col_support" items={supportLinks} />
         </div>
       </div>
 
@@ -69,6 +74,7 @@ export default function Footer() {
         <p style={{ margin: 0 }}>
           주소: 서울특별시 강남구 테헤란로 123, 4층 | 통신판매업신고: 제2026-서울강남-00001호
         </p>
+        {/* eslint-disable-next-line i18n/no-literal-string -- fixed KR business-registration data, identical in both locales */}
         <p style={{ margin: 0 }}>고객센터: support@tip-ai.com | 전화: 02-1234-5678</p>
       </div>
 
@@ -82,13 +88,14 @@ export default function Footer() {
           paddingTop: 24,
         }}
       >
-        © 2026 TiP AI. Crafted for discerning travelers.
+        {t('footer.copyright')}
       </div>
     </footer>
   );
 }
 
-function FooterColumn({ title, items }: { title: string; items: FooterLink[] }) {
+function FooterColumn({ titleKey, items }: { titleKey: TranslationKey; items: FooterLink[] }) {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-col" style={{ gap: 12 }}>
       <span
@@ -99,12 +106,12 @@ function FooterColumn({ title, items }: { title: string; items: FooterLink[] }) 
           color: 'rgba(255,255,255,0.66)',
         }}
       >
-        {title}
+        {t(titleKey)}
       </span>
       {items.map((item) =>
         item.event ? (
           <button
-            key={item.label}
+            key={item.labelKey}
             type="button"
             onClick={() => window.dispatchEvent(new Event(OPEN_COOKIE_SETTINGS_EVENT))}
             style={{
@@ -120,11 +127,11 @@ function FooterColumn({ title, items }: { title: string; items: FooterLink[] }) 
               textAlign: 'left',
             }}
           >
-            {item.label}
+            {t(item.labelKey)}
           </button>
         ) : (
           <Link
-            key={item.label}
+            key={item.labelKey}
             href={item.href}
             style={{
               fontFamily: "'Inter', sans-serif",
@@ -134,7 +141,7 @@ function FooterColumn({ title, items }: { title: string; items: FooterLink[] }) 
               textDecoration: 'none',
             }}
           >
-            {item.label}
+            {t(item.labelKey)}
           </Link>
         ),
       )}

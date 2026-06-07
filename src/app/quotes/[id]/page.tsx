@@ -10,6 +10,7 @@ import { tripDayNumber } from '@/lib/trip-utils';
 import type { QuoteLineItem, QuoteStatus, QuoteWithVersion, QuoteVersion } from '@/types/quote';
 import type { Trip, TripVersion } from '@/types/trip';
 import type { EligibleCredit } from '@/types/stay-credit';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Return-URL polling: backend confirms payment via Flywire webhook, which
 // races with the user's browser redirect from Flywire. We poll until the
@@ -23,12 +24,12 @@ interface ToastMessage {
   tone: ToastTone;
 }
 
-const STATUS_LABELS: Record<QuoteStatus, string> = {
-  DRAFT: 'Draft',
-  SENT: 'Awaiting your decision',
-  PAID: 'Paid',
-  REJECTED: 'Declined',
-  EXPIRED: 'Expired',
+const STATUS_LABEL_KEYS: Record<QuoteStatus, Parameters<ReturnType<typeof useLanguage>['t']>[0]> = {
+  DRAFT: 'quote.status_draft',
+  SENT: 'quote.status_sent',
+  PAID: 'quote.status_paid',
+  REJECTED: 'quote.status_rejected',
+  EXPIRED: 'quote.status_expired',
 };
 
 const STATUS_BADGE_CLASSES: Record<QuoteStatus, string> = {
@@ -78,11 +79,12 @@ function groupByDay(items: QuoteLineItem[]): Map<number, QuoteLineItem[]> {
 }
 
 function StatusBadge({ status }: { status: QuoteStatus }) {
+  const { t } = useLanguage();
   return (
     <span
       className={`text-xs font-semibold px-3 py-1 rounded-full ${STATUS_BADGE_CLASSES[status]}`}
     >
-      {STATUS_LABELS[status] ?? status}
+      {t(STATUS_LABEL_KEYS[status])}
     </span>
   );
 }
@@ -100,7 +102,8 @@ function HeroCard({
   expiresAt?: string | null;
   paidAt?: string | null;
 }) {
-  const title = tripVersion?.title?.trim() || 'Your Trip';
+  const { t } = useLanguage();
+  const title = tripVersion?.title?.trim() || t('quote.your_trip');
   const startDate = tripVersion?.start_date || undefined;
   const endDate = tripVersion?.end_date || undefined;
   const showExpiry = status === 'SENT' && !!expiresAt;
@@ -115,32 +118,32 @@ function HeroCard({
       </div>
       <div className="flex-1 p-6 md:p-10 text-white flex flex-col justify-center">
         <div className="flex items-center gap-3 mb-2">
-          <p className="text-sm uppercase tracking-widest text-white/60">Quote</p>
+          <p className="text-sm uppercase tracking-widest text-white/60">{t('quote.label')}</p>
           <StatusBadge status={status} />
         </div>
         <h1 className="text-2xl md:text-4xl font-bold mb-4 break-words">{title}</h1>
         <div className="flex flex-wrap gap-4 md:gap-8 text-sm">
           <div>
-            <p className="text-white/50">Dates</p>
+            <p className="text-white/50">{t('quote.dates')}</p>
             <p className="font-semibold">
               {formatDate(startDate)} – {formatDate(endDate)}
             </p>
           </div>
           {showExpiry && (
             <div>
-              <p className="text-white/50">Valid until</p>
+              <p className="text-white/50">{t('quote.valid_until')}</p>
               <p className="font-semibold">{formatDate(expiresAt)}</p>
             </div>
           )}
           {showPaid && (
             <div>
-              <p className="text-white/50">Paid on</p>
+              <p className="text-white/50">{t('quote.paid_on')}</p>
               <p className="font-semibold">{formatDate(paidAt)}</p>
             </div>
           )}
           {trip?.id !== undefined && (
             <div>
-              <p className="text-white/50">Trip</p>
+              <p className="text-white/50">{t('quote.trip')}</p>
               <Link
                 href={`/my-page/trip/${trip.id}`}
                 className="font-semibold underline hover:text-white/80"
@@ -156,6 +159,7 @@ function HeroCard({
 }
 
 function PayNowButton({ quoteId, onError }: { quoteId: number; onError: (msg: string) => void }) {
+  const { t } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
 
   const handleClick = async () => {
@@ -166,7 +170,7 @@ function PayNowButton({ quoteId, onError }: { quoteId: number; onError: (msg: st
       // Hand off to Flywire's hosted checkout (or our /checkout/flywire wrapper).
       window.location.assign(result.checkout_url);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to start checkout';
+      const msg = err instanceof Error ? err.message : t('quote.error_start_checkout');
       onError(msg);
       setSubmitting(false);
     }
@@ -186,16 +190,17 @@ function PayNowButton({ quoteId, onError }: { quoteId: number; onError: (msg: st
             className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"
             aria-hidden
           />
-          <span>Starting checkout…</span>
+          <span>{t('quote.starting_checkout')}</span>
         </>
       ) : (
-        <span>Pay now</span>
+        <span>{t('quote.pay_now')}</span>
       )}
     </button>
   );
 }
 
 function ConfirmingBanner() {
+  const { t } = useLanguage();
   return (
     <div
       data-testid="confirming-payment-banner"
@@ -206,10 +211,8 @@ function ConfirmingBanner() {
         aria-hidden
       />
       <div>
-        <p className="text-sm font-semibold text-amber-800">Confirming payment…</p>
-        <p className="text-xs text-amber-700/80">
-          We&apos;re finalising your payment with the provider. This usually takes a few seconds.
-        </p>
+        <p className="text-sm font-semibold text-amber-800">{t('quote.confirming_payment')}</p>
+        <p className="text-xs text-amber-700/80">{t('quote.confirming_payment_body')}</p>
       </div>
     </div>
   );
@@ -222,6 +225,7 @@ function ToastStack({
   toasts: ToastMessage[];
   onDismiss: (id: number) => void;
 }) {
+  const { t } = useLanguage();
   if (toasts.length === 0) return null;
   const toneClasses: Record<ToastTone, string> = {
     info: 'bg-gray-900 text-white',
@@ -234,19 +238,19 @@ function ToastStack({
       aria-live="polite"
       className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm"
     >
-      {toasts.map((t) => (
+      {toasts.map((toast) => (
         <div
-          key={t.id}
-          data-testid={`toast-${t.tone}`}
-          className={`rounded-lg px-4 py-3 text-sm shadow-lg ${toneClasses[t.tone]}`}
+          key={toast.id}
+          data-testid={`toast-${toast.tone}`}
+          className={`rounded-lg px-4 py-3 text-sm shadow-lg ${toneClasses[toast.tone]}`}
         >
           <div className="flex items-start gap-3">
-            <span className="flex-1">{t.text}</span>
+            <span className="flex-1">{toast.text}</span>
             <button
               type="button"
-              onClick={() => onDismiss(t.id)}
+              onClick={() => onDismiss(toast.id)}
               className="opacity-70 hover:opacity-100 text-xs font-semibold"
-              aria-label="Dismiss"
+              aria-label={t('quote.dismiss')}
             >
               ✕
             </button>
@@ -264,6 +268,7 @@ function LineItemsCard({
   version: QuoteVersion;
   tripVersion: TripVersion | null;
 }) {
+  const { t } = useLanguage();
   const grouped = useMemo(() => groupByDay(version.line_items), [version.line_items]);
   const dayKeys = Array.from(grouped.keys());
   const currency = version.total_snapshot.currency;
@@ -276,9 +281,9 @@ function LineItemsCard({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-5">What&apos;s included</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-5">{t('quote.whats_included')}</h2>
       {dayKeys.length === 0 ? (
-        <p className="text-sm text-gray-500">No line items in this quote yet.</p>
+        <p className="text-sm text-gray-500">{t('quote.no_line_items')}</p>
       ) : (
         <div className="space-y-6">
           {dayKeys.map((dayIndex) => {
@@ -289,7 +294,7 @@ function LineItemsCard({
               <div key={dayIndex}>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-xs font-semibold text-[#1E3D2F] bg-green-50 px-2 py-0.5 rounded">
-                    Day {dayBadgeText}
+                    {t('quote.day')} {dayBadgeText}
                   </span>
                 </div>
                 <div className="space-y-2">
@@ -341,6 +346,7 @@ function StayCreditPanel({
   onApplied: (bundle: QuoteWithVersion) => void;
   onError: (msg: string) => void;
 }) {
+  const { t } = useLanguage();
   const [eligible, setEligible] = useState<EligibleCredit[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyCreditId, setBusyCreditId] = useState<number | null>(null);
@@ -362,11 +368,11 @@ function StayCreditPanel({
       const rows = await apiClient.listEligibleCreditsForQuote(quoteId);
       setEligible(rows);
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Could not load credits.');
+      onError(err instanceof Error ? err.message : t('quote.error_load_credits'));
     } finally {
       setLoading(false);
     }
-  }, [quoteId, onError]);
+  }, [quoteId, onError, t]);
 
   useEffect(() => {
     if (isLocked && !appliedId) return;
@@ -380,7 +386,7 @@ function StayCreditPanel({
       onApplied(bundle);
       await refresh();
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Could not apply credit.');
+      onError(err instanceof Error ? err.message : t('quote.error_apply_credit'));
     } finally {
       setBusyCreditId(null);
     }
@@ -393,7 +399,7 @@ function StayCreditPanel({
       onApplied(bundle);
       await refresh();
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Could not remove credit.');
+      onError(err instanceof Error ? err.message : t('quote.error_remove_credit'));
     } finally {
       setBusyCreditId(null);
     }
@@ -410,19 +416,17 @@ function StayCreditPanel({
 
   return (
     <div data-testid="stay-credit-panel" className="bg-white rounded-xl border border-gray-200 p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-1">Stay credits</h2>
-      <p className="text-xs text-gray-500 mb-4">
-        Apply a TiP stay credit to reduce this quote. One credit per booking.
-      </p>
+      <h2 className="text-xl font-bold text-gray-900 mb-1">{t('quote.stay_credits')}</h2>
+      <p className="text-xs text-gray-500 mb-4">{t('quote.stay_credits_hint')}</p>
 
       {loading ? (
-        <div className="text-sm text-gray-500">Loading credits…</div>
+        <div className="text-sm text-gray-500">{t('quote.loading_credits')}</div>
       ) : appliedId ? (
         <div className="space-y-3">
           <div className="flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3">
             <div>
               <p className="text-sm font-semibold text-emerald-800">
-                Applied
+                {t('quote.applied')}
                 {appliedRow
                   ? `: ${formatCurrency(appliedRow.converted_amount, appliedRow.converted_currency)}`
                   : ''}
@@ -440,15 +444,13 @@ function StayCreditPanel({
                 disabled={busyCreditId === appliedId}
                 className="text-xs font-semibold text-emerald-800 hover:text-emerald-900 underline disabled:opacity-50"
               >
-                {busyCreditId === appliedId ? 'Removing…' : 'Remove'}
+                {busyCreditId === appliedId ? t('quote.removing') : t('quote.remove')}
               </button>
             )}
           </div>
         </div>
       ) : eligible.length === 0 ? (
-        <div className="text-sm text-gray-500">
-          No credits available to apply. Earn one by referring a friend or completing onboarding.
-        </div>
+        <div className="text-sm text-gray-500">{t('quote.no_credits')}</div>
       ) : (
         <div className="space-y-2">
           {eligible.map((credit) => {
@@ -472,7 +474,7 @@ function StayCreditPanel({
                   disabled={isBusy}
                   className="text-xs font-semibold text-[#1E3D2F] hover:text-[#163024] underline disabled:opacity-50"
                 >
-                  {isBusy ? 'Applying…' : 'Apply'}
+                  {isBusy ? t('quote.applying') : t('quote.apply')}
                 </button>
               </div>
             );
@@ -484,13 +486,14 @@ function StayCreditPanel({
 }
 
 function TotalsCard({ version }: { version: QuoteVersion }) {
+  const { t } = useLanguage();
   const snap = version.total_snapshot;
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-5">Total</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-5">{t('quote.total')}</h2>
       <div className="space-y-2 text-sm">
         <div className="flex justify-between text-gray-600">
-          <span>Subtotal</span>
+          <span>{t('quote.subtotal')}</span>
           <span>{formatCurrency(snap.subtotal, snap.currency)}</span>
         </div>
         {snap.fees.length > 0 && (
@@ -514,7 +517,7 @@ function TotalsCard({ version }: { version: QuoteVersion }) {
           </div>
         )}
         <div className="border-t border-gray-200 pt-3 mt-3 flex justify-between text-base font-bold text-gray-900">
-          <span>Total</span>
+          <span>{t('quote.total')}</span>
           <span>{formatCurrency(snap.total, snap.currency)}</span>
         </div>
       </div>
@@ -543,6 +546,7 @@ export default function QuoteDetailPage() {
 }
 
 function QuoteDetailContent() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -601,7 +605,7 @@ function QuoteDetailContent() {
           // line items + totals are self-contained.
         }
       } catch {
-        if (!cancelled) setError('Quote not found.');
+        if (!cancelled) setError(t('quote.error_not_found'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -610,14 +614,14 @@ function QuoteDetailContent() {
     return () => {
       cancelled = true;
     };
-  }, [id, sessionStatus, router]);
+  }, [id, sessionStatus, router, t]);
 
   // Cancel handling: ?cancelled=1 → toast + strip query string. No state change.
   useEffect(() => {
     if (searchParams.get('cancelled') !== '1') return;
-    pushToast('Payment cancelled. You can try again whenever you’re ready.', 'info');
+    pushToast(t('quote.toast_cancelled'), 'info');
     router.replace(`/quotes/${id}`);
-  }, [searchParams, router, id, pushToast]);
+  }, [searchParams, router, id, pushToast, t]);
 
   // Return-URL polling: ?paid=1 → poll /api/quotes/{id} every 2s up to 15
   // attempts. Stop when the quote flips to PAID; warn (non-blocking) on
@@ -656,11 +660,7 @@ function QuoteDetailContent() {
       if (attempts >= POLL_MAX_ATTEMPTS) {
         if (!controller.signal.aborted) {
           setConfirmingPayment(false);
-          pushToast(
-            'Payment confirmation is taking longer than expected — refresh in a minute.',
-            'warning',
-            8000,
-          );
+          pushToast(t('quote.toast_timeout'), 'warning', 8000);
         }
         return;
       }
@@ -698,12 +698,12 @@ function QuoteDetailContent() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-6 mt-8 text-center py-20 text-gray-500">
-          <p>{error ?? 'Quote not found.'}</p>
+          <p>{error ?? t('quote.error_not_found')}</p>
           <Link
             href="/my-page"
             className="mt-4 inline-block text-[#1E3D2F] hover:underline text-sm"
           >
-            ← Back to My Trips
+            {t('quote.back_to_my_trips')}
           </Link>
         </div>
         <Footer />
@@ -717,7 +717,7 @@ function QuoteDetailContent() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 mt-8 mb-16 space-y-6">
         <Link href="/my-page" className="text-sm text-gray-500 hover:text-gray-900 inline-block">
-          ← My Trips
+          {t('quote.my_trips')}
         </Link>
 
         <HeroCard
@@ -745,10 +745,8 @@ function QuoteDetailContent() {
               ✓
             </span>
             <div>
-              <p className="text-sm font-semibold text-green-800">Payment received</p>
-              <p className="text-xs text-green-700/80">
-                Thank you — your travel concierge will follow up shortly.
-              </p>
+              <p className="text-sm font-semibold text-green-800">{t('quote.payment_received')}</p>
+              <p className="text-xs text-green-700/80">{t('quote.payment_received_body')}</p>
             </div>
           </div>
         )}
@@ -771,7 +769,7 @@ function QuoteDetailContent() {
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 p-6 text-sm text-gray-500">
-            This quote does not have a pricing snapshot yet.
+            {t('quote.no_snapshot')}
           </div>
         )}
       </div>

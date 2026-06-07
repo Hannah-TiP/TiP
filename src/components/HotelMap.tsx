@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { getLocalizedText } from '@/types/common';
 import { Hotel, getHotelCoordinates, getHotelImages } from '@/types/hotel';
 import { formatRatingBadge, formatReviewSummary, type ReviewAggregate } from '@/types/review';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface HotelMapProps {
   hotels: Hotel[];
@@ -38,6 +39,7 @@ const mapOptions = {
 };
 
 export default function HotelMap({ hotels, reviewAggregates }: HotelMapProps) {
+  const { t } = useLanguage();
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
@@ -209,10 +211,8 @@ export default function HotelMap({ hotels, reviewAggregates }: HotelMapProps) {
     return (
       <div className="flex h-[520px] items-center justify-center bg-[#E8E4D8]">
         <div className="text-center">
-          <p className="text-[16px] font-medium text-red-600">Error loading map</p>
-          <p className="mt-1 text-[13px] text-gray-text">
-            Please check your Google Maps API key configuration
-          </p>
+          <p className="text-[16px] font-medium text-red-600">{t('map.error_title')}</p>
+          <p className="mt-1 text-[13px] text-gray-text">{t('map.error_subtitle')}</p>
         </div>
       </div>
     );
@@ -223,7 +223,7 @@ export default function HotelMap({ hotels, reviewAggregates }: HotelMapProps) {
       <div className="flex h-[520px] items-center justify-center bg-[#E8E4D8]">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
-          <p className="text-[16px] font-medium text-green-dark">Loading map...</p>
+          <p className="text-[16px] font-medium text-green-dark">{t('map.loading')}</p>
         </div>
       </div>
     );

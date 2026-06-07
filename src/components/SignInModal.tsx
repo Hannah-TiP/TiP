@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SignInModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface SignInModalProps {
 }
 
 export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
 
   if (!isOpen) return null;
@@ -25,11 +27,9 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
         <div className="flex flex-col gap-6 p-6 pb-6 md:p-8 md:pb-6">
           <div className="text-center">
             <h2 className="font-primary text-[22px] font-bold text-green-dark">
-              Sign in to luxury travel
+              {t('signin_modal.title')}
             </h2>
-            <p className="mt-2 text-[14px] text-gray-500">
-              Become a member and unlock exclusive benefits
-            </p>
+            <p className="mt-2 text-[14px] text-gray-500">{t('signin_modal.subtitle')}</p>
           </div>
 
           {/* Social Login */}
@@ -69,43 +69,43 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
           {/* Divider */}
           <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-gray-200" />
-            <span className="text-[12px] text-gray-400">or</span>
+            <span className="text-[12px] text-gray-400">{t('signin_modal.or')}</span>
             <div className="h-px flex-1 bg-gray-200" />
           </div>
 
           {/* Email Input */}
           <div>
             <label className="mb-2 block text-[12px] font-medium text-gray-600">
-              Email address
+              {t('signin_modal.email_label')}
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              placeholder={t('signin_modal.email_placeholder')}
               className="w-full rounded-lg border border-gray-200 px-4 py-3 text-[14px] text-green-dark outline-none transition-colors focus:border-green-dark"
             />
           </div>
 
           {/* Continue Button */}
           <button className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-green-dark text-[14px] font-semibold text-white transition-opacity hover:opacity-90">
-            Continue
+            {t('signin_modal.continue')}
             <span className="icon-lucide">&#xe817;</span>
           </button>
         </div>
 
         {/* Sign Up Row */}
         <div className="flex items-center justify-center gap-2 border-t border-gray-100 py-4">
-          <span className="text-[14px] text-gray-500">Don&apos;t have an account?</span>
+          <span className="text-[14px] text-gray-500">{t('signin_modal.no_account')}</span>
           <button className="text-[14px] font-semibold text-green-dark hover:underline">
-            Sign up
+            {t('signin_modal.sign_up')}
           </button>
         </div>
 
         {/* Footer */}
         <div className="flex flex-col items-center gap-1 border-t border-gray-100 bg-gray-50 py-4">
-          <span className="text-[12px] text-gray-400">Secured by clerk</span>
-          <span className="text-[12px] font-medium text-gold">Development mode</span>
+          <span className="text-[12px] text-gray-400">{t('signin_modal.secured_by')}</span>
+          <span className="text-[12px] font-medium text-gold">{t('signin_modal.dev_mode')}</span>
         </div>
 
         {/* Close Button */}

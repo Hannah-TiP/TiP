@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   getTripReviewableItems,
   getTripsWithVersions,
@@ -31,6 +32,7 @@ function formatDateRange(startDate?: string, endDate?: string): string {
 }
 
 export default function TravelHistory() {
+  const { t } = useLanguage();
   const [trips, setTrips] = useState<TripWithVersion[]>([]);
   const [reviewStatus, setReviewStatus] = useState<Record<number, TripReviewStatus>>({});
   const [loading, setLoading] = useState(true);
@@ -87,7 +89,7 @@ export default function TravelHistory() {
       <section className="max-w-7xl mx-auto px-4 md:px-6 mt-8 mb-16">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Past Journeys</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('travel_history.title')}</h1>
             {!loading && !error && (
               <p className="text-gray-500 mt-1">
                 {trips.length} {trips.length === 1 ? 'trip' : 'trips'} completed
@@ -118,12 +120,12 @@ export default function TravelHistory() {
 
         {!loading && !error && trips.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-gray-500 text-lg mb-4">No completed trips yet.</p>
+            <p className="text-gray-500 text-lg mb-4">{t('travel_history.empty')}</p>
             <Link
               href="/concierge"
               className="inline-block px-6 py-3 bg-[#1E3D2F] text-white rounded-full text-sm font-medium hover:bg-[#2a5240] transition-colors"
             >
-              Plan Your First Trip
+              {t('travel_history.plan_first')}
             </Link>
           </div>
         )}
@@ -157,7 +159,7 @@ export default function TravelHistory() {
                       <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold text-gray-900">{title}</h2>
                         <span className="text-xs font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full">
-                          Completed
+                          {t('travel_history.completed')}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3 text-sm text-gray-500">
@@ -194,7 +196,7 @@ export default function TravelHistory() {
                         href={`/my-page/travel-history/${item.trip.id}`}
                         className="text-sm font-medium text-[#1E3D2F] hover:underline"
                       >
-                        View Details →
+                        {t('travel_history.view_details')}
                       </Link>
                     </div>
                   </div>

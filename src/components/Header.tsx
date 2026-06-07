@@ -58,7 +58,7 @@ export default function Header() {
         <Link href="/">
           <Image
             src="/bible_TIP_profil_400x400px.svg"
-            alt="TiP"
+            alt={t('nav.logo_alt')}
             width={36}
             height={36}
             className="h-9"
@@ -88,7 +88,7 @@ export default function Header() {
           {isAuthenticated ? (
             <>
               <Link href="/my-page" className={navItemClass(config.activeNav === 'my-page')}>
-                MY PAGE
+                {t('nav.my_page')}
               </Link>
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
@@ -98,7 +98,7 @@ export default function Header() {
                     : 'text-[11px] font-medium tracking-[2px] text-green-dark/50 transition-colors hover:text-green-dark'
                 }
               >
-                LOGOUT
+                {t('nav.logout')}
               </button>
             </>
           ) : (
@@ -110,7 +110,7 @@ export default function Header() {
                   : 'rounded-full border border-green-dark px-5 py-2 text-[11px] font-medium tracking-[2px] text-green-dark transition-colors hover:bg-green-dark hover:text-white'
               }
             >
-              SIGN IN
+              {t('nav.sign_in')}
             </Link>
           )}
         </nav>

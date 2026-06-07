@@ -3,6 +3,9 @@
 import StarRating from '@/components/reviews/StarRating';
 import type { ReviewableEntity } from '@/lib/trip-utils';
 import type { Review } from '@/types/review';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+type TranslationKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
 export type ReviewItemStatus = 'not-reviewed' | 'draft' | 'submitted' | 'locked';
 
@@ -29,10 +32,10 @@ interface ReviewSessionItemProps {
   error: string | null;
 }
 
-const TYPE_LABEL: Record<ReviewableEntity['entityType'], string> = {
-  hotel: 'Hotel',
-  restaurant: 'Restaurant',
-  activity: 'Activity',
+const TYPE_LABEL_KEY: Record<ReviewableEntity['entityType'], TranslationKey> = {
+  hotel: 'reviews.type_hotel',
+  restaurant: 'reviews.type_restaurant',
+  activity: 'reviews.type_activity',
 };
 
 const TYPE_BADGE_COLOR: Record<ReviewableEntity['entityType'], string> = {
@@ -48,11 +51,14 @@ function statusOf(existingReview: Review | null, value: ReviewItemValue): Review
   return value.rating > 0 || value.comment.trim() !== '' ? 'draft' : 'not-reviewed';
 }
 
-const STATUS_PILL: Record<ReviewItemStatus, { label: string; className: string }> = {
-  'not-reviewed': { label: 'Not Reviewed', className: 'bg-gray-100 text-gray-600' },
-  draft: { label: 'Draft', className: 'bg-blue-100 text-blue-700' },
-  submitted: { label: 'Submitted', className: 'bg-green-100 text-green-700' },
-  locked: { label: 'Locked', className: 'bg-gray-200 text-gray-500' },
+const STATUS_PILL: Record<ReviewItemStatus, { labelKey: TranslationKey; className: string }> = {
+  'not-reviewed': {
+    labelKey: 'reviews.status_not_reviewed',
+    className: 'bg-gray-100 text-gray-600',
+  },
+  draft: { labelKey: 'reviews.status_draft', className: 'bg-blue-100 text-blue-700' },
+  submitted: { labelKey: 'reviews.status_submitted', className: 'bg-green-100 text-green-700' },
+  locked: { labelKey: 'reviews.status_locked', className: 'bg-gray-200 text-gray-500' },
 };
 
 export default function ReviewSessionItem({
@@ -66,12 +72,13 @@ export default function ReviewSessionItem({
   isDeleting,
   error,
 }: ReviewSessionItemProps) {
+  const { t } = useLanguage();
   const isLocked = !!existingReview?.locked_at;
   const { skipped } = value;
   const status = statusOf(existingReview, value);
   const pill = skipped
-    ? { label: 'Skipped', className: 'bg-gray-200 text-gray-500' }
-    : STATUS_PILL[status];
+    ? { label: t('reviews.status_skipped'), className: 'bg-gray-200 text-gray-500' }
+    : { label: t(STATUS_PILL[status].labelKey), className: STATUS_PILL[status].className };
 
   return (
     <div
@@ -84,7 +91,7 @@ export default function ReviewSessionItem({
           <span
             className={`rounded px-2 py-0.5 text-xs font-medium ${TYPE_BADGE_COLOR[entity.entityType]}`}
           >
-            {TYPE_LABEL[entity.entityType]}
+            {t(TYPE_LABEL_KEY[entity.entityType])}
           </span>
           <h3 className="font-semibold text-gray-900">{entity.title}</h3>
         </div>
@@ -99,28 +106,28 @@ export default function ReviewSessionItem({
           {existingReview!.comment && (
             <p className="mt-3 text-sm leading-relaxed text-gray-600">{existingReview!.comment}</p>
           )}
-          <p className="mt-4 text-xs text-gray-400">
-            This review is locked — the 30-day edit window has closed.
-          </p>
+          <p className="mt-4 text-xs text-gray-400">{t('reviews.locked_notice')}</p>
         </div>
       ) : (
         <div>
           <div className="mb-4">
-            <p className="mb-2 text-sm font-medium text-gray-700">Your Rating</p>
+            <p className="mb-2 text-sm font-medium text-gray-700">{t('reviews.your_rating')}</p>
             <StarRating
               value={value.rating}
               onChange={onRatingChange}
               size="lg"
-              label={`Rating for ${entity.title}`}
+              label={t('reviews.rating_for').replace('{title}', entity.title)}
             />
           </div>
           <div className="mb-4">
-            <p className="mb-2 text-sm font-medium text-gray-700">Your Review (optional)</p>
+            <p className="mb-2 text-sm font-medium text-gray-700">
+              {t('reviews.your_review_optional')}
+            </p>
             <textarea
               value={value.comment}
               onChange={(e) => onCommentChange(e.target.value)}
               disabled={skipped}
-              placeholder={`Share your experience at ${entity.title}...`}
+              placeholder={t('reviews.comment_placeholder').replace('{title}', entity.title)}
               rows={4}
               className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#1E3D2F] focus:outline-none focus:ring-2 focus:ring-[#1E3D2F]/20 disabled:bg-gray-50"
             />
@@ -131,7 +138,7 @@ export default function ReviewSessionItem({
               onClick={onSkipToggle}
               className="text-sm font-medium text-gray-500 hover:underline"
             >
-              {skipped ? 'Unskip' : 'Skip'}
+              {skipped ? t('reviews.unskip') : t('reviews.skip')}
             </button>
             {existingReview && (
               <button
@@ -140,7 +147,7 @@ export default function ReviewSessionItem({
                 disabled={isDeleting}
                 className="text-sm font-medium text-red-600 hover:underline disabled:opacity-50"
               >
-                {isDeleting ? 'Deleting…' : 'Delete'}
+                {isDeleting ? t('reviews.deleting') : t('reviews.delete')}
               </button>
             )}
           </div>

@@ -111,7 +111,7 @@ function SignatureJourneysContent() {
       <section className="relative h-[720px] w-full overflow-hidden">
         <Image
           src="https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?w=1920&h=900&fit=crop"
-          alt="Signature Journeys hero"
+          alt={t('signature_journeys.hero_alt')}
           fill
           sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
@@ -148,10 +148,12 @@ function SignatureJourneysContent() {
               }`}
             >
               <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
-                DESTINATION
+                {t('discover.destination_label')}
               </p>
               <p className="text-[14px] font-medium text-green-dark">
-                {selectedCity ? getLocalizedText(selectedCity.name) : 'All destinations'}
+                {selectedCity
+                  ? getLocalizedText(selectedCity.name)
+                  : t('discover.all_destinations')}
               </p>
             </button>
             {openDropdown === 'destination' && (
@@ -159,7 +161,7 @@ function SignatureJourneysContent() {
                 <div className="border-b border-gray-100 p-4">
                   <input
                     type="text"
-                    placeholder="Search destinations..."
+                    placeholder={t('discover.search_destinations')}
                     value={citySearch}
                     onChange={(e) => setCitySearch(e.target.value)}
                     className="w-full rounded-lg bg-gray-50 px-4 py-3 text-[14px] text-green-dark outline-none placeholder:text-gray-400"
@@ -182,7 +184,7 @@ function SignatureJourneysContent() {
                           !selectedCity ? 'font-semibold text-gold' : 'text-green-dark'
                         }`}
                       >
-                        All destinations
+                        {t('discover.all_destinations')}
                       </button>
                       {filteredCities.map((city) => (
                         <button
@@ -202,7 +204,7 @@ function SignatureJourneysContent() {
                       ))}
                       {filteredCities.length === 0 && !citiesLoading && (
                         <p className="px-3 py-4 text-center text-[13px] text-gray-500">
-                          No destinations found
+                          {t('discover.no_destinations')}
                         </p>
                       )}
                     </>
@@ -220,19 +222,19 @@ function SignatureJourneysContent() {
               }}
               className="rounded-lg border border-green-dark px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-green-dark hover:text-white"
             >
-              Clear
+              {t('discover.clear')}
             </button>
           ) : (
             <button className="rounded-lg bg-green-dark px-8 py-4 text-[13px] font-semibold text-white">
-              Search
+              {t('discover.search')}
             </button>
           )}
         </div>
 
         {selectedCity && (
           <p className="mt-3 text-[13px] text-gray-text">
-            Showing {filteredSignatureJourneys.length} signature journeys in{' '}
-            {getLocalizedText(selectedCity.name)}
+            {t('signature_journeys.showing')} {filteredSignatureJourneys.length}{' '}
+            {t('signature_journeys.journeys_in')} {getLocalizedText(selectedCity.name)}
           </p>
         )}
       </section>
@@ -255,15 +257,15 @@ function SignatureJourneysContent() {
           <div className="py-20 text-center">
             <p className="text-gray-text">
               {selectedCity
-                ? 'No signature journeys for this destination yet.'
-                : 'No signature journeys available at the moment.'}
+                ? t('signature_journeys.empty_destination')
+                : t('signature_journeys.empty_none')}
             </p>
             {selectedCity && (
               <button
                 onClick={() => setSelectedCity(null)}
                 className="mt-4 text-[14px] font-medium text-gold underline hover:no-underline"
               >
-                Clear filter
+                {t('discover.clear_filter')}
               </button>
             )}
           </div>
@@ -309,7 +311,7 @@ function SignatureJourneysContent() {
       <section className="bg-green-dark px-6 py-16 sm:px-10 lg:px-[100px] lg:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-            PERSONAL CONCIERGE
+            {t('signature_journeys.cta_overline')}
           </span>
           <h2 className="mt-3 font-primary text-[28px] italic text-[#FAF5EF] md:text-[36px] lg:text-[42px]">
             {t('signature_journeys.cta_title')}
@@ -321,7 +323,7 @@ function SignatureJourneysContent() {
             href="/concierge"
             className="mt-8 inline-block rounded-lg bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-white/90"
           >
-            Start Planning
+            {t('signature_journeys.cta_button')}
           </Link>
         </div>
       </section>

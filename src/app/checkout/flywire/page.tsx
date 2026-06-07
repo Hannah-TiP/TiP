@@ -25,6 +25,7 @@ import { apiClient } from '@/lib/api-client';
 import { buildFlywireInitiateConfig } from '@/lib/flywire-config';
 import type { WidgetConfig } from '@/types/payment';
 import type { TripVersion, TripWithActiveQuote } from '@/types/trip';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const SCRIPT_URL = process.env.NEXT_PUBLIC_FLYWIRE_SCRIPT_URL ?? '';
 const FLYWIRE_ENV = process.env.NEXT_PUBLIC_FLYWIRE_ENV ?? 'demo';
@@ -62,6 +63,7 @@ export default function FlywireCheckoutPage() {
 }
 
 function FlywireCheckoutContent() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { status: sessionStatus } = useSession();
@@ -89,7 +91,7 @@ function FlywireCheckoutContent() {
   useEffect(() => {
     if (sessionStatus !== 'authenticated') return;
     if (!paymentIdRaw || Number.isNaN(paymentId)) {
-      setError('Missing or invalid payment_id.');
+      setError(t('checkout.error_missing_payment_id'));
       setLoading(false);
       return;
     }
@@ -122,15 +124,15 @@ function FlywireCheckoutContent() {
         }
       } catch (err) {
         if (cancelled) return;
-        const message = err instanceof Error ? err.message : 'Failed to load checkout config';
+        const message = err instanceof Error ? err.message : t('checkout.error_config');
         // Map common cases to friendlier copy.
         if (message.toLowerCase().includes('not found')) {
-          setError('Quote not found.');
+          setError(t('checkout.error_quote_not_found'));
         } else if (
           message.toLowerCase().includes('sent') ||
           message.toLowerCase().includes('status')
         ) {
-          setError('This quote is no longer awaiting payment.');
+          setError(t('checkout.error_not_awaiting'));
         } else {
           setError(message);
         }
@@ -142,7 +144,7 @@ function FlywireCheckoutContent() {
     return () => {
       cancelled = true;
     };
-  }, [sessionStatus, paymentIdRaw, paymentId]);
+  }, [sessionStatus, paymentIdRaw, paymentId, t]);
 
   // Script-failure timeout. If FlywirePayment isn't on window 5s after we
   // injected the <Script>, give up and show a refresh CTA. Successful
@@ -173,10 +175,10 @@ function FlywireCheckoutContent() {
       window.FlywirePayment.initiate(buildFlywireInitiateConfig({ env: FLYWIRE_ENV, config }));
       setWidgetMounted(true);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to initialise checkout widget';
+      const msg = err instanceof Error ? err.message : t('checkout.error_widget_init');
       setError(msg);
     }
-  }, [config, scriptReady, widgetMounted]);
+  }, [config, scriptReady, widgetMounted, t]);
 
   if (sessionStatus === 'loading' || (sessionStatus === 'authenticated' && loading)) {
     return (
@@ -199,7 +201,7 @@ function FlywireCheckoutContent() {
             href={errorBackHref}
             className="inline-block text-[#1E3D2F] hover:underline text-sm"
           >
-            ← Back
+            {t('checkout.back')}
           </Link>
         </div>
         <Footer />
@@ -220,7 +222,9 @@ function FlywireCheckoutContent() {
 
       <div className="max-w-3xl mx-auto px-6 mt-8 mb-16 space-y-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Complete payment</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            {t('checkout.complete_payment')}
+          </h1>
           {tripTitle && <p className="text-sm text-gray-500 mt-1">{tripTitle}</p>}
         </div>
 
@@ -230,17 +234,15 @@ function FlywireCheckoutContent() {
             className="rounded-xl border border-red-200 bg-red-50 px-5 py-6 text-center"
           >
             <p className="text-sm font-semibold text-red-800 mb-2">
-              Couldn&apos;t load the secure checkout.
+              {t('checkout.script_failed_title')}
             </p>
-            <p className="text-xs text-red-700/80 mb-4">
-              The payment provider script failed to initialise. Please refresh and try again.
-            </p>
+            <p className="text-xs text-red-700/80 mb-4">{t('checkout.script_failed_body')}</p>
             <button
               type="button"
               onClick={() => window.location.reload()}
               className="inline-flex items-center justify-center px-5 py-2 bg-red-700 text-white text-sm font-semibold rounded-full hover:bg-red-800"
             >
-              Refresh
+              {t('checkout.refresh')}
             </button>
           </div>
         ) : (
@@ -251,10 +253,8 @@ function FlywireCheckoutContent() {
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-4">
               <span className="block w-5 h-5 rounded-full border-2 border-gray-300 border-t-[#1E3D2F] animate-spin" />
             </div>
-            <p className="text-sm font-semibold text-gray-900 mb-1">Opening secure checkout…</p>
-            <p className="text-xs text-gray-500">
-              Flywire&apos;s payment window will appear in a moment.
-            </p>
+            <p className="text-sm font-semibold text-gray-900 mb-1">{t('checkout.opening')}</p>
+            <p className="text-xs text-gray-500">{t('checkout.opening_hint')}</p>
           </div>
         )}
       </div>

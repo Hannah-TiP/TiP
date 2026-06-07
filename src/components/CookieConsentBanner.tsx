@@ -143,6 +143,7 @@ function PreferencesModal({
   onSave: (prefs: CookiePreferences) => void;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const [analyticsOn, setAnalyticsOn] = useState(initialAnalytics);
   const [marketingOn, setMarketingOn] = useState(initialMarketing);
 
@@ -162,7 +163,7 @@ function PreferencesModal({
               type="button"
               onClick={onClose}
               className="flex h-8 w-8 items-center justify-center rounded-full text-gray-text transition-colors hover:bg-gray-light hover:text-green-dark"
-              aria-label="Close"
+              aria-label={t('common.close')}
             >
               <svg
                 width="16"
