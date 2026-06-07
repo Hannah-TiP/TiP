@@ -9,8 +9,10 @@ import EntityReviews from '@/components/reviews/EntityReviews';
 import { apiClient } from '@/lib/api-client';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Activity } from '@/types/activity';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function ActivityDetailPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const activitySlug = params.id as string;
 
@@ -26,7 +28,7 @@ export default function ActivityDetailPage() {
         setActivity(data);
       } catch (err) {
         console.error('Failed to load activity:', err);
-        setError('Activity not found');
+        setError(t('detail.error_activity_not_found'));
       } finally {
         setIsLoading(false);
       }
@@ -35,7 +37,7 @@ export default function ActivityDetailPage() {
     if (activitySlug) {
       loadActivity();
     }
-  }, [activitySlug]);
+  }, [activitySlug, t]);
 
   if (isLoading) {
     return (
@@ -52,15 +54,15 @@ export default function ActivityDetailPage() {
     return (
       <main className="min-h-screen bg-background">
         <div className="flex flex-col items-center justify-center py-40">
-          <h1 className="font-primary text-[42px] italic text-green-dark">Activity Not Found</h1>
-          <p className="mt-4 text-gray-text">
-            The activity you&apos;re looking for doesn&apos;t exist.
-          </p>
+          <h1 className="font-primary text-[42px] italic text-green-dark">
+            {t('detail.activity_not_found_title')}
+          </h1>
+          <p className="mt-4 text-gray-text">{t('detail.activity_not_found_body')}</p>
           <Link
             href="/more-dreams"
             className="mt-8 rounded-full bg-green-dark px-8 py-3 text-[13px] font-semibold text-white hover:bg-green-dark/90"
           >
-            Back to More Dreams
+            {t('detail.back_to_more_dreams')}
           </Link>
         </div>
         <Footer />
@@ -68,7 +70,7 @@ export default function ActivityDetailPage() {
     );
   }
 
-  const badge = activity.category ? activity.category.toUpperCase() : 'ACTIVITY';
+  const badge = activity.category ? activity.category.toUpperCase() : t('detail.activity_badge');
   const heroImage = getImageUrl(activity.images?.[0]);
   const name = getLocalizedText(activity.name);
   const description = activity.description ? getLocalizedText(activity.description) : null;
@@ -108,7 +110,7 @@ export default function ActivityDetailPage() {
         <div className="mx-auto flex max-w-7xl items-start gap-16">
           <div className="flex-1">
             <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-              ABOUT THIS EXPERIENCE
+              {t('detail.about_experience')}
             </span>
             <h2 className="mt-3 font-primary text-[38px] italic leading-snug text-green-dark">
               {name}
@@ -122,7 +124,7 @@ export default function ActivityDetailPage() {
                   <p className="font-primary text-[32px] font-semibold text-green-dark">
                     {visitDuration}
                   </p>
-                  <p className="text-[12px] text-gray-text">Visit Duration</p>
+                  <p className="text-[12px] text-gray-text">{t('detail.visit_duration')}</p>
                 </div>
               )}
             </div>
@@ -135,23 +137,25 @@ export default function ActivityDetailPage() {
         <div className="mx-auto max-w-7xl">
           <div className="mb-10 text-center">
             <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-              PLAN YOUR VISIT
+              {t('detail.plan_your_visit')}
             </span>
             <h2 className="mt-3 font-primary text-[38px] italic text-green-dark">
-              Practical Information
+              {t('detail.practical_information')}
             </h2>
           </div>
           <div className="grid grid-cols-3 gap-6">
             {address && (
               <div className="rounded-xl bg-white p-8 shadow-sm">
-                <span className="text-[11px] font-semibold tracking-[2px] text-gold">ADDRESS</span>
+                <span className="text-[11px] font-semibold tracking-[2px] text-gold">
+                  {t('detail.address')}
+                </span>
                 <p className="mt-3 text-[15px] leading-relaxed text-green-dark">{address}</p>
               </div>
             )}
             {openingHours && (
               <div className="rounded-xl bg-white p-8 shadow-sm">
                 <span className="text-[11px] font-semibold tracking-[2px] text-gold">
-                  OPENING HOURS
+                  {t('detail.opening_hours')}
                 </span>
                 <p className="mt-3 text-[15px] leading-relaxed text-green-dark">{openingHours}</p>
               </div>
@@ -159,7 +163,7 @@ export default function ActivityDetailPage() {
             {visitDuration && (
               <div className="rounded-xl bg-white p-8 shadow-sm">
                 <span className="text-[11px] font-semibold tracking-[2px] text-gold">
-                  VISIT DURATION
+                  {t('detail.visit_duration_caps')}
                 </span>
                 <p className="mt-3 text-[15px] leading-relaxed text-green-dark">{visitDuration}</p>
               </div>
@@ -173,10 +177,10 @@ export default function ActivityDetailPage() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-8 text-center">
             <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-              GUEST REVIEWS
+              {t('detail.guest_reviews')}
             </span>
             <h2 className="mt-3 font-primary text-[38px] italic text-green-dark">
-              What Travelers Say
+              {t('detail.what_travelers_say')}
             </h2>
           </div>
           <EntityReviews entityType="activity" entityId={activity.id} />
@@ -187,27 +191,26 @@ export default function ActivityDetailPage() {
       <section className="bg-[#3D3530] px-20 py-20">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-[11px] font-semibold tracking-[4px] text-white/50">
-            READY TO EXPLORE
+            {t('detail.ready_to_explore')}
           </span>
           <h2 className="mt-4 font-primary text-[52px] italic leading-tight text-[#FAF5EF]">
-            Your Concierge Awaits
+            {t('detail.concierge_awaits')}
           </h2>
           <p className="mt-4 text-[16px] leading-relaxed text-white/60">
-            Want to include this experience in your itinerary? Our dedicated travel specialists can
-            arrange everything for you.
+            {t('detail.cta_activity_body')}
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Link
               href="/concierge"
               className="rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
             >
-              Chat with Concierge
+              {t('detail.chat_with_concierge')}
             </Link>
             <Link
               href="/more-dreams"
               className="rounded-full border border-white/30 px-8 py-4 text-[13px] font-semibold text-white transition-colors hover:bg-white/10"
             >
-              Back to More Dreams
+              {t('detail.back_to_more_dreams')}
             </Link>
           </div>
         </div>

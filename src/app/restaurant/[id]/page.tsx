@@ -9,8 +9,10 @@ import EntityReviews from '@/components/reviews/EntityReviews';
 import { apiClient } from '@/lib/api-client';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Restaurant } from '@/types/restaurant';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function RestaurantDetailPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const restaurantId = params.id as string;
 
@@ -26,7 +28,7 @@ export default function RestaurantDetailPage() {
         setRestaurant(data);
       } catch (err) {
         console.error('Failed to load restaurant:', err);
-        setError('Restaurant not found');
+        setError(t('detail.error_restaurant_not_found'));
       } finally {
         setIsLoading(false);
       }
@@ -35,7 +37,7 @@ export default function RestaurantDetailPage() {
     if (restaurantId) {
       loadRestaurant();
     }
-  }, [restaurantId]);
+  }, [restaurantId, t]);
 
   if (isLoading) {
     return (
@@ -52,15 +54,15 @@ export default function RestaurantDetailPage() {
     return (
       <main className="min-h-screen bg-background">
         <div className="flex flex-col items-center justify-center py-40">
-          <h1 className="font-primary text-[42px] italic text-green-dark">Restaurant Not Found</h1>
-          <p className="mt-4 text-gray-text">
-            The restaurant you&apos;re looking for doesn&apos;t exist.
-          </p>
+          <h1 className="font-primary text-[42px] italic text-green-dark">
+            {t('detail.restaurant_not_found_title')}
+          </h1>
+          <p className="mt-4 text-gray-text">{t('detail.restaurant_not_found_body')}</p>
           <Link
             href="/more-dreams"
             className="mt-8 rounded-full bg-green-dark px-8 py-3 text-[13px] font-semibold text-white hover:bg-green-dark/90"
           >
-            Back to More Dreams
+            {t('detail.back_to_more_dreams')}
           </Link>
         </div>
         <Footer />
@@ -72,7 +74,7 @@ export default function RestaurantDetailPage() {
   const badge =
     primaryRecognition?.source_type === 'michelin' && primaryRecognition.tier
       ? primaryRecognition.tier.replaceAll('_', ' ').toUpperCase()
-      : 'RESTAURANT';
+      : t('detail.restaurant_badge');
 
   return (
     <main className="min-h-screen bg-background">
@@ -105,7 +107,7 @@ export default function RestaurantDetailPage() {
         <div className="mx-auto flex max-w-7xl items-start gap-16">
           <div className="flex-1">
             <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-              ABOUT THIS RESTAURANT
+              {t('detail.about_restaurant')}
             </span>
             <h2 className="mt-3 font-primary text-[38px] italic leading-snug text-green-dark">
               {getLocalizedText(restaurant.name)}
@@ -118,7 +120,7 @@ export default function RestaurantDetailPage() {
                 <p className="font-primary text-[32px] font-semibold text-green-dark">
                   {primaryRecognition.tier?.replaceAll('_', ' ') || primaryRecognition.source_type}
                 </p>
-                <p className="text-[12px] text-gray-text">Recognition</p>
+                <p className="text-[12px] text-gray-text">{t('detail.recognition')}</p>
               </div>
             )}
           </div>
@@ -130,16 +132,18 @@ export default function RestaurantDetailPage() {
         <div className="mx-auto max-w-7xl">
           <div className="mb-10 text-center">
             <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-              PLAN YOUR VISIT
+              {t('detail.plan_your_visit')}
             </span>
             <h2 className="mt-3 font-primary text-[38px] italic text-green-dark">
-              Practical Information
+              {t('detail.practical_information')}
             </h2>
           </div>
           <div className="grid grid-cols-2 gap-6">
             {restaurant.address && (
               <div className="rounded-xl bg-white p-8 shadow-sm">
-                <span className="text-[11px] font-semibold tracking-[2px] text-gold">ADDRESS</span>
+                <span className="text-[11px] font-semibold tracking-[2px] text-gold">
+                  {t('detail.address')}
+                </span>
                 <p className="mt-3 text-[15px] leading-relaxed text-green-dark">
                   {getLocalizedText(restaurant.address)}
                 </p>
@@ -148,7 +152,7 @@ export default function RestaurantDetailPage() {
             {restaurant.opening_hours && (
               <div className="rounded-xl bg-white p-8 shadow-sm">
                 <span className="text-[11px] font-semibold tracking-[2px] text-gold">
-                  OPENING HOURS
+                  {t('detail.opening_hours')}
                 </span>
                 <p className="mt-3 text-[15px] leading-relaxed text-green-dark">
                   {getLocalizedText(restaurant.opening_hours)}
@@ -164,10 +168,10 @@ export default function RestaurantDetailPage() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-8 text-center">
             <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-              GUEST REVIEWS
+              {t('detail.guest_reviews')}
             </span>
             <h2 className="mt-3 font-primary text-[38px] italic text-green-dark">
-              What Travelers Say
+              {t('detail.what_travelers_say')}
             </h2>
           </div>
           <EntityReviews entityType="restaurant" entityId={restaurant.id} />
@@ -178,27 +182,26 @@ export default function RestaurantDetailPage() {
       <section className="bg-[#3D3530] px-20 py-20">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-[11px] font-semibold tracking-[4px] text-white/50">
-            READY TO DINE
+            {t('detail.ready_to_dine')}
           </span>
           <h2 className="mt-4 font-primary text-[52px] italic leading-tight text-[#FAF5EF]">
-            Your Concierge Awaits
+            {t('detail.concierge_awaits')}
           </h2>
           <p className="mt-4 text-[16px] leading-relaxed text-white/60">
-            Want to reserve a table or include this restaurant in your itinerary? Our dedicated
-            travel specialists can arrange everything.
+            {t('detail.cta_restaurant_body2')}
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Link
               href="/concierge"
               className="rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
             >
-              Chat with Concierge
+              {t('detail.chat_with_concierge')}
             </Link>
             <Link
               href="/more-dreams"
               className="rounded-full border border-white/30 px-8 py-4 text-[13px] font-semibold text-white transition-colors hover:bg-white/10"
             >
-              Back to More Dreams
+              {t('detail.back_to_more_dreams')}
             </Link>
           </div>
         </div>

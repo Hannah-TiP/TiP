@@ -283,7 +283,7 @@ function DreamHotelsContent() {
       <section className="relative h-[720px] w-full overflow-hidden">
         <Image
           src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1920&h=900&fit=crop"
-          alt="Luxury hotel"
+          alt={t('dream_hotels.hero_alt')}
           fill
           sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
@@ -293,14 +293,13 @@ function DreamHotelsContent() {
         {/* Hero Content */}
         <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
-            CURATED COLLECTION
+            {t('discover.curated_collection')}
           </span>
           <h1 className="font-primary text-[36px] font-normal italic leading-tight text-white md:text-[48px] lg:text-[64px]">
-            Dream Hotels
+            {t('dream_hotels.hero_title')}
           </h1>
           <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-white/60">
-            Discover the world&apos;s most extraordinary hotels, hand-selected for unparalleled
-            luxury and unforgettable experiences.
+            {t('dream_hotels.hero_subtitle')}
           </p>
         </div>
       </section>
@@ -319,7 +318,9 @@ function DreamHotelsContent() {
             >
               <div className="text-center">
                 <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
-                <p className="text-[16px] font-medium text-green-dark">Loading hotels...</p>
+                <p className="text-[16px] font-medium text-green-dark">
+                  {t('dream_hotels.loading')}
+                </p>
               </div>
             </div>
           ) : (
@@ -347,7 +348,7 @@ function DreamHotelsContent() {
               </svg>
               <input
                 type="text"
-                placeholder="Search hotels by name..."
+                placeholder={t('dream_hotels.search_by_name')}
                 value={hotelSearch}
                 onChange={(e) => setHotelSearch(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
@@ -422,12 +423,12 @@ function DreamHotelsContent() {
                   }`}
                 >
                   <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
-                    DESTINATION
+                    {t('discover.destination_label')}
                   </p>
                   <div className="flex items-center">
                     <input
                       type="text"
-                      placeholder="Search country, region, or city..."
+                      placeholder={t('dream_hotels.search_location')}
                       value={destinationSearch}
                       onChange={(e) => {
                         setDestinationSearch(e.target.value);
@@ -519,11 +520,11 @@ function DreamHotelsContent() {
                 }`}
               >
                 <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
-                  HOTEL TYPE
+                  {t('dream_hotels.hotel_type')}
                 </p>
                 <p className="text-[14px] font-medium text-green-dark">
                   {STAR_RATING_OPTIONS.find((o) => o.value === selectedStarRating)?.label ||
-                    'All types'}
+                    t('dream_hotels.all_types')}
                 </p>
               </button>
               {openDropdown === 'type' && (
@@ -554,11 +555,11 @@ function DreamHotelsContent() {
                 onClick={clearFilters}
                 className="w-full rounded-lg border border-green-dark px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-green-dark hover:text-white md:w-auto"
               >
-                Clear
+                {t('discover.clear')}
               </button>
             ) : (
               <button className="w-full rounded-lg bg-green-dark px-8 py-4 text-[13px] font-semibold text-white md:w-auto">
-                Search
+                {t('discover.search')}
               </button>
             )}
           </div>
@@ -588,10 +589,10 @@ function DreamHotelsContent() {
       <section className="bg-gray-light px-6 py-16 sm:px-10 lg:px-20 lg:py-20">
         <div className="mb-12 text-center">
           <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-            CURATED FOR YOU
+            {t('dream_hotels.curated_for_you')}
           </span>
           <h2 className="mt-3 font-primary text-[28px] italic text-green-dark md:text-[36px] lg:text-[42px]">
-            Featured Hotels & Destinations
+            {t('dream_hotels.featured_title')}
           </h2>
         </div>
 
@@ -602,16 +603,14 @@ function DreamHotelsContent() {
         ) : hotels.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-gray-text">
-              {hasActiveFilters
-                ? 'No hotels match your filters.'
-                : 'No hotels available at the moment.'}
+              {hasActiveFilters ? t('dream_hotels.empty_no_match') : t('dream_hotels.empty_none')}
             </p>
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
                 className="mt-4 text-[14px] font-medium text-gold underline hover:no-underline"
               >
-                Clear all filters
+                {t('dream_hotels.clear_all_filters')}
               </button>
             )}
           </div>
@@ -684,14 +683,13 @@ function DreamHotelsContent() {
       <section className="bg-green-dark px-6 py-16 sm:px-10 lg:px-[100px] lg:py-20">
         <div className="text-center">
           <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-            TRUSTED PARTNERSHIPS
+            {t('dream_hotels.trusted_partnerships')}
           </span>
           <h2 className="mt-3 font-primary text-[28px] italic text-[#FAF5EF] md:text-[36px] lg:text-[42px]">
-            Our Global Luxury Hotel Network
+            {t('dream_hotels.network_title')}
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[16px] leading-relaxed text-white/50">
-            Book through TiP / Paris Class and enjoy preferred rates, exclusive privileges, and
-            benefits you won&apos;t find elsewhere.
+            {t('dream_hotels.network_body')}
           </p>
         </div>
 
@@ -704,8 +702,7 @@ function DreamHotelsContent() {
         </div>
 
         <p className="mt-12 text-center text-[14px] leading-relaxed text-white/40">
-          Reserve with us to unlock the maximum benefits, preferred access, and exclusive savings —
-          at the same price or better.
+          {t('dream_hotels.network_perks')}
         </p>
       </section>
 
