@@ -230,7 +230,7 @@ export default function SearchBar() {
       {isOverlayOpen && (
         <div
           data-testid="searchbar-overlay"
-          className="fixed inset-0 z-[200] flex flex-col overflow-y-auto bg-white md:hidden"
+          className="fixed inset-0 z-[200] flex h-dvh flex-col bg-white md:hidden"
         >
           <div className="flex items-center justify-between border-b border-gray-border px-6 py-4">
             <span className="text-[16px] font-semibold text-green-dark">
@@ -252,7 +252,7 @@ export default function SearchBar() {
             </button>
           </div>
 
-          <div className="flex flex-1 flex-col gap-4 px-6 py-6">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
             {/* Destination */}
             <div className="relative">
               <button

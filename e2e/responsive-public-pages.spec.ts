@@ -46,8 +46,13 @@ async function stubLists(page: Page) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
+      // getCities() returns response.data directly as a City[] (it does NOT
+      // unwrap a paginated { items } envelope). The page calls cities.filter,
+      // so data MUST be a bare array — an { items } envelope here throws
+      // "cities.filter is not a function", which the fallback-less <Suspense>
+      // on more-dreams/signature-journeys swallows, blanking the hero.
       body: JSON.stringify({
-        data: { items: [{ id: 7, name: 'Paris', country_id: 1 }] },
+        data: [{ id: 7, name: 'Paris', country_id: 1 }],
       }),
     });
   });
@@ -92,14 +97,24 @@ test.describe('Responsive public pages (375px)', () => {
 
   test('more-dreams has no horizontal scroll', async ({ page }) => {
     await page.goto('/more-dreams');
-    await expect(page.getByRole('heading', { name: 'More Dreams' })).toBeVisible();
+    // This page wraps its hero in a top-level <Suspense> (it reads
+    // useSearchParams), so the hero <section>/heading is painted only after
+    // client hydration — later than the default 5s assertion window under
+    // waitUntil:'load'. Wait for the network to settle so hydration has run.
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('heading', { name: 'More Dreams' })).toBeVisible({
+      timeout: 15000,
+    });
     await expectNoHorizontalScroll(page);
   });
 
   test('signature-journeys has no horizontal scroll', async ({ page }) => {
     await page.goto('/signature-journeys');
+    // Same Suspense-gated hydration as more-dreams: wait for the network to
+    // settle before asserting the hero region is present.
+    await page.waitForLoadState('networkidle');
     // The hero title is i18n-driven; just wait for the hero region.
-    await expect(page.locator('section').first()).toBeVisible();
+    await expect(page.locator('section').first()).toBeVisible({ timeout: 15000 });
     await expectNoHorizontalScroll(page);
   });
 });
@@ -123,10 +138,38 @@ test.describe('SearchBar mobile collapse (375px)', () => {
     await expect(page.getByTestId('searchbar-overlay')).toHaveCount(0);
 
     await cta.click();
-    await expect(page.getByTestId('searchbar-overlay')).toBeVisible();
+    const overlay = page.getByTestId('searchbar-overlay');
+    await expect(overlay).toBeVisible();
 
     // Opening the overlay must not introduce horizontal scroll.
     await expectNoHorizontalScroll(page);
+
+    // Regression guard for the vertical-collapse blocker: the overlay must
+    // fill the viewport. A previous build pinned it to a ~56px strip via an
+    // unresolved `inset-0` stretch, pushing all 5 fields + Submit below the
+    // fold (y ≈ 857–1276px). The horizontal-only check above missed it because
+    // Playwright auto-scrolls before clicking. Assert the container height and
+    // that the first field + Submit are inside the initial viewport WITHOUT
+    // scrolling.
+    const innerHeight = await page.evaluate(() => window.innerHeight);
+
+    const overlayBox = await overlay.boundingBox();
+    expect(overlayBox).not.toBeNull();
+    expect(overlayBox!.height).toBeGreaterThanOrEqual(innerHeight - 5);
+
+    // The first field (Destination) must be visible in the initial viewport.
+    const firstField = overlay.getByText('Destination', { exact: true }).first();
+    const firstFieldBox = await firstField.boundingBox();
+    expect(firstFieldBox).not.toBeNull();
+    expect(firstFieldBox!.y).toBeGreaterThanOrEqual(0);
+    expect(firstFieldBox!.y).toBeLessThanOrEqual(innerHeight);
+
+    // The Submit button (pinned footer) must also sit within the viewport.
+    const submit = overlay.getByRole('button', { name: /plan my trip/i }).last();
+    const submitBox = await submit.boundingBox();
+    expect(submitBox).not.toBeNull();
+    expect(submitBox!.y).toBeGreaterThanOrEqual(0);
+    expect(submitBox!.y).toBeLessThanOrEqual(innerHeight);
 
     await page.getByTestId('searchbar-overlay-close').click();
     await expect(page.getByTestId('searchbar-overlay')).toHaveCount(0);
