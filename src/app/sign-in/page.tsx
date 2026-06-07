@@ -8,11 +8,13 @@ import Link from 'next/link';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { isSafeRedirectPath } from '@/lib/redirect-validation';
 import PasswordInput from '@/components/PasswordInput';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const DEFAULT_REDIRECT = '/my-page';
 
 function SignInForm() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   // Pre-fill the email when arriving from the signup screen's "account
   // already exists" panel (it links here with ?email=).
@@ -57,7 +59,7 @@ function SignInForm() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || 'Google sign-in failed');
+        throw new Error(data.message || t('auth.error_google_failed'));
       }
 
       const { data } = await res.json();
@@ -70,14 +72,14 @@ function SignInForm() {
       });
 
       if (result?.error) {
-        throw new Error('Failed to establish session');
+        throw new Error(t('auth.error_session_failed'));
       }
 
       const session = await getSession();
       const needsOnboarding = session?.user && !session.user.onboarding_completed;
       window.location.href = needsOnboarding ? '/onboarding' : redirectTo;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+      setError(err instanceof Error ? err.message : t('auth.error_google_failed'));
       setIsLoading(false);
     }
   };
@@ -94,14 +96,14 @@ function SignInForm() {
         redirect: false,
       });
       if (result?.error) {
-        setError('Invalid email or password');
+        setError(t('auth.error_invalid_credentials'));
       } else {
         const session = await getSession();
         const needsOnboarding = session?.user && !session.user.onboarding_completed;
         window.location.href = needsOnboarding ? '/onboarding' : redirectTo;
       }
     } catch {
-      setError('Login failed');
+      setError(t('auth.error_login_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +112,9 @@ function SignInForm() {
   return (
     <div className="mt-8 w-full max-w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
       <div className="flex flex-col gap-6 p-6 md:p-8">
-        <h2 className="text-center text-[20px] font-semibold text-green-dark">Welcome back</h2>
+        <h2 className="text-center text-[20px] font-semibold text-green-dark">
+          {t('auth.welcome_back')}
+        </h2>
 
         {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
@@ -119,7 +123,7 @@ function SignInForm() {
             <div className="flex justify-center">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
-                onError={() => setError('Google sign-in failed')}
+                onError={() => setError(t('auth.error_google_failed'))}
                 size="large"
                 width="356"
                 text="continue_with"
@@ -128,7 +132,7 @@ function SignInForm() {
 
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-gray-200" />
-              <span className="text-xs text-gray-text">or</span>
+              <span className="text-xs text-gray-text">{t('auth.or')}</span>
               <div className="h-px flex-1 bg-gray-200" />
             </div>
           </>
@@ -139,7 +143,7 @@ function SignInForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
+            placeholder={t('auth.email_placeholder')}
             required
             disabled={isLoading}
             className="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-green-dark"
@@ -148,14 +152,14 @@ function SignInForm() {
           <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
+            placeholder={t('auth.password_placeholder')}
             required
             disabled={isLoading}
             className="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-green-dark"
           />
 
           <Link href="/forgot-password" className="text-sm text-green-dark hover:underline">
-            Forgot password?
+            {t('auth.forgot_password')}
           </Link>
 
           <button
@@ -163,18 +167,18 @@ function SignInForm() {
             disabled={isLoading}
             className="flex h-12 w-full items-center justify-center rounded-lg bg-green-dark text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {isLoading ? 'Signing in...' : 'Continue'}
+            {isLoading ? t('auth.signing_in') : t('auth.continue')}
           </button>
         </form>
       </div>
 
       <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 text-center text-sm md:px-8">
-        <span className="text-gray-text">Don&apos;t have an account? </span>
+        <span className="text-gray-text">{t('auth.no_account')}</span>
         <Link
           href={referralCode ? `/register?ref=${referralCode}` : '/register'}
           className="font-medium text-green-dark hover:underline"
         >
-          Sign up
+          {t('auth.sign_up')}
         </Link>
       </div>
     </div>
@@ -182,6 +186,7 @@ function SignInForm() {
 }
 
 export default function SignInPage() {
+  const { t } = useLanguage();
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <main className="flex min-h-screen flex-col bg-gray-light">
@@ -190,7 +195,7 @@ export default function SignInPage() {
           <Link href="/">
             <Image
               src="/bible_TIP_profil_400x400px.svg"
-              alt="TiP"
+              alt={t('auth.logo_alt')}
               className="h-9"
               width={36}
               height={36}
@@ -201,9 +206,9 @@ export default function SignInPage() {
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 md:px-10">
           <div className="text-center">
             <h1 className="font-primary text-[32px] italic text-green-dark md:text-[48px]">
-              Sign in to start planning
+              {t('auth.sign_in_headline')}
             </h1>
-            <p className="mt-2 text-gray-text">Access your personalized travel recommendations</p>
+            <p className="mt-2 text-gray-text">{t('auth.sign_in_subtitle')}</p>
           </div>
 
           <Suspense
