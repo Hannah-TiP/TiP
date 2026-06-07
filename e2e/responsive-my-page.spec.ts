@@ -1,12 +1,17 @@
 import { test, expect, type Page } from '@playwright/test';
 
 /**
- * Mobile responsiveness for the authenticated my-page surface, the auth
- * pages, and the onboarding flow (SMA-68).
+ * Mobile responsiveness for the authenticated my-page surface and the
+ * onboarding flow (SMA-68).
  *
- * Runs under the authed project so /my-page and its sub-routes are reachable.
- * Every route is checked at a 375px-wide viewport for the absence of
- * horizontal overflow (the document must not be wider than the viewport).
+ * Runs under the authed project so /my-page, its sub-routes, and /onboarding
+ * are reachable. Every route is checked at a 375px-wide viewport for the
+ * absence of horizontal overflow (the document must not be wider than the
+ * viewport).
+ *
+ * The PUBLIC auth pages (/sign-in, /register) live in
+ * responsive-auth-pages.spec.ts, which runs unauthenticated — the middleware
+ * redirects a logged-in user away from /sign-in to /my-page.
  */
 
 const MOBILE_VIEWPORT = { width: 375, height: 812 };
@@ -25,26 +30,7 @@ async function expectNoHorizontalScroll(page: Page) {
 
 test.use({ viewport: MOBILE_VIEWPORT });
 
-test.describe('Responsive my-page + auth pages (375px)', () => {
-  test('sign-in form is full-width and does not overflow', async ({ page }) => {
-    await page.goto('/sign-in');
-    await expect(page.getByPlaceholder(/email/i)).toBeVisible();
-
-    // The form container must not exceed the viewport width.
-    const form = page.locator('form').first();
-    const box = await form.boundingBox();
-    expect(box).not.toBeNull();
-    expect(box!.width).toBeLessThanOrEqual(MOBILE_VIEWPORT.width);
-
-    await expectNoHorizontalScroll(page);
-  });
-
-  test('register form does not overflow', async ({ page }) => {
-    await page.goto('/register');
-    await expect(page.getByPlaceholder(/email/i)).toBeVisible();
-    await expectNoHorizontalScroll(page);
-  });
-
+test.describe('Responsive my-page + onboarding (375px)', () => {
   test('onboarding flow does not overflow', async ({ page }) => {
     // An authed user lands on a resumed onboarding step (or is bounced to
     // /my-page if already complete) — either way the layout must fit 375px.
