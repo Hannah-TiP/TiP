@@ -263,20 +263,20 @@ export default function HomePage() {
 
         {/* Hero Content — sits beneath the 64px centralized overlay header */}
         <div
-          className="relative z-10 mt-[64px] flex flex-col items-start justify-end px-[100px] pb-[180px]"
+          className="relative z-10 mt-[64px] flex flex-col items-start justify-end px-6 pb-28 sm:px-10 lg:px-[100px] lg:pb-[180px]"
           style={{ height: 'calc(100% - 64px)' }}
         >
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
             LUXURY TRAVEL REIMAGINED
           </span>
-          <h1 className="max-w-3xl font-primary text-[64px] font-normal italic leading-[1.1] text-white">
+          <h1 className="max-w-3xl font-primary text-[36px] font-normal italic leading-[1.1] text-white md:text-[48px] lg:text-[64px]">
             Dream Hotels, Thoughtfully Curated.
           </h1>
           <p className="mt-6 max-w-xl text-[16px] leading-[1.7] text-white/60">
             Experience the world&apos;s most extraordinary hotels, hand-selected by our AI concierge
             for unparalleled luxury and unforgettable moments.
           </p>
-          <div className="mt-8 flex items-center gap-4">
+          <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
               href="/concierge"
               className="flex items-center gap-2 rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
@@ -294,14 +294,14 @@ export default function HomePage() {
         </div>
 
         {/* Search Bar */}
-        <div className="absolute bottom-[60px] left-1/2 z-[100] w-[1280px] -translate-x-1/2">
+        <div className="absolute bottom-[40px] left-1/2 z-[100] w-full max-w-[1280px] -translate-x-1/2 px-6 sm:px-10 lg:bottom-[60px] lg:px-0">
           <SearchBar />
         </div>
       </section>
 
       {/* Luxury Section */}
-      <section className="bg-gray-light px-[100px] py-20">
-        <div className="mx-auto flex max-w-7xl items-start gap-20">
+      <section className="bg-gray-light px-6 py-16 sm:px-10 lg:px-[100px] lg:py-20">
+        <div className="mx-auto flex max-w-7xl flex-col items-start gap-10 md:flex-row md:gap-20">
           {/* TiP Logo mark */}
           <div className="flex-shrink-0">
             <Image
@@ -314,12 +314,12 @@ export default function HomePage() {
           </div>
 
           {/* Content */}
-          <div className="flex flex-1 items-start justify-between gap-16">
+          <div className="flex flex-1 flex-col items-start justify-between gap-8 lg:flex-row lg:gap-16">
             <div className="max-w-md">
               <span className="text-[11px] font-semibold tracking-[4px] text-gold">
                 THE TIP DIFFERENCE
               </span>
-              <h2 className="mt-3 font-primary text-[38px] italic leading-snug text-green-dark">
+              <h2 className="mt-3 font-primary text-[28px] italic leading-snug text-green-dark md:text-[38px]">
                 Travel Intelligence, Perfected
               </h2>
             </div>
@@ -339,14 +339,14 @@ export default function HomePage() {
       </section>
 
       {/* Elevate Section */}
-      <section className="bg-[#F5F4F2] px-[100px] py-20">
+      <section className="bg-[#F5F4F2] px-6 py-16 sm:px-10 lg:px-[100px] lg:py-20">
         <div className="mx-auto max-w-7xl text-center">
           <span className="text-[11px] font-semibold tracking-[4px] text-gold">HOW IT WORKS</span>
-          <h2 className="mt-3 font-primary text-[42px] italic text-green-dark">
+          <h2 className="mt-3 font-primary text-[28px] italic text-green-dark md:text-[36px] lg:text-[42px]">
             Elevate Your Journey
           </h2>
         </div>
-        <div className="mx-auto mt-12 flex max-w-5xl justify-center gap-6">
+        <div className="mx-auto mt-12 flex max-w-5xl flex-col justify-center gap-6 sm:flex-row">
           {elevateCards.map((card) => (
             <Link
               key={card.title}
@@ -366,7 +366,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gray-light px-[100px] py-20">
+      <section className="bg-gray-light px-6 py-16 sm:px-10 lg:px-[100px] lg:py-20">
         <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
           {/* TiP Logo */}
           <div className="mb-6">
@@ -381,14 +381,14 @@ export default function HomePage() {
           <span className="text-[11px] font-semibold tracking-[4px] text-green-dark">
             BEGIN YOUR JOURNEY
           </span>
-          <h2 className="mt-4 font-primary text-[52px] italic leading-tight text-[#3D3D3D]">
+          <h2 className="mt-4 font-primary text-[32px] italic leading-tight text-[#3D3D3D] md:text-[42px] lg:text-[52px]">
             Ready to explore the world?
           </h2>
           <p className="mt-4 max-w-xl text-[16px] leading-[1.7] text-gray-text">
             Let our AI concierge craft your perfect adventure, tailored to your preferences and
             style — anywhere in the world.
           </p>
-          <div className="mt-8 flex items-center gap-4">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/concierge"
               className="flex items-center gap-2 rounded-full bg-green-dark px-8 py-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
@@ -572,10 +572,10 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#214032] px-[100px] py-12">
+      <footer className="bg-[#214032] px-6 py-12 sm:px-10 lg:px-[100px]">
         <div className="mx-auto max-w-7xl">
           {/* Top */}
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col items-start gap-10 md:flex-row md:justify-between">
             <Link href="/">
               <Image
                 src="/bible_TIP_logo_noir.svg"
@@ -586,7 +586,7 @@ export default function HomePage() {
                 style={{ filter: 'brightness(0) invert(1)' }}
               />
             </Link>
-            <div className="flex gap-20">
+            <div className="flex flex-wrap gap-x-12 gap-y-8 sm:gap-x-20">
               <div>
                 <h4 className="text-[13px] font-semibold text-white/60">Explore</h4>
                 <div className="mt-4 flex flex-col gap-3">

@@ -1,0 +1,124 @@
+import { test, expect, type Page, type Route } from '@playwright/test';
+
+/**
+ * SMA-65 — responsive public pages at a 375px phone viewport.
+ *
+ * Asserts the landing page and the four other changed public pages render with
+ * NO horizontal page scroll at 375px, and that the SearchBar collapses to a
+ * single CTA that opens a full-screen overlay on mobile.
+ *
+ * Strategy: the four data-driven pages (dream-hotels, more-dreams,
+ * signature-journeys) fetch lists on mount; stub every list endpoint with an
+ * empty paginated envelope so the test exercises the page CHROME (hero,
+ * filters, grid container, footer) deterministically without a live backend.
+ * The no-scroll guarantee is a property of the layout, not the data.
+ */
+
+const PHONE = { width: 375, height: 812 };
+
+function emptyEnvelope() {
+  return {
+    data: {
+      items: [],
+      total: 0,
+      per_page: 50,
+      current_page: 1,
+      last_page: 1,
+      has_more: false,
+    },
+  };
+}
+
+async function stubLists(page: Page) {
+  const empty = async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(emptyEnvelope()),
+    });
+  };
+  await page.route('**/api/hotels**', empty);
+  await page.route('**/api/activities**', empty);
+  await page.route('**/api/restaurants**', empty);
+  await page.route('**/api/cities**', empty);
+  await page.route('**/api/reviews/aggregates**', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: {} }),
+    });
+  });
+}
+
+async function expectNoHorizontalScroll(page: Page) {
+  const overflow = await page.evaluate(() => {
+    const el = document.documentElement;
+    return { scrollWidth: el.scrollWidth, clientWidth: el.clientWidth };
+  });
+  // Allow a 1px rounding slack (sub-pixel layout).
+  expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth + 1);
+}
+
+test.describe('Responsive public pages (375px)', () => {
+  test.use({ viewport: PHONE });
+
+  test.beforeEach(async ({ page }) => {
+    await stubLists(page);
+  });
+
+  test('landing page has no horizontal scroll', async ({ page }) => {
+    await page.goto('/');
+    await expect(
+      page.getByRole('heading', { name: 'Dream Hotels, Thoughtfully Curated.' }),
+    ).toBeVisible();
+    await expectNoHorizontalScroll(page);
+  });
+
+  test('dream-hotels has no horizontal scroll', async ({ page }) => {
+    await page.goto('/dream-hotels');
+    await expect(page.getByRole('heading', { name: 'Dream Hotels' })).toBeVisible();
+    await expectNoHorizontalScroll(page);
+  });
+
+  test('more-dreams has no horizontal scroll', async ({ page }) => {
+    await page.goto('/more-dreams');
+    await expect(page.getByRole('heading', { name: 'More Dreams' })).toBeVisible();
+    await expectNoHorizontalScroll(page);
+  });
+
+  test('signature-journeys has no horizontal scroll', async ({ page }) => {
+    await page.goto('/signature-journeys');
+    // The hero title is i18n-driven; just wait for the hero region.
+    await expect(page.locator('section').first()).toBeVisible();
+    await expectNoHorizontalScroll(page);
+  });
+});
+
+test.describe('SearchBar mobile collapse (375px)', () => {
+  test.use({ viewport: PHONE });
+
+  test.beforeEach(async ({ page }) => {
+    await stubLists(page);
+  });
+
+  test('collapses to a single CTA that opens and closes a full-screen overlay', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    const cta = page.getByTestId('searchbar-mobile-cta');
+    await expect(cta).toBeVisible();
+
+    // The overlay is not in the DOM until the CTA is tapped.
+    await expect(page.getByTestId('searchbar-overlay')).toHaveCount(0);
+
+    await cta.click();
+    await expect(page.getByTestId('searchbar-overlay')).toBeVisible();
+
+    // Opening the overlay must not introduce horizontal scroll.
+    await expectNoHorizontalScroll(page);
+
+    await page.getByTestId('searchbar-overlay-close').click();
+    await expect(page.getByTestId('searchbar-overlay')).toHaveCount(0);
+  });
+});

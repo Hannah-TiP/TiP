@@ -119,11 +119,11 @@ function SignatureJourneysContent() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#1E3D2F]/60 via-[#1E3D2F]/70 to-[#1E3D2F]/90" />
 
         {/* Hero Content */}
-        <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
+        <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
             {t('signature_journeys.hero_overline')}
           </span>
-          <h1 className="font-primary text-[64px] font-normal italic leading-tight text-white">
+          <h1 className="font-primary text-[36px] font-normal italic leading-tight text-white md:text-[48px] lg:text-[64px]">
             {t('signature_journeys.hero_title')}
           </h1>
           <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-white/60">
@@ -133,7 +133,7 @@ function SignatureJourneysContent() {
       </section>
 
       {/* Destination filter */}
-      <section className="bg-white px-20 py-10" ref={dropdownRef}>
+      <section className="bg-white px-6 py-10 sm:px-10 lg:px-20" ref={dropdownRef}>
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
             <button
@@ -239,7 +239,7 @@ function SignatureJourneysContent() {
 
       {/* Loading state */}
       {isLoading && (
-        <section className="bg-gray-light px-20 py-20">
+        <section className="bg-gray-light px-6 py-16 sm:px-10 lg:px-20 lg:py-20">
           <div className="flex items-center justify-center py-20">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-dark border-t-transparent"></div>
           </div>
@@ -248,7 +248,10 @@ function SignatureJourneysContent() {
 
       {/* Empty state — shown when the filter excludes everything */}
       {!isLoading && filteredSignatureJourneys.length === 0 && (
-        <section className="bg-gray-light px-20 py-20" data-testid="signature-journeys-empty">
+        <section
+          className="bg-gray-light px-6 py-16 sm:px-10 lg:px-20 lg:py-20"
+          data-testid="signature-journeys-empty"
+        >
           <div className="py-20 text-center">
             <p className="text-gray-text">
               {selectedCity
@@ -271,12 +274,15 @@ function SignatureJourneysContent() {
           Three columns + a centered max-width container keep four items
           feeling intentional rather than a sparse four-column row. */}
       {!isLoading && filteredSignatureJourneys.length > 0 && (
-        <section className="bg-gray-light px-20 py-20" data-testid="section-signature-journeys">
+        <section
+          className="bg-gray-light px-6 py-16 sm:px-10 lg:px-20 lg:py-20"
+          data-testid="section-signature-journeys"
+        >
           <div className="mb-12 text-center">
             <span className="text-[11px] font-semibold tracking-[4px] text-gold">
               {t('signature_journeys.section_overline')}
             </span>
-            <h2 className="mt-3 font-primary text-[42px] italic text-green-dark">
+            <h2 className="mt-3 font-primary text-[28px] italic text-green-dark md:text-[36px] lg:text-[42px]">
               {t('signature_journeys.section_title')}
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-gray-text">
@@ -300,12 +306,12 @@ function SignatureJourneysContent() {
       )}
 
       {/* CTA Section */}
-      <section className="bg-green-dark px-[100px] py-20">
-        <div className="max-w-2xl mx-auto text-center">
+      <section className="bg-green-dark px-6 py-16 sm:px-10 lg:px-[100px] lg:py-20">
+        <div className="mx-auto max-w-2xl text-center">
           <span className="text-[11px] font-semibold tracking-[4px] text-gold">
             PERSONAL CONCIERGE
           </span>
-          <h2 className="mt-3 font-primary text-[42px] italic text-[#FAF5EF]">
+          <h2 className="mt-3 font-primary text-[28px] italic text-[#FAF5EF] md:text-[36px] lg:text-[42px]">
             {t('signature_journeys.cta_title')}
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-[16px] leading-relaxed text-white/50">

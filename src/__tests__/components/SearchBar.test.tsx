@@ -1,6 +1,22 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SearchBar from '@/components/SearchBar';
+import en from '@/translations/en.json';
+
+// SearchBar reads its copy from the i18n catalog via useLanguage(). Mock the
+// context (the real provider touches localStorage) so t() resolves against the
+// real EN catalog — that keeps the field-label assertions honest.
+vi.mock('@/contexts/LanguageContext', () => ({
+  useLanguage: () => ({
+    lang: 'en' as const,
+    setLang: vi.fn(),
+    t: (key: string) => (en as Record<string, string>)[key] ?? key,
+  }),
+}));
+
+function renderSearchBar() {
+  return render(<SearchBar />);
+}
 
 // SearchBar performs a full navigation (window.location.assign), not
 // router.push — see the comment in handleSearch — so capture assign() to
@@ -117,32 +133,42 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+// The desktop inline bar and the mobile CTA both render a "Plan My Trip"
+// label, so scope field/submit interactions to the always-mounted desktop
+// bar (the first match) to keep these handleSearch tests deterministic.
 function clickFieldByText(text: string) {
-  const field = screen.getByText(text);
+  // The desktop bar renders these labels first; getAllByText[0] is the
+  // desktop cell (the overlay only mounts when opened).
+  const field = screen.getAllByText(text)[0];
   fireEvent.click(field);
+}
+
+function submitDesktop() {
+  // First "Plan My Trip" button in DOM order is the desktop bar's submit.
+  fireEvent.click(screen.getAllByRole('button', { name: /plan my trip/i })[0]);
 }
 
 describe('SearchBar.handleSearch', () => {
   it('routes to /concierge with prefill=1 and all picked field values encoded in the URL', () => {
-    render(<SearchBar />);
+    renderSearchBar();
 
     // Open + pick each dropdown.
-    clickFieldByText('DESTINATION');
+    clickFieldByText('Destination');
     fireEvent.click(screen.getByText('Pick Paris'));
 
-    clickFieldByText('CHECK-IN');
+    clickFieldByText('Check-in');
     fireEvent.click(screen.getByText('Pick dates'));
 
-    clickFieldByText('GUESTS');
+    clickFieldByText('Guests');
     fireEvent.click(screen.getByText('Pick guests'));
 
-    clickFieldByText('TRIP TYPE');
+    clickFieldByText('Trip Type');
     fireEvent.click(screen.getByText('Pick business'));
 
-    clickFieldByText('TRAVEL STYLE');
+    clickFieldByText('Travel Style');
     fireEvent.click(screen.getByText('Pick style'));
 
-    fireEvent.click(screen.getByRole('button', { name: /plan my trip/i }));
+    submitDesktop();
 
     expect(assignMock).toHaveBeenCalledTimes(1);
     const navigatedUrl: string = assignMock.mock.calls[0][0];
@@ -161,11 +187,11 @@ describe('SearchBar.handleSearch', () => {
   });
 
   it('allows Search with NO destination — destination is no longer required', () => {
-    render(<SearchBar />);
+    renderSearchBar();
 
     // Submit immediately without picking any field. Defaults are
     // tripType=Leisure, adults=2, children=0 (per the SearchBar state).
-    fireEvent.click(screen.getByRole('button', { name: /plan my trip/i }));
+    submitDesktop();
 
     expect(assignMock).toHaveBeenCalledTimes(1);
     const navigatedUrl: string = assignMock.mock.calls[0][0];
@@ -183,16 +209,67 @@ describe('SearchBar.handleSearch', () => {
   });
 
   it('omits the dates params entirely when the user did not pick dates', () => {
-    render(<SearchBar />);
+    renderSearchBar();
 
-    clickFieldByText('DESTINATION');
+    clickFieldByText('Destination');
     fireEvent.click(screen.getByText('Pick Paris'));
 
-    fireEvent.click(screen.getByRole('button', { name: /plan my trip/i }));
+    submitDesktop();
 
     const navigatedUrl: string = assignMock.mock.calls[0][0];
     const params = new URLSearchParams(navigatedUrl.split('?')[1] ?? '');
     expect(params.has('checkIn')).toBe(false);
     expect(params.has('checkOut')).toBe(false);
+  });
+});
+
+describe('SearchBar mobile overlay', () => {
+  it('does not render the overlay until the mobile CTA is tapped', () => {
+    renderSearchBar();
+
+    // CTA is always mounted (CSS-hidden on desktop); overlay is not.
+    expect(screen.getByTestId('searchbar-mobile-cta')).toBeTruthy();
+    expect(screen.queryByTestId('searchbar-overlay')).toBeNull();
+  });
+
+  it('opens the full-screen overlay with all 5 fields and closes via the X button', () => {
+    renderSearchBar();
+
+    fireEvent.click(screen.getByTestId('searchbar-mobile-cta'));
+
+    const overlay = screen.getByTestId('searchbar-overlay');
+    expect(overlay).toBeTruthy();
+
+    // All 5 field labels are present inside the overlay.
+    for (const label of ['Destination', 'Check-in', 'Check-out', 'Guests', 'Trip Type']) {
+      expect(screen.getAllByText(label).length).toBeGreaterThan(0);
+    }
+
+    fireEvent.click(screen.getByTestId('searchbar-overlay-close'));
+    expect(screen.queryByTestId('searchbar-overlay')).toBeNull();
+  });
+
+  it('submits the overlay selections and routes to /concierge with prefill', () => {
+    renderSearchBar();
+
+    fireEvent.click(screen.getByTestId('searchbar-mobile-cta'));
+
+    // Pick a destination inside the overlay, then submit via the overlay's
+    // own "Plan My Trip" button (the last one in DOM order). The desktop bar
+    // and the overlay share activeDropdown state, so the mocked dropdown can
+    // render in both — click the last "Pick Paris" (the overlay's).
+    fireEvent.click(screen.getAllByText('Destination').slice(-1)[0]);
+    const pickParis = screen.getAllByText('Pick Paris');
+    fireEvent.click(pickParis[pickParis.length - 1]);
+
+    const submitButtons = screen.getAllByRole('button', { name: /plan my trip/i });
+    fireEvent.click(submitButtons[submitButtons.length - 1]);
+
+    expect(assignMock).toHaveBeenCalledTimes(1);
+    const navigatedUrl: string = assignMock.mock.calls[0][0];
+    const params = new URLSearchParams(navigatedUrl.split('?')[1] ?? '');
+    expect(params.get('prefill')).toBe('1');
+    expect(params.get('cityId')).toBe('7');
+    expect(params.get('city')).toBe('Paris');
   });
 });
