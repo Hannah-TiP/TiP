@@ -115,7 +115,7 @@ export default function BookingCard({
 
   return (
     <aside aria-label="Booking card" className="lg:sticky lg:top-24">
-      <div className="border border-gray-border bg-white p-7">
+      <div className="border border-gray-border bg-white p-4 sm:p-7">
         <p className="font-primary text-[22px] italic text-green-dark">
           {t('hotel.booking_card_reserve_title')} {hotelName}
         </p>
@@ -125,7 +125,7 @@ export default function BookingCard({
 
         {benefits.length > 0 && (
           <div
-            className="mt-5 bg-gradient-to-br from-green-dark to-[#152b22] p-5 text-[13px] leading-[1.7] text-white"
+            className="mt-5 bg-gradient-to-br from-green-dark to-[#152b22] p-4 text-[13px] leading-[1.7] text-white sm:p-5"
             role="complementary"
           >
             <p className="font-semibold uppercase tracking-[1.5px] text-gold">

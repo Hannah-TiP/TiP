@@ -82,13 +82,13 @@ export default function HotelDetailContent({
       {stickyBar}
 
       <div
-        className={`mx-auto grid max-w-7xl grid-cols-1 gap-16 px-6 py-16 md:px-10 ${
+        className={`mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-8 md:gap-16 md:px-10 md:py-16 ${
           sidebar ? 'lg:grid-cols-[1fr_380px]' : ''
         }`}
       >
         <div className="min-w-0">
           {showOverviewSection && (
-            <section aria-labelledby="overview-title" className="mb-14">
+            <section aria-labelledby="overview-title" className="mb-8 md:mb-14">
               <SectionTitle
                 id="overview-title"
                 overline={t('hotel.about_overline')}
@@ -118,7 +118,7 @@ export default function HotelDetailContent({
           )}
 
           {rooms.length > 0 && (
-            <section aria-labelledby="rooms-title" className="mb-14">
+            <section aria-labelledby="rooms-title" className="mb-8 md:mb-14">
               <SectionTitle
                 id="rooms-title"
                 overline={t('hotel.rooms_overline')}
@@ -129,7 +129,7 @@ export default function HotelDetailContent({
           )}
 
           {features.length > 0 && (
-            <section aria-labelledby="amenities-title" className="mb-14">
+            <section aria-labelledby="amenities-title" className="mb-8 md:mb-14">
               <SectionTitle
                 id="amenities-title"
                 overline={t('hotel.amenities_overline')}
@@ -140,7 +140,7 @@ export default function HotelDetailContent({
           )}
 
           {showLocationSection && (
-            <section aria-labelledby="location-title" className="mb-14">
+            <section aria-labelledby="location-title" className="mb-8 md:mb-14">
               <SectionTitle
                 id="location-title"
                 overline={t('hotel.location_overline')}
@@ -150,7 +150,7 @@ export default function HotelDetailContent({
             </section>
           )}
 
-          <section aria-labelledby="reviews-title" className="mb-14">
+          <section aria-labelledby="reviews-title" className="mb-8 md:mb-14">
             <SectionTitle
               id="reviews-title"
               overline={t('hotel.reviews_overline')}
@@ -160,7 +160,7 @@ export default function HotelDetailContent({
           </section>
 
           {faqs.length > 0 && (
-            <section aria-labelledby="faq-title" className="mb-14">
+            <section aria-labelledby="faq-title" className="mb-8 md:mb-14">
               <SectionTitle
                 id="faq-title"
                 overline={t('hotel.faq_overline')}

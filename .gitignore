@@ -16,6 +16,7 @@
 /playwright-report
 /.lighthouseci
 /e2e/.auth/
+/e2e/screenshots/
 
 # next.js
 /.next/

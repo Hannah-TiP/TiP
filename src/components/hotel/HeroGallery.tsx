@@ -35,7 +35,7 @@ export default function HeroGallery({
   const stars = starRating ? starBadge(starRating) : null;
 
   return (
-    <section className="relative h-[60vh] min-h-[440px] w-full overflow-hidden md:h-[80vh]">
+    <section className="relative h-[60vh] min-h-[320px] w-full overflow-hidden md:h-[80vh] md:min-h-[440px]">
       <div className="grid h-full grid-cols-1 gap-1 md:grid-cols-[2fr_1fr] md:grid-rows-2">
         <div className="relative md:row-span-2">
           <CroppedImage
@@ -68,7 +68,7 @@ export default function HeroGallery({
         )}
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-10 pb-12 pt-20 text-white">
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-4 pb-8 pt-20 text-white md:px-10 md:pb-12">
         <div className="mx-auto max-w-7xl">
           {(stars || showTipCertified) && (
             <div className="mb-4 flex flex-wrap gap-2">
@@ -84,7 +84,7 @@ export default function HeroGallery({
               )}
             </div>
           )}
-          <h1 className="font-primary text-[44px] font-light leading-tight md:text-[72px]">
+          <h1 className="font-primary text-[32px] font-light leading-tight md:text-[72px]">
             {hotelName}
           </h1>
           {subtitle && (
