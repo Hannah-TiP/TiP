@@ -23,7 +23,7 @@ export default function AmenityGrid({ features }: AmenityGridProps) {
 
   return (
     <>
-      <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {features.map((feature, index) => {
           const name = getLocalizedText(feature.name, lang);
           const description = getLocalizedText(feature.description, lang);
