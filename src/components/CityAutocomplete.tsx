@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { getLocalizedText } from '@/types/common';
 import type { City } from '@/types/location';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CityAutocompleteProps {
   value: number | undefined;
@@ -15,9 +16,10 @@ interface CityAutocompleteProps {
 export default function CityAutocomplete({
   value,
   onChange,
-  placeholder = 'Search city...',
+  placeholder,
   className = '',
 }: CityAutocompleteProps) {
+  const { t } = useLanguage();
   const [inputValue, setInputValue] = useState('');
   const [results, setResults] = useState<City[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -105,7 +107,7 @@ export default function CityAutocomplete({
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => inputValue.length >= 2 && results.length > 0 && setIsOpen(true)}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('city_autocomplete.placeholder')}
           className={`${baseClass} pr-8 ${className}`}
           autoComplete="off"
         />
@@ -114,7 +116,7 @@ export default function CityAutocomplete({
             type="button"
             onClick={handleClear}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            aria-label="Clear"
+            aria-label={t('city_autocomplete.clear')}
           >
             ✕
           </button>
@@ -124,9 +126,9 @@ export default function CityAutocomplete({
       {isOpen && (
         <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-border bg-white py-1 shadow-lg">
           {isSearching ? (
-            <li className="px-3 py-2 text-sm text-gray-text">Searching...</li>
+            <li className="px-3 py-2 text-sm text-gray-text">{t('city_autocomplete.searching')}</li>
           ) : results.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-gray-text">No cities found</li>
+            <li className="px-3 py-2 text-sm text-gray-text">{t('city_autocomplete.no_results')}</li>
           ) : (
             results.map((city) => (
               <li

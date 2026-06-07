@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BirthDatePickerProps {
   value: string; // YYYY-MM-DD
@@ -52,6 +53,7 @@ function parseTypedDate(input: string): string {
 }
 
 export default function BirthDatePicker({ value, onChange }: BirthDatePickerProps) {
+  const { t } = useLanguage();
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -150,7 +152,7 @@ export default function BirthDatePicker({ value, onChange }: BirthDatePickerProp
           ref={inputRef}
           type="text"
           value={inputValue}
-          placeholder="MM/DD/YYYY"
+          placeholder={t('birth_date.placeholder')}
           onChange={(e) => {
             const val = e.target.value;
             setInputValue(val);
@@ -295,13 +297,13 @@ export default function BirthDatePicker({ value, onChange }: BirthDatePickerProp
               }}
               className="text-[13px] font-medium text-gray-500 hover:text-gray-700"
             >
-              Clear
+              {t('birth_date.clear')}
             </button>
             <button
               onClick={() => setOpen(false)}
               className="rounded-lg bg-green-dark px-5 py-1.5 text-[13px] font-semibold text-white hover:opacity-90"
             >
-              Done
+              {t('birth_date.done')}
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
+import i18nPlugin from './eslint-rules/index.js';
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -15,7 +16,20 @@ const eslintConfig = defineConfig([
     'scripts/**',
     // Agent worktree artifacts
     '.claude/**',
+    // Local ESLint rule sources + fixtures are not app code.
+    'eslint-rules/**',
   ]),
+  // i18n guard: hardcoded user-facing JSX strings (text children + the four
+  // translatable attrs) must go through the t() helper. New violations fail
+  // `npm run lint`. Per-line opt-out: // eslint-disable-next-line i18n/no-literal-string
+  {
+    files: ['src/**/*.tsx'],
+    ignores: ['src/**/__tests__/**', 'src/__tests__/**', 'src/**/*.test.tsx'],
+    plugins: { i18n: i18nPlugin },
+    rules: {
+      'i18n/no-literal-string': 'error',
+    },
+  },
 ]);
 
 export default eslintConfig;

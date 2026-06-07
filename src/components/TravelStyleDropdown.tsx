@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TravelStyleDropdownProps {
   value: string;
@@ -25,6 +26,7 @@ export default function TravelStyleDropdown({
   onClose,
   mobile = false,
 }: TravelStyleDropdownProps) {
+  const { t } = useLanguage();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,7 +48,7 @@ export default function TravelStyleDropdown({
       style={mobile ? undefined : { width: 320 }}
     >
       <p className="mb-2 px-2 text-[11px] font-medium uppercase tracking-wider text-gray-400">
-        Travel Style
+        {t('travel_style.title')}
       </p>
       <div className="grid grid-cols-2 gap-2">
         {travelStyles.map((style) => (
@@ -71,7 +73,7 @@ export default function TravelStyleDropdown({
         onClick={() => onChange('')}
         className="mt-3 w-full text-center text-[12px] text-gray-500 hover:text-gray-700"
       >
-        Clear selection
+        {t('travel_style.clear')}
       </button>
     </div>
   );
