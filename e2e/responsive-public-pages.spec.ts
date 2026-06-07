@@ -40,7 +40,17 @@ async function stubLists(page: Page) {
   await page.route('**/api/hotels**', empty);
   await page.route('**/api/activities**', empty);
   await page.route('**/api/restaurants**', empty);
-  await page.route('**/api/cities**', empty);
+  // Seed one city so the Destination picker has content to render at width;
+  // the off-screen regression was about positioning, not data.
+  await page.route('**/api/cities**', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: { items: [{ id: 7, name: 'Paris', country_id: 1 }] },
+      }),
+    });
+  });
   await page.route('**/api/reviews/aggregates**', async (route: Route) => {
     await route.fulfill({
       status: 200,
@@ -121,4 +131,45 @@ test.describe('SearchBar mobile collapse (375px)', () => {
     await page.getByTestId('searchbar-overlay-close').click();
     await expect(page.getByTestId('searchbar-overlay')).toHaveCount(0);
   });
+
+  // Regression guard: opening Dates / Guests / Trip Type inside the overlay
+  // must keep each picker fully on-screen at 375px. Previously these dropdowns
+  // kept their desktop `left-[360px]`/`left-[560px]`/fixed-700px positioning
+  // and rendered off-screen, overflowing the page.
+  for (const field of [
+    { label: 'Check-in', marker: 'Clear dates' }, // DatePicker
+    { label: 'Guests', marker: 'Adults' }, // GuestsDropdown
+    { label: 'Trip Type', marker: 'Bleisure' }, // TripTypeDropdown
+  ]) {
+    test(`opening the ${field.label} picker in the overlay stays within the 375px viewport`, async ({
+      page,
+    }) => {
+      await page.goto('/');
+
+      await page.getByTestId('searchbar-mobile-cta').click();
+      const overlay = page.getByTestId('searchbar-overlay');
+      await expect(overlay).toBeVisible();
+
+      // Open the field inside the overlay.
+      await overlay.getByText(field.label, { exact: true }).first().click();
+
+      // Confirm the picker actually opened by waiting for its unique content.
+      const marker = overlay.getByText(field.marker, { exact: true }).first();
+      await expect(marker).toBeVisible();
+
+      // No horizontal page scroll introduced by the open picker.
+      await expectNoHorizontalScroll(page);
+
+      // The open picker's box must be within the viewport (no off-screen / no
+      // horizontal overflow). Find the picker as the nearest positioned
+      // dropdown ancestor of the marker.
+      const box = await marker.evaluate((el) => {
+        const panel = (el.closest('.absolute') as HTMLElement) ?? el;
+        const r = panel.getBoundingClientRect();
+        return { left: r.left, right: r.right };
+      });
+      expect(box.left).toBeGreaterThanOrEqual(-1);
+      expect(box.right).toBeLessThanOrEqual(375 + 1);
+    });
+  }
 });

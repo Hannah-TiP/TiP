@@ -6,6 +6,8 @@ interface TripTypeDropdownProps {
   value: string;
   onChange: (value: string) => void;
   onClose: () => void;
+  /** When true, render full-width within the mobile planner overlay. */
+  mobile?: boolean;
 }
 
 const tripTypes = [
@@ -14,7 +16,12 @@ const tripTypes = [
   { value: 'Bleisure', description: 'Business + leisure combined' },
 ];
 
-export default function TripTypeDropdown({ value, onChange, onClose }: TripTypeDropdownProps) {
+export default function TripTypeDropdown({
+  value,
+  onChange,
+  onClose,
+  mobile = false,
+}: TripTypeDropdownProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,8 +37,10 @@ export default function TripTypeDropdown({ value, onChange, onClose }: TripTypeD
   return (
     <div
       ref={ref}
-      className="absolute left-[560px] top-full z-50 mt-2 rounded-xl bg-white p-2 shadow-xl"
-      style={{ width: 280 }}
+      className={`absolute top-full z-50 mt-2 rounded-xl bg-white p-2 shadow-xl ${
+        mobile ? 'left-0 right-0 w-full max-w-full' : 'left-[560px]'
+      }`}
+      style={mobile ? undefined : { width: 280 }}
     >
       {tripTypes.map((type) => (
         <button

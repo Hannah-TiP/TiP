@@ -32,11 +32,13 @@ vi.mock('@/components/DestinationDropdown', () => ({
   default: ({
     onChange,
     onClose,
+    mobile,
   }: {
     onChange: (city: { id: number; name: string }) => void;
     onClose: () => void;
+    mobile?: boolean;
   }) => (
-    <div data-testid="destination-dropdown">
+    <div data-testid="destination-dropdown" data-mobile={mobile ? 'true' : 'false'}>
       <button
         onClick={() => {
           onChange({ id: 7, name: 'Paris' });
@@ -53,11 +55,13 @@ vi.mock('@/components/DatePickerDropdown', () => ({
   default: ({
     onChange,
     onClose,
+    mobile,
   }: {
     onChange: (checkIn: string, checkOut: string) => void;
     onClose: () => void;
+    mobile?: boolean;
   }) => (
-    <div data-testid="date-dropdown">
+    <div data-testid="date-dropdown" data-mobile={mobile ? 'true' : 'false'}>
       <button
         onClick={() => {
           onChange('2026-06-01', '2026-06-07');
@@ -74,11 +78,13 @@ vi.mock('@/components/GuestsDropdown', () => ({
   default: ({
     onChange,
     onClose,
+    mobile,
   }: {
     onChange: (adults: number, children: number) => void;
     onClose: () => void;
+    mobile?: boolean;
   }) => (
-    <div data-testid="guests-dropdown">
+    <div data-testid="guests-dropdown" data-mobile={mobile ? 'true' : 'false'}>
       <button
         onClick={() => {
           onChange(3, 1);
@@ -92,8 +98,16 @@ vi.mock('@/components/GuestsDropdown', () => ({
 }));
 
 vi.mock('@/components/TripTypeDropdown', () => ({
-  default: ({ onChange, onClose }: { onChange: (val: string) => void; onClose: () => void }) => (
-    <div data-testid="trip-type-dropdown">
+  default: ({
+    onChange,
+    onClose,
+    mobile,
+  }: {
+    onChange: (val: string) => void;
+    onClose: () => void;
+    mobile?: boolean;
+  }) => (
+    <div data-testid="trip-type-dropdown" data-mobile={mobile ? 'true' : 'false'}>
       <button
         onClick={() => {
           onChange('Business');
@@ -107,8 +121,16 @@ vi.mock('@/components/TripTypeDropdown', () => ({
 }));
 
 vi.mock('@/components/TravelStyleDropdown', () => ({
-  default: ({ onChange, onClose }: { onChange: (val: string) => void; onClose: () => void }) => (
-    <div data-testid="travel-style-dropdown">
+  default: ({
+    onChange,
+    onClose,
+    mobile,
+  }: {
+    onChange: (val: string) => void;
+    onClose: () => void;
+    mobile?: boolean;
+  }) => (
+    <div data-testid="travel-style-dropdown" data-mobile={mobile ? 'true' : 'false'}>
       <button
         onClick={() => {
           onChange('Romantic Escape');
@@ -247,6 +269,47 @@ describe('SearchBar mobile overlay', () => {
 
     fireEvent.click(screen.getByTestId('searchbar-overlay-close'));
     expect(screen.queryByTestId('searchbar-overlay')).toBeNull();
+  });
+
+  // Regression guard for the off-screen-picker bug: inside the mobile
+  // overlay each picker must receive mobile=true so it renders full-width /
+  // left-aligned within the 375px viewport instead of keeping its desktop
+  // `left-[…]` / fixed-width positioning (which rendered off-screen).
+  it.each([
+    ['destination', 'Destination', 'destination-dropdown'],
+    ['dates', 'Check-in', 'date-dropdown'],
+    ['guests', 'Guests', 'guests-dropdown'],
+    ['tripType', 'Trip Type', 'trip-type-dropdown'],
+    ['travelStyle', 'Travel Style', 'travel-style-dropdown'],
+  ])(
+    'passes mobile=true to the %s picker when opened inside the overlay',
+    (_key, label, dropdownTestId) => {
+      renderSearchBar();
+
+      fireEvent.click(screen.getByTestId('searchbar-mobile-cta'));
+
+      // Open the field inside the overlay (last label match is the overlay's).
+      fireEvent.click(screen.getAllByText(label).slice(-1)[0]);
+
+      // The overlay's dropdown is the last rendered instance (the desktop bar
+      // shares activeDropdown state and may also render the field).
+      const dropdowns = screen.getAllByTestId(dropdownTestId);
+      const overlayDropdown = dropdowns[dropdowns.length - 1];
+      expect(overlayDropdown.getAttribute('data-mobile')).toBe('true');
+    },
+  );
+
+  // The desktop inline bar must NOT pass mobile — its dropdowns keep their
+  // exact desktop positioning. Guards against accidentally flipping every
+  // dropdown to full-width.
+  it('passes mobile=false (default) to the desktop bar pickers', () => {
+    renderSearchBar();
+
+    // Open a field on the always-mounted desktop bar (first label match).
+    clickFieldByText('Destination');
+
+    const desktopDropdown = screen.getAllByTestId('destination-dropdown')[0];
+    expect(desktopDropdown.getAttribute('data-mobile')).toBe('false');
   });
 
   it('submits the overlay selections and routes to /concierge with prefill', () => {

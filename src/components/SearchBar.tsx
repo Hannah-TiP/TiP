@@ -267,6 +267,7 @@ export default function SearchBar() {
               </button>
               {activeDropdown === 'destination' && (
                 <DestinationDropdown
+                  mobile
                   value={destination?.name || ''}
                   onChange={(cityData) => {
                     setDestination(cityData);
@@ -295,6 +296,7 @@ export default function SearchBar() {
               </button>
               {activeDropdown === 'dates' && (
                 <DatePickerDropdown
+                  mobile
                   checkIn={dates.checkIn}
                   checkOut={dates.checkOut}
                   onChange={(checkIn, checkOut) => setDates({ checkIn, checkOut })}
@@ -315,6 +317,7 @@ export default function SearchBar() {
               </button>
               {activeDropdown === 'guests' && (
                 <GuestsDropdown
+                  mobile
                   adults={guests.adults}
                   kids={guests.children}
                   onChange={(adults, children) => setGuests({ adults, children })}
@@ -335,6 +338,7 @@ export default function SearchBar() {
               </button>
               {activeDropdown === 'tripType' && (
                 <TripTypeDropdown
+                  mobile
                   value={tripType}
                   onChange={(val) => {
                     setTripType(val);
@@ -357,6 +361,7 @@ export default function SearchBar() {
               </button>
               {activeDropdown === 'travelStyle' && (
                 <TravelStyleDropdown
+                  mobile
                   value={travelStyle}
                   onChange={(val) => {
                     setTravelStyle(val);

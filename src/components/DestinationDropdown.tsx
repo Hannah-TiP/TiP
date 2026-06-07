@@ -9,12 +9,15 @@ interface DestinationDropdownProps {
   value: string;
   onChange: (cityData: { id: number; name: string }) => void;
   onClose: () => void;
+  /** When true, render full-width within the mobile planner overlay. */
+  mobile?: boolean;
 }
 
 export default function DestinationDropdown({
   value,
   onChange,
   onClose,
+  mobile = false,
 }: DestinationDropdownProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState(value);
@@ -57,8 +60,10 @@ export default function DestinationDropdown({
   return (
     <div
       ref={ref}
-      className="absolute left-0 top-full z-50 mt-2 rounded-xl bg-white shadow-xl"
-      style={{ width: 360 }}
+      className={`absolute left-0 top-full z-50 mt-2 rounded-xl bg-white shadow-xl ${
+        mobile ? 'right-0 w-full max-w-full' : ''
+      }`}
+      style={mobile ? undefined : { width: 360 }}
     >
       {/* Search input */}
       <div className="border-b border-gray-100 p-4">
