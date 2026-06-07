@@ -84,7 +84,7 @@ export default function HeroGallery({
               )}
             </div>
           )}
-          <h1 className="font-primary text-[32px] font-light leading-tight md:text-[44px] lg:text-[72px]">
+          <h1 className="font-primary text-[32px] font-light leading-tight md:text-[72px]">
             {hotelName}
           </h1>
           {subtitle && (
