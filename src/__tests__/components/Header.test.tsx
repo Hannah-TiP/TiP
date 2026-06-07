@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const pathnameRef: { current: string } = { current: '/' };
 const sessionRef: { current: { data: unknown } } = { current: { data: null } };
@@ -13,11 +13,20 @@ vi.mock('next-auth/react', () => ({
   signOut: vi.fn(),
 }));
 
+const I18N: Record<string, string> = {
+  'nav.language_toggle': 'EN | KR',
+  'nav.menu_open': 'Open menu',
+  'nav.menu_close': 'Close menu',
+  'nav.sign_in': 'SIGN IN',
+  'nav.my_page': 'MY PAGE',
+  'nav.logout': 'LOGOUT',
+};
+
 vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => ({
     lang: 'en' as const,
     setLang: vi.fn(),
-    t: (key: string) => (key === 'nav.language_toggle' ? 'EN | KR' : key),
+    t: (key: string) => I18N[key] ?? key,
   }),
 }));
 
@@ -39,7 +48,11 @@ describe('Header — render gating', () => {
   });
 });
 
-describe('Header — auth controls render exactly once', () => {
+describe('Header — desktop auth controls render exactly once', () => {
+  // MobileNav duplicates the nav links + auth actions, so these assertions are
+  // scoped to the desktop nav (data-testid="desktop-nav").
+  const desktopNav = () => screen.getByTestId('desktop-nav');
+
   beforeEach(() => {
     pathnameRef.current = '/about';
   });
@@ -47,35 +60,37 @@ describe('Header — auth controls render exactly once', () => {
   it('logged-out: shows a single SIGN IN, no MY PAGE / LOGOUT', () => {
     sessionRef.current = { data: null };
     render(<Header />);
-    expect(screen.getAllByText('SIGN IN')).toHaveLength(1);
-    expect(screen.queryByText('LOGOUT')).toBeNull();
-    expect(screen.queryByText('MY PAGE')).toBeNull();
+    const nav = within(desktopNav());
+    expect(nav.getAllByText('SIGN IN')).toHaveLength(1);
+    expect(nav.queryByText('LOGOUT')).toBeNull();
+    expect(nav.queryByText('MY PAGE')).toBeNull();
   });
 
   it('logged-in: shows a single MY PAGE + LOGOUT, no SIGN IN', () => {
     sessionRef.current = { data: { user: { email: 'a@b.com' } } };
     render(<Header />);
-    expect(screen.getAllByText('MY PAGE')).toHaveLength(1);
-    expect(screen.getAllByText('LOGOUT')).toHaveLength(1);
-    expect(screen.queryByText('SIGN IN')).toBeNull();
+    const nav = within(desktopNav());
+    expect(nav.getAllByText('MY PAGE')).toHaveLength(1);
+    expect(nav.getAllByText('LOGOUT')).toHaveLength(1);
+    expect(nav.queryByText('SIGN IN')).toBeNull();
   });
 
   it('renders the primary nav links once each', () => {
     sessionRef.current = { data: null };
     render(<Header />);
-    expect(screen.getAllByText('DREAM HOTELS')).toHaveLength(1);
-    expect(screen.getAllByText('MORE DREAMS')).toHaveLength(1);
-    expect(screen.getAllByText('SIGNATURE JOURNEYS')).toHaveLength(1);
-    expect(screen.getAllByText('ABOUT')).toHaveLength(1);
-    expect(screen.getAllByText('CONCIERGE')).toHaveLength(1);
+    const nav = within(desktopNav());
+    expect(nav.getAllByText('DREAM HOTELS')).toHaveLength(1);
+    expect(nav.getAllByText('MORE DREAMS')).toHaveLength(1);
+    expect(nav.getAllByText('SIGNATURE JOURNEYS')).toHaveLength(1);
+    expect(nav.getAllByText('ABOUT')).toHaveLength(1);
+    expect(nav.getAllByText('CONCIERGE')).toHaveLength(1);
   });
 
   it('orders the nav: Dream Hotels, More Dreams, Signature Journeys, About, Concierge', () => {
     sessionRef.current = { data: null };
     render(<Header />);
-    const nav = screen.getByRole('navigation');
     const labels = Array.from(
-      nav.querySelectorAll(
+      desktopNav().querySelectorAll(
         'a[href^="/dream-hotels"], a[href^="/more-dreams"], a[href^="/signature-journeys"], a[href^="/about"], a[href^="/concierge"]',
       ),
     ).map((a) => a.textContent);
@@ -91,7 +106,7 @@ describe('Header — auth controls render exactly once', () => {
   it('points the Signature Journeys link at /signature-journeys', () => {
     sessionRef.current = { data: null };
     render(<Header />);
-    const link = screen.getByText('SIGNATURE JOURNEYS').closest('a');
+    const link = within(desktopNav()).getByText('SIGNATURE JOURNEYS').closest('a');
     expect(link?.getAttribute('href')).toBe('/signature-journeys');
   });
 });
@@ -101,12 +116,13 @@ describe('Header — Signature Journeys active state', () => {
     pathnameRef.current = '/signature-journeys';
     sessionRef.current = { data: null };
     render(<Header />);
-    const link = screen.getByText('SIGNATURE JOURNEYS');
+    const desktop = within(screen.getByTestId('desktop-nav'));
+    const link = desktop.getByText('SIGNATURE JOURNEYS');
     // overlay active state = solid white + semibold
     expect(link.className).toContain('text-white');
     expect(link.className).toContain('font-semibold');
     // sibling nav items are not in their active state
-    expect(screen.getByText('MORE DREAMS').className).toContain('text-white/70');
+    expect(desktop.getByText('MORE DREAMS').className).toContain('text-white/70');
   });
 });
 
@@ -139,7 +155,76 @@ describe('Header — variant + SubNav driven by pathname', () => {
     sessionRef.current = { data: null };
     render(<Header />);
     expect(screen.queryByText('Upcoming Travels')).toBeNull();
-    const dreamHotels = screen.getByText('DREAM HOTELS');
+    const dreamHotels = within(screen.getByTestId('desktop-nav')).getByText('DREAM HOTELS');
     expect(dreamHotels.className).toContain('text-green-dark');
+  });
+});
+
+// SubNav (rendered by Header on /my-page/**) calls scrollIntoView on mount.
+beforeAll(() => {
+  Element.prototype.scrollIntoView = vi.fn();
+});
+
+describe('Header — mobile hamburger + drawer', () => {
+  beforeEach(() => {
+    pathnameRef.current = '/about';
+    sessionRef.current = { data: null };
+  });
+
+  it('renders a hamburger button labelled "Open menu"', () => {
+    render(<Header />);
+    expect(screen.getByRole('button', { name: 'Open menu' })).toBeDefined();
+  });
+
+  it('opens the drawer (translate-x-0) when the hamburger is clicked', () => {
+    render(<Header />);
+    const drawer = screen.getByTestId('mobile-nav-drawer');
+    expect(drawer.className).toContain('translate-x-full');
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    expect(drawer.className).toContain('translate-x-0');
+  });
+
+  it('closes the drawer when the X (Close menu) button is clicked', () => {
+    render(<Header />);
+    const drawer = screen.getByTestId('mobile-nav-drawer');
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    expect(drawer.className).toContain('translate-x-0');
+    fireEvent.click(screen.getByRole('button', { name: 'Close menu' }));
+    expect(drawer.className).toContain('translate-x-full');
+  });
+
+  it('closes the drawer on backdrop click', () => {
+    render(<Header />);
+    const drawer = screen.getByTestId('mobile-nav-drawer');
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    expect(drawer.className).toContain('translate-x-0');
+    fireEvent.click(screen.getByTestId('mobile-nav-backdrop'));
+    expect(drawer.className).toContain('translate-x-full');
+  });
+
+  it('closes the drawer on Escape', () => {
+    render(<Header />);
+    const drawer = screen.getByTestId('mobile-nav-drawer');
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    expect(drawer.className).toContain('translate-x-0');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(drawer.className).toContain('translate-x-full');
+  });
+
+  it('locks body scroll while the drawer is open and restores it on close', () => {
+    render(<Header />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    expect(document.body.style.overflow).toBe('hidden');
+    fireEvent.click(screen.getByRole('button', { name: 'Close menu' }));
+    expect(document.body.style.overflow).not.toBe('hidden');
+  });
+
+  it('drawer shows MY PAGE + LOGOUT (not SIGN IN) when authenticated', () => {
+    sessionRef.current = { data: { user: { email: 'a@b.com' } } };
+    render(<Header />);
+    const drawer = screen.getByTestId('mobile-nav-drawer');
+    expect(drawer.textContent).toContain('MY PAGE');
+    expect(drawer.textContent).toContain('LOGOUT');
+    expect(drawer.textContent).not.toContain('SIGN IN');
   });
 });
