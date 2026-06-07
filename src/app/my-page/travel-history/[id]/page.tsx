@@ -15,6 +15,7 @@ import {
   type TripWithVersion,
 } from '@/lib/trip-utils';
 import { STAY_CREDIT_SOURCE_LABELS, creditsForTrip, type StayCredit } from '@/types/stay-credit';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const ITEM_LABELS: Record<TripPlanItem['item_type'], string> = {
   flight: 'Flight',
@@ -70,6 +71,7 @@ function formatCredit(amountCents: number, currency: string): string {
 }
 
 export default function TravelHistoryTripDetailPage() {
+  const { t, lang } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const [tripWithVersion, setTripWithVersion] = useState<TripWithVersion | null>(null);
   const [reviewStatus, setReviewStatus] = useState<{ reviewed: number; total: number } | null>(
@@ -113,14 +115,14 @@ export default function TravelHistoryTripDetailPage() {
           }
         }
       } catch {
-        setError('Failed to load trip details.');
+        setError(t('trip_detail.error_load'));
       } finally {
         setLoading(false);
       }
     };
 
     load();
-  }, [id]);
+  }, [id, t]);
 
   if (loading) {
     return (
@@ -138,12 +140,12 @@ export default function TravelHistoryTripDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-5xl mx-auto px-6 mt-8 text-center py-20 text-gray-500">
-          <p>{error ?? 'Trip not found.'}</p>
+          <p>{error ?? t('trip_detail.error_not_found')}</p>
           <Link
             href="/my-page/travel-history"
             className="mt-4 inline-block text-[#1E3D2F] hover:underline text-sm"
           >
-            ← Back to Travel History
+            {t('trip_detail.back_to_travel_history')}
           </Link>
         </div>
       </div>
@@ -152,7 +154,7 @@ export default function TravelHistoryTripDetailPage() {
 
   const { trip, currentVersion } = tripWithVersion;
   const isCompleted = trip.status === 'travel-completed';
-  const title = currentVersion?.title?.trim() || 'New Trip';
+  const title = currentVersion?.title?.trim() || t('trip_detail.new_trip');
   const startDate = currentVersion?.start_date || undefined;
   const endDate = currentVersion?.end_date || undefined;
   const nights = getNights(startDate, endDate);
@@ -174,7 +176,7 @@ export default function TravelHistoryTripDetailPage() {
           href="/my-page/travel-history"
           className="text-sm text-gray-500 hover:text-gray-900 mb-6 inline-block"
         >
-          ← Travel History
+          {t('trip_detail.travel_history')}
         </Link>
 
         <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex flex-col md:flex-row mb-8">
@@ -182,28 +184,30 @@ export default function TravelHistoryTripDetailPage() {
             <span className="text-white text-3xl font-bold px-6 text-center">{title}</span>
           </div>
           <div className="flex-1 p-6 md:p-10 text-white flex flex-col justify-center">
-            <p className="text-sm uppercase tracking-widest text-white/60 mb-2">Completed Trip</p>
+            <p className="text-sm uppercase tracking-widest text-white/60 mb-2">
+              {t('trip_detail.completed_trip')}
+            </p>
             <h1 className="text-2xl md:text-4xl font-bold mb-4">{title}</h1>
             <div className="flex flex-wrap gap-8 text-sm">
               <div>
-                <p className="text-white/50">Dates</p>
+                <p className="text-white/50">{t('trip_detail.dates')}</p>
                 <p className="font-semibold">
                   {formatDate(startDate)} – {formatDate(endDate)}
                 </p>
               </div>
               {nights !== null && (
                 <div>
-                  <p className="text-white/50">Duration</p>
+                  <p className="text-white/50">{t('trip_detail.duration')}</p>
                   <p className="font-semibold">
-                    {nights} {nights === 1 ? 'Night' : 'Nights'}
+                    {nights} {nights === 1 ? t('common.night') : t('common.nights')}
                   </p>
                 </div>
               )}
               <div>
-                <p className="text-white/50">Travelers</p>
+                <p className="text-white/50">{t('trip_detail.travelers')}</p>
                 <p className="font-semibold">
-                  {adults} {adults === 1 ? 'Adult' : 'Adults'}
-                  {kids ? `, ${kids} ${kids === 1 ? 'Kid' : 'Kids'}` : ''}
+                  {adults} {adults === 1 ? t('common.adult') : t('common.adults')}
+                  {kids ? `, ${kids} ${kids === 1 ? t('common.kid') : t('common.kids')}` : ''}
                 </p>
               </div>
             </div>
@@ -214,7 +218,7 @@ export default function TravelHistoryTripDetailPage() {
           <div className="lg:col-span-2 space-y-5">
             {plan.length > 0 ? (
               <>
-                <h2 className="text-xl font-bold text-gray-900">Itinerary</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t('trip_detail.itinerary')}</h2>
                 {plan.map((day, index) => {
                   const dayNumber = tripDayNumber(day.date, currentVersion?.start_date);
                   const dayBadgeText = dayNumber ?? index + 1;
@@ -231,7 +235,7 @@ export default function TravelHistoryTripDetailPage() {
                       <div className="bg-white rounded-xl border border-gray-200 p-5 flex-1 mb-1">
                         <div className="flex items-center gap-3 mb-3">
                           <span className="text-xs font-semibold text-[#1E3D2F] bg-green-50 px-2 py-0.5 rounded">
-                            Day {dayBadgeText}
+                            {t('trip_detail.day')} {dayBadgeText}
                           </span>
                           <span className="text-xs text-gray-400">{formatDayDate(day.date)}</span>
                           {day.title && (
@@ -271,7 +275,7 @@ export default function TravelHistoryTripDetailPage() {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-400">No items for this day.</p>
+                          <p className="text-sm text-gray-400">{t('trip_detail.no_items_day')}</p>
                         )}
                       </div>
                     </div>
@@ -280,7 +284,7 @@ export default function TravelHistoryTripDetailPage() {
               </>
             ) : (
               <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 text-sm">
-                No itinerary available.
+                {t('trip_detail.no_itinerary')}
               </div>
             )}
           </div>
@@ -288,29 +292,35 @@ export default function TravelHistoryTripDetailPage() {
           <div className="space-y-5">
             {isCompleted && reviewStatus && reviewStatus.total > 0 && (
               <div className="rounded-xl border border-gray-200 bg-white p-5">
-                <h3 className="mb-2 font-semibold text-gray-900">Review Your Experience</h3>
+                <h3 className="mb-2 font-semibold text-gray-900">
+                  {t('trip_detail.review_experience')}
+                </h3>
                 <p className="mb-3 text-sm text-gray-500">
                   {reviewStatus.reviewed === reviewStatus.total
-                    ? 'You have reviewed every item from this trip. Thank you!'
-                    : `${reviewStatus.reviewed} of ${reviewStatus.total} reviewed — share your impressions of the rest.`}
+                    ? t('trip_detail.all_reviewed')
+                    : t('trip_detail.partial_reviewed')
+                        .replace('{done}', String(reviewStatus.reviewed))
+                        .replace('{total}', String(reviewStatus.total))}
                 </p>
                 <Link
                   href={`/my-page/travel-history/${trip.id}/reviews`}
                   className="inline-block rounded-full bg-[#1E3D2F] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#2a5240]"
                 >
-                  Review Your Experience
+                  {t('trip_detail.review_experience')}
                 </Link>
               </div>
             )}
 
             {tripCredits.length > 0 && creditsCurrency && (
               <div className="rounded-xl border border-gray-200 bg-white p-5">
-                <h3 className="mb-3 font-semibold text-gray-900">Credits earned from this trip</h3>
+                <h3 className="mb-3 font-semibold text-gray-900">
+                  {t('trip_detail.credits_earned')}
+                </h3>
                 <div className="space-y-2">
                   {tripCredits.map((credit) => (
                     <div key={credit.id} className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">
-                        {STAY_CREDIT_SOURCE_LABELS[credit.source].en}
+                        {STAY_CREDIT_SOURCE_LABELS[credit.source][lang]}
                       </span>
                       <span className="font-medium text-[#1E3D2F]">
                         {formatCredit(credit.amount_cents, credit.currency)}
@@ -319,7 +329,7 @@ export default function TravelHistoryTripDetailPage() {
                   ))}
                 </div>
                 <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3 text-sm">
-                  <span className="font-semibold text-gray-900">Total</span>
+                  <span className="font-semibold text-gray-900">{t('trip_detail.total')}</span>
                   <span className="font-primary text-lg italic text-[#1E3D2F]">
                     {formatCredit(creditsTotalCents, creditsCurrency)}
                   </span>
@@ -328,38 +338,40 @@ export default function TravelHistoryTripDetailPage() {
                   href="/my-page/credits"
                   className="mt-3 inline-block text-xs font-medium text-[#C4956A] hover:underline"
                 >
-                  View all credits →
+                  {t('trip_detail.view_all_credits')}
                 </Link>
               </div>
             )}
 
             <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 mb-4">Trip Summary</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">{t('trip_detail.trip_summary')}</h3>
               <div className="grid grid-cols-2 gap-3">
                 {nights !== null && (
                   <div className="text-center bg-gray-50 rounded-lg p-3">
                     <p className="text-2xl font-bold text-[#1E3D2F]">{nights}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Nights</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{t('trip_detail.nights')}</p>
                   </div>
                 )}
                 <div className="text-center bg-gray-50 rounded-lg p-3">
                   <p className="text-2xl font-bold text-[#1E3D2F]">{plan.length}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Days</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{t('trip_detail.days')}</p>
                 </div>
                 <div className="text-center bg-gray-50 rounded-lg p-3">
                   <p className="text-2xl font-bold text-[#1E3D2F]">{activitiesCount}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Activities</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{t('trip_detail.activities')}</p>
                 </div>
                 <div className="text-center bg-gray-50 rounded-lg p-3">
                   <p className="text-2xl font-bold text-[#1E3D2F]">{adults + kids}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Travelers</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{t('trip_detail.travelers')}</p>
                 </div>
               </div>
             </div>
 
             {documents.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <h3 className="font-semibold text-gray-900 mb-3">Booking Documents</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  {t('trip_detail.booking_documents')}
+                </h3>
                 <div className="space-y-2">
                   {documents.map((document, index) => (
                     <a
@@ -371,7 +383,9 @@ export default function TravelHistoryTripDetailPage() {
                     >
                       <span>📄</span>
                       <span className="truncate">
-                        {document.file_name || document.document_type || `Document ${index + 1}`}
+                        {document.file_name ||
+                          document.document_type ||
+                          t('trip_detail.document_fallback').replace('{n}', String(index + 1))}
                       </span>
                     </a>
                   ))}

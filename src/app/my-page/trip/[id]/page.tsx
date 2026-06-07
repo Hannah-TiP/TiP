@@ -12,6 +12,7 @@ import {
 } from '@/lib/trip-utils';
 import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
 import { apiClient } from '@/lib/api-client';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Planning',
@@ -49,7 +50,8 @@ function formatDate(dateStr?: string): string {
 }
 
 function HeroCard({ trip }: { trip: TripWithVersion }) {
-  const title = trip.currentVersion?.title?.trim() || 'New Trip';
+  const { t } = useLanguage();
+  const title = trip.currentVersion?.title?.trim() || t('trip_detail.new_trip');
   const startDate = trip.currentVersion?.start_date || undefined;
   const endDate = trip.currentVersion?.end_date || undefined;
   const nights = getNights(startDate, endDate);
@@ -67,7 +69,9 @@ function HeroCard({ trip }: { trip: TripWithVersion }) {
       </div>
       <div className="flex-1 p-6 md:p-10 text-white flex flex-col justify-center">
         <div className="flex items-center gap-3 mb-2">
-          <p className="text-sm uppercase tracking-widest text-white/60">Trip Details</p>
+          <p className="text-sm uppercase tracking-widest text-white/60">
+            {t('trip_detail.trip_details')}
+          </p>
           <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/15 text-white">
             {statusLabel}
           </span>
@@ -75,29 +79,29 @@ function HeroCard({ trip }: { trip: TripWithVersion }) {
         <h1 className="text-2xl md:text-4xl font-bold mb-4">{title}</h1>
         <div className="flex flex-wrap gap-8 text-sm">
           <div>
-            <p className="text-white/50">Dates</p>
+            <p className="text-white/50">{t('trip_detail.dates')}</p>
             <p className="font-semibold">
               {formatDate(startDate)} – {formatDate(endDate)}
             </p>
           </div>
           {nights !== null && (
             <div>
-              <p className="text-white/50">Duration</p>
+              <p className="text-white/50">{t('trip_detail.duration')}</p>
               <p className="font-semibold">
-                {nights} {nights === 1 ? 'Night' : 'Nights'}
+                {nights} {nights === 1 ? t('common.night') : t('common.nights')}
               </p>
             </div>
           )}
           <div>
-            <p className="text-white/50">Travelers</p>
+            <p className="text-white/50">{t('trip_detail.travelers')}</p>
             <p className="font-semibold">
-              {adults} {adults === 1 ? 'Adult' : 'Adults'}
-              {kids ? `, ${kids} ${kids === 1 ? 'Kid' : 'Kids'}` : ''}
+              {adults} {adults === 1 ? t('common.adult') : t('common.adults')}
+              {kids ? `, ${kids} ${kids === 1 ? t('common.kid') : t('common.kids')}` : ''}
             </p>
           </div>
           {summary && (
             <div>
-              <p className="text-white/50">Summary</p>
+              <p className="text-white/50">{t('trip_detail.summary')}</p>
               <p className="font-semibold">{summary}</p>
             </div>
           )}
@@ -117,28 +121,28 @@ function CancelTripDialog({
   onClose: () => void;
   canceling: boolean;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-8">
-        <h3 className="text-lg font-bold text-gray-900 mb-2">Cancel this trip?</h3>
-        <p className="text-sm text-gray-500 mb-6">
-          This action cannot be undone. The trip will be marked as canceled and will no longer
-          appear in your active trips.
-        </p>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">
+          {t('trip_detail.cancel_confirm_title')}
+        </h3>
+        <p className="text-sm text-gray-500 mb-6">{t('trip_detail.cancel_confirm_body')}</p>
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
             disabled={canceling}
             className="px-5 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
-            Keep Trip
+            {t('trip_detail.keep_trip')}
           </button>
           <button
             onClick={onConfirm}
             disabled={canceling}
             className="px-5 py-2.5 bg-red-600 text-white text-sm font-medium rounded-full hover:bg-red-700 transition-colors disabled:opacity-50"
           >
-            {canceling ? 'Canceling...' : 'Yes, Cancel Trip'}
+            {canceling ? t('trip_detail.canceling') : t('trip_detail.confirm_cancel')}
           </button>
         </div>
       </div>
@@ -147,6 +151,7 @@ function CancelTripDialog({
 }
 
 export default function TripDetailPage() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [tripWithVersion, setTripWithVersion] = useState<TripWithVersion | null>(null);
@@ -164,14 +169,14 @@ export default function TripDetailPage() {
       try {
         setTripWithVersion(await getTripWithVersion(Number(id)));
       } catch {
-        setError('Failed to load trip details.');
+        setError(t('trip_detail.error_load'));
       } finally {
         setLoading(false);
       }
     };
 
     load();
-  }, [id]);
+  }, [id, t]);
 
   // Best-effort: fetch the trip's latest quote so we can render a "View
   // quote" affordance. Failures are swallowed — the link simply does not
@@ -204,16 +209,16 @@ export default function TripDetailPage() {
       const res = await fetch(`/api/trip/${id}/cancel`, { method: 'POST' });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        throw new Error(body?.message || 'Failed to cancel trip');
+        throw new Error(body?.message || t('trip_detail.error_cancel'));
       }
       // Redirect back to my-page after successful cancellation
       router.push('/my-page');
     } catch (err) {
-      setCancelError(err instanceof Error ? err.message : 'Failed to cancel trip');
+      setCancelError(err instanceof Error ? err.message : t('trip_detail.error_cancel'));
       setCanceling(false);
       setShowCancelDialog(false);
     }
-  }, [id, router]);
+  }, [id, router, t]);
 
   if (loading) {
     return (
@@ -234,12 +239,12 @@ export default function TripDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 md:px-6 mt-8 text-center py-20 text-gray-500">
-          <p>{error ?? 'Trip not found.'}</p>
+          <p>{error ?? t('trip_detail.error_not_found')}</p>
           <Link
             href="/my-page"
             className="mt-4 inline-block text-[#1E3D2F] hover:underline text-sm"
           >
-            ← Back to My Trips
+            {t('trip_detail.back_to_my_trips')}
           </Link>
         </div>
       </div>
@@ -265,7 +270,7 @@ export default function TripDetailPage() {
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 mt-8 mb-16 space-y-6">
         <Link href="/my-page" className="text-sm text-gray-500 hover:text-gray-900 inline-block">
-          ← My Trips
+          {t('trip_detail.my_trips')}
         </Link>
 
         <HeroCard trip={tripWithVersion} />
@@ -280,11 +285,13 @@ export default function TripDetailPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">What happens next?</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  {t('trip_detail.what_happens_next')}
+                </h3>
                 <p className="text-sm text-gray-500">
                   {trip.status === 'draft'
-                    ? 'Your trip is still being refined. Continue editing it in Concierge or submit it when you are ready.'
-                    : "Your concierge team is working on the next version of this trip. We'll update it as soon as it is ready."}
+                    ? t('trip_detail.next_draft')
+                    : t('trip_detail.next_proposal')}
                 </p>
               </div>
               {trip.status === 'draft' && (
@@ -293,13 +300,13 @@ export default function TripDetailPage() {
                     href={`/concierge?trip_id=${trip.id}`}
                     className="px-5 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-full hover:bg-gray-50 transition-colors"
                   >
-                    Edit in Concierge
+                    {t('trip_detail.edit_in_concierge')}
                   </Link>
                   <Link
                     href={`/concierge?trip_id=${trip.id}&action=submit`}
                     className="px-6 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-full hover:bg-[#2a5240] transition-colors"
                   >
-                    Submit Trip
+                    {t('trip_detail.submit_trip')}
                   </Link>
                 </div>
               )}
@@ -310,7 +317,7 @@ export default function TripDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-5">Itinerary</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-5">{t('trip_detail.itinerary')}</h2>
               {plan.length > 0 ? (
                 <div className="space-y-4">
                   {plan.map((day, index) => {
@@ -329,7 +336,7 @@ export default function TripDetailPage() {
                         <div className="bg-white rounded-xl border border-gray-200 p-5 flex-1 mb-1">
                           <div className="flex items-center gap-3 mb-3">
                             <span className="text-xs font-semibold text-[#1E3D2F] bg-green-50 px-2 py-0.5 rounded">
-                              Day {dayBadgeText}
+                              {t('trip_detail.day')} {dayBadgeText}
                             </span>
                             <span className="text-xs text-gray-400">
                               {formatDateLabel(day.date)}
@@ -373,7 +380,7 @@ export default function TripDetailPage() {
                               ))}
                             </div>
                           ) : (
-                            <p className="text-sm text-gray-400">No items for this day.</p>
+                            <p className="text-sm text-gray-400">{t('trip_detail.no_items_day')}</p>
                           )}
                         </div>
                       </div>
@@ -382,7 +389,7 @@ export default function TripDetailPage() {
                 </div>
               ) : (
                 <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 text-sm">
-                  No itinerary available yet.
+                  {t('trip_detail.no_itinerary_yet')}
                 </div>
               )}
             </div>
@@ -390,21 +397,23 @@ export default function TripDetailPage() {
 
           <div className="space-y-6">
             <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 mb-2">Edit in Concierge</h3>
-              <p className="text-xs text-gray-500 mb-4">
-                Open this trip in Concierge to make changes or ask questions about it.
-              </p>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                {t('trip_detail.edit_in_concierge')}
+              </h3>
+              <p className="text-xs text-gray-500 mb-4">{t('trip_detail.edit_concierge_hint')}</p>
               <Link
                 href={`/concierge?trip_id=${trip.id}`}
                 className="inline-flex w-full items-center justify-center gap-2 px-5 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-full hover:bg-[#2a5240] transition-colors"
               >
-                Edit in Concierge
+                {t('trip_detail.edit_in_concierge')}
               </Link>
             </div>
 
             {documents.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-3">Booking Documents</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-3">
+                  {t('trip_detail.booking_documents')}
+                </h2>
                 <div className="space-y-2">
                   {documents.map((document, index) => (
                     <a
@@ -416,7 +425,9 @@ export default function TripDetailPage() {
                     >
                       <span>📄</span>
                       <span className="truncate">
-                        {document.file_name || document.document_type || `Document ${index + 1}`}
+                        {document.file_name ||
+                          document.document_type ||
+                          t('trip_detail.document_fallback').replace('{n}', String(index + 1))}
                       </span>
                     </a>
                   ))}
@@ -425,7 +436,7 @@ export default function TripDetailPage() {
             )}
 
             <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 mb-4">Trip Summary</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">{t('trip_detail.trip_summary')}</h3>
               <div className="grid grid-cols-2 gap-3">
                 {getNights(
                   currentVersion?.start_date || undefined,
@@ -438,55 +449,51 @@ export default function TripDetailPage() {
                         currentVersion?.end_date || undefined,
                       )}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">Nights</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{t('trip_detail.nights')}</p>
                   </div>
                 )}
                 <div className="text-center bg-gray-50 rounded-lg p-3">
                   <p className="text-2xl font-bold text-[#1E3D2F]">{plan.length}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Days</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{t('trip_detail.days')}</p>
                 </div>
                 <div className="text-center bg-gray-50 rounded-lg p-3">
                   <p className="text-2xl font-bold text-[#1E3D2F]">
                     {allItems.filter((item) => item.item_type === 'activity').length}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">Activities</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{t('trip_detail.activities')}</p>
                 </div>
                 <div className="text-center bg-gray-50 rounded-lg p-3">
                   <p className="text-2xl font-bold text-[#1E3D2F]">
                     {(currentVersion?.adults ?? 0) + (currentVersion?.kids ?? 0)}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">Travelers</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{t('trip_detail.travelers')}</p>
                 </div>
               </div>
             </div>
 
             {latestQuoteId !== null && (
               <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <h3 className="font-semibold text-gray-900 mb-2">Your Quote</h3>
-                <p className="text-xs text-gray-500 mb-4">
-                  A quote has been prepared for this trip. Review the line items and total.
-                </p>
+                <h3 className="font-semibold text-gray-900 mb-2">{t('trip_detail.your_quote')}</h3>
+                <p className="text-xs text-gray-500 mb-4">{t('trip_detail.quote_prepared')}</p>
                 <Link
                   href={`/quotes/${latestQuoteId}`}
                   data-testid="trip-detail-view-quote-link"
                   className="block w-full px-5 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-full hover:bg-[#2a5240] transition-colors text-center"
                 >
-                  View Quote
+                  {t('trip_detail.view_quote')}
                 </Link>
               </div>
             )}
 
             {canCancel && (
               <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <h3 className="font-semibold text-gray-900 mb-2">Cancel Trip</h3>
-                <p className="text-xs text-gray-500 mb-4">
-                  If you no longer need this trip, you can cancel it. This cannot be undone.
-                </p>
+                <h3 className="font-semibold text-gray-900 mb-2">{t('trip_detail.cancel_trip')}</h3>
+                <p className="text-xs text-gray-500 mb-4">{t('trip_detail.cancel_trip_hint')}</p>
                 <button
                   onClick={() => setShowCancelDialog(true)}
                   className="w-full px-5 py-2.5 border border-red-200 text-red-600 text-sm font-medium rounded-full hover:bg-red-50 transition-colors"
                 >
-                  Cancel Trip
+                  {t('trip_detail.cancel_trip')}
                 </button>
               </div>
             )}

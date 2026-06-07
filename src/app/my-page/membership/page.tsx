@@ -288,7 +288,7 @@ function tierFromMembership(membership: string | undefined): CircleKey {
 }
 
 export default function Membership() {
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const { data: session } = useSession();
   const en = lang === 'en';
   const currentTier = tierFromMembership(session?.user?.membership);
@@ -302,7 +302,7 @@ export default function Membership() {
             {en ? 'TIP MEMBERSHIP' : 'TIP 멤버십'}
           </span>
           <h1 className="mt-3 font-primary text-[44px] italic leading-tight text-green-dark md:text-[56px]">
-            Les Quatre Cercles
+            {t('membership.brand_name')}
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-gray-text">
             {en

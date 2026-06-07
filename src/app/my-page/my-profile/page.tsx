@@ -8,15 +8,17 @@ import BirthDatePicker from '@/components/BirthDatePicker';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { apiClient } from '@/lib/api-client';
 import type { User } from '@/types/auth';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const GENDER_OPTIONS = [
-  { value: '', label: 'Select gender' },
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'other', label: 'Other' },
-];
+  { value: '', labelKey: 'profile.gender_select' },
+  { value: 'male', labelKey: 'profile.gender_male' },
+  { value: 'female', labelKey: 'profile.gender_female' },
+  { value: 'other', labelKey: 'profile.gender_other' },
+] as const;
 
 export default function MyProfile() {
+  const { t } = useLanguage();
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
 
@@ -58,7 +60,7 @@ export default function MyProfile() {
       setBirthday(data.birthday || '');
       setCityId(data.city_id ?? undefined);
     } catch (err) {
-      setError('Failed to load profile. Please try again.');
+      setError(t('profile.error_load'));
       console.error('Profile load error:', err);
     } finally {
       setLoading(false);
@@ -85,12 +87,12 @@ export default function MyProfile() {
         birthday: birthday || undefined,
         city_id: cityId,
       });
-      setSuccess('Profile updated successfully.');
+      setSuccess(t('profile.success_saved'));
       setIsDirty(false);
       // Reload profile to get fresh data
       await loadProfile();
     } catch (err) {
-      setError('Failed to save changes. Please try again.');
+      setError(t('profile.error_save'));
       console.error('Profile save error:', err);
     } finally {
       setSaving(false);
@@ -116,7 +118,7 @@ export default function MyProfile() {
   return (
     <div className="min-h-screen bg-gray-50">
       <section className="max-w-4xl mx-auto px-4 md:px-6 mt-8 mb-16">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Account Settings</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('profile.account_settings')}</h1>
 
         {/* Loading State */}
         {loading && (
@@ -155,11 +157,13 @@ export default function MyProfile() {
           <>
             {/* Personal Information */}
             <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-5">Personal Information</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-5">
+                {t('profile.personal_information')}
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    First Name
+                    {t('profile.first_name')}
                   </label>
                   <input
                     type="text"
@@ -170,7 +174,7 @@ export default function MyProfile() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Last Name
+                    {t('profile.last_name')}
                   </label>
                   <input
                     type="text"
@@ -180,7 +184,9 @@ export default function MyProfile() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    {t('profile.email')}
+                  </label>
                   <input
                     type="email"
                     value={session?.user?.email || ''}
@@ -189,7 +195,9 @@ export default function MyProfile() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Gender</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    {t('profile.gender')}
+                  </label>
                   <select
                     value={gender}
                     onChange={handleFieldChange(setGender)}
@@ -197,14 +205,14 @@ export default function MyProfile() {
                   >
                     {GENDER_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
-                        {opt.label}
+                        {t(opt.labelKey)}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Date of Birth
+                    {t('profile.date_of_birth')}
                   </label>
                   <BirthDatePicker
                     value={birthday}
@@ -216,7 +224,9 @@ export default function MyProfile() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">City</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    {t('profile.city')}
+                  </label>
                   <CityAutocomplete
                     value={cityId}
                     onChange={(id) => {
@@ -224,19 +234,19 @@ export default function MyProfile() {
                       setIsDirty(true);
                       setSuccess('');
                     }}
-                    placeholder="Search city..."
+                    placeholder={t('profile.city_placeholder')}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Membership
+                    {t('profile.membership')}
                   </label>
                   <input
                     type="text"
                     value={
                       profile.membership
                         ? profile.membership.charAt(0).toUpperCase() + profile.membership.slice(1)
-                        : 'White'
+                        : t('profile.membership_white')
                     }
                     disabled
                     className={`${inputClass} bg-gray-50 text-gray-500 cursor-not-allowed`}
@@ -247,21 +257,23 @@ export default function MyProfile() {
 
             {/* Security */}
             <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-5">Security</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-5">{t('profile.security')}</h2>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Password</p>
-                  <p className="text-sm text-gray-400 mt-0.5">Change your account password</p>
+                  <p className="text-sm font-medium text-gray-700">{t('profile.password')}</p>
+                  <p className="text-sm text-gray-400 mt-0.5">
+                    {t('profile.change_password_hint')}
+                  </p>
                 </div>
                 <button className="text-sm font-medium text-[#1E3D2F] hover:underline">
-                  Change Password
+                  {t('profile.change_password')}
                 </button>
               </div>
             </div>
 
             {/* Travel Styles */}
             <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-5">Travel Styles</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-5">{t('profile.travel_styles')}</h2>
               {profile.travel_styles && profile.travel_styles.length > 0 ? (
                 <div className="flex flex-wrap gap-3">
                   {profile.travel_styles.map((style) => (
@@ -274,10 +286,7 @@ export default function MyProfile() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-400">
-                  No travel styles set yet. Complete onboarding or update your preferences to
-                  personalize future recommendations.
-                </p>
+                <p className="text-sm text-gray-400">{t('profile.no_travel_styles')}</p>
               )}
             </div>
 
@@ -288,14 +297,14 @@ export default function MyProfile() {
                 disabled={!isDirty || saving}
                 className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Cancel
+                {t('profile.cancel')}
               </button>
               <button
                 onClick={handleSave}
                 disabled={!isDirty || saving}
                 className="px-6 py-2.5 text-sm font-medium text-white bg-[#1E3D2F] rounded-lg hover:bg-[#163024] transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? t('profile.saving') : t('profile.save_changes')}
               </button>
             </div>
           </>
