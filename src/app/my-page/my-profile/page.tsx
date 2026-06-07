@@ -115,7 +115,7 @@ export default function MyProfile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <section className="max-w-4xl mx-auto px-6 mt-8 mb-16">
+      <section className="max-w-4xl mx-auto px-4 md:px-6 mt-8 mb-16">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Account Settings</h1>
 
         {/* Loading State */}
@@ -124,7 +124,7 @@ export default function MyProfile() {
             {[1, 2].map((i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-200 p-6">
                 <div className="h-5 w-48 bg-gray-200 rounded animate-pulse mb-5" />
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   {[1, 2, 3, 4].map((j) => (
                     <div key={j}>
                       <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-1.5" />
@@ -156,7 +156,7 @@ export default function MyProfile() {
             {/* Personal Information */}
             <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
               <h2 className="text-lg font-bold text-gray-900 mb-5">Personal Information</h2>
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     First Name

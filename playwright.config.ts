@@ -20,6 +20,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/sma-55-hotel-benefits.spec.ts',
   '**/redeem-code.spec.ts',
   '**/trip-credits.spec.ts',
+  '**/responsive-my-page.spec.ts',
 ];
 
 // Specs that deliberately test the cookie-consent banner from a blank state.

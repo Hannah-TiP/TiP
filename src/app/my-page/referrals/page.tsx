@@ -75,7 +75,7 @@ export default function MyReferralsPage() {
   return (
     <>
       <main className="min-h-[80vh] bg-[#FAF9F7]">
-        <section className="max-w-4xl mx-auto px-6 py-16">
+        <section className="max-w-4xl mx-auto px-4 md:px-6 py-16">
           <div className="text-center mb-10">
             <span className="text-[11px] font-semibold tracking-[4px] text-[#C4956A]">
               {en ? 'TIP MEMBERSHIP' : 'TIP 멤버십'}

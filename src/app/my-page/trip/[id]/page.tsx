@@ -59,20 +59,20 @@ function HeroCard({ trip }: { trip: TripWithVersion }) {
   const statusLabel = STATUS_LABELS[trip.trip.status] ?? trip.trip.status;
 
   return (
-    <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex">
-      <div className="w-[480px] flex-shrink-0 relative">
+    <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex flex-col md:flex-row">
+      <div className="w-full md:w-[480px] md:flex-shrink-0 relative">
         <div className="w-full h-full min-h-[240px] bg-gradient-to-br from-[#2a5240] to-[#C4956A] flex items-center justify-center">
           <span className="text-white text-2xl font-bold px-6 text-center">{title}</span>
         </div>
       </div>
-      <div className="flex-1 p-10 text-white flex flex-col justify-center">
+      <div className="flex-1 p-6 md:p-10 text-white flex flex-col justify-center">
         <div className="flex items-center gap-3 mb-2">
           <p className="text-sm uppercase tracking-widest text-white/60">Trip Details</p>
           <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/15 text-white">
             {statusLabel}
           </span>
         </div>
-        <h1 className="text-4xl font-bold mb-4">{title}</h1>
+        <h1 className="text-2xl md:text-4xl font-bold mb-4">{title}</h1>
         <div className="flex flex-wrap gap-8 text-sm">
           <div>
             <p className="text-white/50">Dates</p>
@@ -218,9 +218,9 @@ export default function TripDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-6 mt-8 space-y-4 animate-pulse">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 mt-8 space-y-4 animate-pulse">
           <div className="h-56 bg-gray-200 rounded-2xl" />
-          <div className="grid grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-28 bg-gray-200 rounded-xl" />
             ))}
@@ -233,7 +233,7 @@ export default function TripDetailPage() {
   if (error || !tripWithVersion) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-6 mt-8 text-center py-20 text-gray-500">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 mt-8 text-center py-20 text-gray-500">
           <p>{error ?? 'Trip not found.'}</p>
           <Link
             href="/my-page"
@@ -263,7 +263,7 @@ export default function TripDetailPage() {
         />
       )}
 
-      <div className="max-w-7xl mx-auto px-6 mt-8 mb-16 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 mt-8 mb-16 space-y-6">
         <Link href="/my-page" className="text-sm text-gray-500 hover:text-gray-900 inline-block">
           ← My Trips
         </Link>
@@ -278,7 +278,7 @@ export default function TripDetailPage() {
 
         {isPending && (
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between gap-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">What happens next?</h3>
                 <p className="text-sm text-gray-500">
@@ -288,7 +288,7 @@ export default function TripDetailPage() {
                 </p>
               </div>
               {trip.status === 'draft' && (
-                <div className="flex flex-shrink-0 gap-3">
+                <div className="flex flex-shrink-0 flex-wrap gap-3">
                   <Link
                     href={`/concierge?trip_id=${trip.id}`}
                     className="px-5 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-full hover:bg-gray-50 transition-colors"
@@ -307,8 +307,8 @@ export default function TripDetailPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-5">Itinerary</h2>
               {plan.length > 0 ? (
