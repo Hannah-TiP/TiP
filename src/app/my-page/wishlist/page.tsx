@@ -11,9 +11,9 @@ import { getHotelImages, type Hotel } from '@/types/hotel';
 
 function LoadingSkeleton() {
   return (
-    <div className="mx-auto max-w-7xl px-6 py-12 animate-pulse">
+    <div className="mx-auto max-w-7xl px-4 md:px-6 py-12 animate-pulse">
       <div className="h-8 w-48 bg-gray-200 rounded mb-8" />
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-72 bg-gray-200 rounded-xl" />
         ))}
@@ -24,7 +24,7 @@ function LoadingSkeleton() {
 
 function EmptyState() {
   return (
-    <div className="mx-auto max-w-7xl px-6 py-12">
+    <div className="mx-auto max-w-7xl px-4 md:px-6 py-12">
       <div className="text-center py-24">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -77,7 +77,7 @@ export default function WishlistPage() {
 
   return (
     <main className="min-h-screen bg-gray-light">
-      <div className="mx-auto max-w-7xl px-6 pt-8 pb-4">
+      <div className="mx-auto max-w-7xl px-4 md:px-6 pt-8 pb-4">
         <h1 className="font-primary text-[42px] italic text-green-dark">My Wishlist</h1>
         <p className="mt-2 text-[15px] text-gray-text">Hotels you have saved for future travels.</p>
       </div>
@@ -87,7 +87,7 @@ export default function WishlistPage() {
       ) : items.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="mx-auto max-w-7xl px-6 pb-16">
+        <div className="mx-auto max-w-7xl px-4 md:px-6 pb-16">
           <p className="mb-6 text-[13px] text-gray-text">
             {items.length} {items.length === 1 ? 'hotel' : 'hotels'} saved
           </p>

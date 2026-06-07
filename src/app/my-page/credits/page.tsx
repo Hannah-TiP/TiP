@@ -90,7 +90,7 @@ export default function MyCreditsPage() {
   return (
     <>
       <main className="min-h-[80vh] bg-[#FAF9F7]">
-        <section className="max-w-5xl mx-auto px-6 py-16">
+        <section className="max-w-5xl mx-auto px-4 md:px-6 py-16">
           <div className="text-center mb-10">
             <span className="text-[11px] font-semibold tracking-[4px] text-[#C4956A]">
               {en ? 'TIP MEMBERSHIP' : 'TIP 멤버십'}
@@ -150,11 +150,14 @@ export default function MyCreditsPage() {
                 {credits.map((credit) => {
                   const linkedTripId = tripIdFromCredit(credit);
                   return (
-                    <div key={credit.id} className="py-5 grid grid-cols-12 gap-4 items-center">
-                      <div className="col-span-3 font-primary text-[22px] italic text-[#1E3D2F]">
+                    <div
+                      key={credit.id}
+                      className="py-5 flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-4 sm:items-center"
+                    >
+                      <div className="sm:col-span-3 font-primary text-[22px] italic text-[#1E3D2F]">
                         {formatAmount(credit.amount_cents, credit.currency)}
                       </div>
-                      <div className="col-span-3 text-[14px]">
+                      <div className="sm:col-span-3 text-[14px]">
                         <div className="font-medium text-gray-900">
                           {STAY_CREDIT_SOURCE_LABELS[credit.source][en ? 'en' : 'kr']}
                         </div>
@@ -170,7 +173,7 @@ export default function MyCreditsPage() {
                           </Link>
                         )}
                       </div>
-                      <div className="col-span-2">
+                      <div className="sm:col-span-2">
                         <span
                           className={`inline-block rounded-full px-3 py-1 text-[11px] font-semibold ${
                             STATUS_PILL[credit.status]
@@ -179,7 +182,7 @@ export default function MyCreditsPage() {
                           {STAY_CREDIT_STATUS_LABELS[credit.status][en ? 'en' : 'kr']}
                         </span>
                       </div>
-                      <div className="col-span-2 text-[12px] text-gray-500">
+                      <div className="sm:col-span-2 text-[12px] text-gray-500">
                         {credit.expires_at ? (
                           <>
                             <span className="block uppercase tracking-wider text-[10px] text-gray-400">
@@ -194,7 +197,7 @@ export default function MyCreditsPage() {
                         )}
                       </div>
                       <div
-                        className="col-span-2 text-[12px] text-gray-500 truncate"
+                        className="sm:col-span-2 text-[12px] text-gray-500 sm:truncate"
                         title={credit.notes ?? undefined}
                       >
                         {credit.notes || '—'}

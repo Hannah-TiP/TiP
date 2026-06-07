@@ -108,8 +108,8 @@ function SignInForm() {
   };
 
   return (
-    <div className="mt-8 w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
-      <div className="flex flex-col gap-6 p-8">
+    <div className="mt-8 w-full max-w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
+      <div className="flex flex-col gap-6 p-6 md:p-8">
         <h2 className="text-center text-[20px] font-semibold text-green-dark">Welcome back</h2>
 
         {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
@@ -168,7 +168,7 @@ function SignInForm() {
         </form>
       </div>
 
-      <div className="border-t border-gray-100 bg-gray-50 px-8 py-4 text-center text-sm">
+      <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 text-center text-sm md:px-8">
         <span className="text-gray-text">Don&apos;t have an account? </span>
         <Link
           href={referralCode ? `/register?ref=${referralCode}` : '/register'}
@@ -186,7 +186,7 @@ export default function SignInPage() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <main className="flex min-h-screen flex-col bg-gray-light">
         {/* Top Bar */}
-        <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-10">
+        <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-4 md:px-10">
           <Link href="/">
             <Image
               src="/bible_TIP_profil_400x400px.svg"
@@ -198,16 +198,18 @@ export default function SignInPage() {
           </Link>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center px-10">
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 md:px-10">
           <div className="text-center">
-            <h1 className="font-primary text-[48px] italic text-green-dark">
+            <h1 className="font-primary text-[32px] italic text-green-dark md:text-[48px]">
               Sign in to start planning
             </h1>
             <p className="mt-2 text-gray-text">Access your personalized travel recommendations</p>
           </div>
 
           <Suspense
-            fallback={<div className="mt-8 h-64 w-[420px] animate-pulse rounded-xl bg-white" />}
+            fallback={
+              <div className="mt-8 h-64 w-full max-w-[420px] animate-pulse rounded-xl bg-white" />
+            }
           >
             <SignInForm />
           </Suspense>

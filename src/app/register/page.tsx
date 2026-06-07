@@ -188,15 +188,15 @@ function RegisterForm() {
   };
 
   return (
-    <div className="mt-8 w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
+    <div className="mt-8 w-full max-w-[420px] overflow-hidden rounded-xl bg-white shadow-lg">
       {referralCode && (
-        <div className="border-b border-gold/30 bg-gold/10 px-8 py-3 text-center text-sm text-green-dark">
+        <div className="border-b border-gold/30 bg-gold/10 px-6 py-3 text-center text-sm text-green-dark md:px-8">
           Invited by <span className="font-mono font-semibold">{referralCode}</span> — your stay
           credit will be applied when you join.
         </div>
       )}
       {step === 'email' && accountExists ? (
-        <div className="flex flex-col gap-5 p-8" data-testid="account-exists-panel">
+        <div className="flex flex-col gap-5 p-6 md:p-8" data-testid="account-exists-panel">
           <h2 className="text-center text-[20px] font-semibold text-green-dark">Sign up</h2>
 
           <div className="rounded-lg bg-gold/10 p-4 text-center text-sm">
@@ -234,7 +234,7 @@ function RegisterForm() {
           </button>
         </div>
       ) : step === 'email' ? (
-        <div className="flex flex-col gap-6 p-8">
+        <div className="flex flex-col gap-6 p-6 md:p-8">
           <h2 className="text-center text-[20px] font-semibold text-green-dark">Sign up</h2>
 
           {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
@@ -298,7 +298,7 @@ function RegisterForm() {
           </form>
         </div>
       ) : (
-        <form onSubmit={handleRegister} className="flex flex-col gap-6 p-8">
+        <form onSubmit={handleRegister} className="flex flex-col gap-6 p-6 md:p-8">
           <h2 className="text-center text-[20px] font-semibold text-green-dark">
             Verify your email
           </h2>
@@ -338,7 +338,7 @@ function RegisterForm() {
         </form>
       )}
 
-      <div className="border-t border-gray-100 bg-gray-50 px-8 py-4 text-center text-sm">
+      <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 text-center text-sm md:px-8">
         <span className="text-gray-text">Already have an account? </span>
         <Link href="/sign-in" className="font-medium text-green-dark hover:underline">
           Sign in
@@ -352,7 +352,7 @@ export default function RegisterPage() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <main className="flex min-h-screen flex-col bg-gray-light">
-        <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-10">
+        <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-4 md:px-10">
           <Link href="/">
             <Image
               src="/bible_TIP_profil_400x400px.svg"
@@ -364,9 +364,11 @@ export default function RegisterPage() {
           </Link>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center px-10">
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 md:px-10">
           <div className="text-center">
-            <h1 className="font-primary text-[48px] italic text-green-dark">Create your account</h1>
+            <h1 className="font-primary text-[32px] italic text-green-dark md:text-[48px]">
+              Create your account
+            </h1>
             <p className="mt-2 text-gray-text">
               Start your journey with personalized travel planning
             </p>

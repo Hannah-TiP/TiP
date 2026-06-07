@@ -60,9 +60,9 @@ function sortByPriority(trips: TripWithVersion[]): TripWithVersion[] {
 
 function LoadingSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto px-6 mt-8 mb-16 space-y-8 animate-pulse">
+    <div className="max-w-7xl mx-auto px-4 md:px-6 mt-8 mb-16 space-y-8 animate-pulse">
       <div className="h-56 bg-gray-200 rounded-2xl" />
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-48 bg-gray-200 rounded-xl" />
         ))}
@@ -73,7 +73,7 @@ function LoadingSkeleton() {
 
 function EmptyState() {
   return (
-    <div className="max-w-7xl mx-auto px-6 mt-8 mb-16">
+    <div className="max-w-7xl mx-auto px-4 md:px-6 mt-8 mb-16">
       <div className="text-center py-24">
         <p className="text-5xl mb-6">✈️</p>
         <h2 className="text-2xl font-bold text-gray-900 mb-3">No upcoming trips</h2>
@@ -102,20 +102,20 @@ function HeroCard({ item }: { item: TripWithVersion }) {
 
   return (
     <Link href={`/my-page/trip/${item.trip.id}`} className="block group">
-      <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex group-hover:ring-2 group-hover:ring-[#C4956A] transition-all">
-        <div className="w-[480px] flex-shrink-0 relative">
+      <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex flex-col md:flex-row group-hover:ring-2 group-hover:ring-[#C4956A] transition-all">
+        <div className="w-full md:w-[480px] md:flex-shrink-0 relative">
           <div className="w-full h-full min-h-[240px] bg-gradient-to-br from-[#2a5240] to-[#C4956A] flex items-center justify-center">
             <span className="text-white text-2xl font-bold px-6 text-center">{title}</span>
           </div>
         </div>
-        <div className="flex-1 p-10 text-white flex flex-col justify-center">
+        <div className="flex-1 p-6 md:p-10 text-white flex flex-col justify-center">
           <div className="flex items-center gap-3 mb-2">
             <p className="text-sm uppercase tracking-widest text-white/60">Featured Trip</p>
             <span className={`text-xs font-semibold px-3 py-1 rounded-full ${statusColor}`}>
               {statusLabel}
             </span>
           </div>
-          <h1 className="text-4xl font-bold mb-4">{title}</h1>
+          <h1 className="text-2xl md:text-4xl font-bold mb-4">{title}</h1>
           <div className="flex flex-wrap gap-8 text-sm">
             <div>
               <p className="text-white/50">Dates</p>
@@ -219,13 +219,13 @@ export default function MyPageUpcomingTravels() {
       {!loading && trips.length === 0 && <EmptyState />}
 
       {!loading && featured && (
-        <div className="max-w-7xl mx-auto px-6 mt-8 mb-16 space-y-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 mt-8 mb-16 space-y-8">
           <HeroCard item={featured} />
 
           {otherTrips.length > 0 && (
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Other Active Trips</h2>
-              <div className="grid grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {otherTrips.map((item) => (
                   <TripCard key={item.trip.id} item={item} />
                 ))}

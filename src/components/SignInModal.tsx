@@ -14,15 +14,15 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="relative w-[420px] overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="relative w-full max-w-[420px] overflow-hidden rounded-2xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Section */}
-        <div className="flex flex-col gap-6 p-8 pb-6">
+        <div className="flex flex-col gap-6 p-6 pb-6 md:p-8 md:pb-6">
           <div className="text-center">
             <h2 className="font-primary text-[22px] font-bold text-green-dark">
               Sign in to luxury travel

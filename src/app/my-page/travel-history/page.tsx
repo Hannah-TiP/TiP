@@ -84,7 +84,7 @@ export default function TravelHistory() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <section className="max-w-7xl mx-auto px-6 mt-8 mb-16">
+      <section className="max-w-7xl mx-auto px-4 md:px-6 mt-8 mb-16">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Past Journeys</h1>
@@ -101,9 +101,9 @@ export default function TravelHistory() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="bg-white rounded-xl border border-gray-200 overflow-hidden flex h-44 animate-pulse"
+                className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col sm:flex-row sm:h-44 animate-pulse"
               >
-                <div className="w-64 flex-shrink-0 bg-gray-200" />
+                <div className="h-32 w-full sm:h-auto sm:w-64 sm:flex-shrink-0 bg-gray-200" />
                 <div className="flex-1 p-6 space-y-3">
                   <div className="h-5 bg-gray-200 rounded w-1/3" />
                   <div className="h-4 bg-gray-100 rounded w-1/4" />
@@ -142,10 +142,10 @@ export default function TravelHistory() {
               return (
                 <div
                   key={item.trip.id}
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden flex"
+                  className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col sm:flex-row"
                 >
-                  <div className="w-64 flex-shrink-0 bg-gray-100 relative">
-                    <div className="w-full h-full min-h-[176px] bg-gradient-to-br from-[#1E3D2F] to-[#C4956A] rounded-l-xl flex items-center justify-center">
+                  <div className="h-40 w-full sm:h-auto sm:w-64 sm:flex-shrink-0 bg-gray-100 relative">
+                    <div className="w-full h-full min-h-[160px] sm:min-h-[176px] bg-gradient-to-br from-[#1E3D2F] to-[#C4956A] rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none flex items-center justify-center">
                       <span className="text-white text-lg font-semibold px-4 text-center">
                         {title}
                       </span>
@@ -160,7 +160,7 @@ export default function TravelHistory() {
                           Completed
                         </span>
                       </div>
-                      <div className="flex gap-6 mt-3 text-sm text-gray-500">
+                      <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3 text-sm text-gray-500">
                         <span>{formatDateRange(startDate, endDate)}</span>
                         {nights !== null && (
                           <span>

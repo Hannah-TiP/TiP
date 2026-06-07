@@ -238,7 +238,7 @@ export default function ReviewsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="mx-auto mt-8 max-w-4xl space-y-4 px-6 animate-pulse">
+        <div className="mx-auto mt-8 max-w-4xl space-y-4 px-4 md:px-6 animate-pulse">
           <div className="h-8 w-1/3 rounded bg-gray-200" />
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-48 rounded-xl bg-gray-200" />
@@ -251,7 +251,7 @@ export default function ReviewsPage() {
   if (error || !state) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="mx-auto mt-8 max-w-4xl px-6 py-20 text-center text-gray-500">
+        <div className="mx-auto mt-8 max-w-4xl px-4 md:px-6 py-20 text-center text-gray-500">
           <p>{error ?? 'Trip not found.'}</p>
           <Link
             href="/my-page/travel-history"
@@ -270,7 +270,7 @@ export default function ReviewsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto mt-8 mb-16 max-w-4xl px-6">
+      <div className="mx-auto mt-8 mb-16 max-w-4xl px-4 md:px-6">
         <Link
           href={`/my-page/travel-history/${trip.trip.id}`}
           className="mb-6 inline-block text-sm text-gray-500 hover:text-gray-900"

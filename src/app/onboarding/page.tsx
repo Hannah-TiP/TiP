@@ -242,7 +242,7 @@ function OnboardingFlow() {
   return (
     <main className="flex min-h-screen flex-col bg-gray-light">
       {/* Header */}
-      <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-10">
+      <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-4 md:px-10">
         <Link href="/">
           <Image
             src="/bible_TIP_profil_400x400px.svg"
@@ -273,7 +273,7 @@ function OnboardingFlow() {
           {step === 1 && (
             <div className="flex flex-col gap-6">
               <div className="text-center">
-                <h1 className="font-primary text-[36px] italic text-green-dark">
+                <h1 className="font-primary text-[28px] italic text-green-dark md:text-[36px]">
                   {referredBy ? "You're invited" : 'Were you invited?'}
                 </h1>
                 <p className="mt-2 text-gray-text">
@@ -283,7 +283,7 @@ function OnboardingFlow() {
                 </p>
               </div>
 
-              <div className="mt-4 rounded-xl bg-white p-8 shadow-lg">
+              <div className="mt-4 rounded-xl bg-white p-6 shadow-lg md:p-8">
                 {referredBy ? (
                   <div className="text-center">
                     <span className="text-[11px] font-semibold uppercase tracking-[3px] text-[#C4956A]">
@@ -320,13 +320,15 @@ function OnboardingFlow() {
           {step === 2 && (
             <div className="flex flex-col gap-6">
               <div className="text-center">
-                <h1 className="font-primary text-[36px] italic text-green-dark">Welcome to TiP</h1>
+                <h1 className="font-primary text-[28px] italic text-green-dark md:text-[36px]">
+                  Welcome to TiP
+                </h1>
                 <p className="mt-2 text-gray-text">
                   Let&apos;s get to know you so we can personalize your travel experience.
                 </p>
               </div>
 
-              <div className="mt-4 rounded-xl bg-white p-8 shadow-lg">
+              <div className="mt-4 rounded-xl bg-white p-6 shadow-lg md:p-8">
                 <div className="flex flex-col gap-4">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-gray-700">
@@ -362,7 +364,7 @@ function OnboardingFlow() {
           {step === 3 && (
             <div className="flex flex-col gap-6">
               <div className="text-center">
-                <h1 className="font-primary text-[36px] italic text-green-dark">
+                <h1 className="font-primary text-[28px] italic text-green-dark md:text-[36px]">
                   Where do you call home?
                 </h1>
                 <p className="mt-2 text-gray-text">
@@ -370,7 +372,7 @@ function OnboardingFlow() {
                 </p>
               </div>
 
-              <div className="mt-4 rounded-xl bg-white p-8 shadow-lg">
+              <div className="mt-4 rounded-xl bg-white p-6 shadow-lg md:p-8">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">
                     Home City
@@ -389,7 +391,7 @@ function OnboardingFlow() {
           {step === 4 && (
             <div className="flex flex-col gap-6">
               <div className="text-center">
-                <h1 className="font-primary text-[36px] italic text-green-dark">
+                <h1 className="font-primary text-[28px] italic text-green-dark md:text-[36px]">
                   When&apos;s your birthday?
                 </h1>
                 <p className="mt-2 text-sm leading-relaxed text-gray-text">
@@ -398,8 +400,8 @@ function OnboardingFlow() {
                 </p>
               </div>
 
-              <div className="mt-4 rounded-xl bg-white p-8 shadow-lg">
-                <div className="grid grid-cols-3 gap-3">
+              <div className="mt-4 rounded-xl bg-white p-6 shadow-lg md:p-8">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-gray-700">Month</label>
                     <select
@@ -457,7 +459,7 @@ function OnboardingFlow() {
           {step === 5 && (
             <div className="flex flex-col gap-6">
               <div className="text-center">
-                <h1 className="font-primary text-[36px] italic text-green-dark">
+                <h1 className="font-primary text-[28px] italic text-green-dark md:text-[36px]">
                   How do you love to travel?
                 </h1>
                 <p className="mt-2 text-gray-text">
@@ -465,7 +467,7 @@ function OnboardingFlow() {
                 </p>
               </div>
 
-              <div className="mt-4 rounded-xl bg-white p-8 shadow-lg">
+              <div className="mt-4 rounded-xl bg-white p-6 shadow-lg md:p-8">
                 <div className="grid grid-cols-2 gap-3">
                   {TRAVEL_STYLES.map((style) => {
                     const selected = selectedStyles.includes(style.value);

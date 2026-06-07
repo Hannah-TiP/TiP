@@ -169,7 +169,7 @@ export default function TravelHistoryTripDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto px-6 mt-8 mb-16">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 mt-8 mb-16">
         <Link
           href="/my-page/travel-history"
           className="text-sm text-gray-500 hover:text-gray-900 mb-6 inline-block"
@@ -177,13 +177,13 @@ export default function TravelHistoryTripDetailPage() {
           ← Travel History
         </Link>
 
-        <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex mb-8">
-          <div className="w-72 flex-shrink-0 bg-gradient-to-br from-[#2a5240] to-[#C4956A] min-h-[200px] flex items-center justify-center">
+        <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex flex-col md:flex-row mb-8">
+          <div className="w-full md:w-72 md:flex-shrink-0 bg-gradient-to-br from-[#2a5240] to-[#C4956A] min-h-[200px] flex items-center justify-center">
             <span className="text-white text-3xl font-bold px-6 text-center">{title}</span>
           </div>
-          <div className="flex-1 p-10 text-white flex flex-col justify-center">
+          <div className="flex-1 p-6 md:p-10 text-white flex flex-col justify-center">
             <p className="text-sm uppercase tracking-widest text-white/60 mb-2">Completed Trip</p>
-            <h1 className="text-4xl font-bold mb-4">{title}</h1>
+            <h1 className="text-2xl md:text-4xl font-bold mb-4">{title}</h1>
             <div className="flex flex-wrap gap-8 text-sm">
               <div>
                 <p className="text-white/50">Dates</p>
@@ -210,8 +210,8 @@ export default function TravelHistoryTripDetailPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-2 space-y-5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-5">
             {plan.length > 0 ? (
               <>
                 <h2 className="text-xl font-bold text-gray-900">Itinerary</h2>

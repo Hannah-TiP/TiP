@@ -295,7 +295,7 @@ export default function Membership() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <section className="mx-auto max-w-6xl px-6 py-12">
+      <section className="mx-auto max-w-6xl px-4 md:px-6 py-12">
         {/* Header */}
         <div className="text-center">
           <span className="text-[11px] font-semibold tracking-[4px] text-gold">
