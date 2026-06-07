@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import DatePickerDropdown from './DatePickerDropdown';
 import GuestsDropdown from './GuestsDropdown';
 import DestinationDropdown from './DestinationDropdown';
@@ -19,6 +20,27 @@ export default function SearchBar() {
   // Mobile-only: the full-screen planner overlay. Below `md` the inline bar is
   // hidden and replaced by a single CTA that opens this overlay.
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
+  // The overlay is portalled into document.body so its `fixed inset-0` resolves
+  // against the viewport rather than the hero's `-translate-x-1/2` wrapper,
+  // which (per CSS spec) would otherwise establish the containing block for any
+  // fixed descendant. `mounted` gates the portal to the browser so `document`
+  // exists and we avoid an SSR/first-render hydration mismatch — it reads false
+  // during SSR + the first client render, then true once hydrated.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
+  // Lock body scroll while the overlay is open (mirrors MobileNav).
+  useEffect(() => {
+    if (!isOverlayOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOverlayOpen]);
 
   const toggleDropdown = (name: string) => {
     setActiveDropdown(activeDropdown === name ? null : name);
@@ -227,165 +249,172 @@ export default function SearchBar() {
       </button>
 
       {/* ── Mobile full-screen overlay (< md) ──────────────────────────────── */}
-      {isOverlayOpen && (
-        <div
-          data-testid="searchbar-overlay"
-          className="fixed inset-0 z-[200] flex h-dvh flex-col bg-white md:hidden"
-        >
-          <div className="flex items-center justify-between border-b border-gray-border px-6 py-4">
-            <span className="text-[16px] font-semibold text-green-dark">
-              {t('search.plan_my_trip')}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveDropdown(null);
-                setIsOverlayOpen(false);
-              }}
-              aria-label={t('search.close_planner')}
-              data-testid="searchbar-overlay-close"
-              className="flex h-11 w-11 items-center justify-center rounded-full text-green-dark transition-colors hover:bg-gray-light"
-            >
-              <span className="icon-lucide text-xl" aria-hidden="true">
-                &#xe1b2;
+      {/* Portalled into document.body so `fixed inset-0` escapes the hero's
+          translated wrapper and fills the actual viewport. */}
+      {mounted &&
+        isOverlayOpen &&
+        createPortal(
+          <div
+            data-testid="searchbar-overlay"
+            className="fixed inset-0 z-[200] flex h-dvh flex-col bg-white md:hidden"
+          >
+            <div className="flex items-center justify-between border-b border-gray-border px-6 py-4">
+              <span className="text-[16px] font-semibold text-green-dark">
+                {t('search.plan_my_trip')}
               </span>
-            </button>
-          </div>
-
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
-            {/* Destination */}
-            <div className="relative">
               <button
                 type="button"
-                onClick={() => toggleDropdown('destination')}
-                className="flex w-full flex-col items-start rounded-lg border border-gray-border bg-white px-4 py-3 text-left"
+                onClick={() => {
+                  setActiveDropdown(null);
+                  setIsOverlayOpen(false);
+                }}
+                aria-label={t('search.close_planner')}
+                data-testid="searchbar-overlay-close"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-green-dark transition-colors hover:bg-gray-light"
               >
-                <span className={fieldLabelClass}>{t('search.destination')}</span>
-                <span className={fieldValueClass}>
-                  {destination?.name || t('search.destination_placeholder')}
+                <span className="icon-lucide text-xl" aria-hidden="true">
+                  &#xe1b2;
                 </span>
               </button>
-              {activeDropdown === 'destination' && (
-                <DestinationDropdown
-                  mobile
-                  value={destination?.name || ''}
-                  onChange={(cityData) => {
-                    setDestination(cityData);
-                    setActiveDropdown(null);
-                  }}
-                  onClose={() => setActiveDropdown(null)}
-                />
-              )}
             </div>
 
-            {/* Dates */}
-            <div className="relative">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
+              {/* Destination */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown('destination')}
+                  className="flex w-full flex-col items-start rounded-lg border border-gray-border bg-white px-4 py-3 text-left"
+                >
+                  <span className={fieldLabelClass}>{t('search.destination')}</span>
+                  <span className={fieldValueClass}>
+                    {destination?.name || t('search.destination_placeholder')}
+                  </span>
+                </button>
+                {activeDropdown === 'destination' && (
+                  <DestinationDropdown
+                    mobile
+                    value={destination?.name || ''}
+                    onChange={(cityData) => {
+                      setDestination(cityData);
+                      setActiveDropdown(null);
+                    }}
+                    onClose={() => setActiveDropdown(null)}
+                  />
+                )}
+              </div>
+
+              {/* Dates */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown('dates')}
+                  className="flex w-full items-center justify-between gap-4 rounded-lg border border-gray-border bg-white px-4 py-3 text-left"
+                >
+                  <span className="flex flex-col">
+                    <span className={fieldLabelClass}>{t('search.check_in')}</span>
+                    <span className={fieldValueClass}>{dates.checkIn || t('search.add_date')}</span>
+                  </span>
+                  <span className="flex flex-col">
+                    <span className={fieldLabelClass}>{t('search.check_out')}</span>
+                    <span className={fieldValueClass}>
+                      {dates.checkOut || t('search.add_date')}
+                    </span>
+                  </span>
+                </button>
+                {activeDropdown === 'dates' && (
+                  <DatePickerDropdown
+                    mobile
+                    checkIn={dates.checkIn}
+                    checkOut={dates.checkOut}
+                    onChange={(checkIn, checkOut) => setDates({ checkIn, checkOut })}
+                    onClose={() => setActiveDropdown(null)}
+                  />
+                )}
+              </div>
+
+              {/* Guests */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown('guests')}
+                  className="flex w-full flex-col items-start rounded-lg border border-gray-border bg-white px-4 py-3 text-left"
+                >
+                  <span className={fieldLabelClass}>{t('search.guests')}</span>
+                  <span className={fieldValueClass}>{guestsLabel}</span>
+                </button>
+                {activeDropdown === 'guests' && (
+                  <GuestsDropdown
+                    mobile
+                    adults={guests.adults}
+                    kids={guests.children}
+                    onChange={(adults, children) => setGuests({ adults, children })}
+                    onClose={() => setActiveDropdown(null)}
+                  />
+                )}
+              </div>
+
+              {/* Trip Type */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown('tripType')}
+                  className="flex w-full flex-col items-start rounded-lg border border-gray-border bg-white px-4 py-3 text-left"
+                >
+                  <span className={fieldLabelClass}>{t('search.trip_type')}</span>
+                  <span className={fieldValueClass}>{tripType}</span>
+                </button>
+                {activeDropdown === 'tripType' && (
+                  <TripTypeDropdown
+                    mobile
+                    value={tripType}
+                    onChange={(val) => {
+                      setTripType(val);
+                      setActiveDropdown(null);
+                    }}
+                    onClose={() => setActiveDropdown(null)}
+                  />
+                )}
+              </div>
+
+              {/* Travel Style */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown('travelStyle')}
+                  className="flex w-full flex-col items-start rounded-lg border border-gray-border bg-white px-4 py-3 text-left"
+                >
+                  <span className={fieldLabelClass}>{t('search.travel_style')}</span>
+                  <span className={fieldValueClass}>{travelStyle || t('search.any_style')}</span>
+                </button>
+                {activeDropdown === 'travelStyle' && (
+                  <TravelStyleDropdown
+                    mobile
+                    value={travelStyle}
+                    onChange={(val) => {
+                      setTravelStyle(val);
+                      setActiveDropdown(null);
+                    }}
+                    onClose={() => setActiveDropdown(null)}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Submit */}
+            <div className="border-t border-gray-border px-6 py-5">
               <button
                 type="button"
-                onClick={() => toggleDropdown('dates')}
-                className="flex w-full items-center justify-between gap-4 rounded-lg border border-gray-border bg-white px-4 py-3 text-left"
+                onClick={handleSearch}
+                className="flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-green-dark text-[14px] font-semibold text-white transition-opacity hover:opacity-90"
               >
-                <span className="flex flex-col">
-                  <span className={fieldLabelClass}>{t('search.check_in')}</span>
-                  <span className={fieldValueClass}>{dates.checkIn || t('search.add_date')}</span>
-                </span>
-                <span className="flex flex-col">
-                  <span className={fieldLabelClass}>{t('search.check_out')}</span>
-                  <span className={fieldValueClass}>{dates.checkOut || t('search.add_date')}</span>
-                </span>
+                <span className="icon-lucide">&#xe8b6;</span>
+                {t('search.plan_my_trip')}
               </button>
-              {activeDropdown === 'dates' && (
-                <DatePickerDropdown
-                  mobile
-                  checkIn={dates.checkIn}
-                  checkOut={dates.checkOut}
-                  onChange={(checkIn, checkOut) => setDates({ checkIn, checkOut })}
-                  onClose={() => setActiveDropdown(null)}
-                />
-              )}
             </div>
-
-            {/* Guests */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => toggleDropdown('guests')}
-                className="flex w-full flex-col items-start rounded-lg border border-gray-border bg-white px-4 py-3 text-left"
-              >
-                <span className={fieldLabelClass}>{t('search.guests')}</span>
-                <span className={fieldValueClass}>{guestsLabel}</span>
-              </button>
-              {activeDropdown === 'guests' && (
-                <GuestsDropdown
-                  mobile
-                  adults={guests.adults}
-                  kids={guests.children}
-                  onChange={(adults, children) => setGuests({ adults, children })}
-                  onClose={() => setActiveDropdown(null)}
-                />
-              )}
-            </div>
-
-            {/* Trip Type */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => toggleDropdown('tripType')}
-                className="flex w-full flex-col items-start rounded-lg border border-gray-border bg-white px-4 py-3 text-left"
-              >
-                <span className={fieldLabelClass}>{t('search.trip_type')}</span>
-                <span className={fieldValueClass}>{tripType}</span>
-              </button>
-              {activeDropdown === 'tripType' && (
-                <TripTypeDropdown
-                  mobile
-                  value={tripType}
-                  onChange={(val) => {
-                    setTripType(val);
-                    setActiveDropdown(null);
-                  }}
-                  onClose={() => setActiveDropdown(null)}
-                />
-              )}
-            </div>
-
-            {/* Travel Style */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => toggleDropdown('travelStyle')}
-                className="flex w-full flex-col items-start rounded-lg border border-gray-border bg-white px-4 py-3 text-left"
-              >
-                <span className={fieldLabelClass}>{t('search.travel_style')}</span>
-                <span className={fieldValueClass}>{travelStyle || t('search.any_style')}</span>
-              </button>
-              {activeDropdown === 'travelStyle' && (
-                <TravelStyleDropdown
-                  mobile
-                  value={travelStyle}
-                  onChange={(val) => {
-                    setTravelStyle(val);
-                    setActiveDropdown(null);
-                  }}
-                  onClose={() => setActiveDropdown(null)}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Submit */}
-          <div className="border-t border-gray-border px-6 py-5">
-            <button
-              type="button"
-              onClick={handleSearch}
-              className="flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-green-dark text-[14px] font-semibold text-white transition-opacity hover:opacity-90"
-            >
-              <span className="icon-lucide">&#xe8b6;</span>
-              {t('search.plan_my_trip')}
-            </button>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
