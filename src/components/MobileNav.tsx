@@ -61,84 +61,91 @@ export default function MobileNav({ isOpen, onClose, isAuthenticated, activeNav 
         }`}
       />
 
-      {/* Drawer */}
-      <aside
-        data-testid="mobile-nav-drawer"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t('nav.menu_open')}
-        aria-hidden={!isOpen}
-        className={`fixed inset-y-0 right-0 z-50 flex w-[280px] flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out md:hidden ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
-        <div className="flex h-[64px] items-center justify-end border-b border-gray-border px-4">
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t('nav.menu_close')}
-            className="flex h-11 w-11 items-center justify-center rounded-full text-green-dark transition-colors hover:bg-gray-light"
-          >
-            <span className="icon-lucide text-xl" aria-hidden="true">
-              &#xe1b2;
-            </span>
-          </button>
-        </div>
-
-        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-6 py-6">
-          {navLinks.map((link) => (
-            <Link
-              key={link.key}
-              href={link.href}
-              prefetch={link.protected ? false : undefined}
+      {/* Drawer clip wrapper: a full-viewport, off-screen-clipping container so
+          the closed drawer's translate-x-full transform never adds to the page's
+          horizontal scrollWidth (transforms don't shrink scrollWidth on their
+          own). pointer-events-none so it never intercepts taps; the drawer
+          itself re-enables pointer events. */}
+      <div className="pointer-events-none fixed inset-0 z-50 overflow-x-hidden md:hidden">
+        {/* Drawer */}
+        <aside
+          data-testid="mobile-nav-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('nav.menu_open')}
+          aria-hidden={!isOpen}
+          className={`pointer-events-auto absolute inset-y-0 right-0 flex w-[280px] flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out ${
+            isOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <div className="flex h-[64px] items-center justify-end border-b border-gray-border px-4">
+            <button
+              type="button"
               onClick={onClose}
-              className={`${linkClass(activeNav === link.key)} py-3`}
+              aria-label={t('nav.menu_close')}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-green-dark transition-colors hover:bg-gray-light"
             >
-              {link.label}
-            </Link>
-          ))}
+              <span className="icon-lucide text-xl" aria-hidden="true">
+                &#xe1b2;
+              </span>
+            </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setLang(lang === 'en' ? 'kr' : 'en')}
-            className={`${linkClass(false)} py-3 text-left`}
-          >
-            {t('nav.language_toggle')}
-          </button>
-        </nav>
-
-        <div className="flex flex-col gap-3 border-t border-gray-border px-6 py-6">
-          {isAuthenticated ? (
-            <>
+          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-6 py-6">
+            {navLinks.map((link) => (
               <Link
-                href="/my-page"
+                key={link.key}
+                href={link.href}
+                prefetch={link.protected ? false : undefined}
                 onClick={onClose}
-                className={`${linkClass(activeNav === 'my-page')} py-2`}
+                className={`${linkClass(activeNav === link.key)} py-3`}
               >
-                {t('nav.my_page')}
+                {link.label}
               </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  signOut({ callbackUrl: '/' });
-                }}
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setLang(lang === 'en' ? 'kr' : 'en')}
+              className={`${linkClass(false)} py-3 text-left`}
+            >
+              {t('nav.language_toggle')}
+            </button>
+          </nav>
+
+          <div className="flex flex-col gap-3 border-t border-gray-border px-6 py-6">
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/my-page"
+                  onClick={onClose}
+                  className={`${linkClass(activeNav === 'my-page')} py-2`}
+                >
+                  {t('nav.my_page')}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    signOut({ callbackUrl: '/' });
+                  }}
+                  className="rounded-full border border-green-dark px-5 py-3 text-center text-[12px] font-medium tracking-[2px] text-green-dark transition-colors hover:bg-green-dark hover:text-white"
+                >
+                  {t('nav.logout')}
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/sign-in"
+                onClick={onClose}
                 className="rounded-full border border-green-dark px-5 py-3 text-center text-[12px] font-medium tracking-[2px] text-green-dark transition-colors hover:bg-green-dark hover:text-white"
               >
-                {t('nav.logout')}
-              </button>
-            </>
-          ) : (
-            <Link
-              href="/sign-in"
-              onClick={onClose}
-              className="rounded-full border border-green-dark px-5 py-3 text-center text-[12px] font-medium tracking-[2px] text-green-dark transition-colors hover:bg-green-dark hover:text-white"
-            >
-              {t('nav.sign_in')}
-            </Link>
-          )}
-        </div>
-      </aside>
+                {t('nav.sign_in')}
+              </Link>
+            )}
+          </div>
+        </aside>
+      </div>
     </>
   );
 }

@@ -33,17 +33,10 @@ const supportLinks: FooterLink[] = [
 
 export default function Footer() {
   return (
-    <footer
-      style={{
-        backgroundColor: '#214032',
-        padding: '48px 100px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 40,
-      }}
-    >
-      {/* Top row */}
-      <div className="flex justify-between items-start">
+    <footer className="flex flex-col gap-10 bg-green-footer px-6 py-12 md:px-[100px]">
+      {/* Top row — wraps on narrow viewports so the link columns never force
+          horizontal page scroll. */}
+      <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-8">
         <Image
           src="/bible_TIP_logo_noir.svg"
           alt="TiP"
@@ -52,7 +45,7 @@ export default function Footer() {
           style={{ height: 40, filter: 'brightness(0) invert(1)' }}
         />
 
-        <div className="flex" style={{ gap: 80 }}>
+        <div className="flex flex-wrap gap-x-12 gap-y-8 md:gap-x-20">
           <FooterColumn title="Explore" items={exploreLinks} />
           <FooterColumn title="Company" items={companyLinks} />
           <FooterColumn title="Support" items={supportLinks} />
