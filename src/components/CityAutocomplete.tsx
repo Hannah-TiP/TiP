@@ -128,7 +128,9 @@ export default function CityAutocomplete({
           {isSearching ? (
             <li className="px-3 py-2 text-sm text-gray-text">{t('city_autocomplete.searching')}</li>
           ) : results.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-gray-text">{t('city_autocomplete.no_results')}</li>
+            <li className="px-3 py-2 text-sm text-gray-text">
+              {t('city_autocomplete.no_results')}
+            </li>
           ) : (
             results.map((city) => (
               <li

@@ -7,24 +7,24 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 const elevateCards = [
   {
-    title: 'AI Concierge',
-    description: 'Your personal travel assistant, available 24/7 to craft the perfect journey.',
+    titleKey: 'home.card_ai_title',
+    descriptionKey: 'home.card_ai_body',
     icon: '✨',
     link: '/concierge',
   },
   {
-    title: 'Curated Stays',
-    description: 'Hand-picked hotels with exclusive benefits and preferred rates.',
+    titleKey: 'home.card_stays_title',
+    descriptionKey: 'home.card_stays_body',
     icon: '🏨',
     link: '/dream-hotels',
   },
   {
-    title: 'Smart Itineraries',
-    description: 'Intelligently planned trips tailored to your preferences and style.',
+    titleKey: 'home.card_itineraries_title',
+    descriptionKey: 'home.card_itineraries_body',
     icon: '📍',
     link: '/concierge',
   },
-];
+] as const;
 
 type Bilingual = { en: string; kr: string };
 
@@ -242,7 +242,7 @@ const partners: Partner[] = [
 ];
 
 export default function HomePage() {
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const isEn = lang === 'en';
 
   return (
@@ -252,7 +252,7 @@ export default function HomePage() {
         {/* Background Image */}
         <Image
           src="https://images.unsplash.com/photo-1561238349-24053008a28e?w=1920&h=1080&fit=crop"
-          alt="Luxury hotel"
+          alt={t('home.hero_alt')}
           className="absolute inset-0 object-cover"
           fill
           sizes="100vw"
@@ -267,14 +267,13 @@ export default function HomePage() {
           style={{ height: 'calc(100% - 64px)' }}
         >
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
-            LUXURY TRAVEL REIMAGINED
+            {t('home.hero_overline')}
           </span>
           <h1 className="max-w-3xl font-primary text-[36px] font-normal italic leading-[1.1] text-white md:text-[48px] lg:text-[64px]">
-            Dream Hotels, Thoughtfully Curated.
+            {t('home.hero_title')}
           </h1>
           <p className="mt-6 max-w-xl text-[16px] leading-[1.7] text-white/60">
-            Experience the world&apos;s most extraordinary hotels, hand-selected by our AI concierge
-            for unparalleled luxury and unforgettable moments.
+            {t('home.hero_subtitle')}
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
@@ -282,13 +281,13 @@ export default function HomePage() {
               className="flex items-center gap-2 rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
             >
               <span className="icon-lucide">&#xe986;</span>
-              Start Planning
+              {t('home.start_planning')}
             </Link>
             <Link
               href="/dream-hotels"
               className="rounded-full border border-white/40 px-8 py-4 text-[13px] font-semibold text-white transition-colors hover:bg-white/10"
             >
-              Explore Hotels
+              {t('home.explore_hotels')}
             </Link>
           </div>
         </div>
@@ -306,7 +305,7 @@ export default function HomePage() {
           <div className="flex-shrink-0">
             <Image
               src="/bible_TIP_profil_400x400px.svg"
-              alt="TiP"
+              alt={t('home.logo_alt')}
               className="h-[60px] w-[60px]"
               width={60}
               height={60}
@@ -317,21 +316,18 @@ export default function HomePage() {
           <div className="flex flex-1 flex-col items-start justify-between gap-8 lg:flex-row lg:gap-16">
             <div className="max-w-md">
               <span className="text-[11px] font-semibold tracking-[4px] text-gold">
-                THE TIP DIFFERENCE
+                {t('home.difference_overline')}
               </span>
               <h2 className="mt-3 font-primary text-[28px] italic leading-snug text-green-dark md:text-[38px]">
-                Travel Intelligence, Perfected
+                {t('home.difference_title')}
               </h2>
             </div>
             <div className="max-w-lg">
               <p className="text-[15px] leading-[1.8] text-gray-text">
-                TiP combines cutting-edge AI with decades of luxury travel expertise. Our
-                intelligent concierge learns your preferences, anticipates your needs, and crafts
-                journeys that exceed expectations—every single time.
+                {t('home.difference_body1')}
               </p>
               <p className="mt-4 text-[15px] leading-[1.8] text-gray-text">
-                From securing the best suites to arranging exclusive experiences, we handle every
-                detail so you can focus on what matters: enjoying the journey.
+                {t('home.difference_body2')}
               </p>
             </div>
           </div>
@@ -341,23 +337,27 @@ export default function HomePage() {
       {/* Elevate Section */}
       <section className="bg-[#F5F4F2] px-6 py-16 sm:px-10 lg:px-[100px] lg:py-20">
         <div className="mx-auto max-w-7xl text-center">
-          <span className="text-[11px] font-semibold tracking-[4px] text-gold">HOW IT WORKS</span>
+          <span className="text-[11px] font-semibold tracking-[4px] text-gold">
+            {t('home.how_it_works')}
+          </span>
           <h2 className="mt-3 font-primary text-[28px] italic text-green-dark md:text-[36px] lg:text-[42px]">
-            Elevate Your Journey
+            {t('home.elevate_title')}
           </h2>
         </div>
         <div className="mx-auto mt-12 flex max-w-5xl flex-col justify-center gap-6 sm:flex-row">
           {elevateCards.map((card) => (
             <Link
-              key={card.title}
+              key={card.titleKey}
               href={card.link}
               className="group flex-1 rounded-2xl bg-white p-8 shadow-sm transition-shadow hover:shadow-md"
             >
               <span className="text-3xl">{card.icon}</span>
-              <h3 className="mt-4 text-[18px] font-semibold text-green-dark">{card.title}</h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-gray-text">{card.description}</p>
+              <h3 className="mt-4 text-[18px] font-semibold text-green-dark">{t(card.titleKey)}</h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-gray-text">
+                {t(card.descriptionKey)}
+              </p>
               <div className="mt-4 flex items-center gap-1 text-[13px] font-medium text-gold transition-colors group-hover:text-green-dark">
-                Learn more
+                {t('home.learn_more')}
                 <span className="icon-lucide text-sm">&#xe817;</span>
               </div>
             </Link>
@@ -372,21 +372,20 @@ export default function HomePage() {
           <div className="mb-6">
             <Image
               src="/bible_TIP_logo_noir.svg"
-              alt="TiP"
+              alt={t('home.logo_alt')}
               className="h-[60px]"
               width={180}
               height={60}
             />
           </div>
           <span className="text-[11px] font-semibold tracking-[4px] text-green-dark">
-            BEGIN YOUR JOURNEY
+            {t('home.cta_overline')}
           </span>
           <h2 className="mt-4 font-primary text-[32px] italic leading-tight text-[#3D3D3D] md:text-[42px] lg:text-[52px]">
-            Ready to explore the world?
+            {t('home.cta_title')}
           </h2>
           <p className="mt-4 max-w-xl text-[16px] leading-[1.7] text-gray-text">
-            Let our AI concierge craft your perfect adventure, tailored to your preferences and
-            style — anywhere in the world.
+            {t('home.cta_body')}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -394,13 +393,13 @@ export default function HomePage() {
               className="flex items-center gap-2 rounded-full bg-green-dark px-8 py-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
             >
               <span className="icon-lucide">&#xe986;</span>
-              Chat with Concierge
+              {t('home.chat_with_concierge')}
             </Link>
             <Link
               href="/dream-hotels"
               className="rounded-full border border-green-dark/30 px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-green-dark/5"
             >
-              Browse Hotels
+              {t('home.browse_hotels')}
             </Link>
           </div>
         </div>
@@ -414,7 +413,7 @@ export default function HomePage() {
               {isEn ? 'TIP MEMBERSHIP' : 'TIP 멤버십'}
             </span>
             <h2 className="mt-3 font-primary text-[42px] italic leading-tight text-green-dark md:text-[52px]">
-              Les Quatre Cercles
+              {t('home.membership_brand')}
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-gray-text">
               {isEn
@@ -544,7 +543,7 @@ export default function HomePage() {
             disables the animation entirely. */}
         <div
           className="marquee group relative mt-12 overflow-hidden"
-          aria-label={isEn ? 'Our partner brands' : '파트너 브랜드'}
+          aria-label={t('home.partner_brands_aria')}
         >
           {/* Edge fades so logos enter/exit softly rather than clipping hard */}
           <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-gray-light to-transparent md:w-24" />
@@ -579,7 +578,7 @@ export default function HomePage() {
             <Link href="/">
               <Image
                 src="/bible_TIP_logo_noir.svg"
-                alt="TiP"
+                alt={t('home.footer_logo_alt')}
                 className="h-10"
                 width={120}
                 height={40}
@@ -588,47 +587,53 @@ export default function HomePage() {
             </Link>
             <div className="flex flex-wrap gap-x-12 gap-y-8 sm:gap-x-20">
               <div>
-                <h4 className="text-[13px] font-semibold text-white/60">Explore</h4>
+                <h4 className="text-[13px] font-semibold text-white/60">
+                  {t('home.footer_explore')}
+                </h4>
                 <div className="mt-4 flex flex-col gap-3">
                   <Link
                     href="/dream-hotels"
                     className="text-[13px] text-white/40 hover:text-white/70"
                   >
-                    Dream Hotels
+                    {t('home.footer_dream_hotels')}
                   </Link>
                   <Link href="/about" className="text-[13px] text-white/40 hover:text-white/70">
-                    About
+                    {t('home.footer_about')}
                   </Link>
                   <Link href="/concierge" className="text-[13px] text-white/40 hover:text-white/70">
-                    Concierge
+                    {t('home.footer_concierge')}
                   </Link>
                 </div>
               </div>
               <div>
-                <h4 className="text-[13px] font-semibold text-white/60">Company</h4>
+                <h4 className="text-[13px] font-semibold text-white/60">
+                  {t('home.footer_company')}
+                </h4>
                 <div className="mt-4 flex flex-col gap-3">
                   <Link href="/about" className="text-[13px] text-white/40 hover:text-white/70">
-                    About Us
+                    {t('home.footer_about_us')}
                   </Link>
                   <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    Careers
+                    {t('home.footer_careers')}
                   </Link>
                   <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    Press
+                    {t('home.footer_press')}
                   </Link>
                 </div>
               </div>
               <div>
-                <h4 className="text-[13px] font-semibold text-white/60">Support</h4>
+                <h4 className="text-[13px] font-semibold text-white/60">
+                  {t('home.footer_support')}
+                </h4>
                 <div className="mt-4 flex flex-col gap-3">
                   <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    Help Center
+                    {t('home.footer_help_center')}
                   </Link>
                   <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    Contact Us
+                    {t('home.footer_contact_us')}
                   </Link>
                   <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    Privacy Policy
+                    {t('home.footer_privacy')}
                   </Link>
                 </div>
               </div>
@@ -645,7 +650,7 @@ export default function HomePage() {
 
           {/* Copyright */}
           <div className="mt-6 text-center text-[12px] text-white/30">
-            © 2026 TiP AI. Crafted for discerning travelers.
+            {t('home.footer_copyright')}
           </div>
         </div>
       </footer>

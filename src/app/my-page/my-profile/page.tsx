@@ -46,6 +46,9 @@ export default function MyProfile() {
     if (sessionStatus === 'authenticated') {
       loadProfile();
     }
+    // loadProfile is a stable component-scoped function; re-running on its
+    // identity would re-fetch on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionStatus, router]);
 
   async function loadProfile() {

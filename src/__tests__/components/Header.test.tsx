@@ -20,6 +20,7 @@ const I18N: Record<string, string> = {
   'nav.sign_in': 'SIGN IN',
   'nav.my_page': 'MY PAGE',
   'nav.logout': 'LOGOUT',
+  'nav.logo_alt': 'TiP',
 };
 
 vi.mock('@/contexts/LanguageContext', () => ({

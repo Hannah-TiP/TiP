@@ -29,9 +29,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
             <h2 className="font-primary text-[22px] font-bold text-green-dark">
               {t('signin_modal.title')}
             </h2>
-            <p className="mt-2 text-[14px] text-gray-500">
-              {t('signin_modal.subtitle')}
-            </p>
+            <p className="mt-2 text-[14px] text-gray-500">{t('signin_modal.subtitle')}</p>
           </div>
 
           {/* Social Login */}

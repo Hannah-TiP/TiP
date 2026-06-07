@@ -52,7 +52,10 @@ function statusOf(existingReview: Review | null, value: ReviewItemValue): Review
 }
 
 const STATUS_PILL: Record<ReviewItemStatus, { labelKey: TranslationKey; className: string }> = {
-  'not-reviewed': { labelKey: 'reviews.status_not_reviewed', className: 'bg-gray-100 text-gray-600' },
+  'not-reviewed': {
+    labelKey: 'reviews.status_not_reviewed',
+    className: 'bg-gray-100 text-gray-600',
+  },
   draft: { labelKey: 'reviews.status_draft', className: 'bg-blue-100 text-blue-700' },
   submitted: { labelKey: 'reviews.status_submitted', className: 'bg-green-100 text-green-700' },
   locked: { labelKey: 'reviews.status_locked', className: 'bg-gray-200 text-gray-500' },
@@ -103,9 +106,7 @@ export default function ReviewSessionItem({
           {existingReview!.comment && (
             <p className="mt-3 text-sm leading-relaxed text-gray-600">{existingReview!.comment}</p>
           )}
-          <p className="mt-4 text-xs text-gray-400">
-            {t('reviews.locked_notice')}
-          </p>
+          <p className="mt-4 text-xs text-gray-400">{t('reviews.locked_notice')}</p>
         </div>
       ) : (
         <div>
@@ -119,7 +120,9 @@ export default function ReviewSessionItem({
             />
           </div>
           <div className="mb-4">
-            <p className="mb-2 text-sm font-medium text-gray-700">{t('reviews.your_review_optional')}</p>
+            <p className="mb-2 text-sm font-medium text-gray-700">
+              {t('reviews.your_review_optional')}
+            </p>
             <textarea
               value={value.comment}
               onChange={(e) => onCommentChange(e.target.value)}

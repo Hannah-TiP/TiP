@@ -93,7 +93,8 @@ export default function WidgetResponseDisplay({ response }: WidgetResponseDispla
     case 'hotel_carousel': {
       const hotelId = response.value.hotel_id;
       const hotelName = response.value.name;
-      const label = hotelName ?? (hotelId != null ? `Hotel ${hotelId}` : t('widget.hotel_selected'));
+      const label =
+        hotelName ?? (hotelId != null ? `Hotel ${hotelId}` : t('widget.hotel_selected'));
       return (
         <div className="flex items-center gap-2" data-testid="widget-response-hotel-carousel">
           <svg

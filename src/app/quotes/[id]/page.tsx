@@ -24,10 +24,7 @@ interface ToastMessage {
   tone: ToastTone;
 }
 
-const STATUS_LABEL_KEYS: Record<
-  QuoteStatus,
-  Parameters<ReturnType<typeof useLanguage>['t']>[0]
-> = {
+const STATUS_LABEL_KEYS: Record<QuoteStatus, Parameters<ReturnType<typeof useLanguage>['t']>[0]> = {
   DRAFT: 'quote.status_draft',
   SENT: 'quote.status_sent',
   PAID: 'quote.status_paid',
@@ -663,11 +660,7 @@ function QuoteDetailContent() {
       if (attempts >= POLL_MAX_ATTEMPTS) {
         if (!controller.signal.aborted) {
           setConfirmingPayment(false);
-          pushToast(
-            t('quote.toast_timeout'),
-            'warning',
-            8000,
-          );
+          pushToast(t('quote.toast_timeout'), 'warning', 8000);
         }
         return;
       }

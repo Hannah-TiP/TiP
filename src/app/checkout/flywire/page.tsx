@@ -233,7 +233,9 @@ function FlywireCheckoutContent() {
             data-testid="flywire-script-failure"
             className="rounded-xl border border-red-200 bg-red-50 px-5 py-6 text-center"
           >
-            <p className="text-sm font-semibold text-red-800 mb-2">{t('checkout.script_failed_title')}</p>
+            <p className="text-sm font-semibold text-red-800 mb-2">
+              {t('checkout.script_failed_title')}
+            </p>
             <p className="text-xs text-red-700/80 mb-4">{t('checkout.script_failed_body')}</p>
             <button
               type="button"

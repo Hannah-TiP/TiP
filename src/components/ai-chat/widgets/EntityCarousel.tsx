@@ -58,9 +58,7 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
       })
       .catch(() => {
         if (cancelled) return;
-        setPreviewError(
-          t('carousel.load_error').replace('{entity}', entityLabel.toLowerCase()),
-        );
+        setPreviewError(t('carousel.load_error').replace('{entity}', entityLabel.toLowerCase()));
         setPreviewLoading(false);
       });
 

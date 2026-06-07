@@ -122,7 +122,10 @@ export default function MessageBubble({
       className="flex gap-3"
       data-testid={isHumanConcierge ? 'message-human-concierge' : undefined}
     >
-      <div className={avatarClasses} title={isHumanConcierge ? t('chat.concierge_team') : t('chat.ai_concierge')}>
+      <div
+        className={avatarClasses}
+        title={isHumanConcierge ? t('chat.concierge_team') : t('chat.ai_concierge')}
+      >
         {avatarLabel}
       </div>
       <div className="min-w-0 flex-1 max-w-[600px] break-words">
