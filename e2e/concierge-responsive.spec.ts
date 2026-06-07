@@ -149,8 +149,10 @@ test.describe('Concierge responsive layout (375px)', () => {
     await page.getByTestId('mobile-sidebar-toggle').click();
     await expect(page.getByTestId('mobile-sidebar-drawer')).toBeVisible();
 
-    // Close via backdrop.
-    await page.getByTestId('mobile-sidebar-backdrop').click();
+    // Close via backdrop. The left drawer is 280px wide, so the exposed
+    // backdrop sliver is on the right — click there (the default center click
+    // would land under the drawer, which sits above the backdrop at z-40).
+    await page.getByTestId('mobile-sidebar-backdrop').click({ position: { x: 340, y: 400 } });
     await expect(page.getByTestId('mobile-sidebar-drawer')).toHaveCount(0);
 
     // Open again, close via X button.
@@ -175,7 +177,10 @@ test.describe('Concierge responsive layout (375px)', () => {
     await page.getByTestId('mobile-trip-panel-toggle').click();
     await expect(page.getByTestId('mobile-trip-panel-drawer')).toBeVisible();
 
-    await page.getByTestId('mobile-trip-panel-backdrop').click();
+    // The right drawer is 85% wide, so the exposed backdrop sliver is on the
+    // left — click there (the default center click would land under the drawer,
+    // which sits above the backdrop at z-40).
+    await page.getByTestId('mobile-trip-panel-backdrop').click({ position: { x: 20, y: 400 } });
     await expect(page.getByTestId('mobile-trip-panel-drawer')).toHaveCount(0);
 
     await page.getByTestId('mobile-trip-panel-toggle').click();
