@@ -48,13 +48,14 @@ function sortSessions(
 }
 
 export default function ConciergePage() {
+  const { t } = useLanguage();
   return (
     <Suspense
       fallback={
         <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3D2F] mx-auto mb-4" />
-            <p className="font-inter text-sm text-gray-600">Loading...</p>
+            <p className="font-inter text-sm text-gray-600">{t('chat.loading')}</p>
           </div>
         </div>
       }
@@ -523,7 +524,7 @@ function ConciergeContent() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3D2F] mx-auto mb-4" />
-          <p className="font-inter text-sm text-gray-600">Loading...</p>
+          <p className="font-inter text-sm text-gray-600">{t('chat.loading')}</p>
         </div>
       </div>
     );
@@ -566,7 +567,7 @@ function ConciergeContent() {
           <button
             onClick={() => setSidebarCollapsed(false)}
             className="hidden md:flex items-center justify-center w-8 bg-[#FAFAF8] border-r border-gray-100 hover:bg-gray-100 transition-colors"
-            title="Expand sidebar"
+            title={t('chat.open_conversations')}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -688,10 +689,10 @@ function ConciergeContent() {
               data-testid="human-takeover-banner"
             >
               <span className="font-inter text-xs uppercase tracking-wider text-[#C4956A] font-semibold">
-                Concierge Team
+                {t('chat.concierge_team')}
               </span>
               <span className="font-inter text-sm text-gray-700">
-                A human concierge is taking over from here. The AI is paused.
+                {t('chat.human_takeover_notice')}
               </span>
             </div>
           )}
