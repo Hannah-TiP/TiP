@@ -42,7 +42,7 @@ export default function RequestHumanCTA({
 
   return (
     <>
-      <div className="border-t border-gray-100 px-[60px] py-3 flex justify-center">
+      <div className="border-t border-gray-100 px-4 md:px-[60px] py-3 flex justify-center">
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}

@@ -67,8 +67,8 @@ export default function ChatInput({
   };
 
   return (
-    <div className="border-t border-gray-100 px-[60px] py-5">
-      <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-5 py-3">
+    <div className="border-t border-gray-100 px-4 md:px-[60px] py-5">
+      <div className="flex min-h-[44px] items-center gap-3 bg-gray-50 rounded-xl px-5 py-3">
         {/* Image upload button */}
         {onUploadImage && (
           <>

@@ -53,7 +53,7 @@ export default function MessageBubble({
   if (isUser) {
     return (
       <div className="flex flex-col items-end gap-1">
-        <div className="bg-[#1E3D2F] text-white rounded-2xl rounded-tr-sm px-5 py-4 max-w-[400px]">
+        <div className="bg-[#1E3D2F] text-white rounded-2xl rounded-tr-sm px-5 py-4 max-w-[280px] md:max-w-[400px] break-words">
           {hasWidgetResponse ? (
             <WidgetResponseDisplay response={widgetResponse} />
           ) : message.message_type === 'text' && hasTextContent ? (
@@ -123,7 +123,7 @@ export default function MessageBubble({
       <div className={avatarClasses} title={isHumanConcierge ? 'Concierge Team' : 'AI Concierge'}>
         {avatarLabel}
       </div>
-      <div className="flex-1 max-w-[600px]">
+      <div className="min-w-0 flex-1 max-w-[600px] break-words">
         {isHumanConcierge && (
           <div
             className="font-inter text-[10px] uppercase tracking-wider text-[#C4956A] font-semibold mb-1 ml-1"

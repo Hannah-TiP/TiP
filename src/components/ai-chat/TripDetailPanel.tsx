@@ -199,7 +199,7 @@ export default function TripDetailPanel({
       : 'transition-colors duration-500';
 
   return (
-    <div className="w-[420px] flex flex-col bg-[#FAFAF8] overflow-y-auto">
+    <div className="w-full md:w-[420px] flex flex-col bg-[#FAFAF8] overflow-y-auto">
       <div className="px-8 py-8 flex-1">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-cormorant text-2xl font-semibold text-[#1E3D2F]">
