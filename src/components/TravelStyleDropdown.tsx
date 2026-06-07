@@ -6,6 +6,8 @@ interface TravelStyleDropdownProps {
   value: string;
   onChange: (value: string) => void;
   onClose: () => void;
+  /** When true, render full-width within the mobile planner overlay. */
+  mobile?: boolean;
 }
 
 const travelStyles = [
@@ -21,6 +23,7 @@ export default function TravelStyleDropdown({
   value,
   onChange,
   onClose,
+  mobile = false,
 }: TravelStyleDropdownProps) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -37,8 +40,10 @@ export default function TravelStyleDropdown({
   return (
     <div
       ref={ref}
-      className="absolute right-0 top-full z-50 mt-2 rounded-xl bg-white p-3 shadow-xl"
-      style={{ width: 320 }}
+      className={`absolute top-full z-50 mt-2 rounded-xl bg-white p-3 shadow-xl ${
+        mobile ? 'left-0 right-0 w-full max-w-full' : 'right-0'
+      }`}
+      style={mobile ? undefined : { width: 320 }}
     >
       <p className="mb-2 px-2 text-[11px] font-medium uppercase tracking-wider text-gray-400">
         Travel Style

@@ -8,9 +8,17 @@ interface GuestsDropdownProps {
   kids: number;
   onChange: (adults: number, kids: number) => void;
   onClose: () => void;
+  /** When true, render full-width within the mobile planner overlay. */
+  mobile?: boolean;
 }
 
-export default function GuestsDropdown({ adults, kids, onChange, onClose }: GuestsDropdownProps) {
+export default function GuestsDropdown({
+  adults,
+  kids,
+  onChange,
+  onClose,
+  mobile = false,
+}: GuestsDropdownProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
 
@@ -27,8 +35,10 @@ export default function GuestsDropdown({ adults, kids, onChange, onClose }: Gues
   return (
     <div
       ref={ref}
-      className="absolute left-[360px] top-full z-50 mt-2 rounded-xl bg-white p-6 shadow-xl"
-      style={{ width: 320 }}
+      className={`absolute top-full z-50 mt-2 rounded-xl bg-white p-6 shadow-xl ${
+        mobile ? 'left-0 right-0 w-full max-w-full' : 'left-[360px]'
+      }`}
+      style={mobile ? undefined : { width: 320 }}
     >
       <h3 className="mb-4 text-[15px] font-semibold text-green-dark">{t('guests.title')}</h3>
 

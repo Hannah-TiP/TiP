@@ -7,6 +7,8 @@ interface DatePickerDropdownProps {
   checkOut: string;
   onChange: (checkIn: string, checkOut: string) => void;
   onClose: () => void;
+  /** When true, render full-width within the mobile planner overlay. */
+  mobile?: boolean;
 }
 
 const months = [
@@ -31,6 +33,7 @@ export default function DatePickerDropdown({
   checkOut,
   onChange,
   onClose,
+  mobile = false,
 }: DatePickerDropdownProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -164,8 +167,10 @@ export default function DatePickerDropdown({
   return (
     <div
       ref={ref}
-      className="absolute left-0 top-full z-50 mt-2 rounded-xl bg-white p-6 shadow-xl"
-      style={{ width: 700 }}
+      className={`absolute left-0 top-full z-50 mt-2 rounded-xl bg-white p-6 shadow-xl ${
+        mobile ? 'right-0 max-h-[70vh] w-full max-w-full overflow-y-auto' : ''
+      }`}
+      style={mobile ? undefined : { width: 700 }}
     >
       {/* Selected dates display */}
       <div className="mb-6 flex items-center gap-4">
@@ -193,7 +198,7 @@ export default function DatePickerDropdown({
       </div>
 
       {/* Calendars */}
-      <div className="flex gap-8">
+      <div className={`flex gap-8 ${mobile ? 'flex-col' : ''}`}>
         {/* Current month */}
         <div className="flex-1">
           <div className="mb-4 flex items-center justify-between">
