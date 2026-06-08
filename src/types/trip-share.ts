@@ -1,4 +1,4 @@
-import type { Quote } from '@/types/quote';
+import type { QuoteWithVersion } from '@/types/quote';
 import type { TripDocument, TripStatus, TripVersion } from '@/types/trip';
 
 /**
@@ -45,6 +45,6 @@ export interface SharedTripDetail {
   can_reshare: boolean;
   shared_by_email?: string | null;
   created_by_email?: string | null;
-  active_quote?: Quote | null;
+  active_quote?: QuoteWithVersion | null;
   booking_documents: TripDocument[];
 }

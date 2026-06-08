@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
 import { tripDayNumber } from '@/lib/trip-utils';
 import { apiClient } from '@/lib/api-client';
+import { formatCurrency } from '@/lib/format-currency';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { SharedTripDetail } from '@/types/trip-share';
 
@@ -109,6 +110,10 @@ export default function SharedTripDetailPage() {
   const nights = getNights(version?.start_date, version?.end_date);
   const statusLabel = STATUS_LABELS[detail.status] ?? detail.status;
   const title = version?.title?.trim() || t('shared_trip_detail.untitled');
+  // Cost is rendered inline from the quote's current pricing version — the
+  // recipient is NOT the quote owner, so the /quotes/{id} route would 404 for
+  // them. The backend only populates active_quote when show_cost is True.
+  const costSnapshot = detail.active_quote?.current_version?.total_snapshot ?? null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -289,19 +294,35 @@ export default function SharedTripDetailPage() {
               </div>
             )}
 
-            {detail.show_cost && detail.active_quote && (
+            {detail.show_cost && costSnapshot && (
               <div
                 className="bg-white rounded-xl border border-gray-200 p-5"
                 data-testid="shared-quote"
               >
                 <h3 className="font-semibold text-gray-900 mb-2">{t('shared_trip_detail.cost')}</h3>
                 <p className="text-xs text-gray-500 mb-4">{t('shared_trip_detail.cost_hint')}</p>
-                <Link
-                  href={`/quotes/${detail.active_quote.id}`}
-                  className="block w-full px-5 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-full hover:bg-[#2a5240] transition-colors text-center"
-                >
-                  {t('shared_trip_detail.view_quote')}
-                </Link>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between text-gray-600">
+                    <span>{t('shared_trip_detail.subtotal')}</span>
+                    <span>{formatCurrency(costSnapshot.subtotal, costSnapshot.currency)}</span>
+                  </div>
+                  {costSnapshot.fees.map((fee, idx) => (
+                    <div key={`fee-${idx}`} className="flex justify-between text-gray-600">
+                      <span>{fee.label}</span>
+                      <span>+{formatCurrency(fee.amount, costSnapshot.currency)}</span>
+                    </div>
+                  ))}
+                  {costSnapshot.discounts.map((discount, idx) => (
+                    <div key={`discount-${idx}`} className="flex justify-between text-emerald-700">
+                      <span>{discount.label}</span>
+                      <span>−{formatCurrency(discount.amount, costSnapshot.currency)}</span>
+                    </div>
+                  ))}
+                  <div className="border-t border-gray-200 pt-3 mt-1 flex justify-between text-base font-bold text-gray-900">
+                    <span>{t('shared_trip_detail.total')}</span>
+                    <span>{formatCurrency(costSnapshot.total, costSnapshot.currency)}</span>
+                  </div>
+                </div>
               </div>
             )}
 
