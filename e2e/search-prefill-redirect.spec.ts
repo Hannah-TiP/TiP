@@ -38,7 +38,9 @@ test.describe('SearchBar → unauthed redirect preserves prefill params', () => 
   }) => {
     await page.goto('/');
 
-    await page.getByText('DESTINATION', { exact: true }).click();
+    // Label renders as "DESTINATION" via CSS `uppercase`, but the DOM text
+    // node is "Destination" (i18n value); match the actual text content.
+    await page.getByText('Destination', { exact: true }).click();
     await page.getByText('Paris').click();
     await page.getByRole('button', { name: /plan my trip/i }).click();
 
