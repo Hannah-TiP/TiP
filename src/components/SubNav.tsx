@@ -3,22 +3,26 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import type { SubNavKey } from '@/lib/header-config';
+import { useLanguage, type TranslationKeys } from '@/contexts/LanguageContext';
 
 interface SubNavProps {
   activeTab: SubNavKey;
 }
 
-const tabs: { label: SubNavKey; href: string }[] = [
-  { label: 'Upcoming Travels', href: '/my-page' },
-  { label: 'Travel History', href: '/my-page/travel-history' },
-  { label: 'Membership', href: '/my-page/membership' },
-  { label: 'Credits', href: '/my-page/credits' },
-  { label: 'Referrals', href: '/my-page/referrals' },
-  { label: 'Wishlist', href: '/my-page/wishlist' },
-  { label: 'My Profile', href: '/my-page/my-profile' },
+/** Maps each tab key to its href and i18n label key. */
+const tabs: { label: SubNavKey; href: string; i18nKey: TranslationKeys }[] = [
+  { label: 'Upcoming Travels', href: '/my-page', i18nKey: 'subnav.upcoming_travels' },
+  { label: 'Shared With Me', href: '/my-page/shared-trips', i18nKey: 'subnav.shared_with_me' },
+  { label: 'Travel History', href: '/my-page/travel-history', i18nKey: 'subnav.travel_history' },
+  { label: 'Membership', href: '/my-page/membership', i18nKey: 'subnav.membership' },
+  { label: 'Credits', href: '/my-page/credits', i18nKey: 'subnav.credits' },
+  { label: 'Referrals', href: '/my-page/referrals', i18nKey: 'subnav.referrals' },
+  { label: 'Wishlist', href: '/my-page/wishlist', i18nKey: 'subnav.wishlist' },
+  { label: 'My Profile', href: '/my-page/my-profile', i18nKey: 'subnav.my_profile' },
 ];
 
 export default function SubNav({ activeTab }: SubNavProps) {
+  const { t } = useLanguage();
   const activeRef = useRef<HTMLAnchorElement>(null);
 
   // On mobile the tab row scrolls horizontally; make sure the active tab is
@@ -46,7 +50,7 @@ export default function SubNav({ activeTab }: SubNavProps) {
                 : 'border-transparent font-medium text-[#999999] hover:text-green-dark'
             }`}
           >
-            {tab.label}
+            {t(tab.i18nKey)}
           </Link>
         );
       })}

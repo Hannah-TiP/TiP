@@ -5,7 +5,7 @@ import en from '@/translations/en.json';
 import kr from '@/translations/kr.json';
 
 export type Lang = 'en' | 'kr';
-type TranslationKeys = keyof typeof en;
+export type TranslationKeys = keyof typeof en;
 
 const translations: Record<Lang, Record<string, string>> = { en, kr };
 

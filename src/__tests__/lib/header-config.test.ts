@@ -149,6 +149,7 @@ describe('resolveHeaderConfig — /my-page/** SubNav tab mapping', () => {
   const cases: [string, string][] = [
     ['/my-page', 'Upcoming Travels'],
     ['/my-page/trip/55', 'Upcoming Travels'],
+    ['/my-page/shared-trips', 'Shared With Me'],
     ['/my-page/travel-history', 'Travel History'],
     ['/my-page/travel-history/55', 'Travel History'],
     ['/my-page/travel-history/55/reviews', 'Travel History'],

@@ -24,6 +24,7 @@ export type NavKey =
 /** SubNav tab keys (labels rendered by SubNav, only on /my-page/**). */
 export type SubNavKey =
   | 'Upcoming Travels'
+  | 'Shared With Me'
   | 'Travel History'
   | 'Credits'
   | 'Membership'
@@ -62,6 +63,7 @@ function isPathOrSubpath(pathname: string, prefix: string): boolean {
  *
  * Mapping:
  *  - /my-page and /my-page/trip/*           -> Upcoming Travels
+ *  - /my-page/shared-trips*                 -> Shared With Me
  *  - /my-page/travel-history*               -> Travel History
  *      (includes the post-trip review session at
  *       /my-page/travel-history/[id]/reviews)
@@ -73,6 +75,7 @@ function isPathOrSubpath(pathname: string, prefix: string): boolean {
  *  - any other /my-page subpath             -> Upcoming Travels (dashboard fallback)
  */
 function resolveMyPageTab(pathname: string): SubNavKey {
+  if (isPathOrSubpath(pathname, '/my-page/shared-trips')) return 'Shared With Me';
   if (isPathOrSubpath(pathname, '/my-page/travel-history')) return 'Travel History';
   if (isPathOrSubpath(pathname, '/my-page/credits')) return 'Credits';
   if (isPathOrSubpath(pathname, '/my-page/membership')) return 'Membership';
