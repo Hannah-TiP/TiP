@@ -28,6 +28,7 @@ describe('parseSearchPrefill', () => {
         prefill: '1',
         cityId: '7',
         city: 'Paris',
+        destinationType: 'city',
         checkIn: '2026-06-01',
         checkOut: '2026-06-07',
         adults: '3',
@@ -40,6 +41,7 @@ describe('parseSearchPrefill', () => {
     expect(parsed).toEqual({
       cityId: 7,
       cityName: 'Paris',
+      destinationType: 'city',
       checkIn: '2026-06-01',
       checkOut: '2026-06-07',
       adults: 3,
@@ -54,6 +56,7 @@ describe('parseSearchPrefill', () => {
     expect(parsed).toEqual({
       cityId: null,
       cityName: null,
+      destinationType: null,
       checkIn: null,
       checkOut: null,
       adults: 2,
@@ -64,8 +67,38 @@ describe('parseSearchPrefill', () => {
   });
 
   it('drops a non-numeric cityId rather than coercing it to NaN', () => {
-    const parsed = parseSearchPrefill(paramsFrom({ prefill: '1', cityId: 'abc' }));
+    const parsed = parseSearchPrefill(
+      paramsFrom({ prefill: '1', cityId: 'abc', destinationType: 'city' }),
+    );
     expect(parsed?.cityId).toBeNull();
+  });
+
+  it('does NOT keep cityId for a country destination (no cityId poisoning)', () => {
+    // SearchBar never emits cityId for a country, but guard against a stray one.
+    const parsed = parseSearchPrefill(
+      paramsFrom({ prefill: '1', city: 'France', destinationType: 'country', cityId: '99' }),
+    );
+    expect(parsed?.cityId).toBeNull();
+    expect(parsed?.destinationType).toBe('country');
+    expect(parsed?.cityName).toBe('France');
+  });
+
+  it('does NOT keep cityId for a region destination (no cityId poisoning)', () => {
+    const parsed = parseSearchPrefill(
+      paramsFrom({
+        prefill: '1',
+        city: 'Ile-de-France',
+        destinationType: 'region',
+        cityId: '55',
+      }),
+    );
+    expect(parsed?.cityId).toBeNull();
+    expect(parsed?.destinationType).toBe('region');
+  });
+
+  it('ignores an unknown destinationType value', () => {
+    const parsed = parseSearchPrefill(paramsFrom({ prefill: '1', destinationType: 'continent' }));
+    expect(parsed?.destinationType).toBeNull();
   });
 });
 
@@ -88,6 +121,7 @@ describe('buildPrefillTripVersion', () => {
     return {
       cityId: null,
       cityName: null,
+      destinationType: null,
       checkIn: null,
       checkOut: null,
       adults: 2,
@@ -103,6 +137,7 @@ describe('buildPrefillTripVersion', () => {
       makePrefill({
         cityId: 7,
         cityName: 'Paris',
+        destinationType: 'city',
         checkIn: '2026-06-01',
         checkOut: '2026-06-07',
         adults: 2,
@@ -136,6 +171,40 @@ describe('buildPrefillTripVersion', () => {
     expect(version.trip_preferences).toBeUndefined();
   });
 
+  it('routes a COUNTRY destination to custom_destinations (by name), NOT destination_city_ids', () => {
+    const version = buildPrefillTripVersion(
+      makePrefill({ cityId: null, cityName: 'France', destinationType: 'country' }),
+    );
+
+    expect(version.title).toBe('France');
+    expect(version.trip_preferences).toEqual([
+      {
+        type: 'custom',
+        key: 'custom_destinations',
+        value: 'France',
+        label: 'Custom destinations',
+      },
+    ]);
+    // Crucially, no city-id preference is emitted for a country.
+    const prefs = version.trip_preferences ?? [];
+    expect(prefs.find((p) => 'key' in p && p.key === 'destination_city_ids')).toBeUndefined();
+  });
+
+  it('routes a REGION destination to custom_destinations (by name), NOT destination_city_ids', () => {
+    const version = buildPrefillTripVersion(
+      makePrefill({ cityId: null, cityName: 'Ile-de-France', destinationType: 'region' }),
+    );
+
+    expect(version.trip_preferences).toEqual([
+      {
+        type: 'custom',
+        key: 'custom_destinations',
+        value: 'Ile-de-France',
+        label: 'Custom destinations',
+      },
+    ]);
+  });
+
   it('maps Bleisure trip type to business purpose', () => {
     const version = buildPrefillTripVersion(makePrefill({ tripType: 'Bleisure' }));
     expect(version.trip_preferences).toEqual([{ type: 'purpose', value: 'business' }]);
@@ -155,6 +224,7 @@ describe('buildPrefillSeedMessage', () => {
     return {
       cityId: null,
       cityName: null,
+      destinationType: null,
       checkIn: null,
       checkOut: null,
       adults: 2,

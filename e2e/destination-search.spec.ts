@@ -114,4 +114,61 @@ test.describe('SMA-91 unified destination search', () => {
     await expect(page.getByRole('button', { name: /Paris/ }).first()).toBeVisible();
     await page.screenshot({ path: 'test-results/sma91-home-popular.png' });
   });
+
+  // Regression guard for the SMA-91 blocker: selecting a CITY must carry a
+  // cityId in the concierge prefill, while selecting a COUNTRY (or region) must
+  // NOT — a country id passed as cityId poisons destination_city_ids.
+  test('Home hero: selecting a CITY carries cityId into the concierge prefill', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.getByText('Destination', { exact: true }).first().click();
+
+    const destInput = page.getByPlaceholder('Search destinations...');
+    await destInput.fill('Paris');
+    // Pick the city result (id 100, type city).
+    await page.getByRole('button', { name: /Paris/ }).first().click();
+
+    await page
+      .getByRole('button', { name: /plan my trip/i })
+      .first()
+      .click();
+
+    await page.waitForURL('**/concierge?**');
+    const url = new URL(page.url());
+    expect(url.searchParams.get('destinationType')).toBe('city');
+    expect(url.searchParams.get('cityId')).toBe('100');
+    expect(url.searchParams.get('city')).toBe('Paris');
+  });
+
+  test('Home hero: selecting a COUNTRY does NOT set cityId (no cityId poisoning)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.getByText('Destination', { exact: true }).first().click();
+
+    const destInput = page.getByPlaceholder('Search destinations...');
+    await destInput.fill('France');
+    // Pick the country result (id 200, type country). The Paris city card also
+    // mentions "France" in its subtitle, so scope to the option that carries
+    // the "Country" type chip and does NOT render "Paris".
+    const countryOption = page
+      .getByRole('button')
+      .filter({ hasText: 'France' })
+      .filter({ hasText: 'Country' })
+      .filter({ hasNotText: 'Paris' });
+    await countryOption.first().click();
+
+    await page
+      .getByRole('button', { name: /plan my trip/i })
+      .first()
+      .click();
+
+    await page.waitForURL('**/concierge?**');
+    const url = new URL(page.url());
+    expect(url.searchParams.get('destinationType')).toBe('country');
+    // The country id (200) must NOT leak in as a cityId.
+    expect(url.searchParams.has('cityId')).toBe(false);
+    expect(url.searchParams.get('city')).toBe('France');
+  });
 });

@@ -4,7 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import DatePickerDropdown from './DatePickerDropdown';
 import GuestsDropdown from './GuestsDropdown';
-import DestinationDropdown from './DestinationDropdown';
+import DestinationDropdown, { type SelectedDestination } from './DestinationDropdown';
 import TripTypeDropdown from './TripTypeDropdown';
 import TravelStyleDropdown from './TravelStyleDropdown';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -12,7 +12,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 export default function SearchBar() {
   const { t } = useLanguage();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [destination, setDestination] = useState<{ id: number; name: string } | null>(null);
+  const [destination, setDestination] = useState<SelectedDestination | null>(null);
   const [dates, setDates] = useState({ checkIn: '', checkOut: '' });
   const [guests, setGuests] = useState({ adults: 2, children: 0 });
   const [tripType, setTripType] = useState('Leisure');
@@ -58,8 +58,16 @@ export default function SearchBar() {
     params.set('prefill', '1');
 
     if (destination) {
-      params.set('cityId', destination.id.toString());
+      // Carry the destination name + type for every level so the concierge
+      // prefill (search-prefill.ts) can route it correctly. Mirrors how the
+      // Dream Hotels page handles selectedDestination.type. ONLY a city-typed
+      // destination yields a real city id — passing a country/region id as
+      // `cityId` would poison `destination_city_ids` in the prefill.
       params.set('city', destination.name);
+      params.set('destinationType', destination.type);
+      if (destination.type === 'city') {
+        params.set('cityId', destination.id.toString());
+      }
     }
 
     if (dates.checkIn) params.set('checkIn', dates.checkIn);
@@ -187,8 +195,8 @@ export default function SearchBar() {
         {activeDropdown === 'destination' && (
           <DestinationDropdown
             value={destination?.name || ''}
-            onChange={(cityData) => {
-              setDestination(cityData);
+            onChange={(picked) => {
+              setDestination(picked);
               setActiveDropdown(null);
             }}
             onClose={() => setActiveDropdown(null)}
@@ -295,8 +303,8 @@ export default function SearchBar() {
                   <DestinationDropdown
                     mobile
                     value={destination?.name || ''}
-                    onChange={(cityData) => {
-                      setDestination(cityData);
+                    onChange={(picked) => {
+                      setDestination(picked);
                       setActiveDropdown(null);
                     }}
                     onClose={() => setActiveDropdown(null)}

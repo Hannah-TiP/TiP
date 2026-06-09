@@ -65,7 +65,7 @@ describe('DestinationDropdown', () => {
     expect(screen.getByText('France · Ile-de-France')).toBeTruthy();
   });
 
-  it('passes the selected destination id and name to onChange', async () => {
+  it('passes the selected destination id, type, and name to onChange', async () => {
     vi.mocked(apiClient.searchDestinations).mockResolvedValue([paris]);
     const onChange = vi.fn();
 
@@ -73,7 +73,18 @@ describe('DestinationDropdown', () => {
 
     fireEvent.click(await screen.findByText('Paris'));
 
-    expect(onChange).toHaveBeenCalledWith({ id: 1, name: 'Paris' });
+    expect(onChange).toHaveBeenCalledWith({ id: 1, type: 'city', name: 'Paris' });
+  });
+
+  it('propagates a non-city type (country) so the caller can avoid treating it as a city', async () => {
+    vi.mocked(apiClient.searchDestinations).mockResolvedValue([france]);
+    const onChange = vi.fn();
+
+    render(<DestinationDropdown value="" onChange={onChange} onClose={vi.fn()} />);
+
+    fireEvent.click(await screen.findByText('France'));
+
+    expect(onChange).toHaveBeenCalledWith({ id: 2, type: 'country', name: 'France' });
   });
 
   it('shows the popular bookable set on the initial empty state', async () => {

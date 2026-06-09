@@ -6,9 +6,20 @@ import { useLanguage, type TranslationKeys } from '@/contexts/LanguageContext';
 import { useDestinationSearch } from '@/hooks/useDestinationSearch';
 import type { DestinationSuggestion } from '@/types/destination';
 
+export interface SelectedDestination {
+  id: number;
+  type: DestinationSuggestion['type'];
+  name: string;
+}
+
 interface DestinationDropdownProps {
   value: string;
-  onChange: (cityData: { id: number; name: string }) => void;
+  /**
+   * Receives the picked destination with its 3-level `type` so the caller can
+   * route country / region / city differently (a country/region id must NOT be
+   * treated as a city id).
+   */
+  onChange: (destination: SelectedDestination) => void;
   onClose: () => void;
   /** When true, render full-width within the mobile planner overlay. */
   mobile?: boolean;
@@ -90,7 +101,13 @@ export default function DestinationDropdown({
             {suggestions.map((dest) => (
               <button
                 key={`${dest.type}-${dest.id}`}
-                onClick={() => onChange({ id: dest.id, name: getLocalizedText(dest.name, lang) })}
+                onClick={() =>
+                  onChange({
+                    id: dest.id,
+                    type: dest.type,
+                    name: getLocalizedText(dest.name, lang),
+                  })
+                }
                 className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-50"
               >
                 <div className="flex items-center gap-3">

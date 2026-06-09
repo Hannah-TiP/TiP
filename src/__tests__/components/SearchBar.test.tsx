@@ -34,18 +34,34 @@ vi.mock('@/components/DestinationDropdown', () => ({
     onClose,
     mobile,
   }: {
-    onChange: (city: { id: number; name: string }) => void;
+    onChange: (dest: { id: number; type: 'country' | 'region' | 'city'; name: string }) => void;
     onClose: () => void;
     mobile?: boolean;
   }) => (
     <div data-testid="destination-dropdown" data-mobile={mobile ? 'true' : 'false'}>
       <button
         onClick={() => {
-          onChange({ id: 7, name: 'Paris' });
+          onChange({ id: 7, type: 'city', name: 'Paris' });
           onClose();
         }}
       >
         Pick Paris
+      </button>
+      <button
+        onClick={() => {
+          onChange({ id: 99, type: 'country', name: 'France' });
+          onClose();
+        }}
+      >
+        Pick France (country)
+      </button>
+      <button
+        onClick={() => {
+          onChange({ id: 55, type: 'region', name: 'Ile-de-France' });
+          onClose();
+        }}
+      >
+        Pick Ile-de-France (region)
       </button>
     </div>
   ),
@@ -199,6 +215,7 @@ describe('SearchBar.handleSearch', () => {
     const params = new URLSearchParams(navigatedUrl.split('?')[1] ?? '');
     expect(params.get('prefill')).toBe('1');
     expect(params.get('cityId')).toBe('7');
+    expect(params.get('destinationType')).toBe('city');
     expect(params.get('city')).toBe('Paris');
     expect(params.get('checkIn')).toBe('2026-06-01');
     expect(params.get('checkOut')).toBe('2026-06-07');
@@ -242,6 +259,48 @@ describe('SearchBar.handleSearch', () => {
     const params = new URLSearchParams(navigatedUrl.split('?')[1] ?? '');
     expect(params.has('checkIn')).toBe(false);
     expect(params.has('checkOut')).toBe(false);
+  });
+
+  it('sets cityId only for a CITY destination', () => {
+    renderSearchBar();
+
+    clickFieldByText('Destination');
+    fireEvent.click(screen.getByText('Pick Paris'));
+
+    submitDesktop();
+
+    const params = new URLSearchParams(assignMock.mock.calls[0][0].split('?')[1] ?? '');
+    expect(params.get('destinationType')).toBe('city');
+    expect(params.get('cityId')).toBe('7');
+    expect(params.get('city')).toBe('Paris');
+  });
+
+  it('does NOT set cityId for a COUNTRY destination (no cityId poisoning)', () => {
+    renderSearchBar();
+
+    clickFieldByText('Destination');
+    fireEvent.click(screen.getByText('Pick France (country)'));
+
+    submitDesktop();
+
+    const params = new URLSearchParams(assignMock.mock.calls[0][0].split('?')[1] ?? '');
+    expect(params.get('destinationType')).toBe('country');
+    expect(params.has('cityId')).toBe(false);
+    expect(params.get('city')).toBe('France');
+  });
+
+  it('does NOT set cityId for a REGION destination (no cityId poisoning)', () => {
+    renderSearchBar();
+
+    clickFieldByText('Destination');
+    fireEvent.click(screen.getByText('Pick Ile-de-France (region)'));
+
+    submitDesktop();
+
+    const params = new URLSearchParams(assignMock.mock.calls[0][0].split('?')[1] ?? '');
+    expect(params.get('destinationType')).toBe('region');
+    expect(params.has('cityId')).toBe(false);
+    expect(params.get('city')).toBe('Ile-de-France');
   });
 });
 
