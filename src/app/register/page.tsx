@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import PasswordInput from '@/components/PasswordInput';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { buildAuthRedirectUrl } from '@/lib/redirect-validation';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
@@ -21,6 +22,10 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const rawRef = searchParams?.get('ref') ?? '';
   const referralCode = REFERRAL_CODE_PATTERN.test(rawRef) ? rawRef.toUpperCase() : '';
+  // The post-auth destination (e.g. a "Plan My Trip" /concierge?prefill=… URL)
+  // threaded in from sign-in. Forwarded to /onboarding so the context survives
+  // the sign-up chain; buildAuthRedirectUrl drops it if it isn't a safe path.
+  const rawRedirect = searchParams?.get('redirect') ?? '';
 
   const [step, setStep] = useState<'email' | 'verify'>('email');
   const [email, setEmail] = useState('');
@@ -70,10 +75,12 @@ function RegisterForm() {
       // prefill it and attempt the claim from there. For email signups the
       // backend already claimed at register-time, so the onboarding step
       // will see referred_by populated and auto-advance — but threading
-      // the param keeps the Google path covered uniformly.
-      window.location.href = referralCode
-        ? `/onboarding?ref=${encodeURIComponent(referralCode)}`
-        : '/onboarding';
+      // the param keeps the Google path covered uniformly. The pending
+      // redirect rides alongside so trip-planning context survives onboarding.
+      window.location.href = buildAuthRedirectUrl('/onboarding', {
+        ref: referralCode,
+        redirect: rawRedirect,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : t('register.error_google_failed'));
       setIsLoading(false);
@@ -179,10 +186,12 @@ function RegisterForm() {
       // prefill it and attempt the claim from there. For email signups the
       // backend already claimed at register-time, so the onboarding step
       // will see referred_by populated and auto-advance — but threading
-      // the param keeps the Google path covered uniformly.
-      window.location.href = referralCode
-        ? `/onboarding?ref=${encodeURIComponent(referralCode)}`
-        : '/onboarding';
+      // the param keeps the Google path covered uniformly. The pending
+      // redirect rides alongside so trip-planning context survives onboarding.
+      window.location.href = buildAuthRedirectUrl('/onboarding', {
+        ref: referralCode,
+        redirect: rawRedirect,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : t('register.error_registration_failed'));
       setIsLoading(false);

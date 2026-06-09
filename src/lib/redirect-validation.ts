@@ -36,3 +36,29 @@ export function isSafeRedirectPath(value: string): boolean {
 
   return true;
 }
+
+/**
+ * Build an auth-chain target URL (`/register`, `/onboarding`, …) that threads
+ * the `ref` (referral) and `redirect` (post-auth destination) params through
+ * to the next step in the sign-up → onboarding flow.
+ *
+ * Uses `URLSearchParams` so the `redirect` value — which is itself a URL with
+ * its own query string (e.g. `/concierge?prefill=1&cityId=7`) — is encoded
+ * exactly once and never collides with `ref`. Reading it back with
+ * `searchParams.get('redirect')` auto-decodes it.
+ *
+ * `redirect` is dropped unless it passes `isSafeRedirectPath`, so an
+ * external/crafted value can never ride the chain. Empty params are omitted.
+ */
+export function buildAuthRedirectUrl(
+  base: string,
+  params: { ref?: string; redirect?: string },
+): string {
+  const search = new URLSearchParams();
+  if (params.ref) search.set('ref', params.ref);
+  if (params.redirect && isSafeRedirectPath(params.redirect)) {
+    search.set('redirect', params.redirect);
+  }
+  const query = search.toString();
+  return query ? `${base}?${query}` : base;
+}
