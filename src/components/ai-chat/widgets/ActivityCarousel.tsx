@@ -24,10 +24,10 @@ export default function ActivityCarousel({ widget, onSubmit, disabled }: Props) 
       disabled={disabled}
       fetchEntity={fetchActivity}
       renderDetail={(activity) => <ActivityDetailContent activity={activity} />}
-      buildValue={(id, name) => ({
+      buildValue={(selections) => ({
         widget_id: widget.widget_id,
         widget_type: 'activity_carousel',
-        value: { activity_id: id, name },
+        value: { activity_id: selections[0].id, name: selections[0].name },
       })}
       testIdPrefix="activity"
     />

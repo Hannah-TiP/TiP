@@ -102,4 +102,55 @@ describe('WidgetResponseDisplay', () => {
     const el = screen.getByTestId('widget-response-hotel-carousel');
     expect(el.textContent).toBe('Hotel selected');
   });
+
+  it('renders multiple selected hotels as a comma-joined list', () => {
+    const response: AIChatWidgetResponse = {
+      widget_id: 'w-4',
+      widget_type: 'hotel_carousel',
+      value: {
+        hotels: [
+          { hotel_id: 100, name: 'Ritz Paris' },
+          { hotel_id: 101, name: 'Four Seasons' },
+        ],
+      },
+    };
+
+    render(<WidgetResponseDisplay response={response} />);
+
+    const el = screen.getByTestId('widget-response-hotel-carousel');
+    expect(el.textContent).toContain('Ritz Paris');
+    expect(el.textContent).toContain('Four Seasons');
+    expect(el.textContent).toContain('Ritz Paris, Four Seasons');
+  });
+
+  it('falls back to "Hotel <id>" for a multi entry with a null name', () => {
+    const response: AIChatWidgetResponse = {
+      widget_id: 'w-4',
+      widget_type: 'hotel_carousel',
+      value: {
+        hotels: [
+          { hotel_id: 100, name: 'Ritz Paris' },
+          { hotel_id: 101, name: null },
+        ],
+      },
+    };
+
+    render(<WidgetResponseDisplay response={response} />);
+
+    const el = screen.getByTestId('widget-response-hotel-carousel');
+    expect(el.textContent).toBe('Ritz Paris, Hotel 101');
+  });
+
+  it('still renders a single-shape hotel response (backward compatible)', () => {
+    const response: AIChatWidgetResponse = {
+      widget_id: 'w-4',
+      widget_type: 'hotel_carousel',
+      value: { hotel_id: 679, name: 'Aman Tokyo' },
+    };
+
+    render(<WidgetResponseDisplay response={response} />);
+
+    const el = screen.getByTestId('widget-response-hotel-carousel');
+    expect(el.textContent).toBe('Aman Tokyo');
+  });
 });

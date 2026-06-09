@@ -30,9 +30,17 @@ export interface OptionSelectorValue {
   value: string;
 }
 
+export interface HotelCarouselSelection {
+  hotel_id: number;
+  name: string | null;
+}
+
 export interface HotelCarouselValue {
+  // Single-pick shape (unchanged, backward compatible).
   hotel_id?: number | null;
   name?: string | null;
+  // Multi-pick shape: present only when more than one hotel was selected.
+  hotels?: HotelCarouselSelection[] | null;
 }
 
 export interface ActivityCarouselValue {

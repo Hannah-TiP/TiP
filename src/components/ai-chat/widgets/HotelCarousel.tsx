@@ -3,7 +3,11 @@
 import { useCallback } from 'react';
 import HotelDetailContent from '@/components/hotel/HotelDetailContent';
 import { apiClient } from '@/lib/api-client';
-import type { AIChatHotelCarouselWidget, AIChatWidgetResponse } from '@/types/ai-chat';
+import type {
+  AIChatHotelCarouselWidget,
+  AIChatWidgetResponse,
+  HotelCarouselValue,
+} from '@/types/ai-chat';
 import EntityCarousel from './EntityCarousel';
 
 interface Props {
@@ -22,13 +26,20 @@ export default function HotelCarousel({ widget, onSubmit, disabled }: Props) {
       selectLabel="Select this hotel"
       onSubmit={onSubmit}
       disabled={disabled}
+      multiSelect
       fetchEntity={fetchHotel}
       renderDetail={(hotel) => <HotelDetailContent hotel={hotel} />}
-      buildValue={(id, name) => ({
-        widget_id: widget.widget_id,
-        widget_type: 'hotel_carousel',
-        value: { hotel_id: id, name },
-      })}
+      buildValue={(selections) => {
+        const value: HotelCarouselValue =
+          selections.length > 1
+            ? { hotels: selections.map((s) => ({ hotel_id: s.id, name: s.name })) }
+            : { hotel_id: selections[0].id, name: selections[0].name };
+        return {
+          widget_id: widget.widget_id,
+          widget_type: 'hotel_carousel',
+          value,
+        };
+      }}
       testIdPrefix="hotel"
     />
   );

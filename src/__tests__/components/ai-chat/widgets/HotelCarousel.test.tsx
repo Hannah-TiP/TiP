@@ -131,6 +131,89 @@ describe('HotelCarousel modal preview flow', () => {
     expect(screen.getByTestId('hotel-card-101').hasAttribute('disabled')).toBe(true);
   });
 
+  it('"Add & choose another" accumulates a chip and leaves the carousel active without firing onSubmit', async () => {
+    const onSubmit = vi.fn();
+    render(<HotelCarousel widget={WIDGET} onSubmit={onSubmit} />);
+
+    fireEvent.click(screen.getByTestId('hotel-card-100'));
+    await waitFor(() => screen.getByTestId('hotel-preview-add-another'));
+
+    fireEvent.click(screen.getByTestId('hotel-preview-add-another'));
+
+    // Modal closes, no submit yet, a chip appears, the chosen card is disabled.
+    await waitFor(() => {
+      expect(screen.queryByTestId('modal-dialog')).toBeNull();
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByTestId('hotel-chip-100')).toBeDefined();
+    expect(screen.getByTestId('hotel-card-100').hasAttribute('disabled')).toBe(true);
+    // Other card still selectable.
+    expect(screen.getByTestId('hotel-card-101').hasAttribute('disabled')).toBe(false);
+  });
+
+  it('submits a { hotels: [...] } array when finishing after adding another', async () => {
+    const onSubmit = vi.fn();
+    render(<HotelCarousel widget={WIDGET} onSubmit={onSubmit} />);
+
+    // Pick hotel 100 -> Add another.
+    fireEvent.click(screen.getByTestId('hotel-card-100'));
+    await waitFor(() => screen.getByTestId('hotel-preview-add-another'));
+    fireEvent.click(screen.getByTestId('hotel-preview-add-another'));
+    await waitFor(() => screen.queryByTestId('modal-dialog') === null);
+
+    // Pick hotel 101 -> Select this hotel (finish).
+    fireEvent.click(screen.getByTestId('hotel-card-101'));
+    await waitFor(() => screen.getByTestId('hotel-preview-confirm'));
+    fireEvent.click(screen.getByTestId('hotel-preview-confirm'));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledWith({
+      widget_id: 'w-hotels',
+      widget_type: 'hotel_carousel',
+      value: {
+        hotels: [
+          { hotel_id: 100, name: 'Ritz Paris' },
+          { hotel_id: 101, name: 'Four Seasons' },
+        ],
+      },
+    });
+  });
+
+  it('removing a chip de-selects the hotel and re-enables its card', async () => {
+    const onSubmit = vi.fn();
+    render(<HotelCarousel widget={WIDGET} onSubmit={onSubmit} />);
+
+    fireEvent.click(screen.getByTestId('hotel-card-100'));
+    await waitFor(() => screen.getByTestId('hotel-preview-add-another'));
+    fireEvent.click(screen.getByTestId('hotel-preview-add-another'));
+    await waitFor(() => screen.getByTestId('hotel-chip-100'));
+
+    expect(screen.getByTestId('hotel-card-100').hasAttribute('disabled')).toBe(true);
+
+    fireEvent.click(screen.getByTestId('hotel-chip-remove-100'));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('hotel-chip-100')).toBeNull();
+    });
+    expect(screen.getByTestId('hotel-card-100').hasAttribute('disabled')).toBe(false);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('a single pick (no "Add another") still emits the single { hotel_id, name } shape', async () => {
+    const onSubmit = vi.fn();
+    render(<HotelCarousel widget={WIDGET} onSubmit={onSubmit} />);
+
+    fireEvent.click(screen.getByTestId('hotel-card-100'));
+    await waitFor(() => screen.getByTestId('hotel-preview-confirm'));
+    fireEvent.click(screen.getByTestId('hotel-preview-confirm'));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      widget_id: 'w-hotels',
+      widget_type: 'hotel_carousel',
+      value: { hotel_id: 100, name: 'Ritz Paris' },
+    });
+  });
+
   it('shows an error state and a Close button when the fetch fails', async () => {
     vi.spyOn(apiClient, 'getHotelById').mockRejectedValueOnce(new Error('boom'));
 

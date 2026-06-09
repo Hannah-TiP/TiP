@@ -24,10 +24,10 @@ export default function RestaurantCarousel({ widget, onSubmit, disabled }: Props
       disabled={disabled}
       fetchEntity={fetchRestaurant}
       renderDetail={(restaurant) => <RestaurantDetailContent restaurant={restaurant} />}
-      buildValue={(id, name) => ({
+      buildValue={(selections) => ({
         widget_id: widget.widget_id,
         widget_type: 'restaurant_carousel',
-        value: { restaurant_id: id, name },
+        value: { restaurant_id: selections[0].id, name: selections[0].name },
       })}
       testIdPrefix="restaurant"
     />
