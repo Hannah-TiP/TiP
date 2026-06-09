@@ -14,6 +14,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useHotelBooking } from '@/hooks/useHotelBooking';
 import { getLocalizedText } from '@/types/common';
 import { type Hotel } from '@/types/hotel';
+import { filterBenefitsByDates, formatBenefitEligibility } from '@/lib/hotel-benefits';
 
 const DEFAULT_ADULTS = 2;
 const DEFAULT_KIDS = 0;
@@ -150,9 +151,24 @@ export default function HotelDetailPage() {
   const hotelName = getLocalizedText(hotel.name) || hotel.slug;
 
   const tipBenefits = (() => {
-    const programBenefits = (hotel.benefits ?? []).flatMap((program) =>
-      program.benefits.map((benefit) => getLocalizedText(benefit)).filter(Boolean),
-    );
+    const allPrograms = hotel.benefits ?? [];
+    const hasDates = Boolean(checkIn) && Boolean(checkOut);
+    const programs = hasDates ? filterBenefitsByDates(allPrograms, checkIn, checkOut) : allPrograms;
+    const eligibilityTemplates = {
+      range: t('hotel.benefit_eligibility_range'),
+      from: t('hotel.benefit_eligibility_from'),
+      until: t('hotel.benefit_eligibility_until'),
+      month: (m: number) => t(`hotel.benefit_month_abbr_${m}` as Parameters<typeof t>[0]),
+    };
+    const programBenefits = programs.flatMap((program) => {
+      const label = hasDates
+        ? null
+        : formatBenefitEligibility(program.valid_from, program.valid_until, eligibilityTemplates);
+      return program.benefits
+        .map((benefit) => getLocalizedText(benefit))
+        .filter(Boolean)
+        .map((text) => (label ? `${text} (${label})` : text));
+    });
     if (programBenefits.length > 0) return programBenefits;
     return [
       t('hotel.booking_benefit_1'),
