@@ -11,7 +11,8 @@ import EntityRatingBadge from '@/components/reviews/EntityRatingBadge';
 import { apiClient } from '@/lib/api-client';
 import { usePreviewMode } from '@/hooks/usePreviewMode';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useDestinationSearch } from '@/hooks/useDestinationSearch';
+import { useLanguage, type TranslationKeys } from '@/contexts/LanguageContext';
 import { useInfiniteList } from '@/lib/use-infinite-list';
 import { shouldShowDreamHotelsMap } from '@/lib/dream-hotels-map';
 import { getLocalizedText } from '@/types/common';
@@ -46,23 +47,22 @@ const STAR_RATING_OPTIONS = [
 // Infinite-scroll page size (matches the backend hotels per_page cap).
 const HOTELS_PER_PAGE = 50;
 
-function getDestinationTypeLabel(type: string): string {
+function destinationTypeLabelKey(type: string): TranslationKeys {
   switch (type) {
     case 'country':
-      return 'Country';
+      return 'destination.type_country';
     case 'region':
-      return 'Region';
+      return 'destination.type_region';
     case 'city':
-      return 'City';
     default:
-      return '';
+      return 'destination.type_city';
   }
 }
 
 type DropdownType = 'type' | null;
 
 function DreamHotelsContent() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [reviewAggregates, setReviewAggregates] = useState<Record<number, ReviewAggregate>>({});
 
   const { isPreview } = usePreviewMode();
@@ -75,11 +75,21 @@ function DreamHotelsContent() {
   const [selectedDestination, setSelectedDestination] = useState<DestinationSuggestion | null>(
     null,
   );
-  const [destinationSuggestions, setDestinationSuggestions] = useState<DestinationSuggestion[]>([]);
   const [isDestinationFocused, setIsDestinationFocused] = useState(false);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const destinationRef = useRef<HTMLDivElement>(null);
-  const debouncedDestination = useDebounce(destinationSearch, 300);
+
+  // Shared bookable-only destination search (same path as the home hero). A
+  // blank query returns the top bookable destinations (initial state). Disabled
+  // once a destination is selected so the dropdown collapses to the choice.
+  const {
+    suggestions: destinationSuggestions,
+    isLoading: isLoadingSuggestions,
+    isPopular: isPopularDestinations,
+  } = useDestinationSearch(destinationSearch, {
+    disabled: !!selectedDestination,
+    language: lang,
+    limit: 10,
+  });
 
   // Hotel name search
   const [hotelSearch, setHotelSearch] = useState('');
@@ -90,38 +100,6 @@ function DreamHotelsContent() {
   // Dropdown open state
   const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Fetch destination suggestions
-  useEffect(() => {
-    if (!debouncedDestination.trim() || selectedDestination) {
-      setDestinationSuggestions([]);
-      return;
-    }
-
-    let cancelled = false;
-    async function fetchSuggestions() {
-      setIsLoadingSuggestions(true);
-      try {
-        const results = await apiClient.searchDestinations(debouncedDestination.trim(), {
-          limit: 10,
-        });
-        if (!cancelled) {
-          setDestinationSuggestions(results);
-        }
-      } catch (error) {
-        console.error('Failed to search destinations:', error);
-      } finally {
-        if (!cancelled) {
-          setIsLoadingSuggestions(false);
-        }
-      }
-    }
-
-    fetchSuggestions();
-    return () => {
-      cancelled = true;
-    };
-  }, [debouncedDestination, selectedDestination]);
 
   // Build destination filter params from selected destination (ID-based)
   const destinationFilter = useMemo(() => {
@@ -197,13 +175,13 @@ function DreamHotelsContent() {
   // badges appear when this data arrives.
   useEffect(() => {
     const hotelIds = hotels.map((hotel) => hotel.id);
-    if (hotelIds.length === 0) {
-      setReviewAggregates({});
-      return;
-    }
 
     let cancelled = false;
     async function fetchAggregates() {
+      if (hotelIds.length === 0) {
+        setReviewAggregates({});
+        return;
+      }
       try {
         const aggregates = await apiClient.getReviewAggregates('hotel', hotelIds);
         if (!cancelled) {
@@ -254,7 +232,6 @@ function DreamHotelsContent() {
   const clearFilters = useCallback(() => {
     setSelectedDestination(null);
     setDestinationSearch('');
-    setDestinationSuggestions([]);
     setSelectedStarRating('');
     setHotelSearch('');
     setOpenDropdown(null);
@@ -262,17 +239,18 @@ function DreamHotelsContent() {
     setIsDestinationFocused(false);
   }, []);
 
-  const handleSelectDestination = useCallback((dest: DestinationSuggestion) => {
-    setSelectedDestination(dest);
-    setDestinationSearch(getLocalizedText(dest.name));
-    setDestinationSuggestions([]);
-    setIsDestinationFocused(false);
-  }, []);
+  const handleSelectDestination = useCallback(
+    (dest: DestinationSuggestion) => {
+      setSelectedDestination(dest);
+      setDestinationSearch(getLocalizedText(dest.name, lang));
+      setIsDestinationFocused(false);
+    },
+    [lang],
+  );
 
   const handleClearDestination = useCallback(() => {
     setSelectedDestination(null);
     setDestinationSearch('');
-    setDestinationSuggestions([]);
   }, []);
 
   return (
@@ -464,49 +442,62 @@ function DreamHotelsContent() {
                 </div>
                 {selectedDestination && (
                   <span className="absolute right-12 top-1/2 -translate-y-1/2 rounded-full bg-gold/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gold">
-                    {getDestinationTypeLabel(selectedDestination.type)}
+                    {t(destinationTypeLabelKey(selectedDestination.type))}
                   </span>
                 )}
               </div>
-              {/* Destination suggestions dropdown */}
-              {isDestinationFocused &&
-                !selectedDestination &&
-                (destinationSuggestions.length > 0 || isLoadingSuggestions) && (
-                  <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white shadow-xl">
-                    {isLoadingSuggestions ? (
-                      <div className="flex items-center justify-center py-6">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
-                      </div>
-                    ) : (
-                      <div className="max-h-[320px] overflow-auto p-2">
-                        {destinationSuggestions.map((dest) => (
-                          <button
-                            key={`${dest.type}-${dest.id}`}
-                            onClick={() => handleSelectDestination(dest)}
-                            className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
-                          >
-                            <div>
-                              <p className="text-[14px] font-medium text-green-dark">
-                                {getLocalizedText(dest.name)}
+              {/* Destination suggestions dropdown — shows the bookable popular
+                  set on focus (empty query) and ranked matches as the user
+                  types, identical to the home hero. */}
+              {isDestinationFocused && !selectedDestination && (
+                <div
+                  data-testid="destination-suggestions"
+                  className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white shadow-xl"
+                >
+                  {isLoadingSuggestions ? (
+                    <div className="flex items-center justify-center py-6">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
+                    </div>
+                  ) : (
+                    <div className="max-h-[320px] overflow-auto p-2">
+                      <p className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                        {isPopularDestinations
+                          ? t('destination.popular_title')
+                          : t('destination.title')}
+                      </p>
+                      {destinationSuggestions.map((dest) => (
+                        <button
+                          key={`${dest.type}-${dest.id}`}
+                          onClick={() => handleSelectDestination(dest)}
+                          className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
+                        >
+                          <div>
+                            <p className="text-[14px] font-medium text-green-dark">
+                              {getLocalizedText(dest.name, lang)}
+                            </p>
+                            {dest.country_name && (
+                              <p className="text-[12px] text-gray-text">
+                                {getLocalizedText(dest.country_name, lang)}
+                                {dest.region_name
+                                  ? ` · ${getLocalizedText(dest.region_name, lang)}`
+                                  : ''}
                               </p>
-                              {dest.country_name && (
-                                <p className="text-[12px] text-gray-text">
-                                  {getLocalizedText(dest.country_name)}
-                                  {dest.region_name
-                                    ? ` · ${getLocalizedText(dest.region_name)}`
-                                    : ''}
-                                </p>
-                              )}
-                            </div>
-                            <span className="flex-shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-text">
-                              {getDestinationTypeLabel(dest.type)}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                            )}
+                          </div>
+                          <span className="flex-shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-text">
+                            {t(destinationTypeLabelKey(dest.type))}
+                          </span>
+                        </button>
+                      ))}
+                      {destinationSuggestions.length === 0 && (
+                        <p className="px-3 py-4 text-center text-[13px] text-gray-500">
+                          {t('destination.no_results')}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Hotel Type filter */}
