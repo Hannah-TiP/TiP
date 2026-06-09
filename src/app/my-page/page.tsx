@@ -243,6 +243,22 @@ export default function MyPageUpcomingTravels() {
         </div>
       )}
 
+      {!loading && (
+        <div className="max-w-7xl mx-auto px-4 md:px-6 mb-16">
+          <Link
+            href="/my-page/shared-trips"
+            data-testid="shared-with-me-link"
+            className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-6 py-5 hover:border-[#C4956A]/50 hover:shadow-sm transition-all"
+          >
+            <div>
+              <h3 className="font-semibold text-gray-900">{t('my_page.shared_with_me')}</h3>
+              <p className="text-sm text-gray-500">{t('my_page.shared_with_me_hint')}</p>
+            </div>
+            <span className="text-[#1E3D2F] text-sm font-medium">{t('my_page.view_shared')} →</span>
+          </Link>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

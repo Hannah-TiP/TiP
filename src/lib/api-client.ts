@@ -12,6 +12,12 @@ import type {
   TripWithActiveQuote,
 } from '@/types/trip';
 import type { QuoteWithVersion } from '@/types/quote';
+import type {
+  ShareTripRequest,
+  ShareTripResponse,
+  SharedTripDetail,
+  SharedTripItem,
+} from '@/types/trip-share';
 import type { CheckoutSessionResponse, WidgetConfig } from '@/types/payment';
 import type {
   AIChatMessage,
@@ -411,6 +417,32 @@ class ApiClient {
         body: JSON.stringify(payload),
       },
     );
+    return response.data;
+  }
+
+  // Trip sharing methods
+  /**
+   * Share a trip by email (max 10 recipients). Owners set any visibility;
+   * recipients who reshare cannot escalate beyond their own permissions —
+   * the backend clamps and echoes the applied settings.
+   */
+  async shareTrip(tripId: number, payload: ShareTripRequest): Promise<ShareTripResponse> {
+    const response = await this.request<{ data: ShareTripResponse }>(`/trip/${tripId}/share`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return response.data;
+  }
+
+  /** List trips shared TO the current user. */
+  async getSharedTrips(): Promise<SharedTripItem[]> {
+    const response = await this.request<{ data: SharedTripItem[] }>('/me/shared-trips');
+    return response.data;
+  }
+
+  /** Read-only detail of a single shared trip (auth-gated server-side). */
+  async getSharedTripDetail(tripId: number): Promise<SharedTripDetail> {
+    const response = await this.request<{ data: SharedTripDetail }>(`/shared-trips/${tripId}`);
     return response.data;
   }
 

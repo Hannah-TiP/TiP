@@ -1,8 +1,18 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SubNav from '@/components/SubNav';
+import { LanguageProvider } from '@/contexts/LanguageContext';
+import type { SubNavKey } from '@/lib/header-config';
 
 afterEach(cleanup);
+
+function renderSubNav(activeTab: SubNavKey) {
+  return render(
+    <LanguageProvider>
+      <SubNav activeTab={activeTab} />
+    </LanguageProvider>,
+  );
+}
 
 describe('SubNav', () => {
   let scrollSpy: ReturnType<typeof vi.fn>;
@@ -14,8 +24,9 @@ describe('SubNav', () => {
   });
 
   it('renders all tabs and marks the active one bold', () => {
-    render(<SubNav activeTab="Credits" />);
+    renderSubNav('Credits');
     expect(screen.getByText('Upcoming Travels')).toBeDefined();
+    expect(screen.getByText('Shared With Me')).toBeDefined();
     const credits = screen.getByText('Credits');
     expect(credits.className).toContain('font-bold');
     // a non-active tab is not bold
@@ -23,13 +34,13 @@ describe('SubNav', () => {
   });
 
   it('is horizontally scrollable (overflow-x-auto) for mobile', () => {
-    render(<SubNav activeTab="Upcoming Travels" />);
+    renderSubNav('Upcoming Travels');
     const nav = screen.getByRole('navigation');
     expect(nav.className).toContain('overflow-x-auto');
   });
 
   it('scrolls the active tab into view on mount, centered horizontally', () => {
-    render(<SubNav activeTab="My Profile" />);
+    renderSubNav('My Profile');
     expect(scrollSpy).toHaveBeenCalledWith(
       expect.objectContaining({ inline: 'center', behavior: 'smooth' }),
     );

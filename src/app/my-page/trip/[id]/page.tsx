@@ -13,6 +13,7 @@ import {
 import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
 import { apiClient } from '@/lib/api-client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import ShareTripModal from '@/components/ShareTripModal';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Planning',
@@ -158,6 +159,7 @@ export default function TripDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [latestQuoteId, setLatestQuoteId] = useState<number | null>(null);
@@ -267,6 +269,12 @@ export default function TripDetailPage() {
           canceling={canceling}
         />
       )}
+
+      <ShareTripModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        tripId={trip.id}
+      />
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 mt-8 mb-16 space-y-6">
         <Link href="/my-page" className="text-sm text-gray-500 hover:text-gray-900 inline-block">
@@ -484,6 +492,18 @@ export default function TripDetailPage() {
                 </Link>
               </div>
             )}
+
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="font-semibold text-gray-900 mb-2">{t('share_trip.card_title')}</h3>
+              <p className="text-xs text-gray-500 mb-4">{t('share_trip.card_hint')}</p>
+              <button
+                onClick={() => setShowShareModal(true)}
+                data-testid="share-trip-button"
+                className="inline-flex w-full items-center justify-center gap-2 px-5 py-2.5 border border-[#1E3D2F] text-[#1E3D2F] text-sm font-medium rounded-full hover:bg-[#1E3D2F] hover:text-white transition-colors"
+              >
+                {t('share_trip.card_cta')}
+              </button>
+            </div>
 
             {canCancel && (
               <div className="bg-white rounded-xl border border-gray-200 p-5">

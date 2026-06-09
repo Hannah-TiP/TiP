@@ -21,6 +21,14 @@ const I18N: Record<string, string> = {
   'nav.my_page': 'MY PAGE',
   'nav.logout': 'LOGOUT',
   'nav.logo_alt': 'TiP',
+  'subnav.upcoming_travels': 'Upcoming Travels',
+  'subnav.shared_with_me': 'Shared With Me',
+  'subnav.travel_history': 'Travel History',
+  'subnav.membership': 'Membership',
+  'subnav.credits': 'Credits',
+  'subnav.referrals': 'Referrals',
+  'subnav.wishlist': 'Wishlist',
+  'subnav.my_profile': 'My Profile',
 };
 
 vi.mock('@/contexts/LanguageContext', () => ({

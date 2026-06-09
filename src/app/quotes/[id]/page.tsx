@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
+import { formatCurrency } from '@/lib/format-currency';
 import { tripDayNumber } from '@/lib/trip-utils';
 import type { QuoteLineItem, QuoteStatus, QuoteWithVersion, QuoteVersion } from '@/types/quote';
 import type { Trip, TripVersion } from '@/types/trip';
@@ -39,19 +40,6 @@ const STATUS_BADGE_CLASSES: Record<QuoteStatus, string> = {
   REJECTED: 'bg-red-100 text-red-700',
   EXPIRED: 'bg-gray-200 text-gray-500',
 };
-
-function formatCurrency(amount: string | number, currency: string): string {
-  const value = typeof amount === 'string' ? Number(amount) : amount;
-  if (Number.isNaN(value)) return `${currency} ${amount}`;
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency,
-    }).format(value);
-  } catch {
-    return `${currency} ${value.toFixed(2)}`;
-  }
-}
 
 function formatDate(dateStr?: string | null): string {
   if (!dateStr) return '—';

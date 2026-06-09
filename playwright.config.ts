@@ -21,6 +21,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/redeem-code.spec.ts',
   '**/trip-credits.spec.ts',
   '**/responsive-my-page.spec.ts',
+  '**/trip-share.spec.ts',
 ];
 
 // Specs that deliberately test the cookie-consent banner from a blank state.
