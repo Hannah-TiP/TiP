@@ -253,6 +253,9 @@ export default function HotelMap({ hotels, reviewAggregates }: HotelMapProps) {
                   sizes="280px"
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
+                <span className="absolute left-2 top-2 z-10 rounded bg-green-dark/85 px-2 py-1 text-[10px] font-semibold uppercase tracking-[1.5px] text-gold">
+                  {t('hotel.tip_exclusive_perks')}
+                </span>
               </div>
               <h3 className="font-semibold text-green-dark group-hover:text-gold">
                 {getLocalizedText(selectedHotel.name)}
