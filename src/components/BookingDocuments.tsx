@@ -16,6 +16,7 @@ export default function BookingDocuments({
 }: BookingDocumentsProps) {
   const { t } = useLanguage();
   const [openIndexes, setOpenIndexes] = useState<Record<number, boolean>>({});
+  const [errorIndexes, setErrorIndexes] = useState<Record<number, boolean>>({});
 
   if (documents.length === 0) return null;
 
@@ -23,17 +24,25 @@ export default function BookingDocuments({
     setOpenIndexes((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
-  const download = async (url: string, fileName: string) => {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = objectUrl;
-    anchor.download = fileName;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(objectUrl);
+  const download = async (url: string, fileName: string, index: number) => {
+    setErrorIndexes((prev) => ({ ...prev, [index]: false }));
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`Failed to download document: ${res.status}`);
+      }
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      setErrorIndexes((prev) => ({ ...prev, [index]: true }));
+    }
   };
 
   const Heading = headingLevel;
@@ -53,6 +62,7 @@ export default function BookingDocuments({
             document.document_type ||
             t('trip_detail.document_fallback').replace('{n}', String(index + 1));
           const isOpen = !!openIndexes[index];
+          const hasError = !!errorIndexes[index];
 
           return (
             <div key={`${document.file}-${index}`}>
@@ -68,12 +78,17 @@ export default function BookingDocuments({
                 </button>
                 <button
                   type="button"
-                  onClick={() => download(url, fileName)}
+                  onClick={() => download(url, fileName, index)}
                   className="text-sm text-[#1E3D2F] hover:underline"
                 >
                   {t('trip_detail.document_download')}
                 </button>
               </div>
+              {hasError && (
+                <p role="alert" className="mt-1 text-sm text-red-600">
+                  {t('trip_detail.document_download_error')}
+                </p>
+              )}
               {isOpen && (
                 <iframe
                   src={url}

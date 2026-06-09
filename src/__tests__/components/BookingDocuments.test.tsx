@@ -81,7 +81,7 @@ describe('BookingDocuments', () => {
 
   it('downloads via fetch -> blob -> object URL anchor', async () => {
     const blob = new Blob(['pdf'], { type: 'application/pdf' });
-    const fetchMock = vi.fn().mockResolvedValue({ blob: () => Promise.resolve(blob) });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, blob: () => Promise.resolve(blob) });
     vi.stubGlobal('fetch', fetchMock);
 
     const createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
@@ -99,6 +99,58 @@ describe('BookingDocuments', () => {
     expect(createObjectURL).toHaveBeenCalledWith(blob);
     expect(clickSpy).toHaveBeenCalled();
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+
+    vi.unstubAllGlobals();
+  });
+
+  it('surfaces an inline error and saves no file when fetch rejects', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('network down'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
+
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    render(<BookingDocuments documents={documents} />);
+
+    const firstRow = screen.getByText('Flight ticket.pdf').parentElement as HTMLElement;
+    fireEvent.click(within(firstRow).getByText('Download'));
+
+    await waitFor(() =>
+      expect(screen.getByText(enTranslations['trip_detail.document_download_error'])).toBeTruthy(),
+    );
+    expect(createObjectURL).not.toHaveBeenCalled();
+    expect(clickSpy).not.toHaveBeenCalled();
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+
+  it('surfaces an inline error and saves no file on a non-OK HTTP response', async () => {
+    const blobMock = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 403, blob: blobMock });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
+
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    render(<BookingDocuments documents={documents} />);
+
+    const firstRow = screen.getByText('Flight ticket.pdf').parentElement as HTMLElement;
+    fireEvent.click(within(firstRow).getByText('Download'));
+
+    await waitFor(() =>
+      expect(screen.getByText(enTranslations['trip_detail.document_download_error'])).toBeTruthy(),
+    );
+    // The 403 error body must never be read into a blob and saved as the file.
+    expect(blobMock).not.toHaveBeenCalled();
+    expect(createObjectURL).not.toHaveBeenCalled();
+    expect(clickSpy).not.toHaveBeenCalled();
 
     vi.unstubAllGlobals();
   });

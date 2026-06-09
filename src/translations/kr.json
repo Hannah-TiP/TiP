@@ -468,6 +468,7 @@
   "trip_detail.document_view": "보기",
   "trip_detail.document_download": "다운로드",
   "trip_detail.document_close": "닫기",
+  "trip_detail.document_download_error": "이 서류를 다운로드하지 못했습니다. 다시 시도해 주시고, 문제가 계속되면 컨시어지에게 문의해 주세요.",
   "trip_detail.trip_summary": "여행 요약",
   "trip_detail.nights": "박",
   "trip_detail.days": "일",
