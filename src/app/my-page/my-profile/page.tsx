@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Footer from '@/components/Footer';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import CityAutocomplete from '@/components/CityAutocomplete';
+import ChangePasswordModal from '@/components/ChangePasswordModal';
 import { apiClient } from '@/lib/api-client';
 import type { User } from '@/types/auth';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -37,6 +38,9 @@ export default function MyProfile() {
 
   // Track if form is dirty
   const [isDirty, setIsDirty] = useState(false);
+
+  // Change-password modal
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   useEffect(() => {
     if (sessionStatus === 'unauthenticated') {
@@ -268,7 +272,12 @@ export default function MyProfile() {
                     {t('profile.change_password_hint')}
                   </p>
                 </div>
-                <button className="text-sm font-medium text-[#1E3D2F] hover:underline">
+                <button
+                  type="button"
+                  onClick={() => setShowChangePassword(true)}
+                  className="text-sm font-medium text-[#1E3D2F] hover:underline"
+                  data-testid="open-change-password"
+                >
                   {t('profile.change_password')}
                 </button>
               </div>
@@ -313,6 +322,15 @@ export default function MyProfile() {
           </>
         )}
       </section>
+
+      <ChangePasswordModal
+        open={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+        onSuccess={() => {
+          setError('');
+          setSuccess(t('change_password.success'));
+        }}
+      />
 
       <Footer />
     </div>

@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
-import { isSafeRedirectPath } from '@/lib/redirect-validation';
+import { buildAuthRedirectUrl, isSafeRedirectPath } from '@/lib/redirect-validation';
 import PasswordInput from '@/components/PasswordInput';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -31,10 +31,11 @@ function SignInForm() {
   // can't bounce the user off-site after auth.
   const rawCallback = searchParams.get('callbackUrl');
   const rawRedirect = searchParams.get('redirect');
-  const redirectTo =
+  const safeRedirect =
     (rawCallback && isSafeRedirectPath(rawCallback) ? rawCallback : null) ||
     (rawRedirect && isSafeRedirectPath(rawRedirect) ? rawRedirect : null) ||
-    DEFAULT_REDIRECT;
+    '';
+  const redirectTo = safeRedirect || DEFAULT_REDIRECT;
 
   // Forward a referral code through to /register if the user clicks "Sign up"
   // from this page. The actual claim happens at register-time on the backend.
@@ -77,7 +78,12 @@ function SignInForm() {
 
       const session = await getSession();
       const needsOnboarding = session?.user && !session.user.onboarding_completed;
-      window.location.href = needsOnboarding ? '/onboarding' : redirectTo;
+      // When onboarding is still required, thread the pending redirect (and
+      // referral) through /onboarding so the trip-planning context survives to
+      // the end of the chain — see buildAuthRedirectUrl.
+      window.location.href = needsOnboarding
+        ? buildAuthRedirectUrl('/onboarding', { ref: referralCode, redirect: safeRedirect })
+        : redirectTo;
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.error_google_failed'));
       setIsLoading(false);
@@ -100,7 +106,9 @@ function SignInForm() {
       } else {
         const session = await getSession();
         const needsOnboarding = session?.user && !session.user.onboarding_completed;
-        window.location.href = needsOnboarding ? '/onboarding' : redirectTo;
+        window.location.href = needsOnboarding
+          ? buildAuthRedirectUrl('/onboarding', { ref: referralCode, redirect: safeRedirect })
+          : redirectTo;
       }
     } catch {
       setError(t('auth.error_login_failed'));
@@ -175,7 +183,10 @@ function SignInForm() {
       <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 text-center text-sm md:px-8">
         <span className="text-gray-text">{t('auth.no_account')}</span>
         <Link
-          href={referralCode ? `/register?ref=${referralCode}` : '/register'}
+          href={buildAuthRedirectUrl('/register', {
+            ref: referralCode,
+            redirect: rawRedirect ?? undefined,
+          })}
           className="font-medium text-green-dark hover:underline"
         >
           {t('auth.sign_up')}

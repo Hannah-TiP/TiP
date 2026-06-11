@@ -11,6 +11,7 @@ import { apiClient } from '@/lib/api-client';
 import {
   STAY_CREDIT_SOURCE_LABELS,
   STAY_CREDIT_STATUS_LABELS,
+  creditSourceLabel,
   tripIdFromCredit,
   type StayCredit,
 } from '@/types/stay-credit';
@@ -158,8 +159,14 @@ export default function MyCreditsPage() {
                         {formatAmount(credit.amount_cents, credit.currency)}
                       </div>
                       <div className="sm:col-span-3 text-[14px]">
-                        <div className="font-medium text-gray-900">
+                        <div
+                          className="font-medium text-gray-900"
+                          aria-label={creditSourceLabel(credit, en)}
+                        >
                           {STAY_CREDIT_SOURCE_LABELS[credit.source][en ? 'en' : 'kr']}
+                          {credit.promo_code ? (
+                            <span className="text-gray-500"> · {credit.promo_code}</span>
+                          ) : null}
                         </div>
                         <div className="text-[12px] text-gray-500">
                           {formatDate(credit.created_at, en ? 'en-US' : 'ko-KR')}
