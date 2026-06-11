@@ -16,6 +16,7 @@ import {
 } from '@/lib/trip-utils';
 import { STAY_CREDIT_SOURCE_LABELS, creditsForTrip, type StayCredit } from '@/types/stay-credit';
 import { useLanguage } from '@/contexts/LanguageContext';
+import BookingDocuments from '@/components/BookingDocuments';
 
 const ITEM_LABELS: Record<TripPlanItem['item_type'], string> = {
   flight: 'Flight',
@@ -367,31 +368,7 @@ export default function TravelHistoryTripDetailPage() {
               </div>
             </div>
 
-            {documents.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <h3 className="font-semibold text-gray-900 mb-3">
-                  {t('trip_detail.booking_documents')}
-                </h3>
-                <div className="space-y-2">
-                  {documents.map((document, index) => (
-                    <a
-                      key={`${document.file}-${index}`}
-                      href={document.file}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-[#1E3D2F] hover:underline"
-                    >
-                      <span>📄</span>
-                      <span className="truncate">
-                        {document.file_name ||
-                          document.document_type ||
-                          t('trip_detail.document_fallback').replace('{n}', String(index + 1))}
-                      </span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
+            <BookingDocuments documents={documents} headingLevel="h3" />
           </div>
         </div>
       </div>

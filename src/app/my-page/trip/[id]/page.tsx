@@ -14,6 +14,7 @@ import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/tri
 import { apiClient } from '@/lib/api-client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ShareTripModal from '@/components/ShareTripModal';
+import BookingDocuments from '@/components/BookingDocuments';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Planning',
@@ -417,31 +418,7 @@ export default function TripDetailPage() {
               </Link>
             </div>
 
-            {documents.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-3">
-                  {t('trip_detail.booking_documents')}
-                </h2>
-                <div className="space-y-2">
-                  {documents.map((document, index) => (
-                    <a
-                      key={`${document.file}-${index}`}
-                      href={document.file}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-[#1E3D2F] hover:underline"
-                    >
-                      <span>📄</span>
-                      <span className="truncate">
-                        {document.file_name ||
-                          document.document_type ||
-                          t('trip_detail.document_fallback').replace('{n}', String(index + 1))}
-                      </span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
+            <BookingDocuments documents={documents} headingLevel="h2" />
 
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <h3 className="font-semibold text-gray-900 mb-4">{t('trip_detail.trip_summary')}</h3>
