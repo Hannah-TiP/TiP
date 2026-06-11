@@ -48,6 +48,9 @@ export interface StayCredit {
   referral_id?: number | null;
   source_ref?: string | null;
   notes?: string | null;
+  // The promo code redeemed (e.g. WELCOME26), present only on
+  // promo_code_redemption credits. Structured data, not parsed from notes.
+  promo_code?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -69,6 +72,15 @@ export function tripIdFromCredit(credit: StayCredit): number | null {
 // Filter a credit ledger to the credits earned from a given trip.
 export function creditsForTrip(credits: StayCredit[], tripId: number): StayCredit[] {
   return credits.filter((c) => tripIdFromCredit(c) === tripId);
+}
+
+// Build the source display label for a credit row: the localized source label,
+// suffixed with the redeemed promo code when present (e.g.
+// "프로모션 코드 · WELCOME26"). Older promo credits without a structured
+// promo_code fall back to the label alone — no hardcoded copy reaches the user.
+export function creditSourceLabel(credit: StayCredit, en: boolean): string {
+  const label = STAY_CREDIT_SOURCE_LABELS[credit.source][en ? 'en' : 'kr'];
+  return credit.promo_code ? `${label} · ${credit.promo_code}` : label;
 }
 
 // Mirrors tip-backend/v2/data_model/schemas/referral.py::Referral.

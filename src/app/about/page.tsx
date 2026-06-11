@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import Footer from '@/components/Footer';
+import PartnersMarquee from '@/components/PartnersMarquee';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 type Bilingual = { en: string; kr: string };
@@ -167,17 +168,6 @@ const COPY = {
   },
   partners: {
     label: { en: 'Partners & Network', kr: '파트너 & 네트워크' },
-    // Logo files don't exist yet — we render the brand names as a styled
-    // fallback. Drop SVGs into /public/partners/ and swap to <Image>.
-    names: [
-      'Virtuoso',
-      'IHG',
-      'VistaJet',
-      'NetJets',
-      'The Hyundai',
-      'Mastercard',
-      'Lotte Duty Free',
-    ],
   },
   cta: {
     eyebrow: { en: 'Membership', kr: '멤버십' },
@@ -502,16 +492,9 @@ export default function AboutPage() {
           <div className="text-[11px] uppercase tracking-[0.25em] text-gray-text">
             <L s={COPY.partners.label} isEn={isEn} />
           </div>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
-            {COPY.partners.names.map((name) => (
-              <span
-                key={name}
-                className="text-[12px] font-medium uppercase tracking-[0.15em] text-gray-text/70 transition-colors hover:text-gray-text"
-              >
-                {name}
-              </span>
-            ))}
-          </div>
+        </div>
+        <div className="mt-8">
+          <PartnersMarquee />
         </div>
       </section>
 

@@ -80,6 +80,27 @@ export function getLocalizedText(
   return fallback || '';
 }
 
+/**
+ * Resolve an S3 object key (or absolute URL) to a fetchable URL. http(s)
+ * values pass through unchanged; a bare key is prepended with
+ * `NEXT_PUBLIC_S3_ENDPOINT` (a leading slash on the key is stripped first).
+ * Returns '' when the key or endpoint is missing — callers decide their own
+ * fallback (image callers fall back to a placeholder; document callers don't).
+ */
+export function resolveS3Url(key?: string | null): string {
+  if (!key) return '';
+
+  if (key.startsWith('http://') || key.startsWith('https://')) {
+    return key;
+  }
+
+  const s3Endpoint = process.env.NEXT_PUBLIC_S3_ENDPOINT;
+  if (!s3Endpoint) return '';
+
+  const cleanKey = key.startsWith('/') ? key.slice(1) : key;
+  return `${s3Endpoint}/${cleanKey}`;
+}
+
 export function getImageUrl(image?: string | Image | null): string {
   if (!image) return '/placeholder.jpg';
 
@@ -88,18 +109,5 @@ export function getImageUrl(image?: string | Image | null): string {
       ? image
       : image.w1200 || image.w800 || image.w400 || image.w128 || image.original;
 
-  if (!rawPath) return '/placeholder.jpg';
-
-  if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) {
-    return rawPath;
-  }
-
-  const s3Endpoint = process.env.NEXT_PUBLIC_S3_ENDPOINT;
-  if (!s3Endpoint) {
-    console.warn('NEXT_PUBLIC_S3_ENDPOINT not configured');
-    return '/placeholder.jpg';
-  }
-
-  const cleanPath = rawPath.startsWith('/') ? rawPath.slice(1) : rawPath;
-  return `${s3Endpoint}/${cleanPath}`;
+  return resolveS3Url(rawPath) || '/placeholder.jpg';
 }

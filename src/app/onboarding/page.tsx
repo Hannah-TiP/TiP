@@ -9,6 +9,7 @@ import CityAutocomplete from '@/components/CityAutocomplete';
 import type { User } from '@/types/auth';
 import type { MyReferralsResponse } from '@/types/stay-credit';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { isSafeRedirectPath } from '@/lib/redirect-validation';
 
 const TRAVEL_STYLES = [
   { value: 'Solo Retreat', icon: '\u{1F9D8}', description: 'Peaceful, personal time' },
@@ -57,6 +58,10 @@ function OnboardingFlow() {
   // ?ref= is carried through after signup so the referral step can prefill.
   const rawRef = searchParams?.get('ref') ?? '';
   const initialRefCode = REFERRAL_CODE_PATTERN.test(rawRef) ? rawRef.toUpperCase() : '';
+  // ?redirect= is the post-auth destination threaded through the sign-up chain
+  // (e.g. a "Plan My Trip" /concierge?prefill=… URL). Honored at completion so
+  // signing up resumes exactly where logging in would have.
+  const rawRedirect = searchParams?.get('redirect') ?? '';
 
   const [step, setStep] = useState(0); // 0 = loading
   const [isLoading, setIsLoading] = useState(false);
@@ -165,7 +170,7 @@ function OnboardingFlow() {
         travel_styles: selectedStyles.length > 0 ? selectedStyles : undefined,
         onboarding_completed: true,
       });
-      router.push('/my-page');
+      router.push(isSafeRedirectPath(rawRedirect) ? rawRedirect : '/my-page');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('onboarding.error_generic'));
       setIsLoading(false);
