@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import SearchBar from '@/components/SearchBar';
 import PartnersMarquee from '@/components/PartnersMarquee';
+import InstagramIcon from '@/components/icons/InstagramIcon';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const elevateCards = [
@@ -555,9 +556,18 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Copyright */}
-          <div className="mt-6 text-center text-[12px] text-white/30">
-            {t('home.footer_copyright')}
+          {/* Copyright + social icons */}
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 text-[12px] text-white/30">
+            <span>{t('home.footer_copyright')}</span>
+            <a
+              href="https://instagram.com/travelinyourpocket_official"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t('footer.instagram_aria')}
+              className="text-white/40 transition-colors hover:text-white/70"
+            >
+              <InstagramIcon />
+            </a>
           </div>
         </div>
       </footer>
