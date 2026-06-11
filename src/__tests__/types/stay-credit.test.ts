@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   STAY_CREDIT_SOURCE_LABELS,
+  creditSourceLabel,
   creditsForTrip,
   tripIdFromCredit,
   type StayCredit,
@@ -62,6 +63,35 @@ describe('creditsForTrip', () => {
   it('returns an empty array when no credit matches', () => {
     const credits = [makeCredit({ source: 'welcome', source_ref: null })];
     expect(creditsForTrip(credits, 10)).toEqual([]);
+  });
+});
+
+describe('creditSourceLabel', () => {
+  it('appends the redeemed promo code to the localized source label (EN)', () => {
+    const credit = makeCredit({
+      source: 'promo_code_redemption',
+      promo_code: 'WELCOME26',
+    });
+    expect(creditSourceLabel(credit, true)).toBe('Promo Code · WELCOME26');
+  });
+
+  it('appends the redeemed promo code to the localized source label (KR)', () => {
+    const credit = makeCredit({
+      source: 'promo_code_redemption',
+      promo_code: 'WELCOME26',
+    });
+    expect(creditSourceLabel(credit, false)).toBe('프로모션 코드 · WELCOME26');
+  });
+
+  it('falls back to the label alone for old promo credits with no code', () => {
+    const credit = makeCredit({ source: 'promo_code_redemption', promo_code: null });
+    expect(creditSourceLabel(credit, true)).toBe('Promo Code');
+    expect(creditSourceLabel(credit, false)).toBe('프로모션 코드');
+  });
+
+  it('never appends a code for non-promo sources', () => {
+    const credit = makeCredit({ source: 'welcome' });
+    expect(creditSourceLabel(credit, true)).toBe('Welcome');
   });
 });
 

@@ -20,6 +20,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/sma-55-hotel-benefits.spec.ts',
   '**/redeem-code.spec.ts',
   '**/trip-credits.spec.ts',
+  '**/promo-code-credit-history.spec.ts',
   '**/responsive-my-page.spec.ts',
   '**/trip-share.spec.ts',
   '**/change-password.spec.ts',
