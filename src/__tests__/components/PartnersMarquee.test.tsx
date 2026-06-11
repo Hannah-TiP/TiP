@@ -3,7 +3,11 @@ import type { ImgHTMLAttributes } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import enTranslations from '@/translations/en.json';
-import PartnersMarquee, { partners } from '@/components/PartnersMarquee';
+import PartnersMarquee, {
+  LOGO_DISPLAY_HEIGHT,
+  logoDisplayWidth,
+  partners,
+} from '@/components/PartnersMarquee';
 
 vi.mock('next/image', () => ({
   default: ({
@@ -50,10 +54,27 @@ describe('PartnersMarquee', () => {
     }
   });
 
-  it('applies a uniform max height to every logo', () => {
+  it('renders every logo at the uniform h-12 height, width-capped to the cell', () => {
     render(<PartnersMarquee />);
     for (const img of screen.getAllByRole('img')) {
-      expect(img.className).toContain('max-h-12');
+      const classes = img.className.split(/\s+/);
+      expect(classes).toContain('h-12');
+      expect(classes).toContain('w-auto');
+      expect(classes).toContain('max-w-full');
+      expect(classes).toContain('object-contain');
+      // The old cap-only sizing letter-boxed logos at uneven heights.
+      expect(classes).not.toContain('max-h-12');
+    }
+  });
+
+  it('passes per-logo dimensions that preserve each natural aspect ratio', () => {
+    render(<PartnersMarquee />);
+    for (const partner of partners) {
+      expect(partner.width).toBeGreaterThan(0);
+      expect(partner.height).toBeGreaterThan(0);
+      const [img] = screen.getAllByAltText(partner.name);
+      expect(Number(img.getAttribute('height'))).toBe(LOGO_DISPLAY_HEIGHT);
+      expect(Number(img.getAttribute('width'))).toBe(logoDisplayWidth(partner));
     }
   });
 
