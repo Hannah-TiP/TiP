@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { filterBenefitsByDates, formatBenefitEligibility } from '@/lib/hotel-benefits';
+import {
+  filterBenefitsByDates,
+  formatBenefitEligibility,
+  localizeBenefitStrings,
+} from '@/lib/hotel-benefits';
 import type { HotelBenefitProgram } from '@/types/hotel';
 
 const program = (
@@ -69,6 +73,53 @@ describe('filterBenefitsByDates', () => {
     const bad = program('Bad', 'not-a-date', 'also-bad');
     const result = filterBenefitsByDates([bad], '2026-11-10', '2026-11-15');
     expect(result.map((p) => p.program_name)).toEqual(['Bad']);
+  });
+});
+
+describe('localizeBenefitStrings', () => {
+  it('flattens all programs into localized strings (EN)', () => {
+    const multi: HotelBenefitProgram = {
+      program_name: 'Multi',
+      valid_from: null,
+      valid_until: null,
+      benefits: [
+        { en: 'Daily breakfast', kr: '매일 조식' },
+        { en: 'Room upgrade', kr: '객실 업그레이드' },
+      ],
+    };
+    expect(localizeBenefitStrings([multi, ALWAYS], 'en')).toEqual([
+      'Daily breakfast',
+      'Room upgrade',
+      'Always benefit',
+    ]);
+  });
+
+  it('localizes to Korean when lang is kr', () => {
+    expect(localizeBenefitStrings([ALWAYS], 'kr')).toEqual(['Always 혜택']);
+  });
+
+  it('does not date-filter date-bounded programs', () => {
+    // BULGARI is bounded to May–Sep but still surfaces — no dates context.
+    expect(localizeBenefitStrings([BULGARI], 'en')).toEqual(['Summer benefit']);
+  });
+
+  it('returns [] for null/undefined/empty programs', () => {
+    expect(localizeBenefitStrings(null)).toEqual([]);
+    expect(localizeBenefitStrings(undefined)).toEqual([]);
+    expect(localizeBenefitStrings([])).toEqual([]);
+  });
+
+  it('drops empty localized strings', () => {
+    const blank: HotelBenefitProgram = {
+      program_name: 'Blank',
+      valid_from: null,
+      valid_until: null,
+      benefits: [
+        { en: '', kr: '' },
+        { en: 'Kept', kr: '유지' },
+      ],
+    };
+    expect(localizeBenefitStrings([blank], 'en')).toEqual(['Kept']);
   });
 });
 
