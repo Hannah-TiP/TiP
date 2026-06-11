@@ -294,6 +294,7 @@
   "carousel.add_cap_reached": "Maximum reached (5)",
   "carousel.selected_count": "{count} selected",
   "carousel.remove_selection": "Remove {entity}",
+  "carousel.submit_selection": "Done — submit {count} selected",
   "detail.activity_badge": "ACTIVITY",
   "detail.restaurant_badge": "RESTAURANT",
   "detail.about_experience": "ABOUT THIS EXPERIENCE",

@@ -128,6 +128,12 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
     setAccumulated((prev) => prev.filter((s) => s.id !== id));
   }
 
+  function handleSubmitAccumulated() {
+    if (accumulated.length === 0 || isLocked) return;
+    setSelectedId(accumulated[accumulated.length - 1].id);
+    onSubmit(buildValue(accumulated));
+  }
+
   if (items.length === 0) return null;
 
   return (
@@ -180,6 +186,17 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
                 </span>
               ))}
             </div>
+            {!isLocked && (
+              <button
+                type="button"
+                onClick={handleSubmitAccumulated}
+                disabled={disabled}
+                className="mt-3 rounded-full bg-[#1E3D2F] px-5 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                data-testid={`${testIdPrefix}-submit-selection`}
+              >
+                {t('carousel.submit_selection').replace('{count}', String(accumulated.length))}
+              </button>
+            )}
           </div>
         )}
         <div className="flex gap-3 overflow-x-auto pb-1">
