@@ -85,8 +85,8 @@ export default function MyReferralsPage() {
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-gray-600">
               {en
-                ? 'The friend you invite receives a stay credit when they join through your code. Your invite is worth $150 as a Carte member, or $300 as a Cercle, Confidence, or Cénacle member.'
-                : '추천 코드로 가입한 친구에게 스테이 크레딧이 적립됩니다. Carte 멤버의 추천은 $150, Cercle · Confidence · Cénacle 멤버의 추천은 $300의 가치가 있습니다.'}
+                ? 'The friend you invite receives a stay credit when they join through your code. Your invite is worth $50 as a Carte or Cercle member, or $300 as a Confidence or Cénacle member.'
+                : '추천 코드로 가입한 친구에게 스테이 크레딧이 적립됩니다. Carte · Cercle 멤버의 추천은 $50, Confidence · Cénacle 멤버의 추천은 $300의 가치가 있습니다.'}
             </p>
           </div>
 
