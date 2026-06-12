@@ -7,8 +7,10 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import PasswordInput from '@/components/PasswordInput';
+import WebviewLoginNotice from '@/components/auth/WebviewLoginNotice';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { buildAuthRedirectUrl } from '@/lib/redirect-validation';
+import { useInAppBrowser } from '@/lib/in-app-browser';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
@@ -19,6 +21,7 @@ const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{4,16}$/i;
 
 function RegisterForm() {
   const { t } = useLanguage();
+  const webview = useInAppBrowser();
   const searchParams = useSearchParams();
   const rawRef = searchParams?.get('ref') ?? '';
   const referralCode = REFERRAL_CODE_PATTERN.test(rawRef) ? rawRef.toUpperCase() : '';
@@ -253,9 +256,9 @@ function RegisterForm() {
 
           {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
-          {GOOGLE_CLIENT_ID && (
+          {GOOGLE_CLIENT_ID && !webview.inApp && (
             <>
-              <div className="flex justify-center">
+              <div className="flex justify-center" data-testid="google-login-container">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={() => setError(t('register.error_google_failed'))}
@@ -272,6 +275,8 @@ function RegisterForm() {
               </div>
             </>
           )}
+
+          {webview.inApp && <WebviewLoginNotice info={webview} />}
 
           <form onSubmit={handleSendCode} className="flex flex-col gap-6">
             <input
