@@ -135,7 +135,7 @@ function DreamHotelsContent() {
   const fetchHotelsPage = useCallback(
     (page: number) =>
       apiClient.getHotels({
-        language: 'en',
+        language: lang,
         include_draft: isPreview,
         country_id: destinationFilter.country_id,
         region_id: destinationFilter.region_id,
@@ -146,6 +146,7 @@ function DreamHotelsContent() {
         per_page: HOTELS_PER_PAGE,
       }),
     [
+      lang,
       isPreview,
       destinationFilter.country_id,
       destinationFilter.region_id,
@@ -162,6 +163,7 @@ function DreamHotelsContent() {
     isLoadingMore,
     sentinelRef,
   } = useInfiniteList<Hotel>(fetchHotelsPage, [
+    lang,
     isPreview,
     destinationFilter.country_id,
     destinationFilter.region_id,
