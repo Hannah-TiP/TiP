@@ -14,6 +14,13 @@ import type { TripPreference, TripVersion } from '@/types/trip';
 export interface SearchPrefill {
   cityId: number | null;
   cityName: string | null;
+  /**
+   * The 3-level type of the destination the user picked. The backend concierge
+   * prefill only understands city-level destination ids, so a `country` /
+   * `region` selection carries its NAME through `custom_destinations` instead
+   * of poisoning `destination_city_ids` with a non-city id.
+   */
+  destinationType: 'country' | 'region' | 'city' | null;
   checkIn: string | null;
   checkOut: string | null;
   adults: number;
@@ -44,9 +51,21 @@ export function parseSearchPrefill(
   const childrenRaw = params.get('children');
   const childrenNum = childrenRaw ? Number.parseInt(childrenRaw, 10) : NaN;
 
+  const destinationTypeRaw = params.get('destinationType');
+  const destinationType =
+    destinationTypeRaw === 'country' ||
+    destinationTypeRaw === 'region' ||
+    destinationTypeRaw === 'city'
+      ? destinationTypeRaw
+      : null;
+
   return {
-    cityId: Number.isFinite(cityIdNum) && cityIdNum > 0 ? cityIdNum : null,
+    // Only a city-typed destination yields a real city id; SearchBar never
+    // emits `cityId` for country/region selections, so this stays null there.
+    cityId:
+      destinationType === 'city' && Number.isFinite(cityIdNum) && cityIdNum > 0 ? cityIdNum : null,
     cityName: params.get('city'),
+    destinationType,
     checkIn: params.get('checkIn'),
     checkOut: params.get('checkOut'),
     adults: Number.isFinite(adultsNum) && adultsNum > 0 ? adultsNum : 2,
@@ -91,11 +110,27 @@ export function buildPrefillTripVersion(prefill: SearchPrefill): Partial<TripVer
   const prefs: TripPreference[] = [];
 
   if (prefill.cityId !== null) {
+    // City-level: the backend resolves these ids to cities directly.
     prefs.push({
       type: 'custom',
       key: 'destination_city_ids',
       value: String(prefill.cityId),
       label: 'Matched destination cities',
+    });
+  } else if (
+    (prefill.destinationType === 'country' || prefill.destinationType === 'region') &&
+    prefill.cityName?.trim()
+  ) {
+    // Country / region-level: the backend concierge prefill has no
+    // country/region id support, so carry the destination by NAME via
+    // `custom_destinations` (free-text) rather than poisoning
+    // `destination_city_ids` with a non-city id. The AI resolves the named
+    // region/country to concrete cities from turn one.
+    prefs.push({
+      type: 'custom',
+      key: 'custom_destinations',
+      value: prefill.cityName.trim(),
+      label: 'Custom destinations',
     });
   }
 

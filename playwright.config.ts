@@ -23,6 +23,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/promo-code-credit-history.spec.ts',
   '**/responsive-my-page.spec.ts',
   '**/trip-share.spec.ts',
+  '**/destination-search.spec.ts',
   '**/change-password.spec.ts',
 ];
 

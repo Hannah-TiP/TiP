@@ -30,16 +30,30 @@ describe('apiClient.searchDestinations', () => {
     expect(results[0].type).toBe('country');
   });
 
-  it('passes limit parameter', async () => {
+  it('passes limit and language parameters', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ data: [] }),
     });
 
-    await apiClient.searchDestinations('Tokyo', { limit: 5 });
+    await apiClient.searchDestinations('Tokyo', { limit: 5, language: 'kr' });
 
     const calledUrl = mockFetch.mock.calls[0][0] as string;
     expect(calledUrl).toContain('limit=5');
+    expect(calledUrl).toContain('language=kr');
+  });
+
+  it('omits the q param for a blank query (initial popular state)', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: [] }),
+    });
+
+    await apiClient.searchDestinations('   ', { limit: 10, language: 'en' });
+
+    const calledUrl = mockFetch.mock.calls[0][0] as string;
+    expect(calledUrl).not.toContain('q=');
+    expect(calledUrl).toContain('limit=10');
   });
 });
 

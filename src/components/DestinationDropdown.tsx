@@ -1,17 +1,40 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { apiClient } from '@/lib/api-client';
 import { getLocalizedText } from '@/types/common';
-import type { City } from '@/types/location';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type TranslationKeys } from '@/contexts/LanguageContext';
+import { useDestinationSearch } from '@/hooks/useDestinationSearch';
+import type { DestinationSuggestion } from '@/types/destination';
+
+export interface SelectedDestination {
+  id: number;
+  type: DestinationSuggestion['type'];
+  name: string;
+}
 
 interface DestinationDropdownProps {
   value: string;
-  onChange: (cityData: { id: number; name: string }) => void;
+  /**
+   * Receives the picked destination with its 3-level `type` so the caller can
+   * route country / region / city differently (a country/region id must NOT be
+   * treated as a city id).
+   */
+  onChange: (destination: SelectedDestination) => void;
   onClose: () => void;
   /** When true, render full-width within the mobile planner overlay. */
   mobile?: boolean;
+}
+
+function typeLabelKey(type: DestinationSuggestion['type']): TranslationKeys {
+  switch (type) {
+    case 'country':
+      return 'destination.type_country';
+    case 'region':
+      return 'destination.type_region';
+    case 'city':
+    default:
+      return 'destination.type_city';
+  }
 }
 
 export default function DestinationDropdown({
@@ -20,30 +43,16 @@ export default function DestinationDropdown({
   onClose,
   mobile = false,
 }: DestinationDropdownProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const ref = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState(value);
-  const [cities, setCities] = useState<City[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
 
-  // Fetch cities from API
-  useEffect(() => {
-    async function fetchCities() {
-      try {
-        setLoading(true);
-        setHasError(false);
-        const citiesData = await apiClient.getCities('en');
-        setCities(citiesData);
-      } catch (err) {
-        console.error('Failed to fetch cities:', err);
-        setHasError(true);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchCities();
-  }, []);
+  // Unified, bookable-only destination search shared with Dream Hotels. A blank
+  // query returns the top bookable destinations (the initial state).
+  const { suggestions, isLoading, isPopular } = useDestinationSearch(searchQuery, {
+    language: lang,
+    limit: 10,
+  });
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -54,10 +63,6 @@ export default function DestinationDropdown({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
-
-  const filteredDestinations = cities.filter((city) =>
-    getLocalizedText(city.name).toLowerCase().includes(searchQuery.toLowerCase()),
-  );
 
   return (
     <div
@@ -84,40 +89,47 @@ export default function DestinationDropdown({
 
       {/* Destinations list */}
       <div className="max-h-[320px] overflow-auto p-2">
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-green-dark border-t-transparent"></div>
-          </div>
-        ) : hasError ? (
-          <div className="px-3 py-4 text-center">
-            <p className="text-[13px] text-red-500">{t('destination.load_error')}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-2 text-[12px] text-green-dark underline hover:no-underline"
-            >
-              {t('destination.retry')}
-            </button>
           </div>
         ) : (
           <>
             <p className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-gray-400">
-              {t('destination.title')}
+              {isPopular ? t('destination.popular_title') : t('destination.title')}
             </p>
-            {filteredDestinations.map((city) => (
+            {suggestions.map((dest) => (
               <button
-                key={city.id}
-                onClick={() => onChange({ id: city.id, name: getLocalizedText(city.name) })}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-50"
+                key={`${dest.type}-${dest.id}`}
+                onClick={() =>
+                  onChange({
+                    id: dest.id,
+                    type: dest.type,
+                    name: getLocalizedText(dest.name, lang),
+                  })
+                }
+                className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-50"
               >
-                <span className="icon-lucide text-gray-400">&#xe551;</span>
-                <div>
-                  <p className="text-[14px] font-medium text-green-dark">
-                    {getLocalizedText(city.name)}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <span className="icon-lucide text-gray-400">&#xe551;</span>
+                  <div>
+                    <p className="text-[14px] font-medium text-green-dark">
+                      {getLocalizedText(dest.name, lang)}
+                    </p>
+                    {dest.country_name && (
+                      <p className="text-[12px] text-gray-text">
+                        {getLocalizedText(dest.country_name, lang)}
+                        {dest.region_name ? ` · ${getLocalizedText(dest.region_name, lang)}` : ''}
+                      </p>
+                    )}
+                  </div>
                 </div>
+                <span className="flex-shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-text">
+                  {t(typeLabelKey(dest.type))}
+                </span>
               </button>
             ))}
-            {filteredDestinations.length === 0 && !loading && (
+            {suggestions.length === 0 && (
               <p className="px-3 py-4 text-center text-[13px] text-gray-500">
                 {t('destination.no_results')}
               </p>

@@ -32,11 +32,22 @@ describe('GET /api/destinations/search', () => {
     expect(body.data[0].type).toBe('city');
   });
 
-  it('returns 400 when q is missing', async () => {
-    const request = new NextRequest('http://localhost:3000/api/destinations/search');
-    const response = await GET(request);
+  it('forwards a blank/missing q (initial popular state) to the backend', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: [{ id: 1, type: 'city', name: { en: 'Paris' } }] }),
+    });
 
-    expect(response.status).toBe(400);
+    const request = new NextRequest('http://localhost:3000/api/destinations/search?language=en');
+    const response = await GET(request);
+    const body = await response.json();
+
+    // No q param is sent — the backend returns the top bookable destinations.
+    const calledUrl = mockFetch.mock.calls[0][0] as string;
+    expect(calledUrl).not.toContain('q=');
+    expect(calledUrl).toContain('language=en');
+    expect(response.status).toBe(200);
+    expect(body.data).toHaveLength(1);
   });
 
   it('forwards limit param to backend', async () => {

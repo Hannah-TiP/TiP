@@ -208,7 +208,9 @@ class ApiClient {
     q: string,
     params?: { limit?: number; language?: string },
   ): Promise<DestinationSuggestion[]> {
-    const searchParams = new URLSearchParams({ q });
+    const searchParams = new URLSearchParams();
+    // An empty query is valid — it returns the top bookable destinations.
+    if (q.trim()) searchParams.set('q', q.trim());
     if (params?.limit) searchParams.set('limit', params.limit.toString());
     if (params?.language) searchParams.set('language', params.language);
 

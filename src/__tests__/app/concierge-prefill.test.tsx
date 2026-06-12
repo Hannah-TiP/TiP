@@ -136,7 +136,7 @@ async function importPage() {
 describe('Concierge — prefill consumption', () => {
   it('creates a NEW chat session pre-filled with the SearchBar values, seeds the message, and cleans the URL', async () => {
     searchParamsRef.current = new URLSearchParams(
-      'prefill=1&cityId=7&city=Paris&checkIn=2026-06-01&checkOut=2026-06-07&adults=2&children=1&tripType=Leisure&travelStyle=Romantic+Escape',
+      'prefill=1&cityId=7&city=Paris&destinationType=city&checkIn=2026-06-01&checkOut=2026-06-07&adults=2&children=1&tripType=Leisure&travelStyle=Romantic+Escape',
     );
 
     const ConciergePage = await importPage();
@@ -211,7 +211,7 @@ describe('Concierge — prefill consumption', () => {
     // The DestinationDropdown stores the active-language city name in the
     // URL — KR users get "파리" here, the seed message echoes it back.
     searchParamsRef.current = new URLSearchParams(
-      'prefill=1&cityId=7&city=%ED%8C%8C%EB%A6%AC&checkIn=2026-06-01&checkOut=2026-06-07&adults=2&children=0&tripType=Leisure',
+      'prefill=1&cityId=7&city=%ED%8C%8C%EB%A6%AC&destinationType=city&checkIn=2026-06-01&checkOut=2026-06-07&adults=2&children=0&tripType=Leisure',
     );
 
     const ConciergePage = await importPage();
