@@ -1,8 +1,10 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { OPEN_COOKIE_SETTINGS_EVENT } from '@/components/CookieConsentBanner';
+import InstagramIcon from '@/components/icons/InstagramIcon';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 type TranslationKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
@@ -12,6 +14,12 @@ type FooterLink = {
   href: string;
   /** When true, dispatches a custom event instead of navigating. */
   event?: boolean;
+};
+
+type SocialLink = {
+  aria: TranslationKey;
+  href: string;
+  icon: ReactNode;
 };
 
 // `href: '#'` marks a stub link; wire it up when the destination page lands.
@@ -26,6 +34,14 @@ const companyLinks: FooterLink[] = [
   { labelKey: 'footer.link_press', href: '#' },
   { labelKey: 'footer.link_blog', href: '#' },
 ];
+const socialLinks: SocialLink[] = [
+  {
+    aria: 'footer.instagram_aria',
+    href: 'https://instagram.com/travelinyourpocket_official',
+    icon: <InstagramIcon />,
+  },
+];
+
 const supportLinks: FooterLink[] = [
   { labelKey: 'footer.link_help_center', href: '#' },
   { labelKey: 'footer.link_contact_us', href: '#' },
@@ -78,8 +94,9 @@ export default function Footer() {
         <p style={{ margin: 0 }}>고객센터: support@tip-ai.com | 전화: 02-1234-5678</p>
       </div>
 
-      {/* Copyright */}
+      {/* Copyright + social icons */}
       <div
+        className="flex flex-wrap items-center justify-between gap-4"
         style={{
           fontFamily: "'Inter', sans-serif",
           fontSize: 12,
@@ -88,7 +105,21 @@ export default function Footer() {
           paddingTop: 24,
         }}
       >
-        {t('footer.copyright')}
+        <span>{t('footer.copyright')}</span>
+        <div className="flex items-center gap-4">
+          {socialLinks.map((link) => (
+            <a
+              key={link.aria}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t(link.aria)}
+              className="text-white/40 transition-colors hover:text-white/70"
+            >
+              {link.icon}
+            </a>
+          ))}
+        </div>
       </div>
     </footer>
   );
