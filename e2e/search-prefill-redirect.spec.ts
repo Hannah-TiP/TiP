@@ -10,9 +10,12 @@ import { test, expect } from '@playwright/test';
 
 test.describe('SearchBar → unauthed redirect preserves prefill params', () => {
   test.beforeEach(async ({ context }) => {
-    // Cities list for the DestinationDropdown — single city so the click
-    // is deterministic.
-    await context.route('**/api/cities**', async (route) => {
+    // Destination suggestions for the DestinationDropdown. Since SMA-91 the
+    // dropdown hits the unified, bookable-only `/api/destinations/search`
+    // (not `/api/cities`); a blank query returns the "popular" set, so this
+    // single Paris city renders as soon as the dropdown opens. `id: 7` +
+    // `type: 'city'` make the resulting prefill carry `cityId=7&city=Paris`.
+    await context.route('**/api/destinations/search**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -20,12 +23,11 @@ test.describe('SearchBar → unauthed redirect preserves prefill params', () => 
           data: [
             {
               id: 7,
-              region_id: 1,
-              slug: 'paris',
-              status: true,
+              type: 'city',
               name: { en: 'Paris', kr: '파리' },
-              link_services: true,
-              schema_version: 1,
+              slug: 'paris',
+              region_name: { en: 'Ile-de-France', kr: '일드프랑스' },
+              country_name: { en: 'France', kr: '프랑스' },
             },
           ],
         }),
