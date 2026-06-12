@@ -5,8 +5,10 @@ import { signIn } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import DeliveryFailedDialog from '@/components/DeliveryFailedDialog';
 import PasswordInput from '@/components/PasswordInput';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useVerificationDeliveryStatus } from '@/hooks/useVerificationDeliveryStatus';
 
 function ForgotPasswordForm() {
   const { t } = useLanguage();
@@ -20,6 +22,10 @@ function ForgotPasswordForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  // While the user waits on the code step, poll whether the verification
+  // email bounced (Brevo webhook flag) and surface a dialog if it did.
+  const delivery = useVerificationDeliveryStatus(email, step === 'reset');
+  const [deliveryDialogDismissed, setDeliveryDialogDismissed] = useState(false);
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +42,7 @@ function ForgotPasswordForm() {
         const data = await res.json();
         throw new Error(data.message || t('forgot.error_send_failed'));
       }
+      setDeliveryDialogDismissed(false);
       setStep('reset');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('forgot.error_send_failed'));
@@ -157,6 +164,16 @@ function ForgotPasswordForm() {
           {t('forgot.back_to_sign_in')}
         </Link>
       </div>
+
+      <DeliveryFailedDialog
+        isOpen={step === 'reset' && delivery.failed && !deliveryDialogDismissed}
+        email={email}
+        onUseDifferentEmail={() => {
+          setVerificationCode('');
+          setStep('email');
+        }}
+        onClose={() => setDeliveryDialogDismissed(true)}
+      />
     </div>
   );
 }
