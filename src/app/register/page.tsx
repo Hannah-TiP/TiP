@@ -5,7 +5,8 @@ import { signIn } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 import PasswordInput from '@/components/PasswordInput';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { buildAuthRedirectUrl } from '@/lib/redirect-validation';
@@ -18,7 +19,7 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{4,16}$/i;
 
 function RegisterForm() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const searchParams = useSearchParams();
   const rawRef = searchParams?.get('ref') ?? '';
   const referralCode = REFERRAL_CODE_PATTERN.test(rawRef) ? rawRef.toUpperCase() : '';
@@ -39,18 +40,19 @@ function RegisterForm() {
   const [accountExists, setAccountExists] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleSuccess = async (response: CredentialResponse) => {
-    if (!response.credential) return;
+  const handleGoogleSuccess = async (authCode: string) => {
     setError('');
     setIsLoading(true);
 
     try {
+      // Send the OAuth authorization code to the backend via proxy. The
+      // backend exchanges it for tokens server-side (SMA-119).
       const res = await fetch('/api/auth/social-login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Language: lang },
         body: JSON.stringify({
           provider: 'google',
-          id_token: response.credential,
+          auth_code: authCode,
         }),
       });
 
@@ -255,15 +257,12 @@ function RegisterForm() {
 
           {GOOGLE_CLIENT_ID && (
             <>
-              <div className="flex justify-center">
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={() => setError(t('register.error_google_failed'))}
-                  size="large"
-                  width="356"
-                  text="continue_with"
-                />
-              </div>
+              <GoogleSignInButton
+                onCode={handleGoogleSuccess}
+                onFailure={() => setError(t('register.error_google_failed'))}
+                onCancel={() => setError(t('register.error_google_cancelled'))}
+                disabled={isLoading}
+              />
 
               <div className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-gray-200" />
