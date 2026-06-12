@@ -3,79 +3,189 @@
 import Image from 'next/image';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-export type Partner = { name: string; slug: string; logo: string };
+// width/height are the natural pixel dimensions of the logo asset, so each
+// <Image> carries its true aspect ratio instead of a one-size-fits-all box.
+export type Partner = {
+  name: string;
+  slug: string;
+  logo: string;
+  width: number;
+  height: number;
+};
 
 // Curated luxury hotel-brand + travel-network partner logos.
 // Single source of truth shared by the home page and the About page.
 // Brand names are universal (never translated). Assets are static files
 // under /public/partners/ — no runtime/API fetch.
 export const partners: Partner[] = [
-  { name: 'Aman', slug: 'aman', logo: '/partners/aman.jpg' },
-  { name: 'Janu', slug: 'janu', logo: '/partners/janu.jpg' },
-  { name: 'Four Seasons', slug: 'four-seasons', logo: '/partners/four-seasons.jpg' },
-  { name: 'Mandarin Oriental', slug: 'mandarin-oriental', logo: '/partners/mandarin-oriental.png' },
-  { name: 'The Peninsula', slug: 'the-peninsula', logo: '/partners/the-peninsula.png' },
-  { name: 'Rosewood', slug: 'rosewood', logo: '/partners/rosewood.png' },
-  { name: 'Raffles', slug: 'raffles', logo: '/partners/raffles.png' },
-  { name: 'Shangri-La', slug: 'shangri-la', logo: '/partners/shangri-la.png' },
-  { name: 'St. Regis', slug: 'st-regis', logo: '/partners/st-regis.jpg' },
-  { name: 'The Ritz-Carlton', slug: 'ritz-carlton', logo: '/partners/ritz-carlton.jpg' },
+  { name: 'Aman', slug: 'aman', logo: '/partners/aman.jpg', width: 400, height: 400 },
+  { name: 'Janu', slug: 'janu', logo: '/partners/janu.jpg', width: 1080, height: 1080 },
+  {
+    name: 'Four Seasons',
+    slug: 'four-seasons',
+    logo: '/partners/four-seasons.jpg',
+    width: 1600,
+    height: 1600,
+  },
+  {
+    name: 'Mandarin Oriental',
+    slug: 'mandarin-oriental',
+    logo: '/partners/mandarin-oriental.png',
+    width: 820,
+    height: 644,
+  },
+  {
+    name: 'The Peninsula',
+    slug: 'the-peninsula',
+    logo: '/partners/the-peninsula.png',
+    width: 820,
+    height: 167,
+  },
+  { name: 'Rosewood', slug: 'rosewood', logo: '/partners/rosewood.png', width: 425, height: 425 },
+  { name: 'Raffles', slug: 'raffles', logo: '/partners/raffles.png', width: 820, height: 469 },
+  {
+    name: 'Shangri-La',
+    slug: 'shangri-la',
+    logo: '/partners/shangri-la.png',
+    width: 800,
+    height: 84,
+  },
+  { name: 'St. Regis', slug: 'st-regis', logo: '/partners/st-regis.jpg', width: 400, height: 400 },
+  {
+    name: 'The Ritz-Carlton',
+    slug: 'ritz-carlton',
+    logo: '/partners/ritz-carlton.jpg',
+    width: 400,
+    height: 400,
+  },
   {
     name: 'The Ritz-Carlton Yacht Collection',
     slug: 'ritz-carlton-yacht-collection',
     logo: '/partners/ritz-carlton-yacht-collection.jpg',
+    width: 400,
+    height: 400,
   },
-  { name: 'Bulgari Hotels & Resorts', slug: 'bulgari', logo: '/partners/bulgari.jpg' },
-  { name: 'Cheval Blanc', slug: 'cheval-blanc', logo: '/partners/cheval-blanc.jpg' },
+  {
+    name: 'Bulgari Hotels & Resorts',
+    slug: 'bulgari',
+    logo: '/partners/bulgari.jpg',
+    width: 623,
+    height: 233,
+  },
+  {
+    name: 'Cheval Blanc',
+    slug: 'cheval-blanc',
+    logo: '/partners/cheval-blanc.jpg',
+    width: 515,
+    height: 325,
+  },
   {
     name: 'Dorchester Collection',
     slug: 'dorchester-collection',
     logo: '/partners/dorchester-collection.png',
+    width: 366,
+    height: 210,
   },
   {
     name: 'Oetker Collection',
     slug: 'oetker-collection',
     logo: '/partners/oetker-collection.png',
+    width: 820,
+    height: 252,
   },
   {
     name: 'Auberge Collection',
     slug: 'auberge-collection',
     logo: '/partners/auberge-collection.png',
+    width: 820,
+    height: 104,
   },
-  { name: 'Belmond', slug: 'belmond', logo: '/partners/belmond.png' },
-  { name: 'Six Senses', slug: 'six-senses', logo: '/partners/six-senses.png' },
-  { name: 'Soneva', slug: 'soneva', logo: '/partners/soneva.jpg' },
-  { name: 'Singita', slug: 'singita', logo: '/partners/singita.jpg' },
-  { name: 'Fairmont', slug: 'fairmont', logo: '/partners/fairmont.jpg' },
-  { name: 'Upper House', slug: 'upper-house', logo: '/partners/upper-house.png' },
-  { name: 'Hoshino Resorts', slug: 'hoshino-resorts', logo: '/partners/hoshino-resorts.jpg' },
-  { name: 'Virtuoso', slug: 'virtuoso', logo: '/partners/virtuoso.png' },
-  { name: 'IATA', slug: 'iata', logo: '/partners/iata.png' },
+  { name: 'Belmond', slug: 'belmond', logo: '/partners/belmond.png', width: 380, height: 160 },
+  {
+    name: 'Six Senses',
+    slug: 'six-senses',
+    logo: '/partners/six-senses.png',
+    width: 3140,
+    height: 2480,
+  },
+  { name: 'Soneva', slug: 'soneva', logo: '/partners/soneva.jpg', width: 400, height: 400 },
+  { name: 'Singita', slug: 'singita', logo: '/partners/singita.jpg', width: 400, height: 400 },
+  { name: 'Fairmont', slug: 'fairmont', logo: '/partners/fairmont.jpg', width: 400, height: 400 },
+  {
+    name: 'Upper House',
+    slug: 'upper-house',
+    logo: '/partners/upper-house.png',
+    width: 352,
+    height: 60,
+  },
+  {
+    name: 'Hoshino Resorts',
+    slug: 'hoshino-resorts',
+    logo: '/partners/hoshino-resorts.jpg',
+    width: 734,
+    height: 138,
+  },
+  { name: 'Virtuoso', slug: 'virtuoso', logo: '/partners/virtuoso.png', width: 820, height: 131 },
+  { name: 'IATA', slug: 'iata', logo: '/partners/iata.png', width: 820, height: 526 },
   {
     name: 'Marriott Stars & Luminous',
     slug: 'marriott-stars-luminous',
     logo: '/partners/marriott-stars-luminous.jpg',
+    width: 663,
+    height: 136,
   },
-  { name: 'IHG Destined', slug: 'ihg-destined', logo: '/partners/ihg-destined.jpg' },
+  {
+    name: 'IHG Destined',
+    slug: 'ihg-destined',
+    logo: '/partners/ihg-destined.jpg',
+    width: 444,
+    height: 219,
+  },
   {
     name: 'Accor HERA Travel Advisor Program',
     slug: 'accor-hera',
     logo: '/partners/accor-hera.jpg',
+    width: 1897,
+    height: 609,
   },
   {
     name: 'Switzerland Tourism',
     slug: 'switzerland-tourism',
     logo: '/partners/switzerland-tourism.png',
+    width: 8992,
+    height: 1255,
   },
-  { name: 'Lotte Duty Free', slug: 'lotte-duty-free', logo: '/partners/lotte-duty-free.jpg' },
-  { name: 'The Hyundai', slug: 'the-hyundai', logo: '/partners/the-hyundai.jpg' },
+  {
+    name: 'Lotte Duty Free',
+    slug: 'lotte-duty-free',
+    logo: '/partners/lotte-duty-free.jpg',
+    width: 2048,
+    height: 2048,
+  },
+  {
+    name: 'The Hyundai',
+    slug: 'the-hyundai',
+    logo: '/partners/the-hyundai.jpg',
+    width: 828,
+    height: 301,
+  },
 ];
+
+// Logos render at a uniform 48px (h-12); the width/height attrs are 2x that
+// for crisp retina sourcing while preserving each logo's natural aspect ratio.
+export const LOGO_DISPLAY_HEIGHT = 96;
+
+export function logoDisplayWidth(partner: Partner): number {
+  return Math.round((partner.width / partner.height) * LOGO_DISPLAY_HEIGHT);
+}
 
 // Auto-scrolling partner-logo marquee. Shared by the home page and the About
 // page so the partner brand set can never drift between them. The track holds
 // the logo list twice; the -50% keyframe (globals.css) loops seamlessly. Hover
 // pauses it; prefers-reduced-motion disables the animation entirely. Every logo
-// renders at a uniform height (max-h-12) for consistent styling.
+// renders at the uniform h-12 height in its natural aspect ratio (per-logo
+// width/height attrs); max-w-full + object-contain cap ultra-wide wordmarks
+// (e.g. Shangri-La, Switzerland Tourism) at the cell width without distortion.
 export default function PartnersMarquee() {
   const { t } = useLanguage();
 
@@ -98,10 +208,10 @@ export default function PartnersMarquee() {
             <Image
               src={partner.logo}
               alt={partner.name}
-              width={160}
-              height={64}
+              width={logoDisplayWidth(partner)}
+              height={LOGO_DISPLAY_HEIGHT}
               loading="eager"
-              className="max-h-12 w-auto object-contain opacity-50 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0"
+              className="h-12 w-auto max-w-full object-contain opacity-50 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0"
             />
           </div>
         ))}
