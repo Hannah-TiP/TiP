@@ -140,6 +140,16 @@ describe('ActivityCarousel modal preview flow', () => {
     expect(screen.getByTestId('activity-card-11').hasAttribute('disabled')).toBe(true);
   });
 
+  it('stays single-select: the preview modal has NO "Add & choose another" button', async () => {
+    const onSubmit = vi.fn();
+    render(<ActivityCarousel widget={WIDGET} onSubmit={onSubmit} />);
+
+    fireEvent.click(screen.getByTestId('activity-card-10'));
+    await waitFor(() => screen.getByTestId('activity-preview-confirm'));
+
+    expect(screen.queryByTestId('activity-preview-add-another')).toBeNull();
+  });
+
   it('shows an error state and a Close button when the fetch fails', async () => {
     vi.spyOn(apiClient, 'getActivityById').mockRejectedValueOnce(new Error('boom'));
 

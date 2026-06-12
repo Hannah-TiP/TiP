@@ -13,6 +13,13 @@ export interface EntityCarouselItem {
   image_url: string | null;
 }
 
+export interface EntityCarouselSelection {
+  id: number;
+  name: string | null;
+}
+
+const MAX_MULTI_SELECT = 5;
+
 interface EntityCarouselProps<TItem extends EntityCarouselItem, TEntity> {
   items: TItem[];
   entityLabel: string;
@@ -21,8 +28,11 @@ interface EntityCarouselProps<TItem extends EntityCarouselItem, TEntity> {
   disabled?: boolean;
   fetchEntity: (id: number) => Promise<TEntity>;
   renderDetail: (entity: TEntity) => ReactNode;
-  buildValue: (id: number, name: string | null) => AIChatWidgetResponse;
+  buildValue: (selections: EntityCarouselSelection[]) => AIChatWidgetResponse;
   testIdPrefix: string;
+  // Opt-in multi-select mode (HotelCarousel only). When false/undefined the
+  // single-select behavior is byte-for-byte unchanged.
+  multiSelect?: boolean;
 }
 
 export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity>({
@@ -35,9 +45,11 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
   renderDetail,
   buildValue,
   testIdPrefix,
+  multiSelect = false,
 }: EntityCarouselProps<TItem, TEntity>) {
   const { t } = useLanguage();
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [accumulated, setAccumulated] = useState<EntityCarouselSelection[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [activeName, setActiveName] = useState<string | null>(null);
   const [previewEntity, setPreviewEntity] = useState<TEntity | null>(null);
@@ -45,6 +57,8 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
   const [previewError, setPreviewError] = useState<string | null>(null);
 
   const isModalOpen = activeId !== null;
+  const isLocked = selectedId !== null;
+  const atCap = accumulated.length >= MAX_MULTI_SELECT;
 
   useEffect(() => {
     if (activeId === null) return;
@@ -67,8 +81,13 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
     };
   }, [activeId, fetchEntity, entityLabel, t]);
 
+  function isAccumulated(id: number) {
+    return accumulated.some((s) => s.id === id);
+  }
+
   function handleCardClick(item: { id: number; name: string | null }) {
-    if (disabled || selectedId !== null) return;
+    if (disabled || isLocked) return;
+    if (multiSelect && isAccumulated(item.id)) return;
     setPreviewEntity(null);
     setPreviewError(null);
     setPreviewLoading(true);
@@ -88,9 +107,31 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
     if (activeId === null) return;
     const entityId = activeId;
     const name = activeName;
+    const selections =
+      multiSelect && accumulated.length > 0
+        ? [...accumulated, { id: entityId, name }]
+        : [{ id: entityId, name }];
     setSelectedId(entityId);
     closeModal();
-    onSubmit(buildValue(entityId, name));
+    onSubmit(buildValue(selections));
+  }
+
+  function handleAddAnother() {
+    if (activeId === null || atCap) return;
+    if (!isAccumulated(activeId)) {
+      setAccumulated((prev) => [...prev, { id: activeId, name: activeName }]);
+    }
+    closeModal();
+  }
+
+  function handleRemoveChip(id: number) {
+    setAccumulated((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  function handleSubmitAccumulated() {
+    if (accumulated.length === 0 || isLocked) return;
+    setSelectedId(accumulated[accumulated.length - 1].id);
+    onSubmit(buildValue(accumulated));
   }
 
   if (items.length === 0) return null;
@@ -103,17 +144,75 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
             .replace('{article}', /^[aeiou]/i.test(entityLabel) ? 'an' : 'a')
             .replace('{entity}', entityLabel.toLowerCase())}
         </p>
+        {multiSelect && accumulated.length > 0 && (
+          <div className="mb-3" data-testid={`${testIdPrefix}-chips`}>
+            <p className="font-inter mb-2 text-[11px] font-medium tracking-wide text-gray-500 uppercase">
+              {t('carousel.selected_count').replace('{count}', String(accumulated.length))}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {accumulated.map((s) => (
+                <span
+                  key={s.id}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#1E3D2F]/10 py-1 pr-1 pl-3 text-xs font-medium text-[#1E3D2F]"
+                  data-testid={`${testIdPrefix}-chip-${s.id}`}
+                >
+                  {s.name ?? `${entityLabel} ${s.id}`}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveChip(s.id)}
+                    disabled={isLocked}
+                    aria-label={t('carousel.remove_selection').replace(
+                      '{entity}',
+                      s.name ?? `${entityLabel} ${s.id}`,
+                    )}
+                    className="flex h-4 w-4 items-center justify-center rounded-full text-[#1E3D2F] hover:bg-[#1E3D2F]/20 disabled:opacity-50"
+                    data-testid={`${testIdPrefix}-chip-remove-${s.id}`}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </span>
+              ))}
+            </div>
+            {!isLocked && (
+              <button
+                type="button"
+                onClick={handleSubmitAccumulated}
+                disabled={disabled}
+                className="mt-3 rounded-full bg-[#1E3D2F] px-5 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                data-testid={`${testIdPrefix}-submit-selection`}
+              >
+                {t('carousel.submit_selection').replace('{count}', String(accumulated.length))}
+              </button>
+            )}
+          </div>
+        )}
         <div className="flex gap-3 overflow-x-auto pb-1">
           {items.map((item) => {
             const isSelected = selectedId === item.id;
+            const isChosen = multiSelect && isAccumulated(item.id);
             return (
               <button
                 type="button"
                 key={item.id}
                 onClick={() => handleCardClick({ id: item.id, name: item.name })}
-                disabled={disabled || selectedId !== null}
+                disabled={disabled || isLocked || isChosen}
                 className={`w-44 shrink-0 overflow-hidden rounded-lg border text-left transition-all disabled:opacity-60 ${
-                  isSelected ? 'border-[#1E3D2F] ring-2 ring-[#1E3D2F]' : 'border-gray-200'
+                  isSelected || isChosen
+                    ? 'border-[#1E3D2F] ring-2 ring-[#1E3D2F]'
+                    : 'border-gray-200'
                 }`}
                 data-testid={`${testIdPrefix}-card-${item.id}`}
               >
@@ -181,6 +280,17 @@ export default function EntityCarousel<TItem extends EntityCarouselItem, TEntity
               >
                 {t('carousel.cancel')}
               </button>
+              {multiSelect && (
+                <button
+                  type="button"
+                  onClick={handleAddAnother}
+                  disabled={atCap}
+                  className="rounded-full border border-[#1E3D2F] px-6 py-2 text-[13px] font-semibold text-[#1E3D2F] hover:bg-[#1E3D2F]/5 disabled:opacity-50"
+                  data-testid={`${testIdPrefix}-preview-add-another`}
+                >
+                  {atCap ? t('carousel.add_cap_reached') : t('carousel.add_another')}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleConfirm}

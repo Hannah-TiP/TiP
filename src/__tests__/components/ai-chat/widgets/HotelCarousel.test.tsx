@@ -2,6 +2,7 @@
 import type { ImgHTMLAttributes } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import EntityCarousel from '@/components/ai-chat/widgets/EntityCarousel';
 import HotelCarousel from '@/components/ai-chat/widgets/HotelCarousel';
 import { apiClient } from '@/lib/api-client';
 import type { AIChatHotelCarouselWidget } from '@/types/ai-chat';
@@ -131,6 +132,160 @@ describe('HotelCarousel modal preview flow', () => {
     expect(screen.getByTestId('hotel-card-101').hasAttribute('disabled')).toBe(true);
   });
 
+  it('"Add & choose another" accumulates a chip and leaves the carousel active without firing onSubmit', async () => {
+    const onSubmit = vi.fn();
+    render(<HotelCarousel widget={WIDGET} onSubmit={onSubmit} />);
+
+    fireEvent.click(screen.getByTestId('hotel-card-100'));
+    await waitFor(() => screen.getByTestId('hotel-preview-add-another'));
+
+    fireEvent.click(screen.getByTestId('hotel-preview-add-another'));
+
+    // Modal closes, no submit yet, a chip appears, the chosen card is disabled.
+    await waitFor(() => {
+      expect(screen.queryByTestId('modal-dialog')).toBeNull();
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByTestId('hotel-chip-100')).toBeDefined();
+    expect(screen.getByTestId('hotel-card-100').hasAttribute('disabled')).toBe(true);
+    // Other card still selectable.
+    expect(screen.getByTestId('hotel-card-101').hasAttribute('disabled')).toBe(false);
+  });
+
+  it('submits a { hotels: [...] } array when finishing after adding another', async () => {
+    const onSubmit = vi.fn();
+    render(<HotelCarousel widget={WIDGET} onSubmit={onSubmit} />);
+
+    // Pick hotel 100 -> Add another.
+    fireEvent.click(screen.getByTestId('hotel-card-100'));
+    await waitFor(() => screen.getByTestId('hotel-preview-add-another'));
+    fireEvent.click(screen.getByTestId('hotel-preview-add-another'));
+    await waitFor(() => screen.queryByTestId('modal-dialog') === null);
+
+    // Pick hotel 101 -> Select this hotel (finish).
+    fireEvent.click(screen.getByTestId('hotel-card-101'));
+    await waitFor(() => screen.getByTestId('hotel-preview-confirm'));
+    fireEvent.click(screen.getByTestId('hotel-preview-confirm'));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledWith({
+      widget_id: 'w-hotels',
+      widget_type: 'hotel_carousel',
+      value: {
+        hotels: [
+          { hotel_id: 100, name: 'Ritz Paris' },
+          { hotel_id: 101, name: 'Four Seasons' },
+        ],
+      },
+    });
+  });
+
+  it('removing a chip de-selects the hotel and re-enables its card', async () => {
+    const onSubmit = vi.fn();
+    render(<HotelCarousel widget={WIDGET} onSubmit={onSubmit} />);
+
+    fireEvent.click(screen.getByTestId('hotel-card-100'));
+    await waitFor(() => screen.getByTestId('hotel-preview-add-another'));
+    fireEvent.click(screen.getByTestId('hotel-preview-add-another'));
+    await waitFor(() => screen.getByTestId('hotel-chip-100'));
+
+    expect(screen.getByTestId('hotel-card-100').hasAttribute('disabled')).toBe(true);
+
+    fireEvent.click(screen.getByTestId('hotel-chip-remove-100'));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('hotel-chip-100')).toBeNull();
+    });
+    expect(screen.getByTestId('hotel-card-100').hasAttribute('disabled')).toBe(false);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('a single pick (no "Add another") still emits the single { hotel_id, name } shape', async () => {
+    const onSubmit = vi.fn();
+    render(<HotelCarousel widget={WIDGET} onSubmit={onSubmit} />);
+
+    fireEvent.click(screen.getByTestId('hotel-card-100'));
+    await waitFor(() => screen.getByTestId('hotel-preview-confirm'));
+    fireEvent.click(screen.getByTestId('hotel-preview-confirm'));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      widget_id: 'w-hotels',
+      widget_type: 'hotel_carousel',
+      value: { hotel_id: 100, name: 'Ritz Paris' },
+    });
+  });
+
+  it('shows the chips submit button only once a hotel has been accumulated', async () => {
+    const onSubmit = vi.fn();
+    render(<HotelCarousel widget={WIDGET} onSubmit={onSubmit} />);
+
+    // No accumulated selections yet -> no submit button.
+    expect(screen.queryByTestId('hotel-submit-selection')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('hotel-card-100'));
+    await waitFor(() => screen.getByTestId('hotel-preview-add-another'));
+    fireEvent.click(screen.getByTestId('hotel-preview-add-another'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('hotel-submit-selection')).toBeDefined();
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('clicking the chips submit button submits exactly the accumulated hotels and locks the carousel', async () => {
+    const onSubmit = vi.fn();
+    render(<HotelCarousel widget={WIDGET} onSubmit={onSubmit} />);
+
+    // Accumulate both hotels via "Add & choose another" — the dead-end case.
+    fireEvent.click(screen.getByTestId('hotel-card-100'));
+    await waitFor(() => screen.getByTestId('hotel-preview-add-another'));
+    fireEvent.click(screen.getByTestId('hotel-preview-add-another'));
+    await waitFor(() => screen.getByTestId('hotel-chip-100'));
+
+    fireEvent.click(screen.getByTestId('hotel-card-101'));
+    await waitFor(() => screen.getByTestId('hotel-preview-add-another'));
+    fireEvent.click(screen.getByTestId('hotel-preview-add-another'));
+    await waitFor(() => screen.getByTestId('hotel-chip-101'));
+
+    fireEvent.click(screen.getByTestId('hotel-submit-selection'));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledWith({
+      widget_id: 'w-hotels',
+      widget_type: 'hotel_carousel',
+      value: {
+        hotels: [
+          { hotel_id: 100, name: 'Ritz Paris' },
+          { hotel_id: 101, name: 'Four Seasons' },
+        ],
+      },
+    });
+
+    // Carousel locks and the submit button disappears.
+    expect(screen.getByTestId('hotel-card-100').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('hotel-card-101').hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByTestId('hotel-submit-selection')).toBeNull();
+  });
+
+  it('chips submit with a single accumulated hotel emits the single { hotel_id, name } shape', async () => {
+    const onSubmit = vi.fn();
+    render(<HotelCarousel widget={WIDGET} onSubmit={onSubmit} />);
+
+    fireEvent.click(screen.getByTestId('hotel-card-100'));
+    await waitFor(() => screen.getByTestId('hotel-preview-add-another'));
+    fireEvent.click(screen.getByTestId('hotel-preview-add-another'));
+    await waitFor(() => screen.getByTestId('hotel-submit-selection'));
+
+    fireEvent.click(screen.getByTestId('hotel-submit-selection'));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledWith({
+      widget_id: 'w-hotels',
+      widget_type: 'hotel_carousel',
+      value: { hotel_id: 100, name: 'Ritz Paris' },
+    });
+  });
+
   it('shows an error state and a Close button when the fetch fails', async () => {
     vi.spyOn(apiClient, 'getHotelById').mockRejectedValueOnce(new Error('boom'));
 
@@ -145,5 +300,41 @@ describe('HotelCarousel modal preview flow', () => {
 
     expect(screen.queryByTestId('hotel-detail-content')).toBeNull();
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+});
+
+describe('EntityCarousel single-select mode', () => {
+  it('never renders the chips submit button when multiSelect is off', async () => {
+    const onSubmit = vi.fn();
+    render(
+      <EntityCarousel
+        items={[{ id: 100, name: 'Ritz Paris', image_url: null }]}
+        entityLabel="Hotel"
+        selectLabel="Select this hotel"
+        onSubmit={onSubmit}
+        fetchEntity={(id: number) => apiClient.getHotelById(id)}
+        renderDetail={() => <div data-testid="single-detail" />}
+        buildValue={(selections) => ({
+          widget_id: 'w-hotels',
+          widget_type: 'hotel_carousel',
+          value: { hotel_id: selections[0].id, name: selections[0].name },
+        })}
+        testIdPrefix="single"
+      />,
+    );
+
+    expect(screen.queryByTestId('single-submit-selection')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('single-card-100'));
+    await waitFor(() => screen.getByTestId('single-preview-confirm'));
+
+    // No "Add & choose another" and no chips/submit button in single mode.
+    expect(screen.queryByTestId('single-preview-add-another')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('single-preview-confirm'));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('single-submit-selection')).toBeNull();
+    expect(screen.queryByTestId('single-chips')).toBeNull();
   });
 });
