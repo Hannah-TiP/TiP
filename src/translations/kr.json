@@ -141,6 +141,7 @@
   "hotel.booking_benefit_2": "객실 업그레이드 우선 배정",
   "hotel.booking_benefit_3": "가능 시 레이트 체크아웃",
   "hotel.booking_benefit_4": "웰컴 어메니티 및 전담 컨시어지",
+  "hotel.perks_more_count": "+{count}개 더",
   "hotel.booking_check_in": "체크인",
   "hotel.booking_check_out": "체크아웃",
   "hotel.booking_adults": "성인",

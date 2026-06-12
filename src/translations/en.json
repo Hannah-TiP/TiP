@@ -141,6 +141,7 @@
   "hotel.booking_benefit_2": "Priority room upgrade",
   "hotel.booking_benefit_3": "Late checkout when available",
   "hotel.booking_benefit_4": "Welcome amenity & concierge attention",
+  "hotel.perks_more_count": "+{count} more",
   "hotel.booking_check_in": "CHECK IN",
   "hotel.booking_check_out": "CHECK OUT",
   "hotel.booking_adults": "ADULTS",

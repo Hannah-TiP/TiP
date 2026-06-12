@@ -13,6 +13,23 @@
  */
 
 import type { HotelBenefitProgram } from '@/types/hotel';
+import { getLocalizedText } from '@/types/common';
+
+/**
+ * Flatten benefit programs into localized display strings — no date filtering
+ * and no eligibility labels. For compact-teaser contexts (e.g. the dream-hotels
+ * map popup) where no stay dates exist; the full date-aware rendering lives on
+ * the hotel detail page. Empty/missing programs yield [] — callers decide
+ * their own fallback.
+ */
+export function localizeBenefitStrings(
+  programs: HotelBenefitProgram[] | null | undefined,
+  lang: 'en' | 'kr' = 'en',
+): string[] {
+  return (programs ?? []).flatMap((program) =>
+    program.benefits.map((benefit) => getLocalizedText(benefit, lang)).filter(Boolean),
+  );
+}
 
 /** Parse an ISO date string to a UTC `Date`, or null on null/malformed (fail open). */
 function parseIsoDate(value: string | null | undefined): Date | null {
