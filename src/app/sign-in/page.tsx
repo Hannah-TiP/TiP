@@ -8,7 +8,9 @@ import Link from 'next/link';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { buildAuthRedirectUrl, isSafeRedirectPath } from '@/lib/redirect-validation';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
+import { useInAppBrowser } from '@/lib/in-app-browser';
 import PasswordInput from '@/components/PasswordInput';
+import WebviewLoginNotice from '@/components/auth/WebviewLoginNotice';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
@@ -16,6 +18,7 @@ const DEFAULT_REDIRECT = '/my-page';
 
 function SignInForm() {
   const { t, lang } = useLanguage();
+  const webview = useInAppBrowser();
   const searchParams = useSearchParams();
   // Pre-fill the email when arriving from the signup screen's "account
   // already exists" panel (it links here with ?email=).
@@ -127,7 +130,7 @@ function SignInForm() {
 
         {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
-        {GOOGLE_CLIENT_ID && (
+        {GOOGLE_CLIENT_ID && !webview.inApp && (
           <>
             <GoogleSignInButton
               onCode={handleGoogleSuccess}
@@ -143,6 +146,8 @@ function SignInForm() {
             </div>
           </>
         )}
+
+        {webview.inApp && <WebviewLoginNotice info={webview} />}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <input

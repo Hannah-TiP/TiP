@@ -8,8 +8,10 @@ import { useSearchParams } from 'next/navigation';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 import PasswordInput from '@/components/PasswordInput';
+import WebviewLoginNotice from '@/components/auth/WebviewLoginNotice';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { buildAuthRedirectUrl } from '@/lib/redirect-validation';
+import { useInAppBrowser } from '@/lib/in-app-browser';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
@@ -20,6 +22,7 @@ const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{4,16}$/i;
 
 function RegisterForm() {
   const { t, lang } = useLanguage();
+  const webview = useInAppBrowser();
   const searchParams = useSearchParams();
   const rawRef = searchParams?.get('ref') ?? '';
   const referralCode = REFERRAL_CODE_PATTERN.test(rawRef) ? rawRef.toUpperCase() : '';
@@ -255,7 +258,7 @@ function RegisterForm() {
 
           {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
-          {GOOGLE_CLIENT_ID && (
+          {GOOGLE_CLIENT_ID && !webview.inApp && (
             <>
               <GoogleSignInButton
                 onCode={handleGoogleSuccess}
@@ -271,6 +274,8 @@ function RegisterForm() {
               </div>
             </>
           )}
+
+          {webview.inApp && <WebviewLoginNotice info={webview} />}
 
           <form onSubmit={handleSendCode} className="flex flex-col gap-6">
             <input
