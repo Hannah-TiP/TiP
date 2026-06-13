@@ -660,6 +660,7 @@ function ConciergeContent() {
           </div>
 
           <MessageList
+            key={activeSessionId ?? 'none'}
             messages={messages}
             isLoading={isLoading}
             pendingMessage={pendingMessage}
