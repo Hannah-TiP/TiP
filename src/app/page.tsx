@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import SearchBar from '@/components/SearchBar';
 import PartnersMarquee from '@/components/PartnersMarquee';
-import InstagramIcon from '@/components/icons/InstagramIcon';
+import Footer from '@/components/Footer';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const elevateCards = [
@@ -479,98 +479,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#214032] px-6 py-12 sm:px-10 lg:px-[100px]">
-        <div className="mx-auto max-w-7xl">
-          {/* Top */}
-          <div className="flex flex-col items-start gap-10 md:flex-row md:justify-between">
-            <Link href="/">
-              <Image
-                src="/bible_TIP_logo_noir.svg"
-                alt={t('home.footer_logo_alt')}
-                className="h-10"
-                width={120}
-                height={40}
-                style={{ filter: 'brightness(0) invert(1)' }}
-              />
-            </Link>
-            <div className="flex flex-wrap gap-x-12 gap-y-8 sm:gap-x-20">
-              <div>
-                <h4 className="text-[13px] font-semibold text-white/60">
-                  {t('home.footer_explore')}
-                </h4>
-                <div className="mt-4 flex flex-col gap-3">
-                  <Link
-                    href="/dream-hotels"
-                    className="text-[13px] text-white/40 hover:text-white/70"
-                  >
-                    {t('home.footer_dream_hotels')}
-                  </Link>
-                  <Link href="/about" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_about')}
-                  </Link>
-                  <Link href="/concierge" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_concierge')}
-                  </Link>
-                </div>
-              </div>
-              <div>
-                <h4 className="text-[13px] font-semibold text-white/60">
-                  {t('home.footer_company')}
-                </h4>
-                <div className="mt-4 flex flex-col gap-3">
-                  <Link href="/about" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_about_us')}
-                  </Link>
-                  <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_careers')}
-                  </Link>
-                  <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_press')}
-                  </Link>
-                </div>
-              </div>
-              <div>
-                <h4 className="text-[13px] font-semibold text-white/60">
-                  {t('home.footer_support')}
-                </h4>
-                <div className="mt-4 flex flex-col gap-3">
-                  <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_help_center')}
-                  </Link>
-                  <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_contact_us')}
-                  </Link>
-                  <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_privacy')}
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Info */}
-          <div className="mt-10 border-t border-white/10 pt-6 text-[12px] leading-[1.8] text-white/40">
-            <p>상호명: 주식회사 티아이피에이아이 | 대표: 홍길동 | 사업자등록번호: 123-45-67890</p>
-            <p>
-              주소: 서울특별시 강남구 테헤란로 123, 4층 | 통신판매업신고: 제2026-서울강남-00001호
-            </p>
-          </div>
-
-          {/* Copyright + social icons */}
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 text-[12px] text-white/30">
-            <span>{t('home.footer_copyright')}</span>
-            <a
-              href="https://instagram.com/travelinyourpocket_official"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={t('footer.instagram_aria')}
-              className="text-white/40 transition-colors hover:text-white/70"
-            >
-              <InstagramIcon />
-            </a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }
