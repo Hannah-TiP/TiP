@@ -71,9 +71,12 @@ vi.mock('@/hooks/usePreviewMode', () => ({
 // Identity debounce so search input changes apply synchronously in tests.
 vi.mock('@/hooks/useDebounce', () => ({ useDebounce: (v: string) => v }));
 
+// Mutable so individual tests can flip the active language before render.
+const languageState = vi.hoisted(() => ({ lang: 'en' as 'en' | 'kr' }));
+
 vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => ({
-    lang: 'en' as const,
+    lang: languageState.lang,
     setLang: vi.fn(),
     t: (key: string) => (en as Record<string, string>)[key] ?? key,
   }),
@@ -90,6 +93,7 @@ vi.mock('@/lib/api-client', () => ({
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  languageState.lang = 'en';
 });
 
 function hotel(id: number): Hotel {
@@ -175,5 +179,40 @@ describe('DreamHotelsPage — pagination + map gating', () => {
     // Infinite-scroll affordances stay rendered while the map is visible.
     expect(await screen.findByTestId('infinite-sentinel')).toBeTruthy();
     expect(await screen.findByTestId('no-more-results')).toBeTruthy();
+  });
+});
+
+describe('DreamHotelsPage — active language drives the hotels fetch (SMA-116)', () => {
+  it('sends language: "kr" when the context language is KR and renders KR content', async () => {
+    languageState.lang = 'kr';
+    // Backend collapses MultiLanguageStrings to the requested language: with
+    // language=kr the `en` fields come back null.
+    const krHotel: Hotel = {
+      ...hotel(1),
+      name: { en: null, kr: '아만 도쿄' },
+      address: { en: null, kr: '도쿄 오테마치' },
+    };
+    vi.mocked(apiClient.getHotels).mockResolvedValue(page([krHotel]));
+
+    render(<DreamHotelsPage />);
+
+    await waitFor(() =>
+      expect(vi.mocked(apiClient.getHotels).mock.calls.length).toBeGreaterThan(0),
+    );
+    expect(vi.mocked(apiClient.getHotels).mock.calls[0][0]?.language).toBe('kr');
+
+    // getLocalizedText falls back to kr when en is null — KR name renders.
+    expect(await screen.findByText('아만 도쿄')).toBeTruthy();
+  });
+
+  it('sends language: "en" when the context language is EN', async () => {
+    vi.mocked(apiClient.getHotels).mockResolvedValue(page([hotel(1)]));
+
+    render(<DreamHotelsPage />);
+
+    await waitFor(() =>
+      expect(vi.mocked(apiClient.getHotels).mock.calls.length).toBeGreaterThan(0),
+    );
+    expect(vi.mocked(apiClient.getHotels).mock.calls[0][0]?.language).toBe('en');
   });
 });
