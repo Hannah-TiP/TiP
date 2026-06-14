@@ -5,8 +5,9 @@ import { signIn, getSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { buildAuthRedirectUrl, isSafeRedirectPath } from '@/lib/redirect-validation';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 import { useInAppBrowser } from '@/lib/in-app-browser';
 import PasswordInput from '@/components/PasswordInput';
 import WebviewLoginNotice from '@/components/auth/WebviewLoginNotice';
@@ -16,7 +17,7 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const DEFAULT_REDIRECT = '/my-page';
 
 function SignInForm() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const webview = useInAppBrowser();
   const searchParams = useSearchParams();
   // Pre-fill the email when arriving from the signup screen's "account
@@ -45,19 +46,19 @@ function SignInForm() {
   const rawRef = searchParams.get('ref') ?? '';
   const referralCode = /^[A-Z0-9]{4,16}$/i.test(rawRef) ? rawRef.toUpperCase() : '';
 
-  const handleGoogleSuccess = async (response: CredentialResponse) => {
-    if (!response.credential) return;
+  const handleGoogleSuccess = async (authCode: string) => {
     setError('');
     setIsLoading(true);
 
     try {
-      // Send Google token to backend via proxy
+      // Send the OAuth authorization code to the backend via proxy. The
+      // backend exchanges it for tokens server-side (SMA-119).
       const res = await fetch('/api/auth/social-login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Language: lang },
         body: JSON.stringify({
           provider: 'google',
-          id_token: response.credential,
+          auth_code: authCode,
         }),
       });
 
@@ -131,15 +132,12 @@ function SignInForm() {
 
         {GOOGLE_CLIENT_ID && !webview.inApp && (
           <>
-            <div className="flex justify-center" data-testid="google-login-container">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setError(t('auth.error_google_failed'))}
-                size="large"
-                width="356"
-                text="continue_with"
-              />
-            </div>
+            <GoogleSignInButton
+              onCode={handleGoogleSuccess}
+              onFailure={() => setError(t('auth.error_google_failed'))}
+              onCancel={() => setError(t('auth.error_google_cancelled'))}
+              disabled={isLoading}
+            />
 
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-gray-200" />
