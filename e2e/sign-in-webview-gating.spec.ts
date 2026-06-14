@@ -17,7 +17,7 @@ test.describe('webview login gating — KakaoTalk UA', () => {
     await expect(notice).toBeVisible();
 
     // Google widget must not render at all in a detected webview.
-    await expect(page.getByTestId('google-login-container')).toHaveCount(0);
+    await expect(page.getByTestId('google-signin-button')).toHaveCount(0);
     await expect(page.locator('iframe[src*="accounts.google.com"]')).toHaveCount(0);
 
     // KakaoTalk escape hatch points at the openExternal scheme.
@@ -39,7 +39,7 @@ test.describe('webview login gating — KakaoTalk UA', () => {
     await page.goto('/register');
 
     await expect(page.getByTestId('webview-login-notice')).toBeVisible();
-    await expect(page.getByTestId('google-login-container')).toHaveCount(0);
+    await expect(page.getByTestId('google-signin-button')).toHaveCount(0);
     await expect(page.getByTestId('webview-open-external')).toBeVisible();
 
     // Email signup form stays fully usable.
@@ -49,19 +49,19 @@ test.describe('webview login gating — KakaoTalk UA', () => {
 });
 
 test.describe('webview login gating — normal browser UA', () => {
-  test('/sign-in still renders the Google login container, no notice', async ({ page }) => {
+  test('/sign-in still renders the Google sign-in button, no notice', async ({ page }) => {
     await page.goto('/sign-in');
 
-    // The container div mounts regardless of whether the remote GSI script
-    // has finished injecting the button, so assert attachment not visibility.
-    await expect(page.getByTestId('google-login-container')).toBeAttached();
+    // The auth-code sign-in button (SMA-119) renders synchronously in a
+    // normal browser — no remote GSI script injection to wait on.
+    await expect(page.getByTestId('google-signin-button')).toBeVisible();
     await expect(page.getByTestId('webview-login-notice')).toHaveCount(0);
   });
 
-  test('/register still renders the Google login container, no notice', async ({ page }) => {
+  test('/register still renders the Google sign-in button, no notice', async ({ page }) => {
     await page.goto('/register');
 
-    await expect(page.getByTestId('google-login-container')).toBeAttached();
+    await expect(page.getByTestId('google-signin-button')).toBeVisible();
     await expect(page.getByTestId('webview-login-notice')).toHaveCount(0);
   });
 });
