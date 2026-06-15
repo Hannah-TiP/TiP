@@ -5,12 +5,12 @@ import { signIn } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 import PasswordInput from '@/components/PasswordInput';
 import WebviewLoginNotice from '@/components/auth/WebviewLoginNotice';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { buildAuthRedirectUrl } from '@/lib/redirect-validation';
+import { startGoogleRedirect } from '@/lib/google-oauth';
 import { useInAppBrowser } from '@/lib/in-app-browser';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
@@ -21,7 +21,7 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{4,16}$/i;
 
 function RegisterForm() {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const webview = useInAppBrowser();
   const searchParams = useSearchParams();
   const rawRef = searchParams?.get('ref') ?? '';
@@ -43,53 +43,19 @@ function RegisterForm() {
   const [accountExists, setAccountExists] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleSuccess = async (authCode: string) => {
+  // Full-page top-level redirect to Google (SMA-133). The /auth/google/callback
+  // page completes the exchange + session and routes new users through the
+  // onboarding hop (threading the referral + pending redirect). Same-tab
+  // redirect avoids the iOS-Safari popup-postMessage failure.
+  const handleGoogleClick = () => {
     setError('');
     setIsLoading(true);
-
-    try {
-      // Send the OAuth authorization code to the backend via proxy. The
-      // backend exchanges it for tokens server-side (SMA-119).
-      const res = await fetch('/api/auth/social-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Language: lang },
-        body: JSON.stringify({
-          provider: 'google',
-          auth_code: authCode,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || t('register.error_google_failed'));
-      }
-
-      const { data } = await res.json();
-
-      const result = await signIn('social-login', {
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        throw new Error(t('register.error_session_failed'));
-      }
-
-      // Forward the referral code into onboarding so the new step can
-      // prefill it and attempt the claim from there. For email signups the
-      // backend already claimed at register-time, so the onboarding step
-      // will see referred_by populated and auto-advance — but threading
-      // the param keeps the Google path covered uniformly. The pending
-      // redirect rides alongside so trip-planning context survives onboarding.
-      window.location.href = buildAuthRedirectUrl('/onboarding', {
-        ref: referralCode,
-        redirect: rawRedirect,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('register.error_google_failed'));
-      setIsLoading(false);
-    }
+    startGoogleRedirect({
+      clientId: GOOGLE_CLIENT_ID,
+      returnTo: rawRedirect,
+      ref: referralCode || null,
+      from: 'register',
+    });
   };
 
   const handleSendCode = async (e: React.FormEvent) => {
@@ -260,12 +226,7 @@ function RegisterForm() {
 
           {GOOGLE_CLIENT_ID && !webview.inApp && (
             <>
-              <GoogleSignInButton
-                onCode={handleGoogleSuccess}
-                onFailure={() => setError(t('register.error_google_failed'))}
-                onCancel={() => setError(t('register.error_google_cancelled'))}
-                disabled={isLoading}
-              />
+              <GoogleSignInButton onClick={handleGoogleClick} disabled={isLoading} />
 
               <div className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-gray-200" />
@@ -370,34 +331,32 @@ function RegisterForm() {
 export default function RegisterPage() {
   const { t } = useLanguage();
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <main className="flex min-h-screen flex-col bg-gray-light">
-        <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-4 md:px-10">
-          <Link href="/">
-            <Image
-              src="/bible_TIP_profil_400x400px.svg"
-              alt={t('register.logo_alt')}
-              className="h-9"
-              width={36}
-              height={36}
-            />
-          </Link>
+    <main className="flex min-h-screen flex-col bg-gray-light">
+      <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-4 md:px-10">
+        <Link href="/">
+          <Image
+            src="/bible_TIP_profil_400x400px.svg"
+            alt={t('register.logo_alt')}
+            className="h-9"
+            width={36}
+            height={36}
+          />
+        </Link>
+      </div>
+
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 md:px-10">
+        <div className="text-center">
+          <h1 className="font-primary text-[32px] italic text-green-dark md:text-[48px]">
+            {t('register.headline')}
+          </h1>
+          <p className="mt-2 text-gray-text">{t('register.subtitle')}</p>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 md:px-10">
-          <div className="text-center">
-            <h1 className="font-primary text-[32px] italic text-green-dark md:text-[48px]">
-              {t('register.headline')}
-            </h1>
-            <p className="mt-2 text-gray-text">{t('register.subtitle')}</p>
-          </div>
-
-          {/* useSearchParams requires a Suspense boundary in App Router. */}
-          <Suspense fallback={null}>
-            <RegisterForm />
-          </Suspense>
-        </div>
-      </main>
-    </GoogleOAuthProvider>
+        {/* useSearchParams requires a Suspense boundary in App Router. */}
+        <Suspense fallback={null}>
+          <RegisterForm />
+        </Suspense>
+      </div>
+    </main>
   );
 }

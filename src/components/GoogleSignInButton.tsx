@@ -1,57 +1,34 @@
 'use client';
 
-import { useGoogleLogin } from '@react-oauth/google';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface GoogleSignInButtonProps {
-  /** Receives the OAuth authorization code after the popup completes. */
-  onCode: (authCode: string) => void;
-  /** OAuth error or popup failed to open (e.g. blocked). */
-  onFailure: () => void;
-  /** User dismissed the popup without completing sign-in. */
-  onCancel: () => void;
+  /** Starts the full-page Google redirect sign-in flow. */
+  onClick: () => void;
   disabled?: boolean;
 }
 
 /**
- * Custom Google sign-in button driving the OAuth auth-code popup flow.
+ * Branded Google sign-in button.
  *
- * Replaces the GIS-rendered <GoogleLogin> credential button: on iOS Safari
- * (ITP enabled by default) GIS delivers the id_token via an
- * accounts.google.com iframe that needs third-party cookies, which Safari
- * blocks — onSuccess never fires and sign-in hangs after account selection.
- * The auth-code popup returns the authorization code via postMessage
- * instead, which works without third-party cookies (SMA-119).
+ * Drives the full-page top-level redirect auth-code flow (SMA-133): on
+ * iOS Safari (ITP enabled by default) the popup auth-code flow fails —
+ * the popup opens in a separate tab and its postMessage to the opener
+ * (TiP) doesn't survive the cross-origin round-trip, so the code never
+ * arrives. A same-tab redirect to Google and back to a TiP callback URL
+ * works everywhere without third-party cookies.
  *
  * Visuals follow the Google sign-in branding guidelines (light theme):
  * white fill, #747775 stroke, #1F1F1F text, Roboto Medium 14px, 20px logo.
  * https://developers.google.com/identity/branding-guidelines
  */
-export default function GoogleSignInButton({
-  onCode,
-  onFailure,
-  onCancel,
-  disabled,
-}: GoogleSignInButtonProps) {
+export default function GoogleSignInButton({ onClick, disabled }: GoogleSignInButtonProps) {
   const { t } = useLanguage();
-
-  const login = useGoogleLogin({
-    flow: 'auth-code',
-    onSuccess: (codeResponse) => onCode(codeResponse.code),
-    onError: () => onFailure(),
-    onNonOAuthError: (nonOAuthError) => {
-      if (nonOAuthError.type === 'popup_closed') {
-        onCancel();
-      } else {
-        onFailure();
-      }
-    },
-  });
 
   return (
     <button
       type="button"
-      onClick={() => login()}
+      onClick={onClick}
       disabled={disabled}
       data-testid="google-signin-button"
       className="flex h-10 w-full items-center justify-center gap-3 rounded-lg border border-[#747775] bg-white px-3 text-sm font-medium text-[#1F1F1F] transition-colors [font-family:'Roboto',var(--font-secondary),sans-serif] hover:bg-gray-50 disabled:opacity-50"
