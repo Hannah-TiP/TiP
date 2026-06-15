@@ -437,7 +437,7 @@ export default function AboutPage() {
                   <L s={COPY.faq.intro} isEn={isEn} />
                 </p>
                 <Link
-                  href="mailto:support@tip-ai.com"
+                  href="mailto:travelmate@travelinyourpocket.com"
                   className="mt-6 inline-flex h-11 items-center rounded-full border border-black/15 px-6 text-[13px] text-[#1A1A18] transition-colors hover:border-green-dark hover:text-green-dark"
                 >
                   <L s={COPY.faq.contactCta} isEn={isEn} />
