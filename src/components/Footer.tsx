@@ -84,9 +84,7 @@ export default function Footer() {
           paddingTop: 24,
         }}
       >
-        {/* eslint-disable-next-line i18n/no-literal-string -- fixed KR business-registration data, identical in both locales */}
         <p style={{ margin: 0 }}>상호명: 주식회사 파리클래스 | 사업자등록번호: 887-86-03126</p>
-        {/* eslint-disable-next-line i18n/no-literal-string -- fixed KR business-registration data, identical in both locales */}
         <p style={{ margin: 0 }}>
           주소: 서울특별시 서초대로 77길 59 (06611) | 통신판매업신고: 2023-서울중구-1031
         </p>
