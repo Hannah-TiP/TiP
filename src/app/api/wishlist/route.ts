@@ -14,7 +14,11 @@ export async function GET(request: NextRequest) {
 
     const language = new URL(request.url).searchParams.get('language') || 'en';
 
-    const response = await fetch(`${API_BASE_URL}/api/v2/wishlist`, {
+    // The v2 wishlist LIST endpoint reads the active language from a `lang`
+    // QUERY param (unlike the hotel/activity/restaurant detail endpoints, which
+    // read the `lang` header). Forward both so localized hotel names/addresses
+    // come back in the active UI language regardless of which the backend reads.
+    const response = await fetch(`${API_BASE_URL}/api/v2/wishlist?lang=${language}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',

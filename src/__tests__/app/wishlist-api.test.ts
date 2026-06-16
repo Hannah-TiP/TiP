@@ -57,11 +57,14 @@ describe('GET /api/wishlist', () => {
 
     await GET(new NextRequest('http://localhost:3000/api/wishlist?language=kr'));
 
-    const [, options] = mockFetch.mock.calls[0];
+    const [url, options] = mockFetch.mock.calls[0];
     expect(options.headers.lang).toBe('kr');
+    // The v2 wishlist LIST endpoint reads `lang` from the query string, so the
+    // proxy must forward it there too (header alone is ignored by the backend).
+    expect(url).toContain('lang=kr');
   });
 
-  it('defaults the lang header to en when no language is provided', async () => {
+  it('defaults the lang to en when no language is provided', async () => {
     mockAuth.mockResolvedValue({ accessToken: 'test-token' });
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -70,8 +73,9 @@ describe('GET /api/wishlist', () => {
 
     await GET(new NextRequest('http://localhost:3000/api/wishlist'));
 
-    const [, options] = mockFetch.mock.calls[0];
+    const [url, options] = mockFetch.mock.calls[0];
     expect(options.headers.lang).toBe('en');
+    expect(url).toContain('lang=en');
   });
 });
 
