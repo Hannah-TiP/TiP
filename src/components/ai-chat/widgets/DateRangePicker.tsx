@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import DatePickerDropdown from '@/components/DatePickerDropdown';
 import type { AIChatDateRangePickerWidget, AIChatWidgetResponse } from '@/types/ai-chat';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { formatDate } from '@/lib/format-date';
 
 interface Props {
   widget: AIChatDateRangePickerWidget;
@@ -11,16 +12,19 @@ interface Props {
   disabled?: boolean;
 }
 
-function formatLabel(date: string | null): string {
+function formatLabel(date: string | null, lang: Lang): string {
   if (!date) return '';
   const [y, m, d] = date.split('-').map(Number);
   if (!y || !m || !d) return date;
-  const local = new Date(y, m - 1, d);
-  return local.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return formatDate(new Date(y, m - 1, d), lang, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 export default function DateRangePicker({ widget, onSubmit, disabled }: Props) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [open, setOpen] = useState(false);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
@@ -49,7 +53,7 @@ export default function DateRangePicker({ widget, onSubmit, disabled }: Props) {
           data-testid="date-range-trigger"
         >
           {checkIn && checkOut
-            ? `${formatLabel(checkIn)} – ${formatLabel(checkOut)}`
+            ? `${formatLabel(checkIn, lang)} – ${formatLabel(checkOut, lang)}`
             : t('widget.date_picker_placeholder')}
         </button>
         {open && (

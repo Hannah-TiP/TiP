@@ -9,7 +9,8 @@ import {
   type ReviewWithAuthor,
 } from '@/types/review';
 import StarRating from '@/components/reviews/StarRating';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { formatDate } from '@/lib/format-date';
 
 const PAGE_SIZE = 5;
 
@@ -18,17 +19,17 @@ interface EntityReviewsProps {
   entityId: number;
 }
 
-function formatDate(dateStr: string | null): string | null {
+function formatReviewDate(dateStr: string | null, lang: Lang): string | null {
   if (!dateStr) return null;
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  return formatDate(d, lang, { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 function ReviewItem({ entry }: { entry: ReviewWithAuthor }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { review, author } = entry;
-  const submittedAt = formatDate(review.created_at);
+  const submittedAt = formatReviewDate(review.created_at, lang);
 
   return (
     <li className="border-b border-gray-border py-6 last:border-b-0">

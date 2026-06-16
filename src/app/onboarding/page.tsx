@@ -9,6 +9,7 @@ import CityAutocomplete from '@/components/CityAutocomplete';
 import type { User } from '@/types/auth';
 import type { MyReferralsResponse } from '@/types/stay-credit';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { formatDate } from '@/lib/format-date';
 import { isSafeRedirectPath } from '@/lib/redirect-validation';
 
 const TRAVEL_STYLES = [
@@ -52,7 +53,7 @@ function getStartStep(profile: User): number {
 }
 
 function OnboardingFlow() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   // ?ref= is carried through after signup so the referral step can prefill.
@@ -416,7 +417,7 @@ function OnboardingFlow() {
                       <option value="">{t('onboarding.month')}</option>
                       {months.map((m) => (
                         <option key={m} value={m}>
-                          {new Date(2000, m - 1).toLocaleString('en', { month: 'long' })}
+                          {formatDate(new Date(2000, m - 1), lang, { month: 'long' })}
                         </option>
                       ))}
                     </select>

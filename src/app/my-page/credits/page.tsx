@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import RedeemCodeSection from '@/components/credits/RedeemCodeSection';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { formatDate as formatDateI18n } from '@/lib/format-date';
 import { apiClient } from '@/lib/api-client';
 import {
   STAY_CREDIT_SOURCE_LABELS,
@@ -28,11 +29,11 @@ function formatAmount(amountCents: number, currency: string): string {
   return `${currency} ${dollars}`;
 }
 
-function formatDate(iso?: string | null, locale = 'en-US'): string {
+function formatDate(iso: string | null | undefined, lang: Lang): string {
   if (!iso) return '—';
   const ms = Date.parse(iso);
   if (!Number.isFinite(ms)) return '—';
-  return new Date(ms).toLocaleDateString(locale, {
+  return formatDateI18n(ms, lang, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -169,7 +170,7 @@ export default function MyCreditsPage() {
                           ) : null}
                         </div>
                         <div className="text-[12px] text-gray-500">
-                          {formatDate(credit.created_at, en ? 'en-US' : 'ko-KR')}
+                          {formatDate(credit.created_at, lang)}
                         </div>
                         {linkedTripId !== null && (
                           <Link
@@ -195,7 +196,7 @@ export default function MyCreditsPage() {
                             <span className="block uppercase tracking-wider text-[10px] text-gray-400">
                               {en ? 'Expires' : '만료'}
                             </span>
-                            {formatDate(credit.expires_at, en ? 'en-US' : 'ko-KR')}
+                            {formatDate(credit.expires_at, lang)}
                           </>
                         ) : (
                           <span className="italic text-gray-400">

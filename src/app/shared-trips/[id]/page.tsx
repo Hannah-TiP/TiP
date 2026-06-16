@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
+import { formatDate } from '@/lib/format-date';
 import { tripDayNumber } from '@/lib/trip-utils';
 import { apiClient } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/format-currency';
@@ -30,17 +31,10 @@ function getNights(startDate?: string | null, endDate?: string | null): number |
   return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
-function formatDate(dateStr?: string | null): string {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
+const DATE_OPTS: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
 
 export default function SharedTripDetailPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { status: sessionStatus } = useSession();
@@ -145,7 +139,8 @@ export default function SharedTripDetailPage() {
               <div>
                 <p className="text-white/50">{t('shared_trip_detail.dates')}</p>
                 <p className="font-semibold">
-                  {formatDate(version?.start_date)} – {formatDate(version?.end_date)}
+                  {version?.start_date ? formatDate(version.start_date, lang, DATE_OPTS) : '—'} –{' '}
+                  {version?.end_date ? formatDate(version.end_date, lang, DATE_OPTS) : '—'}
                 </p>
               </div>
               {nights !== null && (
@@ -203,7 +198,7 @@ export default function SharedTripDetailPage() {
                               {t('shared_trip_detail.day')} {dayBadgeText}
                             </span>
                             <span className="text-xs text-gray-400">
-                              {formatDateLabel(day.date)}
+                              {formatDateLabel(day.date, lang)}
                             </span>
                             {day.title && (
                               <span className="text-xs font-medium text-gray-700">{day.title}</span>
@@ -230,8 +225,8 @@ export default function SharedTripDetailPage() {
                                     )}
                                     {item.start_at && (
                                       <p className="text-xs text-gray-400">
-                                        {formatTime(item.start_at)}
-                                        {item.end_at ? ` – ${formatTime(item.end_at)}` : ''}
+                                        {formatTime(item.start_at, lang)}
+                                        {item.end_at ? ` – ${formatTime(item.end_at, lang)}` : ''}
                                       </p>
                                     )}
                                     {item.description && (

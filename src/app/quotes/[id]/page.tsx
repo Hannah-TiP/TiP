@@ -11,7 +11,8 @@ import { tripDayNumber } from '@/lib/trip-utils';
 import type { QuoteLineItem, QuoteStatus, QuoteWithVersion, QuoteVersion } from '@/types/quote';
 import type { Trip, TripVersion } from '@/types/trip';
 import type { EligibleCredit } from '@/types/stay-credit';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { formatDate as formatDateI18n } from '@/lib/format-date';
 
 // Return-URL polling: backend confirms payment via Flywire webhook, which
 // races with the user's browser redirect from Flywire. We poll until the
@@ -41,11 +42,9 @@ const STATUS_BADGE_CLASSES: Record<QuoteStatus, string> = {
   EXPIRED: 'bg-gray-200 text-gray-500',
 };
 
-function formatDate(dateStr?: string | null): string {
+function formatDate(dateStr: string | null | undefined, lang: Lang): string {
   if (!dateStr) return '—';
-  const parsed = new Date(dateStr);
-  if (Number.isNaN(parsed.getTime())) return dateStr;
-  return parsed.toLocaleDateString('en-US', {
+  return formatDateI18n(dateStr, lang, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -90,7 +89,7 @@ function HeroCard({
   expiresAt?: string | null;
   paidAt?: string | null;
 }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const title = tripVersion?.title?.trim() || t('quote.your_trip');
   const startDate = tripVersion?.start_date || undefined;
   const endDate = tripVersion?.end_date || undefined;
@@ -114,19 +113,19 @@ function HeroCard({
           <div>
             <p className="text-white/50">{t('quote.dates')}</p>
             <p className="font-semibold">
-              {formatDate(startDate)} – {formatDate(endDate)}
+              {formatDate(startDate, lang)} – {formatDate(endDate, lang)}
             </p>
           </div>
           {showExpiry && (
             <div>
               <p className="text-white/50">{t('quote.valid_until')}</p>
-              <p className="font-semibold">{formatDate(expiresAt)}</p>
+              <p className="font-semibold">{formatDate(expiresAt, lang)}</p>
             </div>
           )}
           {showPaid && (
             <div>
               <p className="text-white/50">{t('quote.paid_on')}</p>
-              <p className="font-semibold">{formatDate(paidAt)}</p>
+              <p className="font-semibold">{formatDate(paidAt, lang)}</p>
             </div>
           )}
           {trip?.id !== undefined && (
