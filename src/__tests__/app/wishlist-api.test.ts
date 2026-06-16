@@ -19,7 +19,7 @@ describe('GET /api/wishlist', () => {
   it('returns 401 when not authenticated', async () => {
     mockAuth.mockResolvedValue(null);
 
-    const response = await GET();
+    const response = await GET(new NextRequest('http://localhost:3000/api/wishlist'));
     const body = await response.json();
 
     expect(response.status).toBe(401);
@@ -33,7 +33,7 @@ describe('GET /api/wishlist', () => {
       json: async () => ({ data: [{ id: 10, slug: 'test', status: 'published' }] }),
     });
 
-    const response = await GET();
+    const response = await GET(new NextRequest('http://localhost:3000/api/wishlist'));
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -46,6 +46,32 @@ describe('GET /api/wishlist', () => {
         }),
       }),
     );
+  });
+
+  it('forwards the active language as the backend lang header (SMA-139)', async () => {
+    mockAuth.mockResolvedValue({ accessToken: 'test-token' });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: [] }),
+    });
+
+    await GET(new NextRequest('http://localhost:3000/api/wishlist?language=kr'));
+
+    const [, options] = mockFetch.mock.calls[0];
+    expect(options.headers.lang).toBe('kr');
+  });
+
+  it('defaults the lang header to en when no language is provided', async () => {
+    mockAuth.mockResolvedValue({ accessToken: 'test-token' });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: [] }),
+    });
+
+    await GET(new NextRequest('http://localhost:3000/api/wishlist'));
+
+    const [, options] = mockFetch.mock.calls[0];
+    expect(options.headers.lang).toBe('en');
   });
 });
 

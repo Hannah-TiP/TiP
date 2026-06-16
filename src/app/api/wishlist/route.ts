@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     const accessToken = session?.accessToken;
@@ -12,10 +12,13 @@ export async function GET() {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
+    const language = new URL(request.url).searchParams.get('language') || 'en';
+
     const response = await fetch(`${API_BASE_URL}/api/v2/wishlist`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
+        lang: language,
       },
     });
 

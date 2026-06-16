@@ -12,7 +12,7 @@ import type { Restaurant } from '@/types/restaurant';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function RestaurantDetailPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const params = useParams();
   const restaurantId = params.id as string;
 
@@ -24,7 +24,7 @@ export default function RestaurantDetailPage() {
     async function loadRestaurant() {
       try {
         setIsLoading(true);
-        const data = await apiClient.getRestaurantBySlug(restaurantId);
+        const data = await apiClient.getRestaurantBySlug(restaurantId, lang);
         setRestaurant(data);
       } catch (err) {
         console.error('Failed to load restaurant:', err);
@@ -37,7 +37,7 @@ export default function RestaurantDetailPage() {
     if (restaurantId) {
       loadRestaurant();
     }
-  }, [restaurantId, t]);
+  }, [restaurantId, lang, t]);
 
   if (isLoading) {
     return (
