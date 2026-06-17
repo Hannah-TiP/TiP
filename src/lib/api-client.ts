@@ -251,13 +251,15 @@ class ApiClient {
     return toPaginatedResult(response.data);
   }
 
-  async getHotelBySlug(slug: string): Promise<Hotel> {
-    const response = await this.request<{ data: Hotel }>(`/hotels/${slug}`);
+  async getHotelBySlug(slug: string, language?: string): Promise<Hotel> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Hotel }>(`/hotels/${slug}${query}`);
     return response.data;
   }
 
-  async getHotelById(id: number): Promise<Hotel> {
-    const response = await this.request<{ data: Hotel }>(`/hotels/by-id/${id}`);
+  async getHotelById(id: number, language?: string): Promise<Hotel> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Hotel }>(`/hotels/by-id/${id}${query}`);
     return response.data;
   }
 
@@ -287,13 +289,15 @@ class ApiClient {
     return toPaginatedResult(response.data);
   }
 
-  async getActivityBySlug(slug: string): Promise<Activity> {
-    const response = await this.request<{ data: Activity }>(`/activities/${slug}`);
+  async getActivityBySlug(slug: string, language?: string): Promise<Activity> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Activity }>(`/activities/${slug}${query}`);
     return response.data;
   }
 
-  async getActivityById(id: number): Promise<Activity> {
-    const response = await this.request<{ data: Activity }>(`/activities/by-id/${id}`);
+  async getActivityById(id: number, language?: string): Promise<Activity> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Activity }>(`/activities/by-id/${id}${query}`);
     return response.data;
   }
 
@@ -319,13 +323,15 @@ class ApiClient {
     return toPaginatedResult(response.data);
   }
 
-  async getRestaurantBySlug(slug: string): Promise<Restaurant> {
-    const response = await this.request<{ data: Restaurant }>(`/restaurants/${slug}`);
+  async getRestaurantBySlug(slug: string, language?: string): Promise<Restaurant> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Restaurant }>(`/restaurants/${slug}${query}`);
     return response.data;
   }
 
-  async getRestaurantById(id: number): Promise<Restaurant> {
-    const response = await this.request<{ data: Restaurant }>(`/restaurants/by-id/${id}`);
+  async getRestaurantById(id: number, language?: string): Promise<Restaurant> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Restaurant }>(`/restaurants/by-id/${id}${query}`);
     return response.data;
   }
 
@@ -342,8 +348,9 @@ class ApiClient {
     return response.data;
   }
 
-  async getCityById(id: number): Promise<City> {
-    const response = await this.request<{ data: City }>(`/cities/${id}`);
+  async getCityById(id: number, language?: string): Promise<City> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: City }>(`/cities/${id}${query}`);
     return response.data;
   }
 
@@ -642,8 +649,9 @@ class ApiClient {
   }
 
   // Wishlist methods
-  async getWishlist(): Promise<Hotel[]> {
-    const response = await this.request<{ data: Hotel[] }>('/wishlist');
+  async getWishlist(language?: string): Promise<Hotel[]> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Hotel[] }>(`/wishlist${query}`);
     return response.data;
   }
 

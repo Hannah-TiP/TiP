@@ -31,7 +31,7 @@ export default function HotelDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const slug = params.id as string;
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { status: sessionStatus } = useSession();
 
   const [hotel, setHotel] = useState<Hotel | null>(null);
@@ -65,7 +65,7 @@ export default function HotelDetailPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const hotelData = await apiClient.getHotelBySlug(slug);
+        const hotelData = await apiClient.getHotelBySlug(slug, lang);
         setHotel(hotelData);
       } catch (err) {
         console.error('Failed to load hotel:', err);
@@ -78,7 +78,7 @@ export default function HotelDetailPage() {
     if (slug) {
       loadHotel();
     }
-  }, [slug]);
+  }, [slug, lang]);
 
   const { reserve, askConcierge, submitRequest, dateError, apiError, clearErrors, isSubmitting } =
     useHotelBooking({ hotelId: hotel?.id ?? null, hotelSlug: slug });

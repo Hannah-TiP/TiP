@@ -26,7 +26,7 @@ function SignatureJourneysContent() {
   const [signatureJourneys, setSignatureJourneys] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { isPreview } = usePreviewMode();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   // Filter state
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
@@ -45,12 +45,12 @@ function SignatureJourneysContent() {
         setIsLoading(true);
         const [packageData, cityData] = await Promise.all([
           apiClient.getActivities({
-            language: 'en',
+            language: lang,
             kind: 'package',
             include_draft: isPreview,
             per_page: 100,
           }),
-          apiClient.getCities('en'),
+          apiClient.getCities(lang),
         ]);
         // Defensive client-side filter: backend filtering is the source of
         // truth, but if any items leak through with a different kind, this
@@ -65,19 +65,19 @@ function SignatureJourneysContent() {
     }
 
     loadData();
-  }, [isPreview]);
+  }, [isPreview, lang]);
 
   // Load cities when dropdown opens
   useEffect(() => {
     if (openDropdown === 'destination' && cities.length === 0) {
       setCitiesLoading(true);
       apiClient
-        .getCities('en')
+        .getCities(lang)
         .then(setCities)
         .catch(() => {})
         .finally(() => setCitiesLoading(false));
     }
-  }, [openDropdown, cities.length]);
+  }, [openDropdown, cities.length, lang]);
 
   // Close dropdown on outside click
   useEffect(() => {
