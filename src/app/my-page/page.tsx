@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { getTripsWithVersions, type TripWithVersion } from '@/lib/trip-utils';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { formatDate as formatDateI18n } from '@/lib/format-date';
 
 const STATUS_PRIORITY = [
   'draft',
@@ -43,13 +44,11 @@ function getNights(startDate?: string, endDate?: string): number | null {
   return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
-function formatDate(dateStr?: string): string {
+const DATE_OPTS: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+
+function formatDate(dateStr: string | undefined, lang: Lang): string {
   if (!dateStr) return '\u2014';
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return formatDateI18n(dateStr, lang, DATE_OPTS);
 }
 
 function sortByPriority(trips: TripWithVersion[]): TripWithVersion[] {
@@ -93,7 +92,7 @@ function EmptyState() {
 }
 
 function HeroCard({ item }: { item: TripWithVersion }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const title = item.currentVersion?.title?.trim() || 'New Trip';
   const startDate = item.currentVersion?.start_date || undefined;
   const endDate = item.currentVersion?.end_date || undefined;
@@ -133,7 +132,7 @@ function HeroCard({ item }: { item: TripWithVersion }) {
             <div>
               <p className="text-white/50">{t('my_page.dates')}</p>
               <p className="font-semibold">
-                {formatDate(startDate)} – {formatDate(endDate)}
+                {formatDate(startDate, lang)} – {formatDate(endDate, lang)}
               </p>
             </div>
             {nights !== null && (
@@ -165,7 +164,7 @@ function HeroCard({ item }: { item: TripWithVersion }) {
 }
 
 function TripCard({ item }: { item: TripWithVersion }) {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const title = item.currentVersion?.title?.trim() || 'New Trip';
   const startDate = item.currentVersion?.start_date || undefined;
   const endDate = item.currentVersion?.end_date || undefined;
@@ -197,7 +196,7 @@ function TripCard({ item }: { item: TripWithVersion }) {
         <div className="p-4">
           <h3 className="font-semibold text-gray-900 mb-1 truncate">{title}</h3>
           <p className="text-sm text-gray-500">
-            {formatDate(startDate)} – {formatDate(endDate)}
+            {formatDate(startDate, lang)} – {formatDate(endDate, lang)}
             {nights !== null && <span className="ml-2 text-gray-400">({nights}N)</span>}
           </p>
           <p className="text-xs text-gray-400 mt-1">

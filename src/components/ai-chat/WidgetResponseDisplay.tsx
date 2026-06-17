@@ -1,20 +1,20 @@
 'use client';
 
 import type { AIChatWidgetResponse } from '@/types/ai-chat';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { formatDate } from '@/lib/format-date';
 
 interface WidgetResponseDisplayProps {
   response: AIChatWidgetResponse;
 }
 
-function formatDateLabel(dateStr: string): string {
+function formatDateLabel(dateStr: string, lang: Lang): string {
   const parts = dateStr.split('-');
   if (parts.length !== 3) return dateStr;
   const year = parseInt(parts[0], 10);
   const month = parseInt(parts[1], 10) - 1;
   const day = parseInt(parts[2], 10);
-  const date = new Date(year, month, day);
-  return date.toLocaleDateString(undefined, {
+  return formatDate(new Date(year, month, day), lang, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -26,14 +26,14 @@ function capitalize(str: string): string {
 }
 
 export default function WidgetResponseDisplay({ response }: WidgetResponseDisplayProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   switch (response.widget_type) {
     case 'date_range_picker': {
       const start = response.value.start_date ?? null;
       const end = response.value.end_date ?? null;
       const label =
         start && end
-          ? `${formatDateLabel(start)} \u2013 ${formatDateLabel(end)}`
+          ? `${formatDateLabel(start, lang)} \u2013 ${formatDateLabel(end, lang)}`
           : t('widget.dates_selected');
       return (
         <div className="flex items-center gap-2" data-testid="widget-response-date-range">

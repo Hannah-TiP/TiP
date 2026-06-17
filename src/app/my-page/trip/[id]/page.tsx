@@ -11,6 +11,7 @@ import {
   type TripWithVersion,
 } from '@/lib/trip-utils';
 import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
+import { formatDate } from '@/lib/format-date';
 import { apiClient } from '@/lib/api-client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ShareTripModal from '@/components/ShareTripModal';
@@ -42,17 +43,10 @@ function getNights(startDate?: string, endDate?: string): number | null {
   return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return '\u2014';
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
+const DATE_OPTS: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
 
 function HeroCard({ trip }: { trip: TripWithVersion }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const title = trip.currentVersion?.title?.trim() || t('trip_detail.new_trip');
   const startDate = trip.currentVersion?.start_date || undefined;
   const endDate = trip.currentVersion?.end_date || undefined;
@@ -83,7 +77,8 @@ function HeroCard({ trip }: { trip: TripWithVersion }) {
           <div>
             <p className="text-white/50">{t('trip_detail.dates')}</p>
             <p className="font-semibold">
-              {formatDate(startDate)} – {formatDate(endDate)}
+              {startDate ? formatDate(startDate, lang, DATE_OPTS) : '—'} –{' '}
+              {endDate ? formatDate(endDate, lang, DATE_OPTS) : '—'}
             </p>
           </div>
           {nights !== null && (
@@ -153,7 +148,7 @@ function CancelTripDialog({
 }
 
 export default function TripDetailPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [tripWithVersion, setTripWithVersion] = useState<TripWithVersion | null>(null);
@@ -348,7 +343,7 @@ export default function TripDetailPage() {
                               {t('trip_detail.day')} {dayBadgeText}
                             </span>
                             <span className="text-xs text-gray-400">
-                              {formatDateLabel(day.date)}
+                              {formatDateLabel(day.date, lang)}
                             </span>
                             {day.title && (
                               <span className="text-xs font-medium text-gray-700">{day.title}</span>
@@ -375,8 +370,8 @@ export default function TripDetailPage() {
                                     )}
                                     {item.start_at && (
                                       <p className="text-xs text-gray-400">
-                                        {formatTime(item.start_at)}
-                                        {item.end_at ? ` – ${formatTime(item.end_at)}` : ''}
+                                        {formatTime(item.start_at, lang)}
+                                        {item.end_at ? ` – ${formatTime(item.end_at, lang)}` : ''}
                                       </p>
                                     )}
                                     {item.description && (

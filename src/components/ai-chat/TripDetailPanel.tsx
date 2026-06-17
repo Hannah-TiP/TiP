@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { tripDayNumber, type TripWithVersion } from '@/lib/trip-utils';
 import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
+import { formatDate } from '@/lib/format-date';
 import type { TripPlanItem } from '@/types/trip';
 
 const FIELD_TO_ROW_KEYS: Record<string, string[]> = {
@@ -174,7 +175,7 @@ export default function TripDetailPanel({
   highlightedFields,
   highlightToken,
 }: TripDetailPanelProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const plan = tripDetail?.currentVersion?.plan ?? [];
 
   const [expiredToken, setExpiredToken] = useState<number | undefined>(undefined);
@@ -244,15 +245,12 @@ export default function TripDetailPanel({
               >
                 <span className="text-gray-500">{t('chat.dates')}</span>
                 <span className="text-[#1E3D2F] font-medium">
-                  {parseLocalDate(tripDetail.currentVersion.start_date).toLocaleDateString(
-                    'en-US',
-                    {
-                      month: 'short',
-                      day: 'numeric',
-                    },
-                  )}{' '}
+                  {formatDate(parseLocalDate(tripDetail.currentVersion.start_date), lang, {
+                    month: 'short',
+                    day: 'numeric',
+                  })}{' '}
                   –{' '}
-                  {parseLocalDate(tripDetail.currentVersion.end_date).toLocaleDateString('en-US', {
+                  {formatDate(parseLocalDate(tripDetail.currentVersion.end_date), lang, {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',
@@ -316,7 +314,7 @@ export default function TripDetailPanel({
                             </span>
                           )}
                           <span className="font-inter text-[11px] text-gray-400">
-                            {formatDateLabel(day.date)}
+                            {formatDateLabel(day.date, lang)}
                           </span>
                           {day.title && (
                             <span className="font-inter text-[11px] font-medium text-gray-700 truncate">
@@ -348,8 +346,8 @@ export default function TripDetailPanel({
                                   )}
                                   {item.start_at && (
                                     <p className="font-inter text-[11px] text-gray-400">
-                                      {formatTime(item.start_at)}
-                                      {item.end_at ? ` – ${formatTime(item.end_at)}` : ''}
+                                      {formatTime(item.start_at, lang)}
+                                      {item.end_at ? ` – ${formatTime(item.end_at, lang)}` : ''}
                                     </p>
                                   )}
                                   {item.description && (

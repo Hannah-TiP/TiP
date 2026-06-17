@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { localeForLang } from '@/lib/format-date';
 import { apiClient } from '@/lib/api-client';
 import { RedeemPromoCodeError, type RedeemPromoCodeErrorCode } from '@/types/stay-credit';
 
@@ -32,7 +33,7 @@ interface RedeemCodeSectionProps {
 
 export default function RedeemCodeSection({ onRedeemed }: RedeemCodeSectionProps) {
   const { lang, t } = useLanguage();
-  const locale = lang === 'en' ? 'en-US' : 'ko-KR';
+  const locale = localeForLang(lang);
 
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);

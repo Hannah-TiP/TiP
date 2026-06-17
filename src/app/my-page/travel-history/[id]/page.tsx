@@ -15,7 +15,8 @@ import {
   type TripWithVersion,
 } from '@/lib/trip-utils';
 import { STAY_CREDIT_SOURCE_LABELS, creditsForTrip, type StayCredit } from '@/types/stay-credit';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { formatDate as formatDateI18n, formatTime as formatTimeI18n } from '@/lib/format-date';
 import BookingDocuments from '@/components/BookingDocuments';
 
 const ITEM_LABELS: Record<TripPlanItem['item_type'], string> = {
@@ -42,26 +43,26 @@ function getNights(startDate?: string, endDate?: string): number | null {
   return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
-function formatDate(dateStr?: string): string {
+function formatDate(dateStr: string | undefined, lang: Lang): string {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-US', {
+  return formatDateI18n(dateStr, lang, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
 }
 
-function formatDayDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
+function formatDayDate(dateStr: string, lang: Lang): string {
+  return formatDateI18n(dateStr, lang, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
   });
 }
 
-function formatTime(dateStr?: string | null): string | undefined {
+function formatTime(dateStr: string | null | undefined, lang: Lang): string | undefined {
   if (!dateStr) return undefined;
-  return new Date(dateStr).toLocaleTimeString('en-US', {
+  return formatTimeI18n(dateStr, lang, {
     hour: 'numeric',
     minute: '2-digit',
   });
@@ -193,7 +194,7 @@ export default function TravelHistoryTripDetailPage() {
               <div>
                 <p className="text-white/50">{t('trip_detail.dates')}</p>
                 <p className="font-semibold">
-                  {formatDate(startDate)} – {formatDate(endDate)}
+                  {formatDate(startDate, lang)} – {formatDate(endDate, lang)}
                 </p>
               </div>
               {nights !== null && (
@@ -238,7 +239,9 @@ export default function TravelHistoryTripDetailPage() {
                           <span className="text-xs font-semibold text-[#1E3D2F] bg-green-50 px-2 py-0.5 rounded">
                             {t('trip_detail.day')} {dayBadgeText}
                           </span>
-                          <span className="text-xs text-gray-400">{formatDayDate(day.date)}</span>
+                          <span className="text-xs text-gray-400">
+                            {formatDayDate(day.date, lang)}
+                          </span>
                           {day.title && (
                             <span className="text-xs font-medium text-gray-700">{day.title}</span>
                           )}
@@ -264,8 +267,8 @@ export default function TravelHistoryTripDetailPage() {
                                   )}
                                   {item.start_at && (
                                     <p className="text-xs text-gray-400">
-                                      {formatTime(item.start_at)}
-                                      {item.end_at ? ` – ${formatTime(item.end_at)}` : ''}
+                                      {formatTime(item.start_at, lang)}
+                                      {item.end_at ? ` – ${formatTime(item.end_at, lang)}` : ''}
                                     </p>
                                   )}
                                   {item.description && (

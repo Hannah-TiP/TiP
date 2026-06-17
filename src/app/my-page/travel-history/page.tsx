@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { formatDate } from '@/lib/format-date';
 import {
   getTripReviewableItems,
   getTripsWithVersions,
@@ -23,16 +24,21 @@ function getNights(startDate?: string, endDate?: string): number | null {
   return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
-function formatDateRange(startDate?: string, endDate?: string): string {
+const DATE_OPTS: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+
+function formatDateRange(
+  startDate: string | undefined,
+  endDate: string | undefined,
+  lang: Lang,
+): string {
   if (!startDate && !endDate) return '—';
-  const fmt = (d: string) =>
-    new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const fmt = (d: string) => formatDate(d, lang, DATE_OPTS);
   if (startDate && endDate) return `${fmt(startDate)} – ${fmt(endDate)}`;
   return fmt((startDate ?? endDate)!);
 }
 
 export default function TravelHistory() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [trips, setTrips] = useState<TripWithVersion[]>([]);
   const [reviewStatus, setReviewStatus] = useState<Record<number, TripReviewStatus>>({});
   const [loading, setLoading] = useState(true);
@@ -163,7 +169,7 @@ export default function TravelHistory() {
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3 text-sm text-gray-500">
-                        <span>{formatDateRange(startDate, endDate)}</span>
+                        <span>{formatDateRange(startDate, endDate, lang)}</span>
                         {nights !== null && (
                           <span>
                             {nights} {nights === 1 ? 'Night' : 'Nights'}

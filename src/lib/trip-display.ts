@@ -1,4 +1,6 @@
 import type { TripPlanItem } from '@/types/trip';
+import type { Lang } from '@/contexts/LanguageContext';
+import { formatDate, formatTime as formatTimeI18n } from '@/lib/format-date';
 
 /** Human-readable label for each plan item type. */
 export const ITEM_LABELS: Record<TripPlanItem['item_type'], string> = {
@@ -20,13 +22,13 @@ export const ITEM_COLORS: Record<TripPlanItem['item_type'], string> = {
   note: 'bg-gray-100 text-gray-600',
 };
 
-/** Format a YYYY-MM-DD date as e.g. "Mon, May 1". Parses as a local date — `new Date('2026-05-02')` would parse as UTC midnight and drift one day in western timezones. */
-export function formatDateLabel(dateStr: string): string {
+/** Format a YYYY-MM-DD date as e.g. "Mon, May 1" (EN) / "5월 1일 (월)" (KR). Parses as a local date — `new Date('2026-05-02')` would parse as UTC midnight and drift one day in western timezones. */
+export function formatDateLabel(dateStr: string, lang: Lang): string {
   const parts = dateStr.split('-');
   if (parts.length !== 3) return dateStr;
   const [y, m, d] = parts.map((p) => parseInt(p, 10));
   if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return dateStr;
-  return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+  return formatDate(new Date(y, m - 1, d), lang, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -34,9 +36,9 @@ export function formatDateLabel(dateStr: string): string {
 }
 
 /** Format an ISO datetime as e.g. "9:30 AM". Returns undefined for empty input. */
-export function formatTime(dateStr?: string | null): string | undefined {
+export function formatTime(dateStr: string | null | undefined, lang: Lang): string | undefined {
   if (!dateStr) return undefined;
-  return new Date(dateStr).toLocaleTimeString('en-US', {
+  return formatTimeI18n(dateStr, lang, {
     hour: 'numeric',
     minute: '2-digit',
   });
