@@ -58,14 +58,14 @@ function EmptyState() {
 }
 
 export default function WishlistPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [items, setItems] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadWishlist() {
       try {
-        const data = await apiClient.getWishlist();
+        const data = await apiClient.getWishlist(lang);
         setItems(data);
       } catch (error) {
         console.error('Failed to load wishlist:', error);
@@ -74,7 +74,7 @@ export default function WishlistPage() {
       }
     }
     loadWishlist();
-  }, []);
+  }, [lang]);
 
   return (
     <main className="min-h-screen bg-gray-light">

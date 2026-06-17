@@ -5,8 +5,9 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const language = new URL(request.url).searchParams.get('language') || 'en';
     const response = await fetch(`${API_BASE_URL}/api/v2/locations/cities/${id}`, {
-      headers: { 'Content-Type': 'application/json', lang: 'en' },
+      headers: { 'Content-Type': 'application/json', lang: language },
     });
 
     if (!response.ok) {

@@ -12,7 +12,7 @@ import type { Activity } from '@/types/activity';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function ActivityDetailPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const params = useParams();
   const activitySlug = params.id as string;
 
@@ -24,7 +24,7 @@ export default function ActivityDetailPage() {
     async function loadActivity() {
       try {
         setIsLoading(true);
-        const data = await apiClient.getActivityBySlug(activitySlug);
+        const data = await apiClient.getActivityBySlug(activitySlug, lang);
         setActivity(data);
       } catch (err) {
         console.error('Failed to load activity:', err);
@@ -37,7 +37,7 @@ export default function ActivityDetailPage() {
     if (activitySlug) {
       loadActivity();
     }
-  }, [activitySlug, t]);
+  }, [activitySlug, lang, t]);
 
   if (isLoading) {
     return (
