@@ -14,15 +14,16 @@ export async function GET(request: NextRequest) {
 
     const language = new URL(request.url).searchParams.get('language') || 'en';
 
-    // The v2 wishlist LIST endpoint reads the active language from a `lang`
-    // QUERY param (unlike the hotel/activity/restaurant detail endpoints, which
-    // read the `lang` header). Forward both so localized hotel names/addresses
-    // come back in the active UI language regardless of which the backend reads.
-    const response = await fetch(`${API_BASE_URL}/api/v2/wishlist?lang=${language}`, {
+    // The v2 wishlist LIST endpoint resolves the active language from the
+    // canonical `Language` header (the standard get_request_language path),
+    // which falls back to the authed user's language_preference, then EN.
+    // Forward the active UI language so localized hotel names/addresses come
+    // back in the active language regardless of stored preference.
+    const response = await fetch(`${API_BASE_URL}/api/v2/wishlist`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        lang: language,
+        Language: language,
       },
     });
 
