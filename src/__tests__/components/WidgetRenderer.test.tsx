@@ -27,7 +27,7 @@ describe('WidgetRenderer factory', () => {
     const onSubmit = vi.fn();
     render(<WidgetRenderer block={widget} onSubmit={onSubmit} />);
 
-    expect(screen.getByText('Adults')).toBeDefined();
+    expect(screen.getByText('Adults (12+)')).toBeDefined();
     expect(screen.getByTestId('stepper-value-adults').textContent).toBe('2');
 
     fireEvent.click(screen.getByTestId('stepper-inc-adults'));
