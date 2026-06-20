@@ -437,7 +437,7 @@ test.describe('Concierge visual captures', () => {
             },
             trip: { id: TRIP_ID },
             trip_version: null,
-            field_updated: ['purpose'],
+            field_updated: ['plan'],
           },
         }),
       });
@@ -447,12 +447,12 @@ test.describe('Concierge visual captures', () => {
     const input = page.getByPlaceholder(/ask your concierge/i);
     await input.fill('It is a leisure trip');
     await input.press('Enter');
-    // Wait for purpose row to be highlighted, then snap mid-animation
-    const purposeRow = page.getByTestId('trip-row-purpose');
-    await purposeRow.waitFor({ timeout: 10_000 });
+    // Wait for summary row to be highlighted, then snap mid-animation
+    const summaryRow = page.getByTestId('trip-row-summary');
+    await summaryRow.waitFor({ timeout: 10_000 });
     await page.waitForFunction(
       () => {
-        const el = document.querySelector('[data-testid="trip-row-purpose"]');
+        const el = document.querySelector('[data-testid="trip-row-summary"]');
         return !!el && el.className.includes('bg-amber-100');
       },
       null,
