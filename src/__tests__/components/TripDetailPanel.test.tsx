@@ -44,20 +44,36 @@ function makeTripWithVersion(plan: TripDay[]): TripWithVersion {
 }
 
 describe('TripDetailPanel — detailed itinerary view', () => {
-  it('renders the basic trip info rows (destination/dates/travelers/purpose)', () => {
+  it('renders the summary row with the trip summary (not the title) plus dates/travelers', () => {
     render(<TripDetailPanel tripDetail={makeTripWithVersion([])} />);
 
-    expect(screen.getByTestId('trip-row-destination').textContent).toContain('Paris Trip');
+    const summaryRow = screen.getByTestId('trip-row-summary');
+    expect(summaryRow.textContent).toContain('Summary');
+    expect(summaryRow.textContent).toContain('Leisure');
+    // The title must NOT leak into the summary slot.
+    expect(summaryRow.textContent).not.toContain('Paris Trip');
+    // The removed Purpose row must not produce a duplicate summary line.
+    expect(screen.queryByTestId('trip-row-purpose')).toBeNull();
     expect(screen.getByTestId('trip-row-dates')).toBeDefined();
     expect(screen.getByTestId('trip-row-travelers').textContent).toContain('2');
-    expect(screen.getByTestId('trip-row-purpose').textContent).toContain('Leisure');
+  });
+
+  it('renders a muted placeholder (not the title, not New Trip) when the summary is empty', () => {
+    const tripDetail = makeTripWithVersion([]);
+    tripDetail.currentVersion!.summary = '';
+    render(<TripDetailPanel tripDetail={tripDetail} />);
+
+    const summaryRow = screen.getByTestId('trip-row-summary');
+    expect(summaryRow.textContent).toContain('No summary yet');
+    expect(summaryRow.textContent).not.toContain('Paris Trip');
+    expect(summaryRow.textContent).not.toContain('New Trip');
   });
 
   it('does NOT render the Travel Plans section when the plan is empty', () => {
     render(<TripDetailPanel tripDetail={makeTripWithVersion([])} />);
 
     // Other rows still present, but no Travel Plans header
-    expect(screen.getByTestId('trip-row-destination')).toBeDefined();
+    expect(screen.getByTestId('trip-row-summary')).toBeDefined();
     expect(screen.queryByText('Travel Plans')).toBeNull();
     expect(screen.queryByTestId('trip-day-0')).toBeNull();
   });
@@ -151,7 +167,7 @@ describe('TripDetailPanel — detailed itinerary view', () => {
   it('shows the empty state when there is no trip detail at all', () => {
     render(<TripDetailPanel tripDetail={null} />);
 
-    expect(screen.queryByTestId('trip-row-destination')).toBeNull();
+    expect(screen.queryByTestId('trip-row-summary')).toBeNull();
     expect(screen.queryByText('Travel Plans')).toBeNull();
   });
 
