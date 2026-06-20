@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { formatDateLabel, formatTime } from '@/lib/trip-display';
+import { formatDateLabel, formatTime, getItemLabel, ITEM_LABEL_KEYS } from '@/lib/trip-display';
+import en from '@/translations/en.json';
+import kr from '@/translations/kr.json';
+import type { TranslationKeys } from '@/contexts/LanguageContext';
 
 describe('formatDateLabel', () => {
   it('renders the literal calendar date in EN (no UTC drift in western timezones)', () => {
@@ -26,6 +29,36 @@ describe('formatDateLabel', () => {
   it('falls back to the raw string for malformed input', () => {
     expect(formatDateLabel('not-a-date', 'en')).toBe('not-a-date');
     expect(formatDateLabel('2026-05', 'kr')).toBe('2026-05');
+  });
+});
+
+describe('getItemLabel', () => {
+  const tEn = (key: TranslationKeys): string => en[key] ?? kr[key] ?? key;
+  const tKr = (key: TranslationKeys): string => kr[key] ?? en[key] ?? key;
+
+  it('resolves the localized label for each item type in EN', () => {
+    expect(getItemLabel('flight', tEn)).toBe('Flight');
+    expect(getItemLabel('hotel', tEn)).toBe('Hotel');
+    expect(getItemLabel('restaurant', tEn)).toBe('Restaurant');
+    expect(getItemLabel('activity', tEn)).toBe('Activity');
+    expect(getItemLabel('transfer', tEn)).toBe('Transfer');
+    expect(getItemLabel('note', tEn)).toBe('Note');
+  });
+
+  it('resolves the localized label for each item type in KR', () => {
+    expect(getItemLabel('flight', tKr)).toBe('항공');
+    expect(getItemLabel('hotel', tKr)).toBe('호텔');
+    expect(getItemLabel('restaurant', tKr)).toBe('레스토랑');
+    expect(getItemLabel('activity', tKr)).toBe('액티비티');
+    expect(getItemLabel('transfer', tKr)).toBe('이동');
+    expect(getItemLabel('note', tKr)).toBe('메모');
+  });
+
+  it('maps every item type to a key present in both catalogs', () => {
+    for (const key of Object.values(ITEM_LABEL_KEYS)) {
+      expect(en[key]).toBeTruthy();
+      expect(kr[key]).toBeTruthy();
+    }
   });
 });
 

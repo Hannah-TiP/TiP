@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type TranslationKeys } from '@/contexts/LanguageContext';
 import { tripDayNumber, type TripWithVersion } from '@/lib/trip-utils';
-import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
+import { ITEM_COLORS, getItemLabel, formatDateLabel, formatTime } from '@/lib/trip-display';
 import { formatDate } from '@/lib/format-date';
 import type { TripPlanItem } from '@/types/trip';
 
@@ -35,15 +35,15 @@ function parseLocalDate(dateStr: string): Date {
 
 // ── Journey Stepper ─────────────────────────────────────────────────────
 
-const JOURNEY_STEPS = [
-  { key: 'draft', label: 'Planning' },
-  { key: 'waiting-for-proposal', label: 'Submitted' },
-  { key: 'in-progress', label: 'Proposal' },
-  { key: 'waiting-for-payment', label: 'Payment' },
-  { key: 'ready-for-travel', label: 'Ready' },
-  { key: 'traveling-now', label: 'Traveling' },
-  { key: 'travel-completed', label: 'Completed' },
-] as const;
+const JOURNEY_STEPS: { key: string; labelKey: TranslationKeys }[] = [
+  { key: 'draft', labelKey: 'trip.step_planning' },
+  { key: 'waiting-for-proposal', labelKey: 'trip.step_submitted' },
+  { key: 'in-progress', labelKey: 'trip.step_proposal' },
+  { key: 'waiting-for-payment', labelKey: 'trip.step_payment' },
+  { key: 'ready-for-travel', labelKey: 'trip.step_ready' },
+  { key: 'traveling-now', labelKey: 'trip.step_traveling' },
+  { key: 'travel-completed', labelKey: 'trip.step_completed' },
+];
 
 // Map backend statuses that fall between visible steps
 const STATUS_TO_STEP: Record<string, string> = {
@@ -58,7 +58,13 @@ const STATUS_TO_STEP: Record<string, string> = {
   canceled: 'canceled',
 };
 
-function JourneyStepper({ status }: { status: string | null }) {
+function JourneyStepper({
+  status,
+  t,
+}: {
+  status: string | null;
+  t: (key: TranslationKeys) => string;
+}) {
   if (!status) return null;
 
   const mappedStatus = STATUS_TO_STEP[status] || status;
@@ -150,7 +156,7 @@ function JourneyStepper({ status }: { status: string | null }) {
                         : 'text-gray-400'
                 }`}
               >
-                {isCanceled && isCurrent ? 'Canceled' : step.label}
+                {isCanceled && isCurrent ? t('trip.step_canceled') : t(step.labelKey)}
               </span>
             </div>
           );
@@ -212,7 +218,7 @@ export default function TripDetailPanel({
           <div className="space-y-3 mb-8">
             {tripDetail.trip.status && (
               <div className="mb-2">
-                <JourneyStepper status={tripDetail.trip.status} />
+                <JourneyStepper status={tripDetail.trip.status} t={t} />
               </div>
             )}
 
@@ -226,14 +232,14 @@ export default function TripDetailPanel({
               </Link>
             </div>
 
-            {(tripDetail.currentVersion?.title?.trim() || 'New Trip') && (
+            {(tripDetail.currentVersion?.title?.trim() || t('chat.new_trip')) && (
               <div
                 className={`flex justify-between font-inter text-sm rounded px-2 -mx-2 py-1 ${highlightClass('destination')}`}
                 data-testid="trip-row-destination"
               >
                 <span className="text-gray-500">{t('chat.destination')}</span>
                 <span className="text-[#1E3D2F] font-medium text-right max-w-[200px]">
-                  {tripDetail.currentVersion?.title?.trim() || 'New Trip'}
+                  {tripDetail.currentVersion?.title?.trim() || t('chat.new_trip')}
                 </span>
               </div>
             )}
@@ -333,11 +339,11 @@ export default function TripDetailPanel({
                                 <span
                                   className={`font-inter text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0 mt-0.5 ${ITEM_COLORS[item.item_type]}`}
                                 >
-                                  {ITEM_LABELS[item.item_type]}
+                                  {getItemLabel(item.item_type, t)}
                                 </span>
                                 <div className="min-w-0 flex-1">
                                   <p className="font-inter text-xs font-medium text-[#1E3D2F] truncate">
-                                    {item.title || ITEM_LABELS[item.item_type]}
+                                    {item.title || getItemLabel(item.item_type, t)}
                                   </p>
                                   {item.location && (
                                     <p className="font-inter text-[11px] text-gray-400 truncate">

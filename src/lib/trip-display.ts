@@ -1,16 +1,27 @@
 import type { TripPlanItem } from '@/types/trip';
-import type { Lang } from '@/contexts/LanguageContext';
+import type { Lang, TranslationKeys } from '@/contexts/LanguageContext';
 import { formatDate, formatTime as formatTimeI18n } from '@/lib/format-date';
 
-/** Human-readable label for each plan item type. */
-export const ITEM_LABELS: Record<TripPlanItem['item_type'], string> = {
-  flight: 'Flight',
-  hotel: 'Hotel',
-  restaurant: 'Restaurant',
-  activity: 'Activity',
-  transfer: 'Transfer',
-  note: 'Note',
+/** i18n catalog key for each plan item type's human-readable label. */
+export const ITEM_LABEL_KEYS: Record<TripPlanItem['item_type'], TranslationKeys> = {
+  flight: 'trip.item_flight',
+  hotel: 'trip.item_hotel',
+  restaurant: 'trip.item_restaurant',
+  activity: 'trip.item_activity',
+  transfer: 'trip.item_transfer',
+  note: 'trip.item_note',
 };
+
+/**
+ * Resolve the localized label for a plan item type. This is a plain module (not a
+ * React component), so callers pass `t` from `useLanguage()`.
+ */
+export function getItemLabel(
+  itemType: TripPlanItem['item_type'],
+  t: (key: TranslationKeys) => string,
+): string {
+  return t(ITEM_LABEL_KEYS[itemType]);
+}
 
 /** Tailwind color classes for the item-type badge. */
 export const ITEM_COLORS: Record<TripPlanItem['item_type'], string> = {

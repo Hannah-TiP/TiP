@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { AIChatOptionSelectorWidget, AIChatWidgetResponse } from '@/types/ai-chat';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
   widget: AIChatOptionSelectorWidget;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function OptionSelector({ widget, onSubmit, disabled }: Props) {
+  const { t } = useLanguage();
   const options = widget.options ?? [];
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -27,7 +29,9 @@ export default function OptionSelector({ widget, onSubmit, disabled }: Props) {
 
   return (
     <div className="mt-3 border border-gray-200 rounded-lg p-3 bg-white">
-      <p className="font-inter text-xs text-gray-500 mb-2">{widget.label ?? 'Select an option'}</p>
+      <p className="font-inter text-xs text-gray-500 mb-2">
+        {widget.label ?? t('widget.option_select_default')}
+      </p>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => {
           const isSelected = selected === option.value;

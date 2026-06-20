@@ -3,7 +3,7 @@
 import type { TripWithVersion } from '@/lib/trip-utils';
 import type { AIChatSessionMetadata } from '@/types/ai-chat';
 import type { Trip } from '@/types/trip';
-import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang, type TranslationKeys } from '@/contexts/LanguageContext';
 import { formatTime as formatTimeI18n, formatDate, formatDateRange } from '@/lib/format-date';
 
 export interface ConciergeSession {
@@ -25,7 +25,11 @@ interface ConversationSidebarProps {
   onToggleCollapse: () => void;
 }
 
-function formatTime(isoStr: string | null, lang: Lang): string {
+function formatTime(
+  isoStr: string | null,
+  lang: Lang,
+  t: (key: TranslationKeys) => string,
+): string {
   if (!isoStr) return '';
   const d = new Date(isoStr);
   const now = new Date();
@@ -35,8 +39,8 @@ function formatTime(isoStr: string | null, lang: Lang): string {
   if (diffDays <= 0) {
     return formatTimeI18n(d, lang, { hour: '2-digit', minute: '2-digit' });
   }
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays === 1) return t('sidebar.yesterday');
+  if (diffDays < 7) return t('sidebar.days_ago').replace('{days}', String(diffDays));
   return formatDate(d, lang, { month: 'short', day: 'numeric' });
 }
 
@@ -82,7 +86,23 @@ function getStatusColor(status: string | null): string {
   }
 }
 
-function getStatusLabel(status: string): string {
+const STATUS_TO_STEP_KEY: Record<string, TranslationKeys> = {
+  draft: 'trip.step_planning',
+  'waiting-for-proposal': 'trip.step_submitted',
+  'in-progress': 'trip.step_proposal',
+  'waiting-for-payment': 'trip.step_payment',
+  waiting_for_booking_docs: 'trip.step_payment',
+  paid: 'trip.step_payment',
+  'ready-for-travel': 'trip.step_ready',
+  'ready-to-travel': 'trip.step_ready',
+  'traveling-now': 'trip.step_traveling',
+  'travel-completed': 'trip.step_completed',
+  canceled: 'trip.step_canceled',
+};
+
+function getStatusLabel(status: string, t: (key: TranslationKeys) => string): string {
+  const key = STATUS_TO_STEP_KEY[status];
+  if (key) return t(key);
   return status
     .split('-')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -176,7 +196,7 @@ export default function ConversationSidebar({
                   {getSessionLabel(s) || t('chat.new_trip')}
                 </span>
                 <span className="font-inter text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">
-                  {formatTime(s.session.last_message_at ?? null, lang)}
+                  {formatTime(s.session.last_message_at ?? null, lang, t)}
                 </span>
               </div>
               {formatRange(startDate, endDate, lang) && (
@@ -188,7 +208,7 @@ export default function ConversationSidebar({
                 <span
                   className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-inter ${getStatusColor(tripStatus)}`}
                 >
-                  {getStatusLabel(tripStatus)}
+                  {getStatusLabel(tripStatus, t)}
                 </span>
               </div>
             </button>

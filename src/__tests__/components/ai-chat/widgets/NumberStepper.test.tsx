@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import NumberStepper from '@/components/ai-chat/widgets/NumberStepper';
+import NumberStepper, { getStepperFieldLabel } from '@/components/ai-chat/widgets/NumberStepper';
 import enTranslations from '@/translations/en.json';
 import krTranslations from '@/translations/kr.json';
 import type { AIChatNumberStepperWidget } from '@/types/ai-chat';
@@ -70,5 +70,40 @@ describe('NumberStepper', () => {
     fireEvent.click(screen.getByTestId('stepper-submit'));
 
     expect(screen.getByTestId('stepper-submit').textContent).toBe('Sent');
+  });
+
+  it('renders localized adults/kids field labels (with age qualifiers) in Korean', () => {
+    setLocale('kr');
+    render(<NumberStepper widget={makeWidget()} onSubmit={vi.fn()} />);
+
+    expect(screen.getByText('성인 (만 12세 이상)')).toBeTruthy();
+    expect(screen.getByText('어린이 (만 12세 미만)')).toBeTruthy();
+    // The English backend-supplied labels must NOT leak into KR mode.
+    expect(screen.queryByText('Adults')).toBeNull();
+    expect(screen.queryByText('Kids')).toBeNull();
+  });
+
+  it('renders localized adults/kids field labels (with age qualifiers) in English', () => {
+    setLocale('en');
+    render(<NumberStepper widget={makeWidget()} onSubmit={vi.fn()} />);
+
+    expect(screen.getByText('Adults (12+)')).toBeTruthy();
+    expect(screen.getByText('Kids (under 12)')).toBeTruthy();
+  });
+});
+
+describe('getStepperFieldLabel', () => {
+  const tKr = (key: 'widget.stepper_adults' | 'widget.stepper_kids') =>
+    (krTranslations as Record<string, string>)[key] ?? key;
+
+  it('maps the adults/kids keys to their localized catalog labels', () => {
+    expect(getStepperFieldLabel({ key: 'adults', label: 'Adults' }, tKr)).toBe(
+      '성인 (만 12세 이상)',
+    );
+    expect(getStepperFieldLabel({ key: 'kids', label: 'Kids' }, tKr)).toBe('어린이 (만 12세 미만)');
+  });
+
+  it('falls back to the backend-supplied label for an unknown field key', () => {
+    expect(getStepperFieldLabel({ key: 'rooms', label: 'Rooms' }, tKr)).toBe('Rooms');
   });
 });
