@@ -1,13 +1,32 @@
 'use client';
 
 import { useState } from 'react';
-import type { AIChatNumberStepperWidget, AIChatWidgetResponse } from '@/types/ai-chat';
+import type {
+  AIChatNumberStepperWidget,
+  AIChatWidgetResponse,
+  NumberStepperField,
+} from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
   widget: AIChatNumberStepperWidget;
   onSubmit: (response: AIChatWidgetResponse) => void;
   disabled?: boolean;
+}
+
+/**
+ * The stepper field labels (`Adults (12+)` / `Kids (under 12)`) are LLM-generated
+ * verbatim by the backend, so they cannot be localized server-side. Map the known
+ * field keys to localized catalog strings; fall back to the backend label for any
+ * unknown key.
+ */
+export function getStepperFieldLabel(
+  field: NumberStepperField,
+  t: (key: 'widget.stepper_adults' | 'widget.stepper_kids') => string,
+): string {
+  if (field.key === 'adults') return t('widget.stepper_adults');
+  if (field.key === 'kids') return t('widget.stepper_kids');
+  return field.label;
 }
 
 export default function NumberStepper({ widget, onSubmit, disabled }: Props) {
@@ -50,7 +69,9 @@ export default function NumberStepper({ widget, onSubmit, disabled }: Props) {
       <div className="space-y-2">
         {fields.map((field) => (
           <div key={field.key} className="flex items-center justify-between gap-3">
-            <span className="font-inter text-sm text-gray-700">{field.label}</span>
+            <span className="font-inter text-sm text-gray-700">
+              {getStepperFieldLabel(field, t)}
+            </span>
             <div className="flex items-center gap-2">
               <button
                 type="button"

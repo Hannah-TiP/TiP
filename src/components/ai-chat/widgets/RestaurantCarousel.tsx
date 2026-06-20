@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import RestaurantDetailContent from '@/components/restaurant/RestaurantDetailContent';
 import { apiClient } from '@/lib/api-client';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { AIChatRestaurantCarouselWidget, AIChatWidgetResponse } from '@/types/ai-chat';
 import EntityCarousel from './EntityCarousel';
 
@@ -13,13 +14,14 @@ interface Props {
 }
 
 export default function RestaurantCarousel({ widget, onSubmit, disabled }: Props) {
+  const { t } = useLanguage();
   const fetchRestaurant = useCallback((id: number) => apiClient.getRestaurantById(id), []);
 
   return (
     <EntityCarousel
       items={widget.restaurants}
-      entityLabel="Restaurant"
-      selectLabel="Select this restaurant"
+      entityLabel={t('widget.carousel_entity_restaurant')}
+      selectLabel={t('widget.carousel_select_restaurant')}
       onSubmit={onSubmit}
       disabled={disabled}
       fetchEntity={fetchRestaurant}

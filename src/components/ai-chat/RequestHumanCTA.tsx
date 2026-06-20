@@ -34,7 +34,7 @@ export default function RequestHumanCTA({
       setIsModalOpen(false);
       onRequested();
     } catch {
-      setError('Failed to request human concierge. Please try again.');
+      setError(t('chat.request_human_error'));
     } finally {
       setIsSubmitting(false);
     }

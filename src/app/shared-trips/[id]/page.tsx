@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
+import { ITEM_COLORS, getItemLabel, formatDateLabel, formatTime } from '@/lib/trip-display';
 import { formatDate } from '@/lib/format-date';
 import { tripDayNumber } from '@/lib/trip-utils';
 import { apiClient } from '@/lib/api-client';
@@ -214,11 +214,11 @@ export default function SharedTripDetailPage() {
                                   <span
                                     className={`text-xs px-2 py-0.5 rounded font-medium flex-shrink-0 mt-0.5 ${ITEM_COLORS[item.item_type]}`}
                                   >
-                                    {ITEM_LABELS[item.item_type]}
+                                    {getItemLabel(item.item_type, t)}
                                   </span>
                                   <div className="min-w-0">
                                     <p className="text-sm font-medium text-gray-900 truncate">
-                                      {item.title || ITEM_LABELS[item.item_type]}
+                                      {item.title || getItemLabel(item.item_type, t)}
                                     </p>
                                     {item.location && (
                                       <p className="text-xs text-gray-400">{item.location}</p>
