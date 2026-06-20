@@ -9,13 +9,11 @@ import { formatDate } from '@/lib/format-date';
 import type { TripPlanItem } from '@/types/trip';
 
 const FIELD_TO_ROW_KEYS: Record<string, string[]> = {
-  destination: ['destination'],
+  plan: ['summary'],
   start_date: ['dates'],
   end_date: ['dates'],
   adults: ['travelers'],
   kids: ['travelers'],
-  purpose: ['purpose'],
-  service_type: ['purpose'],
 };
 
 function rowKeysFromFields(fields: string[]): Set<string> {
@@ -226,17 +224,19 @@ export default function TripDetailPanel({
               </Link>
             </div>
 
-            {(tripDetail.currentVersion?.title?.trim() || 'New Trip') && (
-              <div
-                className={`flex justify-between font-inter text-sm rounded px-2 -mx-2 py-1 ${highlightClass('destination')}`}
-                data-testid="trip-row-destination"
-              >
-                <span className="text-gray-500">{t('chat.destination')}</span>
-                <span className="text-[#1E3D2F] font-medium text-right max-w-[200px]">
-                  {tripDetail.currentVersion?.title?.trim() || 'New Trip'}
+            <div
+              className={`font-inter text-sm rounded px-2 -mx-2 py-1 ${highlightClass('summary')}`}
+              data-testid="trip-row-summary"
+            >
+              <span className="block text-gray-500 text-sm mb-1">{t('chat.summary')}</span>
+              {tripDetail.currentVersion?.summary?.trim() ? (
+                <span className="block text-[#1E3D2F] font-medium whitespace-pre-wrap break-words">
+                  {tripDetail.currentVersion.summary.trim()}
                 </span>
-              </div>
-            )}
+              ) : (
+                <span className="block text-gray-400 italic">{t('chat.summary_empty')}</span>
+              )}
+            </div>
 
             {tripDetail.currentVersion?.start_date && tripDetail.currentVersion?.end_date && (
               <div
@@ -273,18 +273,6 @@ export default function TripDetailPanel({
                   {(tripDetail.currentVersion?.kids ?? 0)
                     ? `, ${tripDetail.currentVersion?.kids ?? 0} ${(tripDetail.currentVersion?.kids ?? 0) === 1 ? t('common.kid') : t('common.kids')}`
                     : ''}
-                </span>
-              </div>
-            )}
-
-            {tripDetail.currentVersion?.summary && (
-              <div
-                className={`flex justify-between font-inter text-sm rounded px-2 -mx-2 py-1 ${highlightClass('purpose')}`}
-                data-testid="trip-row-purpose"
-              >
-                <span className="text-gray-500">{t('chat.purpose')}</span>
-                <span className="text-[#1E3D2F] font-medium">
-                  {tripDetail.currentVersion.summary}
                 </span>
               </div>
             )}
