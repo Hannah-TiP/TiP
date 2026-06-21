@@ -5,25 +5,19 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import { ITEM_COLORS, getItemLabel, formatDateLabel, formatTime } from '@/lib/trip-display';
+import {
+  ITEM_COLORS,
+  getItemLabel,
+  getStatusLabel,
+  formatDateLabel,
+  formatTime,
+} from '@/lib/trip-display';
 import { formatDate } from '@/lib/format-date';
 import { tripDayNumber } from '@/lib/trip-utils';
 import { apiClient } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/format-currency';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { SharedTripDetail } from '@/types/trip-share';
-
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Planning',
-  'waiting-for-proposal': 'Awaiting Proposal',
-  'in-progress': 'In Progress',
-  'waiting-for-payment': 'Awaiting Payment',
-  paid: 'Payment Confirmed',
-  'ready-to-travel': 'Ready to Travel',
-  'traveling-now': 'Traveling Now',
-  'travel-completed': 'Completed',
-  canceled: 'Canceled',
-};
 
 function getNights(startDate?: string | null, endDate?: string | null): number | null {
   if (!startDate || !endDate) return null;
@@ -102,7 +96,7 @@ export default function SharedTripDetailPage() {
   const version = detail.current_version;
   const plan = version?.plan ?? [];
   const nights = getNights(version?.start_date, version?.end_date);
-  const statusLabel = STATUS_LABELS[detail.status] ?? detail.status;
+  const statusLabel = getStatusLabel(detail.status, t);
   const title = version?.title?.trim() || t('shared_trip_detail.untitled');
   // Cost is rendered inline from the quote's current pricing version — the
   // recipient is NOT the quote owner, so the /quotes/{id} route would 404 for

@@ -10,24 +10,18 @@ import {
   tripDayNumber,
   type TripWithVersion,
 } from '@/lib/trip-utils';
-import { ITEM_COLORS, getItemLabel, formatDateLabel, formatTime } from '@/lib/trip-display';
+import {
+  ITEM_COLORS,
+  getItemLabel,
+  getStatusLabel,
+  formatDateLabel,
+  formatTime,
+} from '@/lib/trip-display';
 import { formatDate } from '@/lib/format-date';
 import { apiClient } from '@/lib/api-client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ShareTripModal from '@/components/ShareTripModal';
 import BookingDocuments from '@/components/BookingDocuments';
-
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Planning',
-  'waiting-for-proposal': 'Awaiting Proposal',
-  'in-progress': 'In Progress',
-  'waiting-for-payment': 'Awaiting Payment',
-  paid: 'Payment Confirmed',
-  'ready-to-travel': 'Ready to Travel',
-  'traveling-now': 'Traveling Now',
-  'travel-completed': 'Completed',
-  canceled: 'Canceled',
-};
 
 /** Statuses where the trip can still be canceled (not yet paid). */
 const CANCELABLE_STATUSES = new Set([
@@ -54,7 +48,7 @@ function HeroCard({ trip }: { trip: TripWithVersion }) {
   const adults = trip.currentVersion?.adults ?? 0;
   const kids = trip.currentVersion?.kids ?? 0;
   const summary = trip.currentVersion?.summary || undefined;
-  const statusLabel = STATUS_LABELS[trip.trip.status] ?? trip.trip.status;
+  const statusLabel = getStatusLabel(trip.trip.status, t);
 
   return (
     <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex flex-col md:flex-row">
