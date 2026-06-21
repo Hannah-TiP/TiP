@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import { getTripsWithVersions, type TripWithVersion } from '@/lib/trip-utils';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { formatDate as formatDateI18n } from '@/lib/format-date';
+import { getStatusLabel } from '@/lib/trip-display';
 
 const STATUS_PRIORITY = [
   'draft',
@@ -16,16 +17,6 @@ const STATUS_PRIORITY = [
   'ready-to-travel',
   'traveling-now',
 ] as const;
-
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Planning',
-  'waiting-for-proposal': 'Awaiting Proposal',
-  'in-progress': 'In Progress',
-  'waiting-for-payment': 'Awaiting Payment',
-  paid: 'Payment Confirmed',
-  'ready-to-travel': 'Ready to Travel',
-  'traveling-now': 'Traveling Now',
-};
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-600',
@@ -103,7 +94,7 @@ function HeroCard({ item }: { item: TripWithVersion }) {
   const isCanceled = item.trip.status === 'canceled';
   const statusLabel = isCanceled
     ? t('my_page.status_canceled')
-    : (STATUS_LABELS[item.trip.status] ?? item.trip.status);
+    : getStatusLabel(item.trip.status, t);
   const statusColor = STATUS_COLORS[item.trip.status] ?? 'bg-gray-100 text-gray-600';
 
   return (
@@ -175,7 +166,7 @@ function TripCard({ item }: { item: TripWithVersion }) {
   const isCanceled = item.trip.status === 'canceled';
   const statusLabel = isCanceled
     ? t('my_page.status_canceled')
-    : (STATUS_LABELS[item.trip.status] ?? item.trip.status);
+    : getStatusLabel(item.trip.status, t);
   const statusColor = STATUS_COLORS[item.trip.status] ?? 'bg-gray-100 text-gray-600';
 
   return (
