@@ -54,3 +54,36 @@ export function formatTime(dateStr: string | null | undefined, lang: Lang): stri
     minute: '2-digit',
   });
 }
+
+/**
+ * Canonical trip status → `trip.step_*` i18n key map. Covers every canonical
+ * status, including both spellings of the ready/paid stages. Single source of
+ * truth for status labels across the concierge sidebar and the trip-detail /
+ * shared-trips hero badges.
+ */
+export const STATUS_TO_STEP_KEY: Record<string, TranslationKeys> = {
+  draft: 'trip.step_planning',
+  'waiting-for-proposal': 'trip.step_submitted',
+  'in-progress': 'trip.step_proposal',
+  'waiting-for-payment': 'trip.step_payment',
+  waiting_for_booking_docs: 'trip.step_payment',
+  paid: 'trip.step_payment',
+  'ready-for-travel': 'trip.step_ready',
+  'ready-to-travel': 'trip.step_ready',
+  'traveling-now': 'trip.step_traveling',
+  'travel-completed': 'trip.step_completed',
+  canceled: 'trip.step_canceled',
+};
+
+/**
+ * Resolve the localized status label for a trip status. Unknown/unmapped
+ * statuses fall back to a Title-Cased version of the raw status string.
+ */
+export function getStatusLabel(status: string, t: (key: TranslationKeys) => string): string {
+  const key = STATUS_TO_STEP_KEY[status];
+  if (key) return t(key);
+  return status
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}

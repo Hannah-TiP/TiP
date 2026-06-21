@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { formatDateLabel, formatTime, getItemLabel, ITEM_LABEL_KEYS } from '@/lib/trip-display';
+import {
+  formatDateLabel,
+  formatTime,
+  getItemLabel,
+  getStatusLabel,
+  ITEM_LABEL_KEYS,
+  STATUS_TO_STEP_KEY,
+} from '@/lib/trip-display';
 import en from '@/translations/en.json';
 import kr from '@/translations/kr.json';
 import type { TranslationKeys } from '@/contexts/LanguageContext';
@@ -56,6 +63,52 @@ describe('getItemLabel', () => {
 
   it('maps every item type to a key present in both catalogs', () => {
     for (const key of Object.values(ITEM_LABEL_KEYS)) {
+      expect(en[key]).toBeTruthy();
+      expect(kr[key]).toBeTruthy();
+    }
+  });
+});
+
+describe('getStatusLabel', () => {
+  const tEn = (key: TranslationKeys): string => en[key] ?? kr[key] ?? key;
+  const tKr = (key: TranslationKeys): string => kr[key] ?? en[key] ?? key;
+
+  it('resolves the canonical (shorter step_*) label for each status in EN', () => {
+    expect(getStatusLabel('draft', tEn)).toBe('Planning');
+    expect(getStatusLabel('waiting-for-proposal', tEn)).toBe('Submitted');
+    expect(getStatusLabel('in-progress', tEn)).toBe('Proposal');
+    expect(getStatusLabel('waiting-for-payment', tEn)).toBe('Payment');
+    expect(getStatusLabel('waiting_for_booking_docs', tEn)).toBe('Payment');
+    expect(getStatusLabel('paid', tEn)).toBe('Payment');
+    expect(getStatusLabel('ready-for-travel', tEn)).toBe('Ready');
+    expect(getStatusLabel('ready-to-travel', tEn)).toBe('Ready');
+    expect(getStatusLabel('traveling-now', tEn)).toBe('Traveling');
+    expect(getStatusLabel('travel-completed', tEn)).toBe('Completed');
+    expect(getStatusLabel('canceled', tEn)).toBe('Canceled');
+  });
+
+  it('resolves the Korean label for each status in KR', () => {
+    expect(getStatusLabel('draft', tKr)).toBe('계획');
+    expect(getStatusLabel('waiting-for-proposal', tKr)).toBe('제출됨');
+    expect(getStatusLabel('in-progress', tKr)).toBe('제안');
+    expect(getStatusLabel('waiting-for-payment', tKr)).toBe('결제');
+    expect(getStatusLabel('waiting_for_booking_docs', tKr)).toBe('결제');
+    expect(getStatusLabel('paid', tKr)).toBe('결제');
+    expect(getStatusLabel('ready-for-travel', tKr)).toBe('준비 완료');
+    expect(getStatusLabel('ready-to-travel', tKr)).toBe('준비 완료');
+    expect(getStatusLabel('traveling-now', tKr)).toBe('여행 중');
+    expect(getStatusLabel('travel-completed', tKr)).toBe('완료');
+    expect(getStatusLabel('canceled', tKr)).toBe('취소됨');
+  });
+
+  it('Title-Cases an unknown/unmapped status as a safe fallback', () => {
+    expect(getStatusLabel('some-unknown-status', tEn)).toBe('Some Unknown Status');
+    expect(getStatusLabel('some-unknown-status', tKr)).toBe('Some Unknown Status');
+    expect(getStatusLabel('weird', tEn)).toBe('Weird');
+  });
+
+  it('maps every status to a key present in both catalogs', () => {
+    for (const key of Object.values(STATUS_TO_STEP_KEY)) {
       expect(en[key]).toBeTruthy();
       expect(kr[key]).toBeTruthy();
     }
