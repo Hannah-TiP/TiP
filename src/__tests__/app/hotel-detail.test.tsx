@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element, @typescript-eslint/no-unused-vars */
 import type { AnchorHTMLAttributes, ImgHTMLAttributes } from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import HotelDetailPage from '@/app/hotel/[id]/page';
 import enTranslations from '@/translations/en.json';
@@ -184,6 +184,72 @@ describe('HotelDetailPage', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Aman Tokyo' })).toBeTruthy();
     // Overview heading should not be present
     expect(screen.queryByText(/About the Hotel/i)).toBeNull();
+  });
+
+  it('shows no benefits box for a hotel with no benefits', async () => {
+    vi.mocked(apiClient.getHotelBySlug).mockResolvedValue({ ...baseHotel, benefits: [] });
+
+    render(<HotelDetailPage />);
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Aman Tokyo' })).toBeTruthy();
+    // The benefits box title must not render — no hardcoded fallback bullets.
+    expect(screen.queryByText(enTranslations['hotel.booking_benefits_title'])).toBeNull();
+  });
+
+  it('shows exactly the real benefits when the hotel has them', async () => {
+    vi.mocked(apiClient.getHotelBySlug).mockResolvedValue({
+      ...baseHotel,
+      benefits: [
+        {
+          program_name: 'TiP Program',
+          valid_from: null,
+          valid_until: null,
+          benefits: [
+            { en: 'Daily breakfast for two guests', kr: '2인 매일 조식' },
+            { en: 'USD 100 hotel credit', kr: '100달러 호텔 크레딧' },
+          ],
+        },
+      ],
+    });
+
+    render(<HotelDetailPage />);
+
+    // Both real benefits render as bullets in the box (the box title's
+    // decorative ✦ prefix shares a node, so the bullets are the stable signal).
+    expect(await screen.findByText('Daily breakfast for two guests')).toBeTruthy();
+    expect(screen.getByText('USD 100 hotel credit')).toBeTruthy();
+  });
+
+  it('hides the benefits box when selected dates exclude all benefit programs', async () => {
+    vi.mocked(apiClient.getHotelBySlug).mockResolvedValue({
+      ...baseHotel,
+      benefits: [
+        {
+          program_name: 'Winter Program',
+          valid_from: '2020-01-01',
+          valid_until: '2020-12-31',
+          benefits: [{ en: 'Daily breakfast for two guests', kr: '2인 매일 조식' }],
+        },
+      ],
+    });
+
+    render(<HotelDetailPage />);
+
+    // Wait for the hotel to load — with no dates picked the box shows the
+    // program benefit (with an eligibility label appended).
+    expect(await screen.findByText(/Daily breakfast for two guests/)).toBeTruthy();
+
+    // Pick check-in / check-out dates outside the program's validity window.
+    const checkIn = document.getElementById('hotel-booking-checkin') as HTMLInputElement;
+    const checkOut = document.getElementById('hotel-booking-checkout') as HTMLInputElement;
+    fireEvent.change(checkIn, { target: { value: '2030-06-01' } });
+    fireEvent.change(checkOut, { target: { value: '2030-06-05' } });
+
+    // No benefits valid for these dates → the box (and its bullets) disappear,
+    // and the hardcoded fallback is NOT resurrected.
+    await waitFor(() => {
+      expect(screen.queryByText(/Daily breakfast for two guests/)).toBeNull();
+    });
   });
 
   it('renders not-found state when API rejects', async () => {

@@ -160,7 +160,7 @@ export default function HotelDetailPage() {
       until: t('hotel.benefit_eligibility_until'),
       month: (m: number) => t(`hotel.benefit_month_abbr_${m}` as Parameters<typeof t>[0]),
     };
-    const programBenefits = programs.flatMap((program) => {
+    return programs.flatMap((program) => {
       const label = hasDates
         ? null
         : formatBenefitEligibility(program.valid_from, program.valid_until, eligibilityTemplates);
@@ -169,13 +169,6 @@ export default function HotelDetailPage() {
         .filter(Boolean)
         .map((text) => (label ? `${text} (${label})` : text));
     });
-    if (programBenefits.length > 0) return programBenefits;
-    return [
-      t('hotel.booking_benefit_1'),
-      t('hotel.booking_benefit_2'),
-      t('hotel.booking_benefit_3'),
-      t('hotel.booking_benefit_4'),
-    ];
   })();
 
   const handleSubmitRequest = () => submitRequest(checkIn, checkOut, adults, kids);
