@@ -1,6 +1,7 @@
 import type { PaginatedData, PaginatedResult } from '@/types/common';
 import { toPaginatedResult } from '@/types/common';
 import type { User, UpdateProfileData } from '@/types/auth';
+import type { Lang } from '@/contexts/LanguageContext';
 import type { Hotel } from '@/types/hotel';
 import type { Activity, ActivityKind } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
@@ -188,6 +189,16 @@ class ApiClient {
     await this.request('/profile/update', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  // Persist the logged-in user's UI language to their account so the backend's
+  // request-language resolution (and transactional emails) use the right locale.
+  async updateLanguagePreference(language: Lang): Promise<void> {
+    const body: UpdateProfileData = { language_preference: language };
+    await this.request('/profile/update', {
+      method: 'POST',
+      body: JSON.stringify(body),
     });
   }
 

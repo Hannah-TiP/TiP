@@ -6,10 +6,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { Lang } from '@/contexts/LanguageContext';
 import SubNav from '@/components/SubNav';
 import MobileNav from '@/components/MobileNav';
 import { resolveHeaderConfig } from '@/lib/header-config';
 import { navLinks } from '@/lib/nav-links';
+import { applyLanguageToggle } from '@/lib/persist-language';
 
 /**
  * The single site header. Mounted once in the root layout, inside the
@@ -23,6 +25,11 @@ export default function Header() {
   const isAuthenticated = !!session;
   const { lang, setLang, t } = useLanguage();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  const handleToggleLanguage = () => {
+    const next: Lang = lang === 'en' ? 'kr' : 'en';
+    applyLanguageToggle(next, setLang, isAuthenticated);
+  };
 
   if (config.variant === 'none') return null;
 
@@ -78,10 +85,7 @@ export default function Header() {
             </Link>
           ))}
 
-          <button
-            onClick={() => setLang(lang === 'en' ? 'kr' : 'en')}
-            className={navItemClass(false)}
-          >
+          <button onClick={handleToggleLanguage} className={navItemClass(false)}>
             {t('nav.language_toggle')}
           </button>
 
