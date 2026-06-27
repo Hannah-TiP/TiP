@@ -30,8 +30,6 @@ const exploreLinks: FooterLink[] = [
 ];
 const companyLinks: FooterLink[] = [
   { labelKey: 'footer.link_about_us', href: '/about' },
-  { labelKey: 'footer.link_careers', href: '#' },
-  { labelKey: 'footer.link_press', href: '#' },
   { labelKey: 'footer.link_blog', href: '#' },
 ];
 const socialLinks: SocialLink[] = [
