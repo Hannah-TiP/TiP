@@ -155,7 +155,7 @@ function MoreDreamsContent() {
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
             {t('discover.curated_collection')}
           </span>
-          <h1 className="font-primary text-[36px] font-normal italic leading-tight text-white md:text-[48px] lg:text-[64px]">
+          <h1 className="font-primary text-[36px] font-normal italic leading-tight text-white break-keep md:text-[48px] lg:text-[64px]">
             {t('more_dreams.hero_title')}
           </h1>
           <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-white/60">
