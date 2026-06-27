@@ -233,21 +233,11 @@ export default function HotelMap({ hotels, reviewAggregates }: HotelMapProps) {
   }
 
   // Compact perk teaser for the popup: localized benefit strings (no date
-  // filtering / eligibility labels — no stay-date context on the map), falling
-  // back to the same generic defaults as the hotel detail page so the section
-  // is never empty.
+  // filtering / eligibility labels — no stay-date context on the map). When a
+  // hotel has no real benefits the section is hidden entirely.
   const hotelPerks = selectedHotel ? localizeBenefitStrings(selectedHotel.benefits, lang) : [];
-  const popupPerks =
-    hotelPerks.length > 0
-      ? hotelPerks
-      : [
-          t('hotel.booking_benefit_1'),
-          t('hotel.booking_benefit_2'),
-          t('hotel.booking_benefit_3'),
-          t('hotel.booking_benefit_4'),
-        ];
-  const visiblePerks = popupPerks.slice(0, MAX_POPUP_PERKS);
-  const morePerksCount = popupPerks.length - visiblePerks.length;
+  const visiblePerks = hotelPerks.slice(0, MAX_POPUP_PERKS);
+  const morePerksCount = hotelPerks.length - visiblePerks.length;
 
   return (
     <GoogleMap
@@ -273,9 +263,11 @@ export default function HotelMap({ hotels, reviewAggregates }: HotelMapProps) {
                   sizes="280px"
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                <span className="absolute left-2 top-2 z-10 rounded bg-green-dark/85 px-2 py-1 text-[10px] font-semibold uppercase tracking-[1.5px] text-gold">
-                  {t('hotel.tip_exclusive_perks')}
-                </span>
+                {hotelPerks.length > 0 && (
+                  <span className="absolute left-2 top-2 z-10 rounded bg-green-dark/85 px-2 py-1 text-[10px] font-semibold uppercase tracking-[1.5px] text-gold">
+                    {t('hotel.tip_exclusive_perks')}
+                  </span>
+                )}
               </div>
               <h3 className="font-semibold text-green-dark group-hover:text-gold">
                 {getLocalizedText(selectedHotel.name)}
@@ -293,29 +285,31 @@ export default function HotelMap({ hotels, reviewAggregates }: HotelMapProps) {
                   {formatReviewSummary(reviewAggregates?.[selectedHotel.id])}
                 </p>
               )}
-              <div className="mt-2 border-t border-gray-border pt-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[1.5px] text-gold">
-                  {t('hotel.tip_exclusive_perks')}
-                </p>
-                <ul className="mt-1 space-y-0.5">
-                  {visiblePerks.map((perk, index) => (
-                    <li
-                      key={`${index}-${perk}`}
-                      className="flex items-start gap-1.5 text-xs text-green-dark"
-                    >
-                      <span aria-hidden="true" className="flex-shrink-0 text-gold">
-                        ✓
-                      </span>
-                      <span className="truncate">{perk}</span>
-                    </li>
-                  ))}
-                </ul>
-                {morePerksCount > 0 && (
-                  <p className="mt-1 text-[11px] text-gray-text">
-                    {t('hotel.perks_more_count').replace('{count}', String(morePerksCount))}
+              {hotelPerks.length > 0 && (
+                <div className="mt-2 border-t border-gray-border pt-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[1.5px] text-gold">
+                    {t('hotel.tip_exclusive_perks')}
                   </p>
-                )}
-              </div>
+                  <ul className="mt-1 space-y-0.5">
+                    {visiblePerks.map((perk, index) => (
+                      <li
+                        key={`${index}-${perk}`}
+                        className="flex items-start gap-1.5 text-xs text-green-dark"
+                      >
+                        <span aria-hidden="true" className="flex-shrink-0 text-gold">
+                          ✓
+                        </span>
+                        <span className="truncate">{perk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {morePerksCount > 0 && (
+                    <p className="mt-1 text-[11px] text-gray-text">
+                      {t('hotel.perks_more_count').replace('{count}', String(morePerksCount))}
+                    </p>
+                  )}
+                </div>
+              )}
             </Link>
           </div>
         </InfoWindow>

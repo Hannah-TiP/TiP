@@ -101,6 +101,7 @@ function makeHotel(overrides: Partial<Hotel> = {}): Hotel {
     address: { en: '1-5-6 Otemachi', kr: '오테마치' },
     geo: { lat: 35.6, lng: 139.7 },
     images: [{ id: 1, url: 'https://example.com/a.jpg' }],
+    benefits: [benefitProgram([{ en: 'Daily breakfast', kr: '매일 조식' }])],
     schema_version: 1,
     ...overrides,
   } as unknown as Hotel;
@@ -183,8 +184,6 @@ describe('HotelMap popup perk details', () => {
     expect(screen.getByText('Daily breakfast for two guests')).toBeDefined();
     expect(screen.getByText('USD 100 hotel credit')).toBeDefined();
     expect(screen.queryByText(/more$/)).toBeNull();
-    // The generic fallback defaults must NOT render when real benefits exist.
-    expect(screen.queryByText(en['hotel.booking_benefit_1'])).toBeNull();
   });
 
   it('caps at 3 benefits and shows "+N more" for the rest', () => {
@@ -229,14 +228,20 @@ describe('HotelMap popup perk details', () => {
     expect(screen.getByText('+1개 더')).toBeDefined();
   });
 
-  it('falls back to the 4 generic defaults (3 shown + "+1 more") when benefits is empty', () => {
+  it('hides the perks section entirely (no overlay badge, no header, no "+N more") when benefits is empty', () => {
     renderAndSelectHotel(makeHotel({ benefits: [] }));
 
-    expect(screen.getByText(en['hotel.booking_benefit_1'])).toBeDefined();
-    expect(screen.getByText(en['hotel.booking_benefit_2'])).toBeDefined();
-    expect(screen.getByText(en['hotel.booking_benefit_3'])).toBeDefined();
-    expect(screen.queryByText(en['hotel.booking_benefit_4'])).toBeNull();
-    expect(screen.getByText('+1 more')).toBeDefined();
+    // No "TiP exclusive perks" label anywhere (overlay badge AND section header).
+    expect(screen.queryByText('TiP exclusive perks')).toBeNull();
+    expect(screen.queryByText(/more$/)).toBeNull();
+
+    // Core popup chrome still renders: image, name, address, detail link.
+    expect(screen.getByText('Aman Tokyo')).toBeDefined();
+    expect(screen.getByText('1-5-6 Otemachi')).toBeDefined();
+    expect(screen.getByRole('img')).toBeDefined();
+    expect(screen.getByText('Aman Tokyo').closest('a')?.getAttribute('href')).toBe(
+      '/hotel/aman-tokyo',
+    );
   });
 
   it('keeps the perks section header, the overlay badge, and the detail link together', () => {
