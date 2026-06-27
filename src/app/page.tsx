@@ -204,7 +204,7 @@ export default function HomePage() {
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
             {t('home.hero_overline')}
           </span>
-          <h1 className="max-w-3xl font-primary text-[36px] font-normal italic leading-[1.1] text-white md:text-[48px] lg:text-[64px]">
+          <h1 className="max-w-3xl font-primary text-[36px] font-normal italic leading-[1.1] text-white break-keep md:text-[48px] lg:text-[64px]">
             {t('home.hero_title')}
           </h1>
           <p className="mt-6 max-w-xl text-[16px] leading-[1.7] text-white/60">
