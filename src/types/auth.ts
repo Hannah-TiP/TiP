@@ -41,6 +41,7 @@ export interface UpdateProfileData {
   travel_styles?: string[];
   onboarding_completed?: boolean;
   referral_onboarding_seen?: boolean;
+  language_preference?: string;
 }
 
 export interface AuthContextType {
