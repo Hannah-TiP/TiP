@@ -61,6 +61,25 @@ describe('Footer Instagram link', () => {
   });
 });
 
+describe('Footer Company column', () => {
+  it('renders About Us and Blog but not Careers or Press (EN)', () => {
+    render(<Footer />);
+    expect(screen.getByText(enTranslations['footer.link_about_us'])).toBeTruthy();
+    expect(screen.getByText(enTranslations['footer.link_blog'])).toBeTruthy();
+    expect(screen.queryByText('Careers')).toBeNull();
+    expect(screen.queryByText('Press')).toBeNull();
+  });
+
+  it('does not render the Korean Careers or Press labels (KR)', () => {
+    currentLang = 'kr';
+    render(<Footer />);
+    expect(screen.getByText(krTranslations['footer.link_about_us'])).toBeTruthy();
+    expect(screen.getByText(krTranslations['footer.link_blog'])).toBeTruthy();
+    expect(screen.queryByText('채용')).toBeNull();
+    expect(screen.queryByText('보도자료')).toBeNull();
+  });
+});
+
 describe('Footer business-registration info', () => {
   it('renders the real ParisClass legal data', () => {
     const { container } = render(<Footer />);
