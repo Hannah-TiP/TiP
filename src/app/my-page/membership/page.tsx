@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import Footer from '@/components/Footer';
+import FreeNightSummary from '@/components/FreeNightSummary';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 type Bilingual = { en: string; kr: string };
@@ -89,8 +90,8 @@ const CIRCLES: Circle[] = [
             kr: '버스데이 스테이 — 생일 달 전용 크레딧과 프라이빗 인룸 세레머니',
           },
           {
-            en: 'Loyalty Night — one complimentary night after 15 nights with TiP partners',
-            kr: '로열티 나이트 — TiP 파트너 호텔 누적 15박 시 1박 무료',
+            en: 'Loyalty Night — one complimentary night after 17 nights with TiP partners',
+            kr: '로열티 나이트 — TiP 파트너 호텔 누적 17박 시 1박 무료',
           },
           {
             en: 'Preference Profile — your style remembered across every booking',
@@ -334,6 +335,9 @@ export default function Membership() {
             </div>
           </div>
         </div>
+
+        {/* Live free-night progress + awarded nights (SMA-202) */}
+        <FreeNightSummary />
 
         {/* Circles */}
         <div className="mt-12 space-y-8">
