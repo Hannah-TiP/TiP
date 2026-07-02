@@ -33,6 +33,7 @@ import type {
   S3UploadCredentialsResponse,
 } from '@/types/ai-chat';
 import type { DestinationSuggestion } from '@/types/destination';
+import type { MemberFreeNightSummary } from '@/types/free-night';
 import type {
   ClaimReferralResponse,
   EligibleCredit,
@@ -135,6 +136,11 @@ class ApiClient {
   async getMyCredits(): Promise<StayCredit[]> {
     const response = await this.request<{ data: StayCredit[] }>('/me/credits');
     return response.data ?? [];
+  }
+
+  async getMyFreeNights(): Promise<MemberFreeNightSummary> {
+    const response = await this.request<{ data: MemberFreeNightSummary }>('/me/free-nights');
+    return response.data;
   }
 
   async getMyReferrals(): Promise<MyReferralsResponse> {

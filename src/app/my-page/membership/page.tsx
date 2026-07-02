@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import Footer from '@/components/Footer';
+import FreeNightSummary from '@/components/FreeNightSummary';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 type Bilingual = { en: string; kr: string };
@@ -334,6 +335,9 @@ export default function Membership() {
             </div>
           </div>
         </div>
+
+        {/* Live free-night progress + awarded nights (SMA-202) */}
+        <FreeNightSummary />
 
         {/* Circles */}
         <div className="mt-12 space-y-8">
