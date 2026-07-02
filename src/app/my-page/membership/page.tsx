@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import Footer from '@/components/Footer';
+import FreeNightSummary from '@/components/FreeNightSummary';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 type Bilingual = { en: string; kr: string };
@@ -65,16 +66,16 @@ const CIRCLES: Circle[] = [
     },
     price: { en: 'Free', kr: '무료' },
     qualifying: {
-      en: '$20,000 in annual TiP bookings, or application with member referral.',
-      kr: '연간 $20,000 이상의 TiP 예약, 또는 기존 멤버 추천으로 신청',
+      en: '$30,000 in annual TiP bookings, or application with member referral.',
+      kr: '연간 $30,000 이상의 TiP 예약, 또는 기존 멤버 추천으로 신청',
     },
     sections: [
       {
         heading: { en: 'Cercle benefits', kr: 'Cercle 혜택' },
         items: [
           {
-            en: 'Elevated Stay Credit — up to $200 per booking, for dining, spa, or experiences',
-            kr: '엘리베이티드 스테이 크레딧 — 스테이당 최대 $200, 다이닝 · 스파 · 경험에 사용',
+            en: 'Elevated Stay Credit — up to $150 per booking, for dining, spa, or experiences',
+            kr: '엘리베이티드 스테이 크레딧 — 스테이당 최대 $150, 다이닝 · 스파 · 경험에 사용',
           },
           {
             en: 'Hotel Whisperer — the best room to request, told to you 24 hours before arrival',
@@ -89,8 +90,8 @@ const CIRCLES: Circle[] = [
             kr: '버스데이 스테이 — 생일 달 전용 크레딧과 프라이빗 인룸 세레머니',
           },
           {
-            en: 'Loyalty Night — one complimentary night after 15 nights with TiP partners',
-            kr: '로열티 나이트 — TiP 파트너 호텔 누적 15박 시 1박 무료',
+            en: 'Loyalty Night — one complimentary night after 17 nights with TiP partners',
+            kr: '로열티 나이트 — TiP 파트너 호텔 누적 17박 시 1박 무료',
           },
           {
             en: 'Preference Profile — your style remembered across every booking',
@@ -109,18 +110,18 @@ const CIRCLES: Circle[] = [
     key: 'confidence',
     name: 'Confidence',
     tagline: { en: 'The hotel already knows you.', kr: '호텔이 이미 당신을 아는 곳' },
-    price: { en: '₩3,500,000 / year (approx. $2,500)', kr: '연 ₩3,500,000' },
+    price: { en: '₩9,500,000 / year (approx. $6,500)', kr: '연 ₩9,500,000' },
     qualifying: {
-      en: '$60,000 in annual bookings, or 12+ months as a Cercle member with advisor referral. $500 welcome credit applied to your first qualifying stay.',
-      kr: '연간 $60,000 이상의 TiP 예약, 또는 Cercle 멤버십 12개월 이상 + 어드바이저 추천. 가입 후 첫 스테이에 $500 웰컴 크레딧 자동 적용',
+      en: '$70,000 in annual bookings, or 12+ months as a Cercle member with advisor referral. $500 welcome credit applied to your first qualifying stay.',
+      kr: '연간 $70,000 이상의 TiP 예약, 또는 Cercle 멤버십 12개월 이상 + 어드바이저 추천. 가입 후 첫 스테이에 $500 웰컴 크레딧 자동 적용',
     },
     sections: [
       {
         heading: { en: 'Confidence benefits', kr: 'Confidence 혜택' },
         items: [
           {
-            en: 'Enhanced Stay Credit — up to $300 per booking',
-            kr: '인핸스드 스테이 크레딧 — 스테이당 최대 $300',
+            en: 'Enhanced Stay Credit — up to $200 per booking',
+            kr: '인핸스드 스테이 크레딧 — 스테이당 최대 $200',
           },
           {
             en: 'The Morning After — guaranteed 4pm checkout at every TiP partner hotel',
@@ -167,18 +168,18 @@ const CIRCLES: Circle[] = [
     key: 'cenacle',
     name: 'Cénacle',
     tagline: { en: 'The inner circle.', kr: '초대로만 열리는 가장 안쪽의 원' },
-    price: { en: '₩12,000,000 / year (approx. $8,500)', kr: '연 ₩12,000,000' },
+    price: { en: '₩20,000,000 / year (approx. $15,000)', kr: '연 ₩20,000,000' },
     qualifying: {
-      en: 'By invitation only. Limited to 10 new members per year.',
-      kr: '초대로만. 연간 최대 10명에게만 초대',
+      en: 'By invitation only. Limited to 20 new members per year.',
+      kr: '초대로만. 연간 최대 20명에게만 초대',
     },
     sections: [
       {
         heading: { en: 'Access that cannot be bought', kr: '돈으로 살 수 없는 접근' },
         items: [
           {
-            en: 'Private Stay Credit — up to $500 per booking, shaped to your preferences before arrival',
-            kr: '프라이빗 스테이 크레딧 — 스테이당 최대 $500, 도착 전 취향 설계',
+            en: 'Private Stay Credit — up to $400 per booking, shaped to your preferences before arrival',
+            kr: '프라이빗 스테이 크레딧 — 스테이당 최대 $400, 도착 전 취향 설계',
           },
           {
             en: 'The Seventh Night — on bookings of seven or more nights at any TiP partner hotel, the seventh night is on us.',
@@ -334,6 +335,9 @@ export default function Membership() {
             </div>
           </div>
         </div>
+
+        {/* Live free-night progress + awarded nights (SMA-202) */}
+        <FreeNightSummary />
 
         {/* Circles */}
         <div className="mt-12 space-y-8">

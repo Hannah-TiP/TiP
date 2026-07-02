@@ -8,6 +8,7 @@ const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:3000';
 // Specs that require an authenticated session (run with stored storageState).
 const AUTH_REQUIRED_SPECS = [
   '**/concierge-converse.spec.ts',
+  '**/concierge-i18n-stepper.spec.ts',
   '**/concierge-screenshots.spec.ts',
   '**/concierge-request-human.spec.ts',
   '**/cancel-trip.spec.ts',
@@ -25,6 +26,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/trip-share.spec.ts',
   '**/destination-search.spec.ts',
   '**/change-password.spec.ts',
+  '**/free-night-membership.spec.ts',
 ];
 
 // Specs that deliberately test the cookie-consent banner from a blank state.

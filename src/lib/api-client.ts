@@ -1,6 +1,7 @@
 import type { PaginatedData, PaginatedResult } from '@/types/common';
 import { toPaginatedResult } from '@/types/common';
 import type { User, UpdateProfileData } from '@/types/auth';
+import type { Lang } from '@/contexts/LanguageContext';
 import type { Hotel } from '@/types/hotel';
 import type { Activity, ActivityKind } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
@@ -32,6 +33,7 @@ import type {
   S3UploadCredentialsResponse,
 } from '@/types/ai-chat';
 import type { DestinationSuggestion } from '@/types/destination';
+import type { MemberFreeNightSummary } from '@/types/free-night';
 import type {
   ClaimReferralResponse,
   EligibleCredit,
@@ -136,6 +138,11 @@ class ApiClient {
     return response.data ?? [];
   }
 
+  async getMyFreeNights(): Promise<MemberFreeNightSummary> {
+    const response = await this.request<{ data: MemberFreeNightSummary }>('/me/free-nights');
+    return response.data;
+  }
+
   async getMyReferrals(): Promise<MyReferralsResponse> {
     const response = await this.request<{ data: MyReferralsResponse }>('/me/referrals');
     return response.data;
@@ -188,6 +195,16 @@ class ApiClient {
     await this.request('/profile/update', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  // Persist the logged-in user's UI language to their account so the backend's
+  // request-language resolution (and transactional emails) use the right locale.
+  async updateLanguagePreference(language: Lang): Promise<void> {
+    const body: UpdateProfileData = { language_preference: language };
+    await this.request('/profile/update', {
+      method: 'POST',
+      body: JSON.stringify(body),
     });
   }
 
@@ -251,13 +268,15 @@ class ApiClient {
     return toPaginatedResult(response.data);
   }
 
-  async getHotelBySlug(slug: string): Promise<Hotel> {
-    const response = await this.request<{ data: Hotel }>(`/hotels/${slug}`);
+  async getHotelBySlug(slug: string, language?: string): Promise<Hotel> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Hotel }>(`/hotels/${slug}${query}`);
     return response.data;
   }
 
-  async getHotelById(id: number): Promise<Hotel> {
-    const response = await this.request<{ data: Hotel }>(`/hotels/by-id/${id}`);
+  async getHotelById(id: number, language?: string): Promise<Hotel> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Hotel }>(`/hotels/by-id/${id}${query}`);
     return response.data;
   }
 
@@ -287,13 +306,15 @@ class ApiClient {
     return toPaginatedResult(response.data);
   }
 
-  async getActivityBySlug(slug: string): Promise<Activity> {
-    const response = await this.request<{ data: Activity }>(`/activities/${slug}`);
+  async getActivityBySlug(slug: string, language?: string): Promise<Activity> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Activity }>(`/activities/${slug}${query}`);
     return response.data;
   }
 
-  async getActivityById(id: number): Promise<Activity> {
-    const response = await this.request<{ data: Activity }>(`/activities/by-id/${id}`);
+  async getActivityById(id: number, language?: string): Promise<Activity> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Activity }>(`/activities/by-id/${id}${query}`);
     return response.data;
   }
 
@@ -319,13 +340,15 @@ class ApiClient {
     return toPaginatedResult(response.data);
   }
 
-  async getRestaurantBySlug(slug: string): Promise<Restaurant> {
-    const response = await this.request<{ data: Restaurant }>(`/restaurants/${slug}`);
+  async getRestaurantBySlug(slug: string, language?: string): Promise<Restaurant> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Restaurant }>(`/restaurants/${slug}${query}`);
     return response.data;
   }
 
-  async getRestaurantById(id: number): Promise<Restaurant> {
-    const response = await this.request<{ data: Restaurant }>(`/restaurants/by-id/${id}`);
+  async getRestaurantById(id: number, language?: string): Promise<Restaurant> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Restaurant }>(`/restaurants/by-id/${id}${query}`);
     return response.data;
   }
 
@@ -342,8 +365,9 @@ class ApiClient {
     return response.data;
   }
 
-  async getCityById(id: number): Promise<City> {
-    const response = await this.request<{ data: City }>(`/cities/${id}`);
+  async getCityById(id: number, language?: string): Promise<City> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: City }>(`/cities/${id}${query}`);
     return response.data;
   }
 
@@ -642,8 +666,9 @@ class ApiClient {
   }
 
   // Wishlist methods
-  async getWishlist(): Promise<Hotel[]> {
-    const response = await this.request<{ data: Hotel[] }>('/wishlist');
+  async getWishlist(language?: string): Promise<Hotel[]> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: Hotel[] }>(`/wishlist${query}`);
     return response.data;
   }
 

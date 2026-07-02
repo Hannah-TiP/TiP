@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { formatDateTime } from '@/lib/format-date';
 import type { AIChatQuoteSentWidget } from '@/types/ai-chat';
 
 interface Props {
@@ -9,22 +10,18 @@ interface Props {
   disabled?: boolean;
 }
 
-function formatSentAt(sentAt: string): string {
-  try {
-    return new Date(sentAt).toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  } catch {
-    return sentAt;
-  }
+function formatSentAt(sentAt: string, lang: Lang): string {
+  return formatDateTime(sentAt, lang, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }
 
 export default function QuoteSent({ widget, disabled }: Props) {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const handleOpen = () => router.push(`/quotes/${widget.quote_id}`);
 
   const headline = widget.was_resent
@@ -57,7 +54,7 @@ export default function QuoteSent({ widget, disabled }: Props) {
           <p className="font-cormorant text-lg font-semibold text-[#1E3D2F]">{headline}</p>
           <p className="mt-1 font-inter text-[13px] leading-relaxed text-gray-600">{body}</p>
           <p className="mt-2 font-inter text-[11px] uppercase tracking-[1.5px] text-gray-400">
-            {formatSentAt(widget.sent_at)}
+            {formatSentAt(widget.sent_at, lang)}
           </p>
         </div>
       </div>

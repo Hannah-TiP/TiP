@@ -4,7 +4,9 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { Lang } from '@/contexts/LanguageContext';
 import { navLinks } from '@/lib/nav-links';
+import { applyLanguageToggle } from '@/lib/persist-language';
 import type { NavKey } from '@/lib/header-config';
 
 interface MobileNavProps {
@@ -106,7 +108,10 @@ export default function MobileNav({ isOpen, onClose, isAuthenticated, activeNav 
 
             <button
               type="button"
-              onClick={() => setLang(lang === 'en' ? 'kr' : 'en')}
+              onClick={() => {
+                const next: Lang = lang === 'en' ? 'kr' : 'en';
+                applyLanguageToggle(next, setLang, isAuthenticated);
+              }}
               className={`${linkClass(false)} py-3 text-left`}
             >
               {t('nav.language_toggle')}

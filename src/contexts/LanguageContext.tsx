@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import en from '@/translations/en.json';
 import kr from '@/translations/kr.json';
+import { resolveClientLanguage } from '@/lib/detect-language';
 
 export type Lang = 'en' | 'kr';
 export type TranslationKeys = keyof typeof en;
@@ -17,12 +18,34 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() => {
-    if (typeof window === 'undefined') return 'en';
-    const saved = localStorage.getItem('tip-lang') as Lang | null;
-    return saved && (saved === 'en' || saved === 'kr') ? saved : 'en';
-  });
+/**
+ * @param initialLang language resolved server-side from the `Accept-Language`
+ *   header (see `resolveServerLanguage`). It is the SSR first-paint language, so
+ *   both the server and the client's FIRST render use it — this avoids a
+ *   hydration mismatch / flash of the wrong language. After hydration a
+ *   `useEffect` reconciles it with localStorage + navigator.language (the
+ *   detection ladder), which is a post-hydration update and won't warn.
+ */
+export function LanguageProvider({
+  children,
+  initialLang,
+}: {
+  children: ReactNode;
+  initialLang: Lang;
+}) {
+  const [lang, setLangState] = useState<Lang>(initialLang);
+
+  useEffect(() => {
+    // Post-hydration reconciliation: read client-only signals (localStorage
+    // override + navigator.language) that the server couldn't see, and apply
+    // them on top of the SSR-provided initial language. Synchronous setState
+    // here is intentional and safe — it runs once after the first (matching)
+    // paint, so it never causes a hydration mismatch.
+    const saved = localStorage.getItem('tip-lang');
+    const reconciled = resolveClientLanguage(saved, navigator.language, initialLang);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLangState((current) => (reconciled === current ? current : reconciled));
+  }, [initialLang]);
 
   const setLang = (newLang: Lang) => {
     setLangState(newLang);

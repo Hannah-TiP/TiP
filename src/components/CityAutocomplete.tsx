@@ -19,7 +19,7 @@ export default function CityAutocomplete({
   placeholder,
   className = '',
 }: CityAutocompleteProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [inputValue, setInputValue] = useState('');
   const [results, setResults] = useState<City[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -34,10 +34,10 @@ export default function CityAutocomplete({
       return;
     }
     apiClient
-      .getCityById(value)
+      .getCityById(value, lang)
       .then((city) => setInputValue(getLocalizedText(city.name)))
       .catch(() => setInputValue(''));
-  }, [value]);
+  }, [value, lang]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -50,23 +50,26 @@ export default function CityAutocomplete({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const search = useCallback(async (q: string) => {
-    if (q.length < 2) {
-      setResults([]);
-      setIsOpen(false);
-      return;
-    }
-    setIsSearching(true);
-    try {
-      const cities = await apiClient.searchCities(q);
-      setResults(cities);
-      setIsOpen(true);
-    } catch {
-      setResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  }, []);
+  const search = useCallback(
+    async (q: string) => {
+      if (q.length < 2) {
+        setResults([]);
+        setIsOpen(false);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        const cities = await apiClient.searchCities(q, lang);
+        setResults(cities);
+        setIsOpen(true);
+      } catch {
+        setResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [lang],
+  );
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const q = e.target.value;

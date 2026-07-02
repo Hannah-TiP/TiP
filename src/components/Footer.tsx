@@ -30,8 +30,6 @@ const exploreLinks: FooterLink[] = [
 ];
 const companyLinks: FooterLink[] = [
   { labelKey: 'footer.link_about_us', href: '/about' },
-  { labelKey: 'footer.link_careers', href: '#' },
-  { labelKey: 'footer.link_press', href: '#' },
   { labelKey: 'footer.link_blog', href: '#' },
 ];
 const socialLinks: SocialLink[] = [
@@ -84,14 +82,14 @@ export default function Footer() {
           paddingTop: 24,
         }}
       >
+        <p style={{ margin: 0 }}>상호명: 주식회사 파리클래스 | 사업자등록번호: 887-86-03126</p>
         <p style={{ margin: 0 }}>
-          상호명: 주식회사 티아이피에이아이 | 대표: 홍길동 | 사업자등록번호: 123-45-67890
-        </p>
-        <p style={{ margin: 0 }}>
-          주소: 서울특별시 강남구 테헤란로 123, 4층 | 통신판매업신고: 제2026-서울강남-00001호
+          주소: 서울특별시 서초대로 77길 59 (06611) | 통신판매업신고: 2023-서울중구-1031
         </p>
         {/* eslint-disable-next-line i18n/no-literal-string -- fixed KR business-registration data, identical in both locales */}
-        <p style={{ margin: 0 }}>고객센터: support@tip-ai.com | 전화: 02-1234-5678</p>
+        <p style={{ margin: 0 }}>
+          고객센터: travelmate@travelinyourpocket.com | 전화: 02-6013-7775
+        </p>
       </div>
 
       {/* Copyright + social icons */}

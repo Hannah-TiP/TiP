@@ -135,7 +135,7 @@ function DreamHotelsContent() {
   const fetchHotelsPage = useCallback(
     (page: number) =>
       apiClient.getHotels({
-        language: 'en',
+        language: lang,
         include_draft: isPreview,
         country_id: destinationFilter.country_id,
         region_id: destinationFilter.region_id,
@@ -146,6 +146,7 @@ function DreamHotelsContent() {
         per_page: HOTELS_PER_PAGE,
       }),
     [
+      lang,
       isPreview,
       destinationFilter.country_id,
       destinationFilter.region_id,
@@ -162,6 +163,7 @@ function DreamHotelsContent() {
     isLoadingMore,
     sentinelRef,
   } = useInfiniteList<Hotel>(fetchHotelsPage, [
+    lang,
     isPreview,
     destinationFilter.country_id,
     destinationFilter.region_id,
@@ -273,7 +275,7 @@ function DreamHotelsContent() {
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
             {t('discover.curated_collection')}
           </span>
-          <h1 className="font-primary text-[36px] font-normal italic leading-tight text-white md:text-[48px] lg:text-[64px]">
+          <h1 className="font-primary text-[36px] font-normal italic leading-tight text-white break-keep md:text-[48px] lg:text-[64px]">
             {t('dream_hotels.hero_title')}
           </h1>
           <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-white/60">

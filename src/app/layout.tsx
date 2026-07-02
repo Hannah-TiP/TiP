@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import './globals.css';
 import { SessionProvider } from 'next-auth/react';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { UserProvider } from '@/contexts/UserContext';
 import Header from '@/components/Header';
 import CookieConsentBanner from '@/components/CookieConsentBanner';
+import { resolveServerLanguage } from '@/lib/detect-language';
 
 export const metadata: Metadata = {
   title: 'TiP - Luxury Travel Concierge',
@@ -15,13 +17,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const acceptLanguage = (await headers()).get('accept-language');
+  const initialLang = resolveServerLanguage(acceptLanguage);
+  const htmlLang = initialLang === 'kr' ? 'ko' : 'en';
+
   return (
-    <html lang="en" className="h-full">
+    <html lang={htmlLang} className="h-full">
       <head>
         {/* eslint-disable-next-line @next/next/no-page-custom-font -- App Router layout, not Pages Router */}
         <link
@@ -32,7 +38,7 @@ export default function RootLayout({
       </head>
       <body className="h-full antialiased font-secondary">
         <SessionProvider>
-          <LanguageProvider>
+          <LanguageProvider initialLang={initialLang}>
             <UserProvider>
               <div className="flex min-h-screen flex-col">
                 <Header />

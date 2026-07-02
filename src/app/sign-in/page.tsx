@@ -5,9 +5,12 @@ import { signIn, getSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { buildAuthRedirectUrl, isSafeRedirectPath } from '@/lib/redirect-validation';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
+import { startGoogleRedirect } from '@/lib/google-oauth';
+import { useInAppBrowser } from '@/lib/in-app-browser';
 import PasswordInput from '@/components/PasswordInput';
+import WebviewLoginNotice from '@/components/auth/WebviewLoginNotice';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
@@ -15,6 +18,7 @@ const DEFAULT_REDIRECT = '/my-page';
 
 function SignInForm() {
   const { t } = useLanguage();
+  const webview = useInAppBrowser();
   const searchParams = useSearchParams();
   // Pre-fill the email when arriving from the signup screen's "account
   // already exists" panel (it links here with ?email=).
@@ -42,52 +46,19 @@ function SignInForm() {
   const rawRef = searchParams.get('ref') ?? '';
   const referralCode = /^[A-Z0-9]{4,16}$/i.test(rawRef) ? rawRef.toUpperCase() : '';
 
-  const handleGoogleSuccess = async (response: CredentialResponse) => {
-    if (!response.credential) return;
+  // Full-page top-level redirect to Google (SMA-133). The /auth/google/callback
+  // page completes the exchange + session and routes back to `safeRedirect`
+  // (threading the onboarding hop + referral). Same-tab redirect avoids the
+  // iOS-Safari popup-postMessage failure.
+  const handleGoogleClick = () => {
     setError('');
     setIsLoading(true);
-
-    try {
-      // Send Google token to backend via proxy
-      const res = await fetch('/api/auth/social-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          provider: 'google',
-          id_token: response.credential,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || t('auth.error_google_failed'));
-      }
-
-      const { data } = await res.json();
-
-      // Establish NextAuth session using the social-login provider
-      const result = await signIn('social-login', {
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        throw new Error(t('auth.error_session_failed'));
-      }
-
-      const session = await getSession();
-      const needsOnboarding = session?.user && !session.user.onboarding_completed;
-      // When onboarding is still required, thread the pending redirect (and
-      // referral) through /onboarding so the trip-planning context survives to
-      // the end of the chain — see buildAuthRedirectUrl.
-      window.location.href = needsOnboarding
-        ? buildAuthRedirectUrl('/onboarding', { ref: referralCode, redirect: safeRedirect })
-        : redirectTo;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('auth.error_google_failed'));
-      setIsLoading(false);
-    }
+    startGoogleRedirect({
+      clientId: GOOGLE_CLIENT_ID,
+      returnTo: safeRedirect,
+      ref: referralCode || null,
+      from: 'sign-in',
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,17 +97,9 @@ function SignInForm() {
 
         {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
-        {GOOGLE_CLIENT_ID && (
+        {GOOGLE_CLIENT_ID && !webview.inApp && (
           <>
-            <div className="flex justify-center">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setError(t('auth.error_google_failed'))}
-                size="large"
-                width="356"
-                text="continue_with"
-              />
-            </div>
+            <GoogleSignInButton onClick={handleGoogleClick} disabled={isLoading} />
 
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-gray-200" />
@@ -145,6 +108,8 @@ function SignInForm() {
             </div>
           </>
         )}
+
+        {webview.inApp && <WebviewLoginNotice info={webview} />}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <input
@@ -199,38 +164,36 @@ function SignInForm() {
 export default function SignInPage() {
   const { t } = useLanguage();
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <main className="flex min-h-screen flex-col bg-gray-light">
-        {/* Top Bar */}
-        <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-4 md:px-10">
-          <Link href="/">
-            <Image
-              src="/bible_TIP_profil_400x400px.svg"
-              alt={t('auth.logo_alt')}
-              className="h-9"
-              width={36}
-              height={36}
-            />
-          </Link>
+    <main className="flex min-h-screen flex-col bg-gray-light">
+      {/* Top Bar */}
+      <div className="flex h-14 items-center justify-between border-b border-gray-border bg-white px-4 md:px-10">
+        <Link href="/">
+          <Image
+            src="/bible_TIP_profil_400x400px.svg"
+            alt={t('auth.logo_alt')}
+            className="h-9"
+            width={36}
+            height={36}
+          />
+        </Link>
+      </div>
+
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 md:px-10">
+        <div className="text-center">
+          <h1 className="font-primary text-[32px] italic text-green-dark md:text-[48px]">
+            {t('auth.sign_in_headline')}
+          </h1>
+          <p className="mt-2 text-gray-text">{t('auth.sign_in_subtitle')}</p>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 md:px-10">
-          <div className="text-center">
-            <h1 className="font-primary text-[32px] italic text-green-dark md:text-[48px]">
-              {t('auth.sign_in_headline')}
-            </h1>
-            <p className="mt-2 text-gray-text">{t('auth.sign_in_subtitle')}</p>
-          </div>
-
-          <Suspense
-            fallback={
-              <div className="mt-8 h-64 w-full max-w-[420px] animate-pulse rounded-xl bg-white" />
-            }
-          >
-            <SignInForm />
-          </Suspense>
-        </div>
-      </main>
-    </GoogleOAuthProvider>
+        <Suspense
+          fallback={
+            <div className="mt-8 h-64 w-full max-w-[420px] animate-pulse rounded-xl bg-white" />
+          }
+        >
+          <SignInForm />
+        </Suspense>
+      </div>
+    </main>
   );
 }

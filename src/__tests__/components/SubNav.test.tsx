@@ -8,7 +8,7 @@ afterEach(cleanup);
 
 function renderSubNav(activeTab: SubNavKey) {
   return render(
-    <LanguageProvider>
+    <LanguageProvider initialLang="en">
       <SubNav activeTab={activeTab} />
     </LanguageProvider>,
   );

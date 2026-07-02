@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import HotelDetailContent from '@/components/hotel/HotelDetailContent';
 import { apiClient } from '@/lib/api-client';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type {
   AIChatHotelCarouselWidget,
   AIChatWidgetResponse,
@@ -17,13 +18,14 @@ interface Props {
 }
 
 export default function HotelCarousel({ widget, onSubmit, disabled }: Props) {
+  const { t } = useLanguage();
   const fetchHotel = useCallback((id: number) => apiClient.getHotelById(id), []);
 
   return (
     <EntityCarousel
       items={widget.hotels}
-      entityLabel="Hotel"
-      selectLabel="Select this hotel"
+      entityLabel={t('widget.carousel_entity_hotel')}
+      selectLabel={t('widget.carousel_select_hotel')}
       onSubmit={onSubmit}
       disabled={disabled}
       multiSelect

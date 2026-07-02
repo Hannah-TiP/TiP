@@ -26,7 +26,7 @@ function SignatureJourneysContent() {
   const [signatureJourneys, setSignatureJourneys] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { isPreview } = usePreviewMode();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   // Filter state
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
@@ -45,12 +45,12 @@ function SignatureJourneysContent() {
         setIsLoading(true);
         const [packageData, cityData] = await Promise.all([
           apiClient.getActivities({
-            language: 'en',
+            language: lang,
             kind: 'package',
             include_draft: isPreview,
             per_page: 100,
           }),
-          apiClient.getCities('en'),
+          apiClient.getCities(lang),
         ]);
         // Defensive client-side filter: backend filtering is the source of
         // truth, but if any items leak through with a different kind, this
@@ -65,19 +65,19 @@ function SignatureJourneysContent() {
     }
 
     loadData();
-  }, [isPreview]);
+  }, [isPreview, lang]);
 
   // Load cities when dropdown opens
   useEffect(() => {
     if (openDropdown === 'destination' && cities.length === 0) {
       setCitiesLoading(true);
       apiClient
-        .getCities('en')
+        .getCities(lang)
         .then(setCities)
         .catch(() => {})
         .finally(() => setCitiesLoading(false));
     }
-  }, [openDropdown, cities.length]);
+  }, [openDropdown, cities.length, lang]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -123,7 +123,7 @@ function SignatureJourneysContent() {
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
             {t('signature_journeys.hero_overline')}
           </span>
-          <h1 className="font-primary text-[36px] font-normal italic leading-tight text-white md:text-[48px] lg:text-[64px]">
+          <h1 className="font-primary text-[36px] font-normal italic leading-tight text-white break-keep md:text-[48px] lg:text-[64px]">
             {t('signature_journeys.hero_title')}
           </h1>
           <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-white/60">

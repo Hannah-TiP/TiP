@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import SearchBar from '@/components/SearchBar';
 import PartnersMarquee from '@/components/PartnersMarquee';
-import InstagramIcon from '@/components/icons/InstagramIcon';
+import Footer from '@/components/Footer';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const elevateCards = [
@@ -81,11 +81,11 @@ const membershipCircles: MembershipCircle[] = [
     },
     price: { en: 'Free', kr: '무료' },
     qualifying: {
-      en: '$20,000 in annual TiP bookings, or by member referral.',
-      kr: '연간 $20,000 이상의 TiP 예약, 또는 멤버 추천',
+      en: '$30,000 in annual TiP bookings, or by member referral.',
+      kr: '연간 $30,000 이상의 TiP 예약, 또는 멤버 추천',
     },
     benefits: [
-      { en: 'Up to $200 stay credit per booking', kr: '스테이당 최대 $200 크레딧' },
+      { en: 'Up to $150 stay credit per booking', kr: '스테이당 최대 $150 크레딧' },
       {
         en: 'Hotel Whisperer — best room, told to you 24h before arrival',
         kr: '호텔 위스퍼러 — 도착 24시간 전 최적의 객실 안내',
@@ -114,13 +114,13 @@ const membershipCircles: MembershipCircle[] = [
       en: 'The hotel already knows you.',
       kr: '호텔이 이미 당신을 아는 곳',
     },
-    price: { en: '₩3,500,000 / year', kr: '연 ₩3,500,000' },
+    price: { en: '₩9,500,000 / year', kr: '연 ₩9,500,000' },
     qualifying: {
-      en: '$60,000 in annual bookings, or 12+ months as Cercle.',
-      kr: '연간 $60,000 이상, 또는 Cercle 멤버십 12개월 이상',
+      en: '$70,000 in annual bookings, or 12+ months as Cercle.',
+      kr: '연간 $70,000 이상, 또는 Cercle 멤버십 12개월 이상',
     },
     benefits: [
-      { en: 'Up to $300 stay credit per booking', kr: '스테이당 최대 $300 크레딧' },
+      { en: 'Up to $200 stay credit per booking', kr: '스테이당 최대 $200 크레딧' },
       {
         en: 'Pre-Stay Call — 15 min with your Travel Designer',
         kr: '프리 스테이 콜 — 트래블 디자이너와 15분 통화',
@@ -149,13 +149,13 @@ const membershipCircles: MembershipCircle[] = [
       en: 'The inner circle.',
       kr: '초대로만 열리는 가장 안쪽의 원',
     },
-    price: { en: '₩12,000,000 / year', kr: '연 ₩12,000,000' },
+    price: { en: '₩20,000,000 / year', kr: '연 ₩20,000,000' },
     qualifying: {
-      en: 'By invitation only. Limited to 10 new members per year.',
-      kr: '초대로만. 연간 최대 10명에게만 초대',
+      en: 'By invitation only. Limited to 20 new members per year.',
+      kr: '초대로만. 연간 최대 20명에게만 초대',
     },
     benefits: [
-      { en: 'Up to $500 stay credit per booking', kr: '스테이당 최대 $500 크레딧' },
+      { en: 'Up to $400 stay credit per booking', kr: '스테이당 최대 $400 크레딧' },
       {
         en: 'Empty Room Guarantee — even when sold out',
         kr: '엠프티 룸 개런티 — 매진 시에도 객실 확보',
@@ -204,7 +204,7 @@ export default function HomePage() {
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
             {t('home.hero_overline')}
           </span>
-          <h1 className="max-w-3xl font-primary text-[36px] font-normal italic leading-[1.1] text-white md:text-[48px] lg:text-[64px]">
+          <h1 className="max-w-3xl font-primary text-[36px] font-normal italic leading-[1.1] text-white break-keep md:text-[48px] lg:text-[64px]">
             {t('home.hero_title')}
           </h1>
           <p className="mt-6 max-w-xl text-[16px] leading-[1.7] text-white/60">
@@ -479,98 +479,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#214032] px-6 py-12 sm:px-10 lg:px-[100px]">
-        <div className="mx-auto max-w-7xl">
-          {/* Top */}
-          <div className="flex flex-col items-start gap-10 md:flex-row md:justify-between">
-            <Link href="/">
-              <Image
-                src="/bible_TIP_logo_noir.svg"
-                alt={t('home.footer_logo_alt')}
-                className="h-10"
-                width={120}
-                height={40}
-                style={{ filter: 'brightness(0) invert(1)' }}
-              />
-            </Link>
-            <div className="flex flex-wrap gap-x-12 gap-y-8 sm:gap-x-20">
-              <div>
-                <h4 className="text-[13px] font-semibold text-white/60">
-                  {t('home.footer_explore')}
-                </h4>
-                <div className="mt-4 flex flex-col gap-3">
-                  <Link
-                    href="/dream-hotels"
-                    className="text-[13px] text-white/40 hover:text-white/70"
-                  >
-                    {t('home.footer_dream_hotels')}
-                  </Link>
-                  <Link href="/about" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_about')}
-                  </Link>
-                  <Link href="/concierge" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_concierge')}
-                  </Link>
-                </div>
-              </div>
-              <div>
-                <h4 className="text-[13px] font-semibold text-white/60">
-                  {t('home.footer_company')}
-                </h4>
-                <div className="mt-4 flex flex-col gap-3">
-                  <Link href="/about" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_about_us')}
-                  </Link>
-                  <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_careers')}
-                  </Link>
-                  <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_press')}
-                  </Link>
-                </div>
-              </div>
-              <div>
-                <h4 className="text-[13px] font-semibold text-white/60">
-                  {t('home.footer_support')}
-                </h4>
-                <div className="mt-4 flex flex-col gap-3">
-                  <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_help_center')}
-                  </Link>
-                  <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_contact_us')}
-                  </Link>
-                  <Link href="#" className="text-[13px] text-white/40 hover:text-white/70">
-                    {t('home.footer_privacy')}
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Info */}
-          <div className="mt-10 border-t border-white/10 pt-6 text-[12px] leading-[1.8] text-white/40">
-            <p>상호명: 주식회사 티아이피에이아이 | 대표: 홍길동 | 사업자등록번호: 123-45-67890</p>
-            <p>
-              주소: 서울특별시 강남구 테헤란로 123, 4층 | 통신판매업신고: 제2026-서울강남-00001호
-            </p>
-          </div>
-
-          {/* Copyright + social icons */}
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 text-[12px] text-white/30">
-            <span>{t('home.footer_copyright')}</span>
-            <a
-              href="https://instagram.com/travelinyourpocket_official"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={t('footer.instagram_aria')}
-              className="text-white/40 transition-colors hover:text-white/70"
-            >
-              <InstagramIcon />
-            </a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }

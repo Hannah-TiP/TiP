@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import MessageList from '@/components/ai-chat/MessageList';
 import type { AIChatMessage, PendingMessage } from '@/types/ai-chat';
 
@@ -11,8 +11,14 @@ vi.mock('@/contexts/LanguageContext', () => ({
   }),
 }));
 
+const scrollIntoViewMock = vi.fn();
+
 beforeAll(() => {
-  Element.prototype.scrollIntoView = vi.fn();
+  Element.prototype.scrollIntoView = scrollIntoViewMock;
+});
+
+beforeEach(() => {
+  scrollIntoViewMock.mockClear();
 });
 
 afterEach(() => {
@@ -159,5 +165,150 @@ describe('MessageList pending message', () => {
 
     expect(screen.queryByText('chat.no_messages')).toBeNull();
     expect(screen.getByTestId('pending-message')).toBeDefined();
+  });
+});
+
+describe('MessageList scroll behavior', () => {
+  // jsdom has no layout — stub the container's scroll metrics, then fire a
+  // scroll event so the component's near-bottom tracking picks them up.
+  function setScrollPosition(
+    container: HTMLElement,
+    {
+      scrollHeight,
+      clientHeight,
+      scrollTop,
+    }: { scrollHeight: number; clientHeight: number; scrollTop: number },
+  ) {
+    Object.defineProperty(container, 'scrollHeight', { value: scrollHeight, configurable: true });
+    Object.defineProperty(container, 'clientHeight', { value: clientHeight, configurable: true });
+    Object.defineProperty(container, 'scrollTop', {
+      value: scrollTop,
+      configurable: true,
+      writable: true,
+    });
+    fireEvent.scroll(container);
+  }
+
+  function scrollFarUp(container: HTMLElement) {
+    // 1000 - (100 + 400) = 500 >= 100 threshold → not near bottom
+    setScrollPosition(container, { scrollHeight: 1000, clientHeight: 400, scrollTop: 100 });
+  }
+
+  function defaultProps(messages: AIChatMessage[]) {
+    return {
+      messages,
+      isLoading: false,
+      pendingMessage: null,
+      onWidgetSubmit: () => {},
+    };
+  }
+
+  const m1 = makeMessage({ id: 1, content: 'First' });
+  const m2 = makeMessage({ id: 2, content: 'Second' });
+
+  it('scrolls to bottom instantly on initial render with messages', () => {
+    render(<MessageList {...defaultProps([m1])} />);
+
+    expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'auto' });
+    expect(screen.queryByTestId('scroll-to-bottom-button')).toBeNull();
+  });
+
+  it('does not scroll but shows the button when a new message arrives while scrolled up', () => {
+    const { rerender } = render(<MessageList {...defaultProps([m1])} />);
+    scrollFarUp(screen.getByTestId('message-list-container'));
+    scrollIntoViewMock.mockClear();
+
+    rerender(<MessageList {...defaultProps([m1, m2])} />);
+
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
+    expect(screen.getByTestId('scroll-to-bottom-button')).toBeDefined();
+  });
+
+  it('ignores identity-only array replacement (polling tick) while scrolled up', () => {
+    const { rerender } = render(<MessageList {...defaultProps([m1, m2])} />);
+    scrollFarUp(screen.getByTestId('message-list-container'));
+    scrollIntoViewMock.mockClear();
+
+    rerender(<MessageList {...defaultProps([{ ...m1 }, { ...m2 }])} />);
+
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('scroll-to-bottom-button')).toBeNull();
+  });
+
+  it('ignores identity-only array replacement (polling tick) while near bottom', () => {
+    const { rerender } = render(<MessageList {...defaultProps([m1, m2])} />);
+    scrollIntoViewMock.mockClear();
+
+    rerender(<MessageList {...defaultProps([{ ...m1 }, { ...m2 }])} />);
+
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('scroll-to-bottom-button')).toBeNull();
+  });
+
+  it('auto-follows a new message when near bottom, without showing the button', () => {
+    const { rerender } = render(<MessageList {...defaultProps([m1])} />);
+    scrollIntoViewMock.mockClear();
+
+    rerender(<MessageList {...defaultProps([m1, m2])} />);
+
+    expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth' });
+    expect(screen.queryByTestId('scroll-to-bottom-button')).toBeNull();
+  });
+
+  it('clicking the button scrolls to bottom and dismisses it', () => {
+    const { rerender } = render(<MessageList {...defaultProps([m1])} />);
+    scrollFarUp(screen.getByTestId('message-list-container'));
+    rerender(<MessageList {...defaultProps([m1, m2])} />);
+    scrollIntoViewMock.mockClear();
+
+    fireEvent.click(screen.getByTestId('scroll-to-bottom-button'));
+
+    expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth' });
+    expect(screen.queryByTestId('scroll-to-bottom-button')).toBeNull();
+  });
+
+  it('scrolling back near the bottom dismisses the button', () => {
+    const { rerender } = render(<MessageList {...defaultProps([m1])} />);
+    const container = screen.getByTestId('message-list-container');
+    scrollFarUp(container);
+    rerender(<MessageList {...defaultProps([m1, m2])} />);
+    expect(screen.getByTestId('scroll-to-bottom-button')).toBeDefined();
+
+    // 1000 - (950 + 400) < 100 → near bottom again
+    setScrollPosition(container, { scrollHeight: 1000, clientHeight: 400, scrollTop: 950 });
+
+    expect(screen.queryByTestId('scroll-to-bottom-button')).toBeNull();
+  });
+
+  it('scrolls when the pending message appears even while scrolled up (own send)', () => {
+    const { rerender } = render(<MessageList {...defaultProps([m1])} />);
+    scrollFarUp(screen.getByTestId('message-list-container'));
+    scrollIntoViewMock.mockClear();
+
+    const pending: PendingMessage = {
+      content: 'My own message',
+      widget_response: null,
+      sent_at: '2026-05-01T10:01:00Z',
+    };
+    rerender(<MessageList {...defaultProps([m1])} pendingMessage={pending} />);
+
+    expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth' });
+    expect(screen.queryByTestId('scroll-to-bottom-button')).toBeNull();
+  });
+
+  it('scrolls when isLoading flips on even while scrolled up (audio own send)', () => {
+    const { rerender } = render(<MessageList {...defaultProps([m1])} />);
+    scrollFarUp(screen.getByTestId('message-list-container'));
+    scrollIntoViewMock.mockClear();
+
+    rerender(<MessageList {...defaultProps([m1])} isLoading={true} />);
+
+    expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth' });
+    expect(screen.queryByTestId('scroll-to-bottom-button')).toBeNull();
   });
 });

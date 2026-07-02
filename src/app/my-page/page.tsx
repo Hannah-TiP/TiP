@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { getTripsWithVersions, type TripWithVersion } from '@/lib/trip-utils';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { formatDate as formatDateI18n } from '@/lib/format-date';
+import { getStatusLabel } from '@/lib/trip-display';
 
 const STATUS_PRIORITY = [
   'draft',
@@ -16,16 +18,6 @@ const STATUS_PRIORITY = [
   'traveling-now',
 ] as const;
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Planning',
-  'waiting-for-proposal': 'Awaiting Proposal',
-  'in-progress': 'In Progress',
-  'waiting-for-payment': 'Awaiting Payment',
-  paid: 'Payment Confirmed',
-  'ready-to-travel': 'Ready to Travel',
-  'traveling-now': 'Traveling Now',
-};
-
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-600',
   'waiting-for-proposal': 'bg-yellow-100 text-yellow-700',
@@ -34,6 +26,7 @@ const STATUS_COLORS: Record<string, string> = {
   paid: 'bg-teal-100 text-teal-700',
   'ready-to-travel': 'bg-green-100 text-green-700',
   'traveling-now': 'bg-emerald-100 text-emerald-700',
+  canceled: 'bg-gray-200 text-gray-500',
 };
 
 function getNights(startDate?: string, endDate?: string): number | null {
@@ -42,13 +35,11 @@ function getNights(startDate?: string, endDate?: string): number | null {
   return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
-function formatDate(dateStr?: string): string {
+const DATE_OPTS: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+
+function formatDate(dateStr: string | undefined, lang: Lang): string {
   if (!dateStr) return '\u2014';
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return formatDateI18n(dateStr, lang, DATE_OPTS);
 }
 
 function sortByPriority(trips: TripWithVersion[]): TripWithVersion[] {
@@ -92,7 +83,7 @@ function EmptyState() {
 }
 
 function HeroCard({ item }: { item: TripWithVersion }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const title = item.currentVersion?.title?.trim() || 'New Trip';
   const startDate = item.currentVersion?.start_date || undefined;
   const endDate = item.currentVersion?.end_date || undefined;
@@ -100,12 +91,19 @@ function HeroCard({ item }: { item: TripWithVersion }) {
   const adults = item.currentVersion?.adults ?? 0;
   const kids = item.currentVersion?.kids ?? 0;
   const summary = item.currentVersion?.summary || undefined;
-  const statusLabel = STATUS_LABELS[item.trip.status] ?? item.trip.status;
+  const isCanceled = item.trip.status === 'canceled';
+  const statusLabel = isCanceled
+    ? t('my_page.status_canceled')
+    : getStatusLabel(item.trip.status, t);
   const statusColor = STATUS_COLORS[item.trip.status] ?? 'bg-gray-100 text-gray-600';
 
   return (
     <Link href={`/my-page/trip/${item.trip.id}`} className="block group">
-      <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex flex-col md:flex-row group-hover:ring-2 group-hover:ring-[#C4956A] transition-all">
+      <div
+        className={`bg-[#1E3D2F] rounded-2xl overflow-hidden flex flex-col md:flex-row group-hover:ring-2 group-hover:ring-[#C4956A] transition-all ${
+          isCanceled ? 'opacity-70 grayscale' : ''
+        }`}
+      >
         <div className="w-full md:w-[480px] md:flex-shrink-0 relative">
           <div className="w-full h-full min-h-[240px] bg-gradient-to-br from-[#2a5240] to-[#C4956A] flex items-center justify-center">
             <span className="text-white text-2xl font-bold px-6 text-center">{title}</span>
@@ -125,7 +123,7 @@ function HeroCard({ item }: { item: TripWithVersion }) {
             <div>
               <p className="text-white/50">{t('my_page.dates')}</p>
               <p className="font-semibold">
-                {formatDate(startDate)} – {formatDate(endDate)}
+                {formatDate(startDate, lang)} – {formatDate(endDate, lang)}
               </p>
             </div>
             {nights !== null && (
@@ -157,6 +155,7 @@ function HeroCard({ item }: { item: TripWithVersion }) {
 }
 
 function TripCard({ item }: { item: TripWithVersion }) {
+  const { lang, t } = useLanguage();
   const title = item.currentVersion?.title?.trim() || 'New Trip';
   const startDate = item.currentVersion?.start_date || undefined;
   const endDate = item.currentVersion?.end_date || undefined;
@@ -164,12 +163,19 @@ function TripCard({ item }: { item: TripWithVersion }) {
   const adults = item.currentVersion?.adults ?? 0;
   const kids = item.currentVersion?.kids ?? 0;
   const summary = item.currentVersion?.summary || undefined;
-  const statusLabel = STATUS_LABELS[item.trip.status] ?? item.trip.status;
+  const isCanceled = item.trip.status === 'canceled';
+  const statusLabel = isCanceled
+    ? t('my_page.status_canceled')
+    : getStatusLabel(item.trip.status, t);
   const statusColor = STATUS_COLORS[item.trip.status] ?? 'bg-gray-100 text-gray-600';
 
   return (
     <Link href={`/my-page/trip/${item.trip.id}`} className="block group">
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-[#C4956A]/40 transition-all">
+      <div
+        className={`bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-[#C4956A]/40 transition-all ${
+          isCanceled ? 'opacity-70 grayscale' : ''
+        }`}
+      >
         <div className="h-36 relative">
           <div className="w-full h-full bg-gradient-to-br from-[#2a5240] to-[#C4956A]" />
           <span
@@ -181,7 +187,7 @@ function TripCard({ item }: { item: TripWithVersion }) {
         <div className="p-4">
           <h3 className="font-semibold text-gray-900 mb-1 truncate">{title}</h3>
           <p className="text-sm text-gray-500">
-            {formatDate(startDate)} – {formatDate(endDate)}
+            {formatDate(startDate, lang)} – {formatDate(endDate, lang)}
             {nights !== null && <span className="ml-2 text-gray-400">({nights}N)</span>}
           </p>
           <p className="text-xs text-gray-400 mt-1">
@@ -203,11 +209,9 @@ export default function MyPageUpcomingTravels() {
   useEffect(() => {
     const load = async () => {
       try {
-        const loaded = await getTripsWithVersions({ exclude_canceled: true });
-        const active = loaded.filter(
-          ({ trip }) => trip.status !== 'travel-completed' && trip.status !== 'canceled',
-        );
-        setTrips(sortByPriority(active));
+        const loaded = await getTripsWithVersions();
+        const shown = loaded.filter(({ trip }) => trip.status !== 'travel-completed');
+        setTrips(sortByPriority(shown));
       } finally {
         setLoading(false);
       }

@@ -3,7 +3,9 @@
 import type { TripWithVersion } from '@/lib/trip-utils';
 import type { AIChatSessionMetadata } from '@/types/ai-chat';
 import type { Trip } from '@/types/trip';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang, type TranslationKeys } from '@/contexts/LanguageContext';
+import { formatTime as formatTimeI18n, formatDate, formatDateRange } from '@/lib/format-date';
+import { getStatusLabel } from '@/lib/trip-display';
 
 export interface ConciergeSession {
   session: AIChatSessionMetadata;
@@ -24,7 +26,11 @@ interface ConversationSidebarProps {
   onToggleCollapse: () => void;
 }
 
-function formatTime(isoStr: string | null): string {
+function formatTime(
+  isoStr: string | null,
+  lang: Lang,
+  t: (key: TranslationKeys) => string,
+): string {
   if (!isoStr) return '';
   const d = new Date(isoStr);
   const now = new Date();
@@ -32,11 +38,11 @@ function formatTime(isoStr: string | null): string {
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays <= 0) {
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return formatTimeI18n(d, lang, { hour: '2-digit', minute: '2-digit' });
   }
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  if (diffDays === 1) return t('sidebar.yesterday');
+  if (diffDays < 7) return t('sidebar.days_ago').replace('{days}', String(diffDays));
+  return formatDate(d, lang, { month: 'short', day: 'numeric' });
 }
 
 function getSessionLabel(s: ConciergeSession): string | null {
@@ -50,12 +56,13 @@ function parseLocalDate(dateStr: string): Date {
   return new Date(y, m - 1, d);
 }
 
-function formatDateRange(start: string | null, end: string | null): string | null {
+function formatRange(start: string | null, end: string | null, lang: Lang): string | null {
   if (!start || !end) return null;
-  const s = parseLocalDate(start);
-  const e = parseLocalDate(end);
   const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
-  return `${s.toLocaleDateString('en-US', opts)} – ${e.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
+  return formatDateRange(parseLocalDate(start), parseLocalDate(end), lang, opts, {
+    ...opts,
+    year: 'numeric',
+  });
 }
 
 function getStatusColor(status: string | null): string {
@@ -80,13 +87,6 @@ function getStatusColor(status: string | null): string {
   }
 }
 
-function getStatusLabel(status: string): string {
-  return status
-    .split('-')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
-
 export default function ConversationSidebar({
   sessions,
   activeSessionId,
@@ -95,7 +95,7 @@ export default function ConversationSidebar({
   isCollapsed,
   onToggleCollapse,
 }: ConversationSidebarProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   return (
     <div
       className="flex flex-col bg-[#FAFAF8] border-r border-gray-100 transition-all duration-300 overflow-hidden"
@@ -174,19 +174,19 @@ export default function ConversationSidebar({
                   {getSessionLabel(s) || t('chat.new_trip')}
                 </span>
                 <span className="font-inter text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">
-                  {formatTime(s.session.last_message_at ?? null)}
+                  {formatTime(s.session.last_message_at ?? null, lang, t)}
                 </span>
               </div>
-              {formatDateRange(startDate, endDate) && (
+              {formatRange(startDate, endDate, lang) && (
                 <p className="font-inter text-[11px] text-gray-400 mt-0.5 truncate">
-                  {formatDateRange(startDate, endDate)}
+                  {formatRange(startDate, endDate, lang)}
                 </p>
               )}
               <div className="flex items-center gap-2 mt-1">
                 <span
                   className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-inter ${getStatusColor(tripStatus)}`}
                 >
-                  {getStatusLabel(tripStatus)}
+                  {getStatusLabel(tripStatus, t)}
                 </span>
               </div>
             </button>

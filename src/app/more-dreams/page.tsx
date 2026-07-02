@@ -31,7 +31,7 @@ function isLocalExperience(activity: Activity): boolean {
 }
 
 function MoreDreamsContent() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { isPreview } = usePreviewMode();
 
   // Filter state
@@ -62,7 +62,7 @@ function MoreDreamsContent() {
     (page) =>
       apiClient
         .getActivities({
-          language: 'en',
+          language: lang,
           kind: 'local_experience',
           include_draft: isPreview,
           city_id: cityId,
@@ -73,7 +73,7 @@ function MoreDreamsContent() {
         // truth, but if any package items leak into the local_experience
         // bucket, drop them — packages now live on /signature-journeys.
         .then((result) => ({ ...result, items: result.items.filter(isLocalExperience) })),
-    [isPreview, cityId],
+    [lang, isPreview, cityId],
   );
 
   const {
@@ -86,20 +86,20 @@ function MoreDreamsContent() {
   } = useInfiniteList<Restaurant>(
     (page) =>
       apiClient.getRestaurants({
-        language: 'en',
+        language: lang,
         include_draft: isPreview,
         city_id: cityId,
         page,
         per_page: MORE_DREAMS_PER_PAGE,
       }),
-    [isPreview, cityId],
+    [lang, isPreview, cityId],
   );
 
   // Load cities for the destination dropdown once on mount.
   useEffect(() => {
     let cancelled = false;
     apiClient
-      .getCities('en')
+      .getCities(lang)
       .then((data) => {
         if (!cancelled) setCities(data);
       })
@@ -110,7 +110,7 @@ function MoreDreamsContent() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [lang]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -155,7 +155,7 @@ function MoreDreamsContent() {
           <span className="mb-4 text-[11px] font-semibold tracking-[4px] text-gold">
             {t('discover.curated_collection')}
           </span>
-          <h1 className="font-primary text-[36px] font-normal italic leading-tight text-white md:text-[48px] lg:text-[64px]">
+          <h1 className="font-primary text-[36px] font-normal italic leading-tight text-white break-keep md:text-[48px] lg:text-[64px]">
             {t('more_dreams.hero_title')}
           </h1>
           <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-white/60">

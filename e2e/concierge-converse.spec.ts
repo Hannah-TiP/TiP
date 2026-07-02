@@ -147,7 +147,7 @@ test.describe('Concierge chat message flow', () => {
               },
               trip: { id: TRIP_ID },
               trip_version: null,
-              field_updated: ['purpose'],
+              field_updated: ['plan'],
             },
           }),
         });
@@ -185,10 +185,11 @@ test.describe('Concierge chat message flow', () => {
       timeout: 5000,
     });
 
-    // Trip panel highlights the purpose row
-    const purposeRow = page.getByTestId('trip-row-purpose');
-    await expect(purposeRow).toBeVisible({ timeout: 5000 });
-    await expect(purposeRow).toHaveClass(/bg-amber-100/);
+    // Trip panel highlights the summary row (backend reports a summary change as "plan")
+    const summaryRow = page.getByTestId('trip-row-summary');
+    await expect(summaryRow).toBeVisible({ timeout: 5000 });
+    await expect(summaryRow).toContainText('Leisure');
+    await expect(summaryRow).toHaveClass(/bg-amber-100/);
   });
 });
 

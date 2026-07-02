@@ -37,6 +37,7 @@ const seededVersion = {
   trip_id: TRIP_ID,
   version_number: 1,
   title: 'Paris',
+  summary: 'A leisure getaway to Paris',
   start_date: '2099-06-01',
   end_date: '2099-06-07',
   adults: 2,
@@ -175,9 +176,9 @@ test.describe('SearchBar → Concierge prefill (authed)', () => {
 
     await page.waitForURL(/\/concierge/, { timeout: 15_000 });
 
-    const destinationRow = page.getByTestId('trip-row-destination');
-    await expect(destinationRow).toBeVisible({ timeout: 15_000 });
-    await expect(destinationRow).toContainText('Paris');
+    const summaryRow = page.getByTestId('trip-row-summary');
+    await expect(summaryRow).toBeVisible({ timeout: 15_000 });
+    await expect(summaryRow).toContainText('A leisure getaway to Paris');
 
     // URL gets cleaned up after the prefill is consumed.
     await page.waitForURL((u) => u.pathname === '/concierge' && u.search === '', {

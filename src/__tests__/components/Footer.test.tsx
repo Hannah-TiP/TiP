@@ -60,3 +60,46 @@ describe('Footer Instagram link', () => {
     expect(link.getAttribute('href')).toBe('https://instagram.com/travelinyourpocket_official');
   });
 });
+
+describe('Footer Company column', () => {
+  it('renders About Us and Blog but not Careers or Press (EN)', () => {
+    render(<Footer />);
+    expect(screen.getByText(enTranslations['footer.link_about_us'])).toBeTruthy();
+    expect(screen.getByText(enTranslations['footer.link_blog'])).toBeTruthy();
+    expect(screen.queryByText('Careers')).toBeNull();
+    expect(screen.queryByText('Press')).toBeNull();
+  });
+
+  it('does not render the Korean Careers or Press labels (KR)', () => {
+    currentLang = 'kr';
+    render(<Footer />);
+    expect(screen.getByText(krTranslations['footer.link_about_us'])).toBeTruthy();
+    expect(screen.getByText(krTranslations['footer.link_blog'])).toBeTruthy();
+    expect(screen.queryByText('채용')).toBeNull();
+    expect(screen.queryByText('보도자료')).toBeNull();
+  });
+});
+
+describe('Footer business-registration info', () => {
+  it('renders the real ParisClass legal data', () => {
+    const { container } = render(<Footer />);
+    const text = container.textContent ?? '';
+    expect(text).toContain('주식회사 파리클래스');
+    expect(text).toContain('887-86-03126');
+    expect(text).toContain('서울특별시 서초대로 77길 59 (06611)');
+    expect(text).toContain('2023-서울중구-1031');
+    expect(text).toContain('travelmate@travelinyourpocket.com');
+    expect(text).toContain('02-6013-7775');
+  });
+
+  it('contains none of the old placeholder business-registration strings', () => {
+    const { container } = render(<Footer />);
+    const text = container.textContent ?? '';
+    expect(text).not.toContain('홍길동');
+    expect(text).not.toContain('123-45-67890');
+    expect(text).not.toContain('support@tip-ai.com');
+    expect(text).not.toContain('02-1234-5678');
+    expect(text).not.toContain('주식회사 티아이피에이아이');
+    expect(text).not.toContain('테헤란로');
+  });
+});

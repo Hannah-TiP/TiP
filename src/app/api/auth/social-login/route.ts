@@ -9,15 +9,22 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { provider, id_token } = body;
+    const { provider, auth_code, id_token } = body;
+    const language = request.headers.get('Language') || 'en';
 
     const response = await fetch(`${API_BASE_URL}/api/v2/auth/social-login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Language: 'en',
+        Language: language,
       },
-      body: JSON.stringify({ provider, id_token }),
+      // auth_code is the OAuth auth-code popup flow (SMA-119); id_token is
+      // the legacy GIS credential — the backend accepts either.
+      body: JSON.stringify({
+        provider,
+        ...(auth_code ? { auth_code } : {}),
+        ...(id_token ? { id_token } : {}),
+      }),
     });
 
     const data = await response.json().catch(() => null);

@@ -10,23 +10,18 @@ import {
   tripDayNumber,
   type TripWithVersion,
 } from '@/lib/trip-utils';
-import { ITEM_COLORS, ITEM_LABELS, formatDateLabel, formatTime } from '@/lib/trip-display';
+import {
+  ITEM_COLORS,
+  getItemLabel,
+  getStatusLabel,
+  formatDateLabel,
+  formatTime,
+} from '@/lib/trip-display';
+import { formatDate } from '@/lib/format-date';
 import { apiClient } from '@/lib/api-client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ShareTripModal from '@/components/ShareTripModal';
 import BookingDocuments from '@/components/BookingDocuments';
-
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Planning',
-  'waiting-for-proposal': 'Awaiting Proposal',
-  'in-progress': 'In Progress',
-  'waiting-for-payment': 'Awaiting Payment',
-  paid: 'Payment Confirmed',
-  'ready-to-travel': 'Ready to Travel',
-  'traveling-now': 'Traveling Now',
-  'travel-completed': 'Completed',
-  canceled: 'Canceled',
-};
 
 /** Statuses where the trip can still be canceled (not yet paid). */
 const CANCELABLE_STATUSES = new Set([
@@ -42,17 +37,10 @@ function getNights(startDate?: string, endDate?: string): number | null {
   return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return '\u2014';
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
+const DATE_OPTS: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
 
 function HeroCard({ trip }: { trip: TripWithVersion }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const title = trip.currentVersion?.title?.trim() || t('trip_detail.new_trip');
   const startDate = trip.currentVersion?.start_date || undefined;
   const endDate = trip.currentVersion?.end_date || undefined;
@@ -60,7 +48,7 @@ function HeroCard({ trip }: { trip: TripWithVersion }) {
   const adults = trip.currentVersion?.adults ?? 0;
   const kids = trip.currentVersion?.kids ?? 0;
   const summary = trip.currentVersion?.summary || undefined;
-  const statusLabel = STATUS_LABELS[trip.trip.status] ?? trip.trip.status;
+  const statusLabel = getStatusLabel(trip.trip.status, t);
 
   return (
     <div className="bg-[#1E3D2F] rounded-2xl overflow-hidden flex flex-col md:flex-row">
@@ -83,7 +71,8 @@ function HeroCard({ trip }: { trip: TripWithVersion }) {
           <div>
             <p className="text-white/50">{t('trip_detail.dates')}</p>
             <p className="font-semibold">
-              {formatDate(startDate)} – {formatDate(endDate)}
+              {startDate ? formatDate(startDate, lang, DATE_OPTS) : '—'} –{' '}
+              {endDate ? formatDate(endDate, lang, DATE_OPTS) : '—'}
             </p>
           </div>
           {nights !== null && (
@@ -153,7 +142,7 @@ function CancelTripDialog({
 }
 
 export default function TripDetailPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [tripWithVersion, setTripWithVersion] = useState<TripWithVersion | null>(null);
@@ -348,7 +337,7 @@ export default function TripDetailPage() {
                               {t('trip_detail.day')} {dayBadgeText}
                             </span>
                             <span className="text-xs text-gray-400">
-                              {formatDateLabel(day.date)}
+                              {formatDateLabel(day.date, lang)}
                             </span>
                             {day.title && (
                               <span className="text-xs font-medium text-gray-700">{day.title}</span>
@@ -364,19 +353,19 @@ export default function TripDetailPage() {
                                   <span
                                     className={`text-xs px-2 py-0.5 rounded font-medium flex-shrink-0 mt-0.5 ${ITEM_COLORS[item.item_type]}`}
                                   >
-                                    {ITEM_LABELS[item.item_type]}
+                                    {getItemLabel(item.item_type, t)}
                                   </span>
                                   <div className="min-w-0">
                                     <p className="text-sm font-medium text-gray-900 truncate">
-                                      {item.title || ITEM_LABELS[item.item_type]}
+                                      {item.title || getItemLabel(item.item_type, t)}
                                     </p>
                                     {item.location && (
                                       <p className="text-xs text-gray-400">{item.location}</p>
                                     )}
                                     {item.start_at && (
                                       <p className="text-xs text-gray-400">
-                                        {formatTime(item.start_at)}
-                                        {item.end_at ? ` – ${formatTime(item.end_at)}` : ''}
+                                        {formatTime(item.start_at, lang)}
+                                        {item.end_at ? ` – ${formatTime(item.end_at, lang)}` : ''}
                                       </p>
                                     )}
                                     {item.description && (
@@ -405,18 +394,20 @@ export default function TripDetailPage() {
           </div>
 
           <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 mb-2">
-                {t('trip_detail.edit_in_concierge')}
-              </h3>
-              <p className="text-xs text-gray-500 mb-4">{t('trip_detail.edit_concierge_hint')}</p>
-              <Link
-                href={`/concierge?trip_id=${trip.id}`}
-                className="inline-flex w-full items-center justify-center gap-2 px-5 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-full hover:bg-[#2a5240] transition-colors"
-              >
-                {t('trip_detail.edit_in_concierge')}
-              </Link>
-            </div>
+            {trip.status !== 'canceled' && (
+              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  {t('trip_detail.edit_in_concierge')}
+                </h3>
+                <p className="text-xs text-gray-500 mb-4">{t('trip_detail.edit_concierge_hint')}</p>
+                <Link
+                  href={`/concierge?trip_id=${trip.id}`}
+                  className="inline-flex w-full items-center justify-center gap-2 px-5 py-2.5 bg-[#1E3D2F] text-white text-sm font-medium rounded-full hover:bg-[#2a5240] transition-colors"
+                >
+                  {t('trip_detail.edit_in_concierge')}
+                </Link>
+              </div>
+            )}
 
             <BookingDocuments documents={documents} headingLevel="h2" />
 

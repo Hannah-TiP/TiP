@@ -4,20 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { formatDate as formatDateI18n } from '@/lib/format-date';
+import { getStatusLabel } from '@/lib/trip-display';
 import type { SharedTripItem } from '@/types/trip-share';
-
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Planning',
-  'waiting-for-proposal': 'Awaiting Proposal',
-  'in-progress': 'In Progress',
-  'waiting-for-payment': 'Awaiting Payment',
-  paid: 'Payment Confirmed',
-  'ready-to-travel': 'Ready to Travel',
-  'traveling-now': 'Traveling Now',
-  'travel-completed': 'Completed',
-  canceled: 'Canceled',
-};
 
 function getNights(startDate?: string | null, endDate?: string | null): number | null {
   if (!startDate || !endDate) return null;
@@ -25,9 +15,9 @@ function getNights(startDate?: string | null, endDate?: string | null): number |
   return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
-function formatDate(dateStr?: string | null): string {
+function formatDate(dateStr: string | null | undefined, lang: Lang): string {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-US', {
+  return formatDateI18n(dateStr, lang, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -35,10 +25,10 @@ function formatDate(dateStr?: string | null): string {
 }
 
 function SharedTripCard({ item }: { item: SharedTripItem }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const title = item.title?.trim() || t('shared_trips.untitled');
   const nights = getNights(item.start_date, item.end_date);
-  const statusLabel = STATUS_LABELS[item.status] ?? item.status;
+  const statusLabel = getStatusLabel(item.status, t);
 
   return (
     <Link href={`/shared-trips/${item.trip_id}`} className="block group">
@@ -52,7 +42,7 @@ function SharedTripCard({ item }: { item: SharedTripItem }) {
         <div className="p-4">
           <h3 className="font-semibold text-gray-900 mb-1 truncate">{title}</h3>
           <p className="text-sm text-gray-500">
-            {formatDate(item.start_date)} – {formatDate(item.end_date)}
+            {formatDate(item.start_date, lang)} – {formatDate(item.end_date, lang)}
             {nights !== null && <span className="ml-2 text-gray-400">({nights}N)</span>}
           </p>
           {item.created_by_email && (
