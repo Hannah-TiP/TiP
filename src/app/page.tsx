@@ -81,11 +81,11 @@ const membershipCircles: MembershipCircle[] = [
     },
     price: { en: 'Free', kr: '무료' },
     qualifying: {
-      en: '$20,000 in annual TiP bookings, or by member referral.',
-      kr: '연간 $20,000 이상의 TiP 예약, 또는 멤버 추천',
+      en: '$30,000 in annual TiP bookings, or by member referral.',
+      kr: '연간 $30,000 이상의 TiP 예약, 또는 멤버 추천',
     },
     benefits: [
-      { en: 'Up to $200 stay credit per booking', kr: '스테이당 최대 $200 크레딧' },
+      { en: 'Up to $150 stay credit per booking', kr: '스테이당 최대 $150 크레딧' },
       {
         en: 'Hotel Whisperer — best room, told to you 24h before arrival',
         kr: '호텔 위스퍼러 — 도착 24시간 전 최적의 객실 안내',
@@ -114,13 +114,13 @@ const membershipCircles: MembershipCircle[] = [
       en: 'The hotel already knows you.',
       kr: '호텔이 이미 당신을 아는 곳',
     },
-    price: { en: '₩3,500,000 / year', kr: '연 ₩3,500,000' },
+    price: { en: '₩9,500,000 / year', kr: '연 ₩9,500,000' },
     qualifying: {
-      en: '$60,000 in annual bookings, or 12+ months as Cercle.',
-      kr: '연간 $60,000 이상, 또는 Cercle 멤버십 12개월 이상',
+      en: '$70,000 in annual bookings, or 12+ months as Cercle.',
+      kr: '연간 $70,000 이상, 또는 Cercle 멤버십 12개월 이상',
     },
     benefits: [
-      { en: 'Up to $300 stay credit per booking', kr: '스테이당 최대 $300 크레딧' },
+      { en: 'Up to $200 stay credit per booking', kr: '스테이당 최대 $200 크레딧' },
       {
         en: 'Pre-Stay Call — 15 min with your Travel Designer',
         kr: '프리 스테이 콜 — 트래블 디자이너와 15분 통화',
@@ -149,13 +149,13 @@ const membershipCircles: MembershipCircle[] = [
       en: 'The inner circle.',
       kr: '초대로만 열리는 가장 안쪽의 원',
     },
-    price: { en: '₩12,000,000 / year', kr: '연 ₩12,000,000' },
+    price: { en: '₩20,000,000 / year', kr: '연 ₩20,000,000' },
     qualifying: {
-      en: 'By invitation only. Limited to 10 new members per year.',
-      kr: '초대로만. 연간 최대 10명에게만 초대',
+      en: 'By invitation only. Limited to 20 new members per year.',
+      kr: '초대로만. 연간 최대 20명에게만 초대',
     },
     benefits: [
-      { en: 'Up to $500 stay credit per booking', kr: '스테이당 최대 $500 크레딧' },
+      { en: 'Up to $400 stay credit per booking', kr: '스테이당 최대 $400 크레딧' },
       {
         en: 'Empty Room Guarantee — even when sold out',
         kr: '엠프티 룸 개런티 — 매진 시에도 객실 확보',
