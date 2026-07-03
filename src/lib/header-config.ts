@@ -140,11 +140,9 @@ export function resolveHeaderConfig(rawPathname: string): HeaderConfig {
   if (isPathOrSubpath(pathname, '/hotel')) {
     return { variant: 'app', activeNav: 'dream-hotels', subNav: null };
   }
-  // Accepted tradeoff: signature journeys (kind=package) and local
-  // experiences share one detail route (/activity/[id]). The pathname carries
-  // no `kind`, so this can't tell a package detail from a local-experience
-  // one — both highlight More Dreams. We deliberately do NOT add a separate
-  // /signature-journeys/[id] route just to recover the parent highlight.
+  // Local experiences live on /activity/[id] and highlight More Dreams.
+  // Signature journeys have their own /signature-journeys/[slug] detail
+  // route (SMA-209), matched by the section-landing branch above.
   if (isPathOrSubpath(pathname, '/restaurant') || isPathOrSubpath(pathname, '/activity')) {
     return { variant: 'app', activeNav: 'more-dreams', subNav: null };
   }

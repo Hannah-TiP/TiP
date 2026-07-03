@@ -1,19 +1,24 @@
 import { test, expect, type Route } from '@playwright/test';
 
 /**
- * E2E for the promoted /signature-journeys top-level tab (task RfR_dnQU).
+ * E2E for the /signature-journeys top-level tab.
+ *
+ * SMA-209: the page now lists from the dedicated signature_journeys_v2
+ * endpoint (GET /api/signature-journeys) and cards link to the new
+ * /signature-journeys/[slug] detail route.
  *
  * Asserts:
- *   - the page renders the 4 known kind=package items
+ *   - the page renders the 4 known journeys from the new endpoint
+ *   - cards link to /signature-journeys/[slug]
  *   - the header uses the overlay (marketing) variant over the hero
  *   - the Signature Journeys nav item is active
  *   - the destination filter narrows the grid
  *
- * Strategy: intercept /api/activities + /api/cities so the test is
+ * Strategy: intercept /api/signature-journeys + /api/cities so the test is
  * deterministic against any backend (preview, prod, local).
  */
 
-const PACKAGES = [
+const JOURNEYS = [
   { id: 4, slug: 'ritz-carlton-yacht', name: 'The Ritz-Carlton Yacht', city_id: 10 },
   { id: 5, slug: 'four-seasons-yachts', name: 'Four Seasons Yachts', city_id: 10 },
   { id: 6, slug: 'amangati', name: 'Amangati (Aman Cruise)', city_id: 20 },
@@ -30,36 +35,28 @@ const CITIES = [
   { id: 20, slug: 'maldives', name: { en: 'Maldives', kr: '몰디브' }, schema_version: 1 },
 ];
 
-function activityFixture(item: { id: number; slug: string; name: string; city_id: number }) {
+function journeyFixture(item: { id: number; slug: string; name: string; city_id: number }) {
   return {
     id: item.id,
     slug: item.slug,
     city_id: item.city_id,
-    kind: 'package',
     status: 'published',
-    name: { en: item.name, kr: item.name },
-    images: [
-      {
-        original:
-          'https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?w=600&h=400&fit=crop',
-      },
-    ],
+    title: { en: item.name, kr: item.name },
+    cover_image: {
+      original: 'https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?w=600&h=400&fit=crop',
+    },
     schema_version: 1,
   };
 }
 
 test.describe('/signature-journeys', () => {
   test.beforeEach(async ({ page }) => {
-    await page.route('**/api/activities**', async (route: Route) => {
-      const url = new URL(route.request().url());
-      const kind = url.searchParams.get('kind');
-      // The page must only ever ask for kind=package.
-      expect(kind).toBe('package');
-      const items = PACKAGES.map(activityFixture);
+    await page.route('**/api/signature-journeys**', async (route: Route) => {
+      const items = JOURNEYS.map(journeyFixture);
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        // v2 list endpoints return the standard pagination envelope (SMA-73).
+        // v2 list endpoints return the standard pagination envelope.
         body: JSON.stringify({
           data: {
             items,
@@ -82,7 +79,9 @@ test.describe('/signature-journeys', () => {
     });
   });
 
-  test('renders the 4 package items with the gold signature pill', async ({ page }) => {
+  test('renders the 4 journeys from the new endpoint with the gold signature pill', async ({
+    page,
+  }) => {
     await page.goto('/signature-journeys');
 
     await expect(
@@ -92,15 +91,22 @@ test.describe('/signature-journeys', () => {
     const section = page.locator('[data-testid="section-signature-journeys"]');
     await expect(section).toBeVisible();
 
-    for (const pkg of PACKAGES) {
-      await expect(section.getByText(pkg.name, { exact: true })).toBeVisible();
+    for (const journey of JOURNEYS) {
+      await expect(section.getByText(journey.name, { exact: true })).toBeVisible();
     }
 
-    const cards = page.locator('[data-testid="activity-card-signature"]');
+    const cards = page.locator('[data-testid="signature-journey-card"]');
     await expect(cards).toHaveCount(4);
-    const pill = page.locator('[data-testid="activity-pill-signature"]').first();
+    const pill = page.locator('[data-testid="signature-journey-pill"]').first();
     await expect(pill).toHaveClass(/bg-gold/);
     await expect(pill).toHaveText('SIGNATURE JOURNEY');
+  });
+
+  test('cards link to the /signature-journeys/[slug] detail route', async ({ page }) => {
+    await page.goto('/signature-journeys');
+
+    const cards = page.locator('[data-testid="signature-journey-card"]');
+    await expect(cards.first()).toHaveAttribute('href', '/signature-journeys/ritz-carlton-yacht');
   });
 
   test('uses the overlay header variant and highlights the Signature Journeys nav', async ({

@@ -5,6 +5,7 @@ import type { Lang } from '@/contexts/LanguageContext';
 import type { Hotel } from '@/types/hotel';
 import type { Activity, ActivityKind } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
+import type { SignatureJourney } from '@/types/signatureJourney';
 import type { City, Country, Region } from '@/types/location';
 import type {
   Trip,
@@ -315,6 +316,34 @@ class ApiClient {
   async getActivityById(id: number, language?: string): Promise<Activity> {
     const query = language ? `?language=${language}` : '';
     const response = await this.request<{ data: Activity }>(`/activities/by-id/${id}${query}`);
+    return response.data;
+  }
+
+  // Signature journey methods
+  async getSignatureJourneys(params?: {
+    city_id?: number;
+    language?: string;
+    page?: number;
+    per_page?: number;
+  }): Promise<PaginatedResult<SignatureJourney>> {
+    const searchParams = new URLSearchParams();
+    if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
+    if (params?.language) searchParams.set('language', params.language);
+    if (params?.page !== undefined) searchParams.set('page', params.page.toString());
+    if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
+
+    const query = searchParams.toString();
+    const endpoint = `/signature-journeys${query ? `?${query}` : ''}`;
+
+    const response = await this.request<{ data: PaginatedData<SignatureJourney> }>(endpoint);
+    return toPaginatedResult(response.data);
+  }
+
+  async getSignatureJourneyBySlug(slug: string, language?: string): Promise<SignatureJourney> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: SignatureJourney }>(
+      `/signature-journeys/${slug}${query}`,
+    );
     return response.data;
   }
 

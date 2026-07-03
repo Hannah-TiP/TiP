@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import SignatureJourneysPage from '@/app/signature-journeys/page';
 import { apiClient } from '@/lib/api-client';
 import en from '@/translations/en.json';
-import type { Activity } from '@/types/activity';
+import type { SignatureJourney } from '@/types/signatureJourney';
 import type { City } from '@/types/location';
 import type { PaginatedResult } from '@/types/common';
 
@@ -47,14 +47,6 @@ vi.mock('@/components/Footer', () => ({
   default: () => <div>Footer</div>,
 }));
 
-vi.mock('@/components/PreviewBanner', () => ({
-  default: () => null,
-}));
-
-vi.mock('@/hooks/usePreviewMode', () => ({
-  usePreviewMode: () => ({ isPreview: false, isAllowed: false, toggle: () => {} }),
-}));
-
 // `t()` resolves to the real English copy so headings are assertable.
 vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => ({
@@ -66,12 +58,8 @@ vi.mock('@/contexts/LanguageContext', () => ({
 
 vi.mock('@/lib/api-client', () => ({
   apiClient: {
-    getActivities: vi.fn(),
+    getSignatureJourneys: vi.fn(),
     getCities: vi.fn(),
-    getReviewsByEntity: vi.fn().mockResolvedValue({
-      reviews: [],
-      aggregate: { average_rating: null, review_count: 0 },
-    }),
   },
 }));
 
@@ -80,36 +68,22 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-const ritzYacht: Activity = {
+const ritzYacht: SignatureJourney = {
   id: 4,
   slug: 'ritz-carlton-yacht',
   city_id: 10,
-  category: 'culture',
-  kind: 'package',
   status: 'published',
-  name: { en: 'The Ritz-Carlton Yacht', kr: '리츠칼튼 요트' },
-  images: [{ original: 'https://example.com/yacht.jpg' }],
+  title: { en: 'The Ritz-Carlton Yacht', kr: '리츠칼튼 요트' },
+  cover_image: { original: 'https://example.com/yacht.jpg' },
   schema_version: 1,
 };
 
-const fsYacht: Activity = {
+const fsYacht: SignatureJourney = {
   ...ritzYacht,
   id: 5,
   slug: 'four-seasons-yachts',
   city_id: 20,
-  name: { en: 'Four Seasons Yachts', kr: '포시즌스 요트' },
-};
-
-const localExperience: Activity = {
-  id: 1,
-  slug: 'paris-private-boat',
-  city_id: 10,
-  category: 'sightseeing',
-  kind: 'local_experience',
-  status: 'published',
-  name: { en: 'Paris Private Boat Tour', kr: '파리 보트' },
-  images: [{ original: 'https://example.com/boat.jpg' }],
-  schema_version: 1,
+  title: { en: 'Four Seasons Yachts', kr: '포시즌스 요트' },
 };
 
 const paris: City = {
@@ -130,8 +104,8 @@ const rome: City = {
 };
 
 describe('SignatureJourneysPage', () => {
-  it('fetches only kind=package and renders the package cards with the gold pill', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue(page([ritzYacht, fsYacht]));
+  it('fetches from the signature-journeys endpoint and renders cards with the gold pill', async () => {
+    vi.mocked(apiClient.getSignatureJourneys).mockResolvedValue(page([ritzYacht, fsYacht]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
@@ -141,40 +115,32 @@ describe('SignatureJourneysPage', () => {
     ).toBeTruthy();
 
     await waitFor(() => {
-      expect(vi.mocked(apiClient.getActivities).mock.calls.length).toBe(1);
+      expect(vi.mocked(apiClient.getSignatureJourneys).mock.calls.length).toBe(1);
     });
-    expect(vi.mocked(apiClient.getActivities).mock.calls[0]?.[0]?.kind).toBe('package');
 
-    // findByText waits for the async getActivities() data to render — the
-    // mock call resolving above does not guarantee React has re-rendered
-    // the cards yet, which made the synchronous getByText flaky under CI load.
     expect(await screen.findByText('The Ritz-Carlton Yacht')).toBeTruthy();
     expect(screen.getByText('Four Seasons Yachts')).toBeTruthy();
 
-    // All cards use the signature (gold) variant pill.
-    const pills = screen.getAllByTestId('activity-pill-signature');
+    const pills = screen.getAllByTestId('signature-journey-pill');
     expect(pills.length).toBe(2);
     expect(pills[0].className).toContain('bg-gold');
     expect(pills[0].textContent).toBe('SIGNATURE JOURNEY');
-    expect(screen.queryByTestId('activity-pill-standard')).toBeNull();
   });
 
-  it('drops any non-package items that leak into the response', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue(page([ritzYacht, localExperience]));
+  it('links each card to the /signature-journeys/[slug] detail route', async () => {
+    vi.mocked(apiClient.getSignatureJourneys).mockResolvedValue(page([ritzYacht]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
     render(<SignatureJourneysPage />);
 
-    // findByRole above only waits for the static page heading, which renders
-    // before getActivities() resolves — findByText waits for the actual card.
-    await screen.findByRole('heading', { level: 1, name: /Signature Journeys/i });
+    await screen.findByText('The Ritz-Carlton Yacht');
 
-    expect(await screen.findByText('The Ritz-Carlton Yacht')).toBeTruthy();
-    expect(screen.queryByText('Paris Private Boat Tour')).toBeNull();
+    const card = screen.getByTestId('signature-journey-card');
+    expect(card.getAttribute('href')).toBe('/signature-journeys/ritz-carlton-yacht');
   });
 
   it('filters the grid by the selected destination city', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue(page([ritzYacht, fsYacht]));
+    vi.mocked(apiClient.getSignatureJourneys).mockResolvedValue(page([ritzYacht, fsYacht]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
@@ -196,7 +162,7 @@ describe('SignatureJourneysPage', () => {
   });
 
   it('shows an empty state when the selected city has no journeys', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue(page([ritzYacht]));
+    vi.mocked(apiClient.getSignatureJourneys).mockResolvedValue(page([ritzYacht]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
@@ -211,8 +177,8 @@ describe('SignatureJourneysPage', () => {
     expect(screen.queryByText('The Ritz-Carlton Yacht')).toBeNull();
   });
 
-  it('renders the page-level empty state when there are no packages at all', async () => {
-    vi.mocked(apiClient.getActivities).mockResolvedValue(page([]));
+  it('renders the page-level empty state when there are no journeys at all', async () => {
+    vi.mocked(apiClient.getSignatureJourneys).mockResolvedValue(page([]));
     vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
 
     render(<SignatureJourneysPage />);
