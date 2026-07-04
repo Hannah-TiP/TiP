@@ -822,5 +822,13 @@
   "shared_trip_detail.error_not_found": "This shared trip could not be found.",
   "my_page.shared_with_me": "Shared with me",
   "my_page.shared_with_me_hint": "View trips others have shared with you.",
-  "my_page.view_shared": "View"
+  "my_page.view_shared": "View",
+  "magazine.eyebrow": "TiP Magazine",
+  "magazine.published": "Published",
+  "magazine.updated": "Updated",
+  "magazine.key_takeaways_title": "Key takeaways",
+  "magazine.faq_title": "Frequently asked questions",
+  "magazine.cta_title": "The concierge awaits",
+  "magazine.cta_body": "Let our team turn this inspiration into a journey made just for you.",
+  "magazine.cta_button": "Chat with Concierge"
 }

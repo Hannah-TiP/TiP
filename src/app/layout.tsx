@@ -7,8 +7,10 @@ import { UserProvider } from '@/contexts/UserContext';
 import Header from '@/components/Header';
 import CookieConsentBanner from '@/components/CookieConsentBanner';
 import { resolveServerLanguage } from '@/lib/detect-language';
+import { SITE_ORIGIN } from '@/lib/seo/locale';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_ORIGIN),
   title: 'TiP - Luxury Travel Concierge',
   description: 'Dream Hotels, Thoughtfully Curated.',
   icons: {
