@@ -1,9 +1,12 @@
 import type { Lang } from '@/contexts/LanguageContext';
+import en from '@/translations/en.json';
+import kr from '@/translations/kr.json';
 
 /**
  * Site origin used as the metadata base and as the JSON-LD / canonical URL
- * prefix. Reads `AUTH_URL` (already set for NextAuth) and falls back to the
- * production apex.
+ * prefix. Reads `AUTH_URL` (already set for NextAuth, and equal to the public
+ * site origin in every environment) and falls back to the production apex.
+ * Used for `metadataBase`, canonical URLs, and absolute JSON-LD `url`s.
  */
 export const SITE_ORIGIN = process.env.AUTH_URL || 'https://www.travelinyourpocket.com';
 
@@ -36,4 +39,22 @@ export function localeToHreflang(locale: string): string {
   if (normalized === 'kr' || normalized === 'ko') return 'ko';
   if (normalized === 'en') return 'en';
   return normalized;
+}
+
+const translations: Record<Lang, Record<string, string>> = { en, kr };
+
+/**
+ * Server-side translation lookup for the SEO layer (no React context available
+ * in `generateMetadata` / server JSON-LD components). Mirrors the client
+ * `useLanguage().t` resolution order: requested language → EN fallback → key.
+ */
+export function serverT(key: keyof typeof en, lang: Lang): string {
+  return translations[lang][key] || translations.en[key] || key;
+}
+
+/** Build an absolute URL on the publish origin for a site-relative path. */
+export function absoluteUrl(path: string): string {
+  const base = SITE_ORIGIN.replace(/\/$/, '');
+  const suffix = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${suffix}`;
 }

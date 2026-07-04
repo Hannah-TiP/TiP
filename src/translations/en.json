@@ -659,6 +659,7 @@
   "signature_journeys.empty_destination": "No signature journeys for this destination yet.",
   "signature_journeys.empty_none": "No signature journeys available at the moment.",
   "signature_journeys.card_pill": "SIGNATURE JOURNEY",
+  "signature_journeys.breadcrumb_label": "Signature Journeys",
   "signature_journey_detail.about_overline": "ABOUT THE JOURNEY",
   "signature_journey_detail.highlights_overline": "SIGNATURE HIGHLIGHTS",
   "signature_journey_detail.highlights_title": "What Makes It Extraordinary",

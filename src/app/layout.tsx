@@ -8,6 +8,7 @@ import Header from '@/components/Header';
 import CookieConsentBanner from '@/components/CookieConsentBanner';
 import { resolveServerLanguage } from '@/lib/detect-language';
 import { SITE_ORIGIN } from '@/lib/seo/locale';
+import { buildTravelAgencyJsonLd } from '@/lib/seo/signature-journey-jsonld';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
@@ -37,6 +38,12 @@ export default async function RootLayout({
           rel="stylesheet"
         />
         <link href="https://unpkg.com/lucide-static@latest/font/lucide.css" rel="stylesheet" />
+        {/* Site-wide TravelAgency structured data (Paris Class). Emitted ONCE
+            here; per-page signature-journey blocks reference it as provider. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(buildTravelAgencyJsonLd()) }}
+        />
       </head>
       <body className="h-full antialiased font-secondary">
         <SessionProvider>
