@@ -6,6 +6,7 @@ import type { Hotel } from '@/types/hotel';
 import type { Activity, ActivityKind } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
 import type { SignatureJourney } from '@/types/signatureJourney';
+import type { MagazineArticleDetail, MagazineArticleType } from '@/types/magazine';
 import type { City, Country, Region } from '@/types/location';
 import type {
   Trip,
@@ -343,6 +344,25 @@ class ApiClient {
     const query = language ? `?language=${language}` : '';
     const response = await this.request<{ data: SignatureJourney }>(
       `/signature-journeys/${slug}${query}`,
+    );
+    return response.data;
+  }
+
+  // Magazine methods
+  /**
+   * Browser path for a magazine article detail (client-island needs). `type` is
+   * the SINGULAR backend enum — the plural URL segment must be mapped to it by
+   * the caller (via `typeEnumFromSegment`). Forwards the UI language as
+   * `?language=`.
+   */
+  async getMagazineArticle(
+    type: MagazineArticleType,
+    slug: string,
+    lang?: string,
+  ): Promise<MagazineArticleDetail> {
+    const query = lang ? `?language=${lang}` : '';
+    const response = await this.request<{ data: MagazineArticleDetail }>(
+      `/magazine/articles/${type}/${slug}${query}`,
     );
     return response.data;
   }

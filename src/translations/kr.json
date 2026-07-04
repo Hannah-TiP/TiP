@@ -822,5 +822,13 @@
   "shared_trip_detail.error_not_found": "공유된 여행을 찾을 수 없습니다.",
   "my_page.shared_with_me": "공유받은 여행",
   "my_page.shared_with_me_hint": "다른 사람이 회원님과 공유한 여행을 확인하세요.",
-  "my_page.view_shared": "보기"
+  "my_page.view_shared": "보기",
+  "magazine.eyebrow": "TiP 매거진",
+  "magazine.published": "게시일",
+  "magazine.updated": "수정일",
+  "magazine.key_takeaways_title": "핵심 요약",
+  "magazine.faq_title": "자주 묻는 질문",
+  "magazine.cta_title": "컨시어지가 기다립니다",
+  "magazine.cta_body": "이 영감을 회원님만을 위한 여행으로 만들어 드립니다.",
+  "magazine.cta_button": "컨시어지와 상담하기"
 }
