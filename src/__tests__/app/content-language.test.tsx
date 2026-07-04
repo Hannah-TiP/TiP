@@ -7,6 +7,7 @@ import { apiClient } from '@/lib/api-client';
 import type { Hotel } from '@/types/hotel';
 import type { Activity } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
+import type { SignatureJourney } from '@/types/signatureJourney';
 import type { City } from '@/types/location';
 import type { PaginatedResult } from '@/types/common';
 
@@ -94,6 +95,7 @@ vi.mock('@/lib/api-client', () => ({
     getRestaurantBySlug: vi.fn(),
     getActivities: vi.fn(),
     getRestaurants: vi.fn(),
+    getSignatureJourneys: vi.fn(),
     getCities: vi.fn(),
     getWishlist: vi.fn(),
     getReviewsByEntity: vi.fn().mockResolvedValue({
@@ -150,6 +152,16 @@ const krRestaurant: Restaurant = {
   status: 'published',
   name: { en: null, kr: '노마' },
   images: [{ original: 'https://example.com/noma.jpg' }],
+  schema_version: 1,
+};
+
+const krJourney: SignatureJourney = {
+  id: 1,
+  slug: 'ritz-carlton-yacht',
+  city_id: 10,
+  status: 'published',
+  title: { en: null, kr: '리츠칼튼 요트' },
+  cover_image: { original: 'https://example.com/yacht.jpg' },
   schema_version: 1,
 };
 
@@ -280,34 +292,30 @@ describe('Content surfaces thread the active language into their fetches (SMA-13
   });
 
   describe('signature-journeys', () => {
-    it('fetches packages and cities with the active KR language', async () => {
+    it('fetches journeys and cities with the active KR language', async () => {
       languageState.lang = 'kr';
-      vi.mocked(apiClient.getActivities).mockResolvedValue(
-        listPage([{ ...krActivity, kind: 'package' }]),
-      );
+      vi.mocked(apiClient.getSignatureJourneys).mockResolvedValue(listPage([krJourney]));
       vi.mocked(apiClient.getCities).mockResolvedValue([krCity]);
 
       render(<SignatureJourneysPage />);
 
       await waitFor(() =>
-        expect(vi.mocked(apiClient.getActivities).mock.calls.length).toBeGreaterThan(0),
+        expect(vi.mocked(apiClient.getSignatureJourneys).mock.calls.length).toBeGreaterThan(0),
       );
-      expect(vi.mocked(apiClient.getActivities).mock.calls[0][0]?.language).toBe('kr');
+      expect(vi.mocked(apiClient.getSignatureJourneys).mock.calls[0][0]?.language).toBe('kr');
       expect(vi.mocked(apiClient.getCities).mock.calls[0][0]).toBe('kr');
     });
 
     it('fetches with EN when the active language is EN', async () => {
-      vi.mocked(apiClient.getActivities).mockResolvedValue(
-        listPage([{ ...krActivity, kind: 'package' }]),
-      );
+      vi.mocked(apiClient.getSignatureJourneys).mockResolvedValue(listPage([krJourney]));
       vi.mocked(apiClient.getCities).mockResolvedValue([krCity]);
 
       render(<SignatureJourneysPage />);
 
       await waitFor(() =>
-        expect(vi.mocked(apiClient.getActivities).mock.calls.length).toBeGreaterThan(0),
+        expect(vi.mocked(apiClient.getSignatureJourneys).mock.calls.length).toBeGreaterThan(0),
       );
-      expect(vi.mocked(apiClient.getActivities).mock.calls[0][0]?.language).toBe('en');
+      expect(vi.mocked(apiClient.getSignatureJourneys).mock.calls[0][0]?.language).toBe('en');
     });
   });
 

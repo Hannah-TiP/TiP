@@ -131,13 +131,12 @@ test.describe('/more-dreams — Activities + Restaurants only (no Signature Jour
     await expect(standardCards.first()).toBeVisible();
     expect(await standardCards.count()).toBeGreaterThan(0);
 
-    // No Signature Journeys section, heading, signature cards, or gold pills.
+    // No Signature Journeys section or heading. (The old ActivityCard
+    // 'signature' variant testids were removed with the variant in SMA-209.)
     await expect(page.locator('[data-testid="section-signature-journeys"]')).toHaveCount(0);
     await expect(
       page.getByRole('heading', { level: 2, name: /^Signature Journeys$/i }),
     ).toHaveCount(0);
-    await expect(page.locator('[data-testid="activity-card-signature"]')).toHaveCount(0);
-    await expect(page.locator('[data-testid="activity-pill-signature"]')).toHaveCount(0);
 
     // And the page never asked the API for kind=package.
     expect(packageRequested).toBe(false);

@@ -327,7 +327,6 @@ function MoreDreamsContent() {
               <ActivityCard
                 key={activity.id}
                 activity={activity}
-                variant="standard"
                 cityName={
                   activity.city_id ? (cityNameById.get(activity.city_id) ?? undefined) : undefined
                 }
