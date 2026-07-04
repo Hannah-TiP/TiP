@@ -127,7 +127,12 @@ test.describe('/signature-journeys/[slug]', () => {
     await expect(page.locator('[data-testid="journey-units"]')).toHaveCount(0);
 
     // Spot-check section content.
-    await expect(page.getByText('All-Suite Yacht')).toBeVisible();
+    // Scoped to the highlights section: the phrase "all-suite yacht" also
+    // appears in the hero description ("Seven nights aboard an all-suite
+    // yacht."), so an unscoped getByText matches 2 elements (strict-mode fail).
+    await expect(
+      page.locator('[data-testid="journey-highlights"]').getByText('All-Suite Yacht'),
+    ).toBeVisible();
     await expect(page.getByText('Barcelona — Palma — Ajaccio — Rome')).toBeVisible();
     await expect(page.getByText('298 guests')).toBeVisible();
     await expect(page.getByText('All gratuities')).toBeVisible();
