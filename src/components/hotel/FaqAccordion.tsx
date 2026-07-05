@@ -2,21 +2,23 @@
 
 import { useState } from 'react';
 import { getLocalizedText } from '@/types/common';
+import type { Lang } from '@/contexts/LanguageContext';
 import type { FaqItem } from '@/types/hotel';
 
 interface FaqAccordionProps {
   faqs: FaqItem[];
+  lang: Lang;
 }
 
-export default function FaqAccordion({ faqs }: FaqAccordionProps) {
+export default function FaqAccordion({ faqs, lang }: FaqAccordionProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
     <ul className="divide-y divide-gray-border border-y border-gray-border">
       {faqs.map((faq, index) => {
         const isOpen = index === openIndex;
-        const question = getLocalizedText(faq.question);
-        const answer = getLocalizedText(faq.answer);
+        const question = getLocalizedText(faq.question, lang);
+        const answer = getLocalizedText(faq.answer, lang);
         return (
           <li key={`${question}-${index}`}>
             <button

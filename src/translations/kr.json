@@ -96,6 +96,8 @@
   "common.kids": "어린이",
   "hotel.breadcrumb_home": "홈",
   "hotel.breadcrumb_dream_hotels": "드림 호텔",
+  "hotel.from_magazine_overline": "매거진에서",
+  "hotel.from_magazine_title": "매거진 속 이 호텔",
   "hotel.not_found_title": "호텔을 찾을 수 없습니다",
   "hotel.not_found_message": "찾으시는 호텔이 존재하지 않습니다.",
   "hotel.back_to_hotels": "호텔 목록으로",
