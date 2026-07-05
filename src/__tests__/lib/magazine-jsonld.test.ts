@@ -3,12 +3,16 @@ import {
   buildArticleJsonLd,
   buildBreadcrumbJsonLd,
   buildFaqPageJsonLd,
+  buildHowToJsonLd,
   buildItemListJsonLd,
   buildMagazineJsonLd,
+  buildNewsArticleJsonLd,
   articleCanonicalUrl,
   hotelCanonicalUrl,
 } from '@/lib/seo/magazine-jsonld';
 import { rankedHotelRelations } from '@/lib/magazine-relations';
+import { guideSteps } from '@/lib/magazine-payload';
+import { toPlainText } from '@/lib/magazine-plain-text';
 import { SITE_ORIGIN } from '@/lib/seo/locale';
 import type { ExpandedArticleRelation, MagazineArticleDetail } from '@/types/magazine';
 
@@ -309,12 +313,132 @@ describe('ItemList ↔ on-screen ranked list parity', () => {
   });
 });
 
+/** A Guide article whose `type_payload.steps` carries three steps. */
+function guideDetailFixture(): MagazineArticleDetail {
+  return {
+    ...detailFixture({
+      type: 'guide',
+      type_payload: {
+        steps: [
+          {
+            label: { en: 'Day 1', kr: '1일차' },
+            title: { en: 'Arrive in Kyoto', kr: '교토 도착' },
+            body: { en: '**Check in** and rest.', kr: '체크인 후 휴식.' },
+            hotel_id: 100,
+          },
+          {
+            label: { en: 'Day 2', kr: '2일차' },
+            title: { en: 'Temples', kr: '사원' },
+            body: { en: 'Visit the golden pavilion.', kr: '금각사 방문.' },
+            hotel_id: null,
+          },
+        ],
+      },
+    }),
+    // The step-1 hotel is synced into a linked relation server-side.
+    relations: [
+      {
+        id: 1,
+        target_type: 'hotel',
+        target_id: 100,
+        kind: 'linked',
+        position: 0,
+        schema_version: 1,
+        hotel: { id: 100, slug: 'aman-kyoto', name: { en: 'Aman Kyoto', kr: null } },
+      },
+    ],
+  };
+}
+
+describe('buildHowToJsonLd', () => {
+  it('emits a HowTo whose steps mirror the guideSteps payload (name/text/position/url)', () => {
+    const node = buildHowToJsonLd(guideDetailFixture(), 'en')!;
+    expect(node['@type']).toBe('HowTo');
+    expect(node.name).toBe('Best Hotels in Japan');
+    expect(node.step).toEqual([
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Arrive in Kyoto',
+        text: 'Check in and rest.',
+        url: `${SITE_ORIGIN}/hotel/aman-kyoto`,
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Temples',
+        text: 'Visit the golden pavilion.',
+      },
+    ]);
+  });
+
+  it('serializes rich-text step body to PLAIN text for the JSON-LD text', () => {
+    expect(toPlainText('**Check in** and _rest_.')).toBe('Check in and rest.');
+    expect(toPlainText('<p>Hello <b>world</b></p>')).toBe('Hello world');
+  });
+
+  it('returns null when the guide has no steps', () => {
+    expect(buildHowToJsonLd(detailFixture({ type: 'guide', type_payload: null }), 'en')).toBeNull();
+  });
+});
+
+describe('HowTo ↔ on-screen steps parity', () => {
+  it('HowTo step name/order EQUALS the guideSteps the component renders', () => {
+    const detail = guideDetailFixture();
+    const onScreen = guideSteps(detail.article).map((step, index) => ({
+      position: index + 1,
+      name: step.title!.en,
+    }));
+    const node = buildHowToJsonLd(detail, 'en')!;
+    const jsonld = (node.step as Array<{ position: number; name: string }>).map((s) => ({
+      position: s.position,
+      name: s.name,
+    }));
+    expect(jsonld).toEqual(onScreen);
+  });
+});
+
+describe('buildNewsArticleJsonLd', () => {
+  it('is an Article-shaped node with @type NewsArticle carrying datePublished', () => {
+    const node = buildNewsArticleJsonLd(detailFixture({ type: 'news' }), 'en')!;
+    expect(node['@type']).toBe('NewsArticle');
+    expect(node.headline).toBe('Best Hotels in Japan');
+    expect(node.datePublished).toBe('2026-01-10T00:00:00Z');
+    expect(node.publisher).toEqual({ '@type': 'Organization', name: 'Travel in Your Pocket' });
+    // No author node anywhere.
+    expect('author' in node).toBe(false);
+  });
+});
+
 describe('buildMagazineJsonLd dispatch table', () => {
-  it('emits the base stack (Article + FAQPage + BreadcrumbList) for every non-destination type', () => {
-    for (const type of ['collection', 'guide', 'news', 'insider'] as const) {
-      const nodes = buildMagazineJsonLd(detailFixture({ type }), 'en');
-      expect(nodes.map((n) => n['@type'])).toEqual(['Article', 'FAQPage', 'BreadcrumbList']);
-    }
+  it('emits Article + ItemList for a Collection with ranked hotels (reuses ItemList)', () => {
+    const detail: MagazineArticleDetail = {
+      ...detailFixture({ type: 'collection' }),
+      relations: rankedRelationsFixture(),
+    };
+    const nodes = buildMagazineJsonLd(detail, 'en');
+    expect(nodes.map((n) => n['@type'])).toEqual([
+      'Article',
+      'FAQPage',
+      'BreadcrumbList',
+      'ItemList',
+    ]);
+  });
+
+  it('emits Article + HowTo for a Guide with steps', () => {
+    const nodes = buildMagazineJsonLd(guideDetailFixture(), 'en');
+    expect(nodes.map((n) => n['@type'])).toEqual(['Article', 'FAQPage', 'BreadcrumbList', 'HowTo']);
+  });
+
+  it('emits NewsArticle (NOT Article) + BreadcrumbList for a News article', () => {
+    const nodes = buildMagazineJsonLd(detailFixture({ type: 'news' }), 'en');
+    expect(nodes.map((n) => n['@type'])).toEqual(['NewsArticle', 'FAQPage', 'BreadcrumbList']);
+  });
+
+  it('emits a plain Article (no author node) for an Insider article', () => {
+    const nodes = buildMagazineJsonLd(detailFixture({ type: 'insider' }), 'en');
+    expect(nodes.map((n) => n['@type'])).toEqual(['Article', 'FAQPage', 'BreadcrumbList']);
+    expect('author' in nodes[0]).toBe(false);
   });
 
   it('emits 4 blocks (base + ItemList) for a destination with ranked hotels', () => {

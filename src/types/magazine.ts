@@ -18,6 +18,42 @@ export type ArticleRelationTargetType = 'hotel' | 'article';
 
 export type ArticleRelationKind = 'linked' | 'related' | 'ranked' | 'parent';
 
+/** News category — matches the backend `NewsCategory`. */
+export type NewsCategory = 'opening' | 'brand_news' | 'award' | 'michelin';
+
+/** Insider topic — matches the backend `InsiderTopic`. */
+export type InsiderTopic = 'virtuoso' | 'booking' | 'upgrade' | 'membership' | 'behind_the_scenes';
+
+/**
+ * One step of a Guide article's itinerary / how-to. Mirrors the backend
+ * `GuideStep`. `label`, `title` and `body` are all translatable (`body` is
+ * rich text, rendered as-is on screen and serialized to plain text for the
+ * HowTo JSON-LD). `hotel_id` optionally ties the step to a hotel (that hotel is
+ * also synced into a `kind=linked` relation server-side, so its render-ready
+ * card is available via `linkedHotelRelations`).
+ */
+export interface GuideStep {
+  label?: MultiLanguageString | null;
+  title?: MultiLanguageString | null;
+  body?: MultiLanguageString | null;
+  hotel_id?: number | null;
+}
+
+/** Typed `type_payload` for a Guide article. Mirrors the backend `GuidePayload`. */
+export interface GuidePayload {
+  steps: GuideStep[];
+}
+
+/** Typed `type_payload` for a News article. Mirrors the backend `NewsPayload`. */
+export interface NewsPayload {
+  category?: NewsCategory | null;
+}
+
+/** Typed `type_payload` for an Insider article. Mirrors the backend `InsiderPayload`. */
+export interface InsiderPayload {
+  topic?: InsiderTopic | null;
+}
+
 /** A short TL;DR fact (GEO extraction target). 3-5 per article. */
 export interface KeyTakeaway {
   text?: MultiLanguageString | null;
