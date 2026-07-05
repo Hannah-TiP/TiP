@@ -244,7 +244,7 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
               {t('magazine.faq_title')}
             </h2>
             <div className="rounded-xl bg-white p-6 md:p-8">
-              <FaqAccordion faqs={faqItems} />
+              <FaqAccordion faqs={faqItems} lang={lang} />
             </div>
           </div>
         </section>

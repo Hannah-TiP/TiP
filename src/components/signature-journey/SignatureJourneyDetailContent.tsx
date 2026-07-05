@@ -193,7 +193,7 @@ export default function SignatureJourneyDetailContent({
               title={t('signature_journey_detail.faq_title')}
             />
             <div className="rounded-xl bg-white p-6 md:p-8">
-              <FaqAccordion faqs={faqItems} />
+              <FaqAccordion faqs={faqItems} lang={lang} />
             </div>
           </div>
         </section>

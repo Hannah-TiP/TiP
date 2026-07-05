@@ -44,7 +44,7 @@ export default function HotelDetailContent({
   stickyBar,
   sidebar,
 }: HotelDetailContentProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const hotelImages = useMemo(() => getHotelHeroImages(hotel), [hotel]);
   const hotelName = getLocalizedText(hotel.name) || hotel.slug;
@@ -166,7 +166,7 @@ export default function HotelDetailContent({
                 overline={t('hotel.faq_overline')}
                 title={t('hotel.faq_title')}
               />
-              <FaqAccordion faqs={faqs} />
+              <FaqAccordion faqs={faqs} lang={lang} />
             </section>
           )}
         </div>
