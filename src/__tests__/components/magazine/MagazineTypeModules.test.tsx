@@ -53,8 +53,18 @@ function guideDetail(): MagazineArticleDetail {
       type: 'guide',
       type_payload: {
         steps: [
-          { label: 'Day 1', title: { en: 'Arrive' }, body: { en: 'Rest up.' }, hotel_id: 100 },
-          { label: 'Day 2', title: { en: 'Explore' }, body: { en: 'Walk.' }, hotel_id: null },
+          {
+            label: { en: 'Day 1' },
+            title: { en: 'Arrive' },
+            body: { en: 'Rest up.' },
+            hotel_id: 100,
+          },
+          {
+            label: { en: 'Day 2' },
+            title: { en: 'Explore' },
+            body: { en: 'Walk.' },
+            hotel_id: null,
+          },
         ],
       },
     }),

@@ -188,7 +188,8 @@ export const buildHowToJsonLd: JsonLdBuilder = (detail, lang) => {
   }
 
   const step = steps.map((guideStep, index) => {
-    const name = getLocalizedText(guideStep.title, lang) || guideStep.label || '';
+    const name =
+      getLocalizedText(guideStep.title, lang) || getLocalizedText(guideStep.label, lang) || '';
     const text = toPlainText(getLocalizedText(guideStep.body, lang));
     const element: JsonLd = {
       '@type': 'HowToStep',

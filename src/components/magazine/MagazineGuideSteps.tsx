@@ -36,14 +36,15 @@ export default function MagazineGuideSteps({ detail }: MagazineGuideStepsProps) 
       </h2>
       <ol className="space-y-8">
         {steps.map((step, index) => {
+          const label = getLocalizedText(step.label, lang);
           const title = getLocalizedText(step.title, lang);
           const body = getLocalizedText(step.body, lang);
           const relation = step.hotel_id != null ? linkedByHotelId.get(step.hotel_id) : undefined;
           return (
             <li key={index} data-testid="magazine-guide-step">
-              {step.label && (
+              {label && (
                 <span className="mb-2 inline-block rounded-full bg-green-dark px-3 py-1 text-[11px] font-semibold tracking-wider text-white">
-                  {step.label}
+                  {label}
                 </span>
               )}
               {title && (

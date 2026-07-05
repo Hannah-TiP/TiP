@@ -19,14 +19,14 @@ describe('guideSteps', () => {
     const steps = guideSteps(
       article({
         steps: [
-          { label: 'Day 1', title: { en: 'A' }, body: { en: 'b' }, hotel_id: 5 },
+          { label: { en: 'Day 1' }, title: { en: 'A' }, body: { en: 'b' }, hotel_id: 5 },
           'not-a-step',
           { label: 42, hotel_id: 'nope' },
         ],
       }),
     );
     expect(steps).toEqual([
-      { label: 'Day 1', title: { en: 'A' }, body: { en: 'b' }, hotel_id: 5 },
+      { label: { en: 'Day 1' }, title: { en: 'A' }, body: { en: 'b' }, hotel_id: 5 },
       { label: null, title: null, body: null, hotel_id: null },
     ]);
   });

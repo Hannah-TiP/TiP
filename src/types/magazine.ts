@@ -26,13 +26,14 @@ export type InsiderTopic = 'virtuoso' | 'booking' | 'upgrade' | 'membership' | '
 
 /**
  * One step of a Guide article's itinerary / how-to. Mirrors the backend
- * `GuideStep`. `body` is rich text (rendered as-is on screen; serialized to
- * plain text for the HowTo JSON-LD). `hotel_id` optionally ties the step to a
- * hotel (that hotel is also synced into a `kind=linked` relation server-side,
- * so its render-ready card is available via `linkedHotelRelations`).
+ * `GuideStep`. `label`, `title` and `body` are all translatable (`body` is
+ * rich text, rendered as-is on screen and serialized to plain text for the
+ * HowTo JSON-LD). `hotel_id` optionally ties the step to a hotel (that hotel is
+ * also synced into a `kind=linked` relation server-side, so its render-ready
+ * card is available via `linkedHotelRelations`).
  */
 export interface GuideStep {
-  label?: string | null;
+  label?: MultiLanguageString | null;
   title?: MultiLanguageString | null;
   body?: MultiLanguageString | null;
   hotel_id?: number | null;

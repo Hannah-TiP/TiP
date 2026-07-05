@@ -321,13 +321,13 @@ function guideDetailFixture(): MagazineArticleDetail {
       type_payload: {
         steps: [
           {
-            label: 'Day 1',
+            label: { en: 'Day 1', kr: '1일차' },
             title: { en: 'Arrive in Kyoto', kr: '교토 도착' },
             body: { en: '**Check in** and rest.', kr: '체크인 후 휴식.' },
             hotel_id: 100,
           },
           {
-            label: 'Day 2',
+            label: { en: 'Day 2', kr: '2일차' },
             title: { en: 'Temples', kr: '사원' },
             body: { en: 'Visit the golden pavilion.', kr: '금각사 방문.' },
             hotel_id: null,

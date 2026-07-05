@@ -41,7 +41,7 @@ export function guideSteps(article: MagazineArticle): GuideStep[] {
   return raw
     .filter((step): step is Record<string, unknown> => typeof step === 'object' && step !== null)
     .map((step) => ({
-      label: typeof step.label === 'string' ? step.label : null,
+      label: isMls(step.label) ? step.label : null,
       title: isMls(step.title) ? step.title : null,
       body: isMls(step.body) ? step.body : null,
       hotel_id: typeof step.hotel_id === 'number' ? step.hotel_id : null,
