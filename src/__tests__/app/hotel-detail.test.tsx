@@ -2,7 +2,7 @@
 import type { AnchorHTMLAttributes, ImgHTMLAttributes } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import HotelDetailPage from '@/app/hotel/[id]/page';
+import HotelDetailIsland from '@/components/hotel/HotelDetailIsland';
 import enTranslations from '@/translations/en.json';
 import { apiClient } from '@/lib/api-client';
 import type { Hotel } from '@/types/hotel';
@@ -16,7 +16,6 @@ vi.mock('@/contexts/LanguageContext', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useParams: () => ({ id: 'aman-tokyo' }),
   useRouter: () => ({
     push: vi.fn(),
     back: vi.fn(),
@@ -113,11 +112,13 @@ const baseHotel: Hotel = {
   schema_version: 1,
 };
 
-describe('HotelDetailPage', () => {
-  it('renders hero, breadcrumb, key facts, rooms, amenities, FAQ, and reviews placeholder', async () => {
-    vi.mocked(apiClient.getHotelBySlug).mockResolvedValue(baseHotel);
+function renderIsland(hotel: Hotel) {
+  return render(<HotelDetailIsland slug={hotel.slug} initialHotel={hotel} featured={[]} />);
+}
 
-    render(<HotelDetailPage />);
+describe('HotelDetailIsland', () => {
+  it('renders hero, breadcrumb, key facts, rooms, amenities, FAQ, and reviews placeholder', async () => {
+    renderIsland(baseHotel);
 
     // Hero h1
     expect(await screen.findByRole('heading', { level: 1, name: 'Aman Tokyo' })).toBeTruthy();
@@ -151,14 +152,7 @@ describe('HotelDetailPage', () => {
   });
 
   it('hides rooms / amenities / FAQ sections when their data is empty', async () => {
-    vi.mocked(apiClient.getHotelBySlug).mockResolvedValue({
-      ...baseHotel,
-      rooms: [],
-      features: [],
-      faqs: [],
-    });
-
-    render(<HotelDetailPage />);
+    renderIsland({ ...baseHotel, rooms: [], features: [], faqs: [] });
 
     await waitFor(() => {
       expect(screen.queryByText('Deluxe Room')).toBeNull();
@@ -170,7 +164,7 @@ describe('HotelDetailPage', () => {
   });
 
   it('hides the overview section entirely when no overview text and no key facts exist', async () => {
-    vi.mocked(apiClient.getHotelBySlug).mockResolvedValue({
+    renderIsland({
       ...baseHotel,
       overview: null,
       check_in_time: null,
@@ -178,18 +172,13 @@ describe('HotelDetailPage', () => {
       star_rating: null,
     });
 
-    render(<HotelDetailPage />);
-
-    // Wait for load to complete
     expect(await screen.findByRole('heading', { level: 1, name: 'Aman Tokyo' })).toBeTruthy();
     // Overview heading should not be present
     expect(screen.queryByText(/About the Hotel/i)).toBeNull();
   });
 
   it('shows no benefits box for a hotel with no benefits', async () => {
-    vi.mocked(apiClient.getHotelBySlug).mockResolvedValue({ ...baseHotel, benefits: [] });
-
-    render(<HotelDetailPage />);
+    renderIsland({ ...baseHotel, benefits: [] });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Aman Tokyo' })).toBeTruthy();
     // The benefits box title must not render — no hardcoded fallback bullets.
@@ -197,7 +186,7 @@ describe('HotelDetailPage', () => {
   });
 
   it('shows exactly the real benefits when the hotel has them', async () => {
-    vi.mocked(apiClient.getHotelBySlug).mockResolvedValue({
+    renderIsland({
       ...baseHotel,
       benefits: [
         {
@@ -212,16 +201,13 @@ describe('HotelDetailPage', () => {
       ],
     });
 
-    render(<HotelDetailPage />);
-
-    // Both real benefits render as bullets in the box (the box title's
-    // decorative ✦ prefix shares a node, so the bullets are the stable signal).
+    // Both real benefits render as bullets in the box.
     expect(await screen.findByText('Daily breakfast for two guests')).toBeTruthy();
     expect(screen.getByText('USD 100 hotel credit')).toBeTruthy();
   });
 
   it('hides the benefits box when selected dates exclude all benefit programs', async () => {
-    vi.mocked(apiClient.getHotelBySlug).mockResolvedValue({
+    renderIsland({
       ...baseHotel,
       benefits: [
         {
@@ -233,10 +219,8 @@ describe('HotelDetailPage', () => {
       ],
     });
 
-    render(<HotelDetailPage />);
-
-    // Wait for the hotel to load — with no dates picked the box shows the
-    // program benefit (with an eligibility label appended).
+    // With no dates picked the box shows the program benefit (with an
+    // eligibility label appended).
     expect(await screen.findByText(/Daily breakfast for two guests/)).toBeTruthy();
 
     // Pick check-in / check-out dates outside the program's validity window.
@@ -252,14 +236,29 @@ describe('HotelDetailPage', () => {
     });
   });
 
-  it('renders not-found state when API rejects', async () => {
-    vi.mocked(apiClient.getHotelBySlug).mockRejectedValue(new Error('boom'));
-
-    render(<HotelDetailPage />);
-
-    expect(await screen.findByText('Hotel Not Found')).toBeTruthy();
-    expect(screen.getByRole('link', { name: /back to hotels/i }).getAttribute('href')).toBe(
-      '/dream-hotels',
+  it('renders the From the Magazine section only when featured articles exist', async () => {
+    const { rerender } = render(
+      <HotelDetailIsland slug={baseHotel.slug} initialHotel={baseHotel} featured={[]} />,
     );
+    expect(await screen.findByRole('heading', { level: 1, name: 'Aman Tokyo' })).toBeTruthy();
+    expect(screen.queryByTestId('from-the-magazine')).toBeNull();
+
+    rerender(
+      <HotelDetailIsland
+        slug={baseHotel.slug}
+        initialHotel={baseHotel}
+        featured={[
+          {
+            id: 5,
+            type: 'destination',
+            slug: 'japan-guide',
+            title: { en: 'Japan Guide', kr: '일본 가이드' },
+            hero_image: null,
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByTestId('from-the-magazine')).toBeTruthy();
+    expect(screen.getByText('Japan Guide')).toBeTruthy();
   });
 });
