@@ -137,9 +137,11 @@ export const buildBreadcrumbJsonLd: JsonLdBuilder = (detail, lang) => {
  * hotel `ListItem`s. Built from the SAME `rankedHotelRelations(...)` selector
  * the on-screen ranked section consumes, so the JSON-LD order/content EQUALS
  * the rendered order (parity is asserted in the unit test). Each element uses an
- * ABSOLUTE `/hotel/{slug}` URL on the canonical host, `position` = the relation
- * rank, and `name` = the hotel's EN name from the MLS. Returns `null` when there
- * are no ranked hotels so no empty node is emitted.
+ * ABSOLUTE `/hotel/{slug}` URL on the canonical host, `position` = the 1-based
+ * array index (the on-screen rank badge, NOT the raw stored `relation.position`
+ * — those diverge when positions are non-contiguous, e.g. a deleted rank), and
+ * `name` = the hotel's EN name from the MLS. Returns `null` when there are no
+ * ranked hotels so no empty node is emitted.
  */
 export const buildItemListJsonLd: JsonLdBuilder = (detail) => {
   const ranked = rankedHotelRelations(detail.relations);
@@ -150,7 +152,7 @@ export const buildItemListJsonLd: JsonLdBuilder = (detail) => {
     const name = getLocalizedText(hotel.name, 'en');
     const element: JsonLd = {
       '@type': 'ListItem',
-      position: relation.position || index + 1,
+      position: index + 1,
       url: hotelCanonicalUrl(hotel.slug),
     };
     if (name) element.name = name;

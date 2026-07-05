@@ -38,6 +38,36 @@ function rankedRelationsFixture(): ExpandedArticleRelation[] {
   ];
 }
 
+/**
+ * Two ranked relations with NON-CONTIGUOUS stored positions (10, 20) — the case
+ * a deleted middle rank or wide-gap ordering produces. The emitted ItemList
+ * `position` must be the 1-based index (1, 2 — the on-screen rank badge), NOT
+ * the raw stored position. Guards the parity bug where `relation.position` was
+ * used directly.
+ */
+function nonContiguousRankedFixture(): ExpandedArticleRelation[] {
+  return [
+    {
+      id: 30,
+      target_type: 'hotel',
+      target_id: 300,
+      kind: 'ranked',
+      position: 20,
+      schema_version: 1,
+      hotel: { id: 300, slug: 'bulgari-tokyo', name: { en: 'Bulgari Tokyo', kr: null } },
+    },
+    {
+      id: 40,
+      target_type: 'hotel',
+      target_id: 400,
+      kind: 'ranked',
+      position: 10,
+      schema_version: 1,
+      hotel: { id: 400, slug: 'aman-kyoto', name: { en: 'Aman Kyoto', kr: null } },
+    },
+  ];
+}
+
 function detailFixture(
   overrides: Partial<MagazineArticleDetail['article']> = {},
 ): MagazineArticleDetail {
@@ -254,6 +284,28 @@ describe('ItemList ↔ on-screen ranked list parity', () => {
     }));
 
     expect(jsonld).toEqual(onScreen);
+  });
+
+  it('emits CONTIGUOUS index-based positions (1,2) for non-contiguous stored positions', () => {
+    // Stored positions are 10 & 20; the on-screen ranks are 1 & 2. The ItemList
+    // position MUST equal the index-based on-screen rank, NOT the raw stored
+    // position. This fails under `relation.position || index + 1`.
+    const detail: MagazineArticleDetail = {
+      ...detailFixture(),
+      relations: nonContiguousRankedFixture(),
+    };
+
+    const elements = buildItemListJsonLd(detail, 'en')!.itemListElement as Array<{
+      position: number;
+      url: string;
+    }>;
+
+    expect(elements.map((el) => el.position)).toEqual([1, 2]);
+    // Still sorted by stored position: 10 (aman-kyoto) then 20 (bulgari-tokyo).
+    expect(elements.map((el) => el.url.replace(`${SITE_ORIGIN}/hotel/`, ''))).toEqual([
+      'aman-kyoto',
+      'bulgari-tokyo',
+    ]);
   });
 });
 

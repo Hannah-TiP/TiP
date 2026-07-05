@@ -111,6 +111,29 @@ describe('MagazineRelationSections — ranked', () => {
     expect(within(cards[0]).getByText('Blurb for Aman Tokyo')).toBeTruthy();
   });
 
+  it('renders CONTIGUOUS rank badges (1,2) even for non-contiguous stored positions', () => {
+    // Stored positions 10 & 20 — the on-screen badge is the 1-based sorted index,
+    // matching the ItemList JSON-LD `position` (parity guard, mirrors the
+    // jsonld unit test).
+    render(
+      <MagazineRelationSections
+        relations={[
+          rankedRelation(20, 'bulgari-tokyo', 'Bulgari Tokyo'),
+          rankedRelation(10, 'aman-kyoto', 'Aman Kyoto'),
+        ]}
+        related={[]}
+      />,
+    );
+    const cards = within(screen.getByTestId('magazine-ranked')).getAllByTestId(
+      'magazine-hotel-card',
+    );
+    // Sorted by stored position (10 then 20), badges are contiguous 1,2 — NOT 10,20.
+    expect(within(cards[0]).getByText('Aman Kyoto')).toBeTruthy();
+    expect(within(cards[0]).getByTestId('magazine-hotel-rank').textContent).toBe('1');
+    expect(within(cards[1]).getByText('Bulgari Tokyo')).toBeTruthy();
+    expect(within(cards[1]).getByTestId('magazine-hotel-rank').textContent).toBe('2');
+  });
+
   it('ignores ranked relations whose expanded hotel target is missing', () => {
     const orphan: ExpandedArticleRelation = {
       id: 1,
