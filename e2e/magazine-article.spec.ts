@@ -108,3 +108,61 @@ test.describe('/magazine/[type]/[slug]', () => {
     expect(domSlugs).toEqual(itemListSlugs);
   });
 });
+
+/**
+ * MAG-4 per-type JSON-LD sets (SMA-216). Each is env-gated on a seeded published
+ * slug of that type so the deterministic checks above always run in CI, while
+ * these full structural checks run post-deploy against real data.
+ */
+async function ldTypesInInitialHtml(html: string): Promise<string[]> {
+  return [...html.matchAll(/"@type":"([A-Za-z]+)"/g)].map((m) => m[1]);
+}
+
+test.describe('/magazine/[type]/[slug] — MAG-4 type sets', () => {
+  test('a Guide article server-renders Article + HowTo + FAQPage + BreadcrumbList', async ({
+    page,
+  }) => {
+    const slug = process.env.E2E_MAGAZINE_GUIDE_SLUG || '';
+    test.skip(!slug, 'Set E2E_MAGAZINE_GUIDE_SLUG to a published guide with steps');
+
+    const response = await page.goto(`/magazine/guides/${slug}`);
+    expect(response?.status()).toBe(200);
+    const html = await response!.text();
+    const types = await ldTypesInInitialHtml(html);
+    expect(types).toContain('Article');
+    expect(types).toContain('HowTo');
+    expect(types).toContain('BreadcrumbList');
+    await expect(page.locator('[data-testid="magazine-guide-steps"]')).toBeVisible();
+  });
+
+  test('a News article server-renders NewsArticle (not Article) + BreadcrumbList', async ({
+    page,
+  }) => {
+    const slug = process.env.E2E_MAGAZINE_NEWS_SLUG || '';
+    test.skip(!slug, 'Set E2E_MAGAZINE_NEWS_SLUG to a published news article');
+
+    const response = await page.goto(`/magazine/news/${slug}`);
+    expect(response?.status()).toBe(200);
+    const html = await response!.text();
+    const types = await ldTypesInInitialHtml(html);
+    expect(types).toContain('NewsArticle');
+    expect(types).not.toContain('Article'); // NewsArticle replaces Article
+    expect(types).toContain('BreadcrumbList');
+    await expect(page.locator('[data-testid="magazine-news-dateline"]')).toBeVisible();
+  });
+
+  test('an Insider article server-renders a plain Article with NO author node', async ({
+    page,
+  }) => {
+    const slug = process.env.E2E_MAGAZINE_INSIDER_SLUG || '';
+    test.skip(!slug, 'Set E2E_MAGAZINE_INSIDER_SLUG to a published insider article');
+
+    const response = await page.goto(`/magazine/insider/${slug}`);
+    expect(response?.status()).toBe(200);
+    const html = await response!.text();
+    const types = await ldTypesInInitialHtml(html);
+    expect(types).toContain('Article');
+    // No E-E-A-T author node (Insider bylines are descoped).
+    expect(html).not.toContain('"@type":"Person"');
+  });
+});

@@ -841,5 +841,15 @@
   "magazine.type_badge.collection": "컬렉션",
   "magazine.type_badge.guide": "가이드",
   "magazine.type_badge.news": "뉴스",
-  "magazine.type_badge.insider": "인사이더"
+  "magazine.type_badge.insider": "인사이더",
+  "magazine.guide_steps_title": "일정",
+  "magazine.news_category.opening": "신규 오픈",
+  "magazine.news_category.brand_news": "브랜드 소식",
+  "magazine.news_category.award": "수상",
+  "magazine.news_category.michelin": "미슐랭",
+  "magazine.insider_topic.virtuoso": "버추오소",
+  "magazine.insider_topic.booking": "예약 노하우",
+  "magazine.insider_topic.upgrade": "업그레이드",
+  "magazine.insider_topic.membership": "멤버십",
+  "magazine.insider_topic.behind_the_scenes": "비하인드 스토리"
 }

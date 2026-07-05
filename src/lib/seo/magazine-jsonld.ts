@@ -6,7 +6,9 @@ import type {
   MagazineArticleType,
 } from '@/types/magazine';
 import { TYPE_ENUM_TO_SEGMENT } from '@/types/magazine';
-import { rankedHotelRelations } from '@/lib/magazine-relations';
+import { linkedHotelRelations, rankedHotelRelations } from '@/lib/magazine-relations';
+import { guideSteps } from '@/lib/magazine-payload';
+import { toPlainText } from '@/lib/magazine-plain-text';
 import { SITE_ORIGIN } from '@/lib/seo/locale';
 
 /**
@@ -166,6 +168,59 @@ export const buildItemListJsonLd: JsonLdBuilder = (detail) => {
   };
 };
 
+/**
+ * `HowTo` (Guide) — built from the SAME `guideSteps(...)` payload the on-screen
+ * Guide steps section renders (parity is asserted in the unit test). Each
+ * `HowToStep` carries `position` (1-based index), `name` (the step title, or the
+ * label as a fallback) and `text` (the step body serialized to PLAIN text — the
+ * page renders the rich version). A step's `url` is emitted ONLY when the step is
+ * tied to a hotel whose linked-relation ref resolves a slug (empty-key omission).
+ * Returns `null` when there are no steps so no empty node is emitted.
+ */
+export const buildHowToJsonLd: JsonLdBuilder = (detail, lang) => {
+  const steps = guideSteps(detail.article);
+  if (steps.length === 0) return null;
+
+  // Resolve step hotels → slug via the same linked relations the page renders.
+  const slugByHotelId = new Map<number, string>();
+  for (const relation of linkedHotelRelations(detail.relations)) {
+    if (relation.hotel) slugByHotelId.set(relation.hotel.id, relation.hotel.slug);
+  }
+
+  const step = steps.map((guideStep, index) => {
+    const name = getLocalizedText(guideStep.title, lang) || guideStep.label || '';
+    const text = toPlainText(getLocalizedText(guideStep.body, lang));
+    const element: JsonLd = {
+      '@type': 'HowToStep',
+      position: index + 1,
+    };
+    if (name) element.name = name;
+    if (text) element.text = text;
+    const slug = guideStep.hotel_id != null ? slugByHotelId.get(guideStep.hotel_id) : undefined;
+    if (slug) element.url = hotelCanonicalUrl(slug);
+    return element;
+  });
+
+  const node: JsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    step,
+  };
+  const name = getLocalizedText(detail.article.title, lang);
+  if (name) node.name = name;
+  return node;
+};
+
+/**
+ * `NewsArticle` — the News-type replacement for `buildArticleJsonLd` (same
+ * shape, `@type` = `NewsArticle`). `datePublished` is the GEO freshness signal
+ * and is emitted whenever present. Omits empty keys.
+ */
+export const buildNewsArticleJsonLd: JsonLdBuilder = (detail, lang) => {
+  const article = buildArticleJsonLd(detail, lang)!;
+  return { ...article, '@type': 'NewsArticle' };
+};
+
 /** The base stack every published type gets today. */
 const BASE_BUILDERS: JsonLdBuilder[] = [
   buildArticleJsonLd,
@@ -180,10 +235,15 @@ const BASE_BUILDERS: JsonLdBuilder[] = [
  * adding entries here.
  */
 export const JSONLD_BUILDERS: Record<MagazineArticleType, JsonLdBuilder[]> = {
+  // Destination + Collection: Article + FAQPage + BreadcrumbList + ItemList
+  // (both reuse the ranked-hotel ItemList; empty when no ranked hotels).
   destination: [...BASE_BUILDERS, buildItemListJsonLd],
-  collection: BASE_BUILDERS,
-  guide: BASE_BUILDERS,
-  news: BASE_BUILDERS,
+  collection: [...BASE_BUILDERS, buildItemListJsonLd],
+  // Guide: Article + FAQPage + BreadcrumbList + HowTo.
+  guide: [...BASE_BUILDERS, buildHowToJsonLd],
+  // News: NewsArticle REPLACES Article; keeps FAQPage + BreadcrumbList.
+  news: [buildNewsArticleJsonLd, buildFaqPageJsonLd, buildBreadcrumbJsonLd],
+  // Insider: plain Article + FAQPage + BreadcrumbList (NO author node).
   insider: BASE_BUILDERS,
 };
 

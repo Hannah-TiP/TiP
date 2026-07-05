@@ -9,6 +9,8 @@ import type { BodyBlock, MagazineArticle, MagazineArticleDetail } from '@/types/
 import type { FaqItem } from '@/types/hotel';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MagazineRelationSections from '@/components/magazine/MagazineRelationSections';
+import MagazineGuideSteps from '@/components/magazine/MagazineGuideSteps';
+import MagazineTypeMeta from '@/components/magazine/MagazineTypeMeta';
 
 interface MagazineArticleContentProps {
   detail: MagazineArticleDetail;
@@ -186,6 +188,9 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
           </div>
         )}
 
+        {/* Type-specific header meta (News dateline + category; Insider topic). */}
+        <MagazineTypeMeta article={article} publishedLabel={publishedLabel} />
+
         {/* Key Takeaways — pinned near the top */}
         {takeaways.length > 0 && (
           <section
@@ -232,8 +237,13 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
         )}
       </article>
 
+      {/* Guide type module: ordered steps (label, title, body, optional hotel
+          card). Renders nothing for non-Guide types / a Guide with no steps. */}
+      <MagazineGuideSteps detail={detail} />
+
       {/* Relation-driven sections: ranked / linked hotels, related stories,
-          cluster up-link. Each block self-hides when its source is empty. */}
+          cluster up-link. Each block self-hides when its source is empty.
+          Collection's ordered hotels render here as the ranked section. */}
       <MagazineRelationSections relations={detail.relations} related={detail.related} />
 
       {/* FAQ accordion (client island) */}

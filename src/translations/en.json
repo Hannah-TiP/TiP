@@ -841,5 +841,15 @@
   "magazine.type_badge.collection": "Collection",
   "magazine.type_badge.guide": "Guide",
   "magazine.type_badge.news": "News",
-  "magazine.type_badge.insider": "Insider"
+  "magazine.type_badge.insider": "Insider",
+  "magazine.guide_steps_title": "The itinerary",
+  "magazine.news_category.opening": "New opening",
+  "magazine.news_category.brand_news": "Brand news",
+  "magazine.news_category.award": "Award",
+  "magazine.news_category.michelin": "Michelin",
+  "magazine.insider_topic.virtuoso": "Virtuoso",
+  "magazine.insider_topic.booking": "Booking know-how",
+  "magazine.insider_topic.upgrade": "Upgrades",
+  "magazine.insider_topic.membership": "Membership",
+  "magazine.insider_topic.behind_the_scenes": "Behind the scenes"
 }
