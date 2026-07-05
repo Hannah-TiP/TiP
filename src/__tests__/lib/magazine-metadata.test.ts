@@ -30,6 +30,7 @@ function detailFixture(
       ...overrides,
     },
     relations: [],
+    related: [],
     available_locales: ['en', 'kr'],
     ...detailOverrides,
   };

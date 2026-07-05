@@ -5,12 +5,13 @@ import Footer from '@/components/Footer';
 import CroppedImage from '@/components/hotel/CroppedImage';
 import FaqAccordion from '@/components/hotel/FaqAccordion';
 import { getImageUrl, getLocalizedText } from '@/types/common';
-import type { BodyBlock, MagazineArticle } from '@/types/magazine';
+import type { BodyBlock, MagazineArticle, MagazineArticleDetail } from '@/types/magazine';
 import type { FaqItem } from '@/types/hotel';
 import { useLanguage } from '@/contexts/LanguageContext';
+import MagazineRelationSections from '@/components/magazine/MagazineRelationSections';
 
 interface MagazineArticleContentProps {
-  article: MagazineArticle;
+  detail: MagazineArticleDetail;
 }
 
 /**
@@ -100,8 +101,9 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
   }
 }
 
-export default function MagazineArticleContent({ article }: MagazineArticleContentProps) {
+export default function MagazineArticleContent({ detail }: MagazineArticleContentProps) {
   const { t, lang } = useLanguage();
+  const { article } = detail;
 
   const title = getLocalizedText(article.title, lang) || article.slug;
   const summary = getLocalizedText(article.summary, lang);
@@ -229,6 +231,10 @@ export default function MagazineArticleContent({ article }: MagazineArticleConte
           </div>
         )}
       </article>
+
+      {/* Relation-driven sections: ranked / linked hotels, related stories,
+          cluster up-link. Each block self-hides when its source is empty. */}
+      <MagazineRelationSections relations={detail.relations} related={detail.related} />
 
       {/* FAQ accordion (client island) */}
       {faqItems.length > 0 && (

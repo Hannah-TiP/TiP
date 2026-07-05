@@ -89,10 +89,47 @@ export interface ArticleRelation {
   updated_at?: string | null;
 }
 
+/**
+ * Render-ready summary of a hotel a relation points at. Narrow projection of
+ * the heavyweight `Hotel` schema — only the fields the FE needs to render a
+ * relation card. `hero_image` is the hotel's first catalog image (`null` when
+ * the hotel has no images).
+ */
+export interface MagazineRelationHotelRef {
+  id: number;
+  slug: string;
+  name?: MultiLanguageString | null;
+  hero_image?: Image | null;
+}
+
+/**
+ * Render-ready summary of an article a relation (or auto-related edge) points
+ * at. The shape shared by expanded article-target relations and every entry in
+ * `related[]`.
+ */
+export interface MagazineRelationArticleRef {
+  id: number;
+  type: MagazineArticleType;
+  slug: string;
+  title?: MultiLanguageString | null;
+  hero_image?: Image | null;
+}
+
+/**
+ * An `ArticleRelation` whose `target_id` has been resolved. Exactly one of
+ * `hotel` / `article` is populated, matching `target_type`
+ * (ranked/linked → hotel; related/parent → article).
+ */
+export interface ExpandedArticleRelation extends ArticleRelation {
+  hotel?: MagazineRelationHotelRef | null;
+  article?: MagazineRelationArticleRef | null;
+}
+
 /** Complete `seo_render` input payload returned by the detail API. */
 export interface MagazineArticleDetail {
   article: MagazineArticle;
-  relations: ArticleRelation[];
+  relations: ExpandedArticleRelation[];
+  related: MagazineRelationArticleRef[];
   available_locales: string[];
 }
 

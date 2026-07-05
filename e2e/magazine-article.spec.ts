@@ -61,4 +61,50 @@ test.describe('/magazine/[type]/[slug]', () => {
     await expect(page.locator('h1')).toBeVisible();
     await expect(page.locator('[data-testid="magazine-hero"]')).toBeVisible();
   });
+
+  test('a destination article with ranked hotels server-renders 4 JSON-LD blocks incl. ItemList, DOM order matching', async ({
+    page,
+  }) => {
+    test.skip(
+      !PUBLISHED_SLUG,
+      'Set E2E_MAGAZINE_SLUG to a published DESTINATION article with ranked hotels to run this check',
+    );
+
+    const response = await page.goto(`/magazine/${PUBLISHED_TYPE_SEGMENT}/${PUBLISHED_SLUG}`);
+    expect(response?.status()).toBe(200);
+
+    const html = await response!.text();
+    // Skip when the fixture has no ranked hotels (ItemList is conditional).
+    test.skip(
+      !/"@type":"ItemList"/.test(html),
+      'Fixture has no ranked hotels — set E2E_MAGAZINE_SLUG to a destination with ranked hotels',
+    );
+
+    // 4 server-rendered ld+json blocks: Article, FAQPage, BreadcrumbList, ItemList.
+    const scripts = html.match(/<script type="application\/ld\+json">/g) ?? [];
+    expect(scripts.length).toBeGreaterThanOrEqual(4);
+    const types = [...html.matchAll(/"@type":"(Article|FAQPage|BreadcrumbList|ItemList)"/g)].map(
+      (m) => m[1],
+    );
+    expect(types).toContain('Article');
+    expect(types).toContain('FAQPage');
+    expect(types).toContain('BreadcrumbList');
+    expect(types).toContain('ItemList');
+
+    // The ItemList hotel-slug order (parsed from the ld+json URLs) must equal the
+    // on-screen ranked-section CTA order (both derive from the same payload).
+    const itemListMatch = html.match(/"@type":"ItemList","itemListElement":(\[[\s\S]*?\])\}/);
+    expect(itemListMatch).not.toBeNull();
+    const itemListSlugs = [...itemListMatch![1].matchAll(/\/hotel\/([a-z0-9-]+)"/g)].map(
+      (m) => m[1],
+    );
+
+    const ctaHrefs = await page
+      .locator('[data-testid="magazine-ranked"] [data-testid="magazine-hotel-cta"]')
+      .evaluateAll((els) => els.map((el) => (el as HTMLAnchorElement).getAttribute('href') ?? ''));
+    const domSlugs = ctaHrefs.map((href) => href.replace('/hotel/', ''));
+
+    expect(domSlugs.length).toBeGreaterThan(0);
+    expect(domSlugs).toEqual(itemListSlugs);
+  });
 });

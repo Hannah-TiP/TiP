@@ -56,7 +56,7 @@ export default async function MagazineArticlePage({ params }: { params: Promise<
   return (
     <>
       <MagazineJsonLd detail={detail} lang={lang} />
-      <MagazineArticleContent article={detail.article} />
+      <MagazineArticleContent detail={detail} />
     </>
   );
 }

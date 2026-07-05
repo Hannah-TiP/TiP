@@ -831,5 +831,15 @@
   "magazine.faq_title": "자주 묻는 질문",
   "magazine.cta_title": "컨시어지가 기다립니다",
   "magazine.cta_body": "이 영감을 회원님만을 위한 여행으로 만들어 드립니다.",
-  "magazine.cta_button": "컨시어지와 상담하기"
+  "magazine.cta_button": "컨시어지와 상담하기",
+  "magazine.where_to_stay": "추천 숙소",
+  "magazine.also_featured": "함께 소개된 호텔",
+  "magazine.related_stories": "관련 이야기",
+  "magazine.hotel_cta": "호텔 보기",
+  "magazine.part_of_series": "다음 시리즈의 일부:",
+  "magazine.type_badge.destination": "여행지",
+  "magazine.type_badge.collection": "컬렉션",
+  "magazine.type_badge.guide": "가이드",
+  "magazine.type_badge.news": "뉴스",
+  "magazine.type_badge.insider": "인사이더"
 }
