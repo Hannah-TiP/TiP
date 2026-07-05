@@ -831,5 +831,15 @@
   "magazine.faq_title": "Frequently asked questions",
   "magazine.cta_title": "The concierge awaits",
   "magazine.cta_body": "Let our team turn this inspiration into a journey made just for you.",
-  "magazine.cta_button": "Chat with Concierge"
+  "magazine.cta_button": "Chat with Concierge",
+  "magazine.where_to_stay": "Where to stay",
+  "magazine.also_featured": "Also featured",
+  "magazine.related_stories": "Related stories",
+  "magazine.hotel_cta": "View hotel",
+  "magazine.part_of_series": "Part of",
+  "magazine.type_badge.destination": "Destination",
+  "magazine.type_badge.collection": "Collection",
+  "magazine.type_badge.guide": "Guide",
+  "magazine.type_badge.news": "News",
+  "magazine.type_badge.insider": "Insider"
 }

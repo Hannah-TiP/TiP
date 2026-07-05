@@ -24,6 +24,7 @@ const detail: MagazineArticleDetail = {
     schema_version: 1,
   },
   relations: [],
+  related: [],
   available_locales: ['en', 'kr'],
 };
 

@@ -1,7 +1,12 @@
 import type { Lang } from '@/contexts/LanguageContext';
 import { getImageUrl, getLocalizedText } from '@/types/common';
-import type { MagazineArticleDetail, MagazineArticleType } from '@/types/magazine';
+import type {
+  ExpandedArticleRelation,
+  MagazineArticleDetail,
+  MagazineArticleType,
+} from '@/types/magazine';
 import { TYPE_ENUM_TO_SEGMENT } from '@/types/magazine';
+import { rankedHotelRelations } from '@/lib/magazine-relations';
 import { SITE_ORIGIN } from '@/lib/seo/locale';
 
 /**
@@ -30,6 +35,15 @@ const PUBLISHER = {
 /** Canonical `/magazine/{typeSegment}/{slug}` absolute URL for the article. */
 export function articleCanonicalUrl(type: MagazineArticleType, slug: string): string {
   return `${SITE_ORIGIN}/magazine/${TYPE_ENUM_TO_SEGMENT[type]}/${slug}`;
+}
+
+/**
+ * Absolute hotel detail URL on the SAME canonical host as
+ * {@link articleCanonicalUrl}. The path is `/hotel/{slug}` (D1 Model A — the
+ * TiP consumer route), NOT the spec's `/hotels/{slug}`.
+ */
+export function hotelCanonicalUrl(slug: string): string {
+  return `${SITE_ORIGIN}/hotel/${slug}`;
 }
 
 /** `Article` — headline/description/image/dates/publisher. Omits empty keys. */
@@ -118,6 +132,40 @@ export const buildBreadcrumbJsonLd: JsonLdBuilder = (detail, lang) => {
   };
 };
 
+/**
+ * `ItemList` — the ranked hotels (Destination pillars) as an ordered list of
+ * hotel `ListItem`s. Built from the SAME `rankedHotelRelations(...)` selector
+ * the on-screen ranked section consumes, so the JSON-LD order/content EQUALS
+ * the rendered order (parity is asserted in the unit test). Each element uses an
+ * ABSOLUTE `/hotel/{slug}` URL on the canonical host, `position` = the 1-based
+ * array index (the on-screen rank badge, NOT the raw stored `relation.position`
+ * — those diverge when positions are non-contiguous, e.g. a deleted rank), and
+ * `name` = the hotel's EN name from the MLS. Returns `null` when there are no
+ * ranked hotels so no empty node is emitted.
+ */
+export const buildItemListJsonLd: JsonLdBuilder = (detail) => {
+  const ranked = rankedHotelRelations(detail.relations);
+  if (ranked.length === 0) return null;
+
+  const itemListElement = ranked.map((relation: ExpandedArticleRelation, index) => {
+    const hotel = relation.hotel!;
+    const name = getLocalizedText(hotel.name, 'en');
+    const element: JsonLd = {
+      '@type': 'ListItem',
+      position: index + 1,
+      url: hotelCanonicalUrl(hotel.slug),
+    };
+    if (name) element.name = name;
+    return element;
+  });
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement,
+  };
+};
+
 /** The base stack every published type gets today. */
 const BASE_BUILDERS: JsonLdBuilder[] = [
   buildArticleJsonLd,
@@ -132,7 +180,7 @@ const BASE_BUILDERS: JsonLdBuilder[] = [
  * adding entries here.
  */
 export const JSONLD_BUILDERS: Record<MagazineArticleType, JsonLdBuilder[]> = {
-  destination: BASE_BUILDERS,
+  destination: [...BASE_BUILDERS, buildItemListJsonLd],
   collection: BASE_BUILDERS,
   guide: BASE_BUILDERS,
   news: BASE_BUILDERS,

@@ -3,12 +3,70 @@ import {
   buildArticleJsonLd,
   buildBreadcrumbJsonLd,
   buildFaqPageJsonLd,
+  buildItemListJsonLd,
   buildMagazineJsonLd,
   articleCanonicalUrl,
-  JSONLD_BUILDERS,
+  hotelCanonicalUrl,
 } from '@/lib/seo/magazine-jsonld';
+import { rankedHotelRelations } from '@/lib/magazine-relations';
 import { SITE_ORIGIN } from '@/lib/seo/locale';
-import type { MagazineArticleDetail } from '@/types/magazine';
+import type { ExpandedArticleRelation, MagazineArticleDetail } from '@/types/magazine';
+
+/** Two ranked hotel relations, deliberately provided OUT of position order. */
+function rankedRelationsFixture(): ExpandedArticleRelation[] {
+  return [
+    {
+      id: 20,
+      target_type: 'hotel',
+      target_id: 200,
+      kind: 'ranked',
+      position: 2,
+      blurb: { en: 'Second best.', kr: '두 번째.' },
+      schema_version: 1,
+      hotel: { id: 200, slug: 'the-ritz-paris', name: { en: 'The Ritz Paris', kr: '리츠 파리' } },
+    },
+    {
+      id: 10,
+      target_type: 'hotel',
+      target_id: 100,
+      kind: 'ranked',
+      position: 1,
+      blurb: { en: 'Top pick.', kr: '최고.' },
+      schema_version: 1,
+      hotel: { id: 100, slug: 'aman-tokyo', name: { en: 'Aman Tokyo', kr: '아만 도쿄' } },
+    },
+  ];
+}
+
+/**
+ * Two ranked relations with NON-CONTIGUOUS stored positions (10, 20) — the case
+ * a deleted middle rank or wide-gap ordering produces. The emitted ItemList
+ * `position` must be the 1-based index (1, 2 — the on-screen rank badge), NOT
+ * the raw stored position. Guards the parity bug where `relation.position` was
+ * used directly.
+ */
+function nonContiguousRankedFixture(): ExpandedArticleRelation[] {
+  return [
+    {
+      id: 30,
+      target_type: 'hotel',
+      target_id: 300,
+      kind: 'ranked',
+      position: 20,
+      schema_version: 1,
+      hotel: { id: 300, slug: 'bulgari-tokyo', name: { en: 'Bulgari Tokyo', kr: null } },
+    },
+    {
+      id: 40,
+      target_type: 'hotel',
+      target_id: 400,
+      kind: 'ranked',
+      position: 10,
+      schema_version: 1,
+      hotel: { id: 400, slug: 'aman-kyoto', name: { en: 'Aman Kyoto', kr: null } },
+    },
+  ];
+}
 
 function detailFixture(
   overrides: Partial<MagazineArticleDetail['article']> = {},
@@ -41,6 +99,7 @@ function detailFixture(
       ...overrides,
     },
     relations: [],
+    related: [],
     available_locales: ['en', 'kr'],
   };
 }
@@ -127,12 +186,154 @@ describe('buildBreadcrumbJsonLd', () => {
   });
 });
 
+describe('buildItemListJsonLd', () => {
+  it('builds an ItemList of ranked hotels with absolute /hotel/{slug} URLs, position=rank, name=EN', () => {
+    const detail: MagazineArticleDetail = {
+      ...detailFixture(),
+      relations: rankedRelationsFixture(),
+    };
+    const node = buildItemListJsonLd(detail, 'kr')!;
+
+    expect(node['@type']).toBe('ItemList');
+    expect(node.itemListElement).toEqual([
+      {
+        '@type': 'ListItem',
+        position: 1,
+        url: `${SITE_ORIGIN}/hotel/aman-tokyo`,
+        name: 'Aman Tokyo',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        url: `${SITE_ORIGIN}/hotel/the-ritz-paris`,
+        name: 'The Ritz Paris',
+      },
+    ]);
+  });
+
+  it('uses the canonical host — same origin as articleCanonicalUrl', () => {
+    expect(hotelCanonicalUrl('aman-tokyo')).toBe(`${SITE_ORIGIN}/hotel/aman-tokyo`);
+    expect(hotelCanonicalUrl('aman-tokyo').startsWith(SITE_ORIGIN)).toBe(true);
+  });
+
+  it('returns null when there are no ranked hotels', () => {
+    expect(buildItemListJsonLd(detailFixture(), 'en')).toBeNull();
+    // linked-only relations must NOT produce an ItemList
+    const linkedOnly: MagazineArticleDetail = {
+      ...detailFixture(),
+      relations: [
+        {
+          id: 1,
+          target_type: 'hotel',
+          target_id: 1,
+          kind: 'linked',
+          position: 1,
+          schema_version: 1,
+          hotel: { id: 1, slug: 'x', name: { en: 'X', kr: null } },
+        },
+      ],
+    };
+    expect(buildItemListJsonLd(linkedOnly, 'en')).toBeNull();
+  });
+
+  it('omits name when the hotel has no EN/KR name', () => {
+    const detail: MagazineArticleDetail = {
+      ...detailFixture(),
+      relations: [
+        {
+          id: 1,
+          target_type: 'hotel',
+          target_id: 1,
+          kind: 'ranked',
+          position: 1,
+          schema_version: 1,
+          hotel: { id: 1, slug: 'nameless', name: null },
+        },
+      ],
+    };
+    const element = (buildItemListJsonLd(detail, 'en')!.itemListElement as Array<object>)[0];
+    expect('name' in element).toBe(false);
+  });
+});
+
+describe('ItemList ↔ on-screen ranked list parity', () => {
+  it('ItemList order/content EQUALS the ranked list the component renders (same selector)', () => {
+    const detail: MagazineArticleDetail = {
+      ...detailFixture(),
+      relations: rankedRelationsFixture(),
+    };
+
+    // What the on-screen ranked section renders (the component maps over this
+    // exact selector, in this exact order, deriving /hotel/{slug} links).
+    const onScreen = rankedHotelRelations(detail.relations).map((r, index) => ({
+      position: index + 1,
+      slug: r.hotel!.slug,
+      name: r.hotel!.name!.en,
+    }));
+
+    const jsonld = (
+      buildItemListJsonLd(detail, 'en')!.itemListElement as Array<{
+        position: number;
+        url: string;
+        name: string;
+      }>
+    ).map((el) => ({
+      position: el.position,
+      slug: el.url.replace(`${SITE_ORIGIN}/hotel/`, ''),
+      name: el.name,
+    }));
+
+    expect(jsonld).toEqual(onScreen);
+  });
+
+  it('emits CONTIGUOUS index-based positions (1,2) for non-contiguous stored positions', () => {
+    // Stored positions are 10 & 20; the on-screen ranks are 1 & 2. The ItemList
+    // position MUST equal the index-based on-screen rank, NOT the raw stored
+    // position. This fails under `relation.position || index + 1`.
+    const detail: MagazineArticleDetail = {
+      ...detailFixture(),
+      relations: nonContiguousRankedFixture(),
+    };
+
+    const elements = buildItemListJsonLd(detail, 'en')!.itemListElement as Array<{
+      position: number;
+      url: string;
+    }>;
+
+    expect(elements.map((el) => el.position)).toEqual([1, 2]);
+    // Still sorted by stored position: 10 (aman-kyoto) then 20 (bulgari-tokyo).
+    expect(elements.map((el) => el.url.replace(`${SITE_ORIGIN}/hotel/`, ''))).toEqual([
+      'aman-kyoto',
+      'bulgari-tokyo',
+    ]);
+  });
+});
+
 describe('buildMagazineJsonLd dispatch table', () => {
-  it('emits the base stack (Article + FAQPage + BreadcrumbList) for every type', () => {
-    for (const type of Object.keys(JSONLD_BUILDERS) as Array<keyof typeof JSONLD_BUILDERS>) {
+  it('emits the base stack (Article + FAQPage + BreadcrumbList) for every non-destination type', () => {
+    for (const type of ['collection', 'guide', 'news', 'insider'] as const) {
       const nodes = buildMagazineJsonLd(detailFixture({ type }), 'en');
       expect(nodes.map((n) => n['@type'])).toEqual(['Article', 'FAQPage', 'BreadcrumbList']);
     }
+  });
+
+  it('emits 4 blocks (base + ItemList) for a destination with ranked hotels', () => {
+    const detail: MagazineArticleDetail = {
+      ...detailFixture({ type: 'destination' }),
+      relations: rankedRelationsFixture(),
+    };
+    const nodes = buildMagazineJsonLd(detail, 'en');
+    expect(nodes.map((n) => n['@type'])).toEqual([
+      'Article',
+      'FAQPage',
+      'BreadcrumbList',
+      'ItemList',
+    ]);
+  });
+
+  it('drops the ItemList for a destination with no ranked hotels', () => {
+    const nodes = buildMagazineJsonLd(detailFixture({ type: 'destination' }), 'en');
+    expect(nodes.map((n) => n['@type'])).toEqual(['Article', 'FAQPage', 'BreadcrumbList']);
   });
 
   it('drops the FAQPage node when the article has no FAQs', () => {
