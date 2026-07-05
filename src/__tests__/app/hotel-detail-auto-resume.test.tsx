@@ -2,11 +2,12 @@
 import type { AnchorHTMLAttributes, ImgHTMLAttributes } from 'react';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import HotelDetailIsland from '@/components/hotel/HotelDetailIsland';
 import enTranslations from '@/translations/en.json';
 import { apiClient } from '@/lib/api-client';
 import type { Hotel } from '@/types/hotel';
 
-// ── Mocks: read by the page on mount ─────────────────────────────────────────
+// ── Mocks: read by the island on mount ───────────────────────────────────────
 
 const pushMock = vi.fn();
 const replaceMock = vi.fn();
@@ -16,7 +17,6 @@ const sessionRef: { current: 'authenticated' | 'unauthenticated' | 'loading' } =
 };
 
 vi.mock('next/navigation', () => ({
-  useParams: () => ({ id: 'aman-tokyo' }),
   useRouter: () => ({ push: pushMock, replace: replaceMock, back: vi.fn() }),
   useSearchParams: () => searchParamsRef.current,
 }));
@@ -90,6 +90,10 @@ const baseHotel: Hotel = {
   schema_version: 1,
 };
 
+function renderIsland() {
+  return render(<HotelDetailIsland slug="aman-tokyo" initialHotel={baseHotel} featured={[]} />);
+}
+
 beforeEach(() => {
   pushMock.mockReset();
   replaceMock.mockReset();
@@ -104,10 +108,8 @@ afterEach(() => {
   cleanup();
 });
 
-describe('HotelDetailPage — auto-resume after sign-in', () => {
+describe('HotelDetailIsland — auto-resume after sign-in', () => {
   it('fires the Reserve handler once when ?reserve=1 + checkin/checkout + authed, then cleans the URL', async () => {
-    const { default: HotelDetailPage } = await import('@/app/hotel/[id]/page');
-
     sessionRef.current = 'authenticated';
     searchParamsRef.current = new URLSearchParams(
       'reserve=1&checkin=2099-06-10&checkout=2099-06-13',
@@ -118,7 +120,7 @@ describe('HotelDetailPage — auto-resume after sign-in', () => {
       trip_version_id: 5,
     });
 
-    render(<HotelDetailPage />);
+    renderIsland();
 
     await waitFor(() => {
       expect(apiClient.createTripFromHotel).toHaveBeenCalledTimes(1);
@@ -135,8 +137,6 @@ describe('HotelDetailPage — auto-resume after sign-in', () => {
   });
 
   it('fires Ask Concierge once when ?ask=1 + authed, even without dates', async () => {
-    const { default: HotelDetailPage } = await import('@/app/hotel/[id]/page');
-
     sessionRef.current = 'authenticated';
     searchParamsRef.current = new URLSearchParams('ask=1');
     vi.mocked(apiClient.createTripFromHotel).mockResolvedValueOnce({
@@ -145,7 +145,7 @@ describe('HotelDetailPage — auto-resume after sign-in', () => {
       trip_version_id: 5,
     });
 
-    render(<HotelDetailPage />);
+    renderIsland();
 
     await waitFor(() => {
       expect(apiClient.createTripFromHotel).toHaveBeenCalledTimes(1);
@@ -157,8 +157,6 @@ describe('HotelDetailPage — auto-resume after sign-in', () => {
   });
 
   it('fires Submit Request once when ?submit_request=1 with dates+travelers + authed, then cleans the URL', async () => {
-    const { default: HotelDetailPage } = await import('@/app/hotel/[id]/page');
-
     sessionRef.current = 'authenticated';
     searchParamsRef.current = new URLSearchParams(
       'submit_request=1&checkin=2099-06-10&checkout=2099-06-13&adults=3&kids=1',
@@ -169,7 +167,7 @@ describe('HotelDetailPage — auto-resume after sign-in', () => {
       trip_version_id: 5,
     });
 
-    render(<HotelDetailPage />);
+    renderIsland();
 
     await waitFor(() => {
       expect(apiClient.submitRequestFromHotel).toHaveBeenCalledTimes(1);
@@ -190,8 +188,6 @@ describe('HotelDetailPage — auto-resume after sign-in', () => {
   });
 
   it('falls back to default traveler counts (2/0) when ?submit_request=1 omits adults/kids', async () => {
-    const { default: HotelDetailPage } = await import('@/app/hotel/[id]/page');
-
     sessionRef.current = 'authenticated';
     searchParamsRef.current = new URLSearchParams(
       'submit_request=1&checkin=2099-06-10&checkout=2099-06-13',
@@ -202,7 +198,7 @@ describe('HotelDetailPage — auto-resume after sign-in', () => {
       trip_version_id: 5,
     });
 
-    render(<HotelDetailPage />);
+    renderIsland();
 
     await waitFor(() => {
       expect(apiClient.submitRequestFromHotel).toHaveBeenCalledTimes(1);
@@ -217,34 +213,26 @@ describe('HotelDetailPage — auto-resume after sign-in', () => {
   });
 
   it('does not auto-fire when the user is unauthed (post-redirect mount before auth lands)', async () => {
-    const { default: HotelDetailPage } = await import('@/app/hotel/[id]/page');
-
     sessionRef.current = 'unauthenticated';
     searchParamsRef.current = new URLSearchParams(
       'submit_request=1&checkin=2099-06-10&checkout=2099-06-13&adults=2&kids=0',
     );
 
-    render(<HotelDetailPage />);
+    const { findByRole } = renderIsland();
 
-    await waitFor(() => {
-      expect(apiClient.getHotelBySlug).toHaveBeenCalled();
-    });
+    await findByRole('heading', { level: 1, name: 'Aman Tokyo' });
     expect(apiClient.createTripFromHotel).not.toHaveBeenCalled();
     expect(apiClient.submitRequestFromHotel).not.toHaveBeenCalled();
     expect(replaceMock).not.toHaveBeenCalled();
   });
 
   it('does not auto-fire when authed but no action param is present', async () => {
-    const { default: HotelDetailPage } = await import('@/app/hotel/[id]/page');
-
     sessionRef.current = 'authenticated';
     searchParamsRef.current = new URLSearchParams();
 
-    render(<HotelDetailPage />);
+    const { findByRole } = renderIsland();
 
-    await waitFor(() => {
-      expect(apiClient.getHotelBySlug).toHaveBeenCalled();
-    });
+    await findByRole('heading', { level: 1, name: 'Aman Tokyo' });
     expect(apiClient.createTripFromHotel).not.toHaveBeenCalled();
     expect(apiClient.submitRequestFromHotel).not.toHaveBeenCalled();
     expect(replaceMock).not.toHaveBeenCalled();

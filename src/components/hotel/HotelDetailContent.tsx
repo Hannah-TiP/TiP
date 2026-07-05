@@ -36,6 +36,11 @@ interface HotelDetailContentProps {
    * detail grid renders 2 columns at lg+; otherwise single column.
    */
   sidebar?: ReactNode;
+  /**
+   * Optional content rendered at the bottom of the main content column,
+   * after the FAQ section (e.g. the "From the Magazine" backlink section).
+   */
+  belowContent?: ReactNode;
 }
 
 export default function HotelDetailContent({
@@ -43,6 +48,7 @@ export default function HotelDetailContent({
   heroOverlay,
   stickyBar,
   sidebar,
+  belowContent,
 }: HotelDetailContentProps) {
   const { t } = useLanguage();
 
@@ -169,6 +175,8 @@ export default function HotelDetailContent({
               <FaqAccordion faqs={faqs} />
             </section>
           )}
+
+          {belowContent}
         </div>
 
         {sidebar}
