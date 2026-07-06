@@ -10,9 +10,10 @@ interface JourneyHighlightsProps {
 }
 
 export default function JourneyHighlights({ highlights }: JourneyHighlightsProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const items = highlights.filter(
-    (highlight) => getLocalizedText(highlight.title) || getLocalizedText(highlight.desc),
+    (highlight) =>
+      getLocalizedText(highlight.title, lang) || getLocalizedText(highlight.desc, lang),
   );
   if (items.length === 0) return null;
 
@@ -28,8 +29,8 @@ export default function JourneyHighlights({ highlights }: JourneyHighlightsProps
         />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((highlight, index) => {
-            const title = getLocalizedText(highlight.title);
-            const desc = getLocalizedText(highlight.desc);
+            const title = getLocalizedText(highlight.title, lang);
+            const desc = getLocalizedText(highlight.desc, lang);
             return (
               <div key={index} className="rounded-xl bg-white p-8 shadow-sm">
                 {title && (

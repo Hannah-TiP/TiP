@@ -53,9 +53,9 @@ export default function HotelDetailContent({
   const { t, lang } = useLanguage();
 
   const hotelImages = useMemo(() => getHotelHeroImages(hotel), [hotel]);
-  const hotelName = getLocalizedText(hotel.name) || hotel.slug;
-  const address = getLocalizedText(hotel.address);
-  const overview = getLocalizedText(hotel.overview);
+  const hotelName = getLocalizedText(hotel.name, lang) || hotel.slug;
+  const address = getLocalizedText(hotel.address, lang);
+  const overview = getLocalizedText(hotel.overview, lang);
   const rooms = hotel.rooms ?? [];
   const features = hotel.features ?? [];
   const faqs = hotel.faqs ?? [];

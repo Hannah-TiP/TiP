@@ -10,12 +10,12 @@ interface JourneyBenefitsProps {
 }
 
 export default function JourneyBenefits({ benefits }: JourneyBenefitsProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const items = benefits.filter(
     (benefit) =>
-      getLocalizedText(benefit.mark) ||
-      getLocalizedText(benefit.title) ||
-      getLocalizedText(benefit.desc),
+      getLocalizedText(benefit.mark, lang) ||
+      getLocalizedText(benefit.title, lang) ||
+      getLocalizedText(benefit.desc, lang),
   );
   if (items.length === 0) return null;
 
@@ -28,9 +28,9 @@ export default function JourneyBenefits({ benefits }: JourneyBenefitsProps) {
         />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((benefit, index) => {
-            const mark = getLocalizedText(benefit.mark);
-            const title = getLocalizedText(benefit.title);
-            const desc = getLocalizedText(benefit.desc);
+            const mark = getLocalizedText(benefit.mark, lang);
+            const title = getLocalizedText(benefit.title, lang);
+            const desc = getLocalizedText(benefit.desc, lang);
             return (
               <div key={index} className="rounded-xl border border-gray-border p-8">
                 {mark && (

@@ -11,14 +11,14 @@ interface JourneyRoutesProps {
 }
 
 export default function JourneyRoutes({ routes }: JourneyRoutesProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const items = routes.filter(
     (route) =>
       route.map_image ||
-      getLocalizedText(route.region) ||
-      getLocalizedText(route.title) ||
-      getLocalizedText(route.stops) ||
-      getLocalizedText(route.meta),
+      getLocalizedText(route.region, lang) ||
+      getLocalizedText(route.title, lang) ||
+      getLocalizedText(route.stops, lang) ||
+      getLocalizedText(route.meta, lang),
   );
   if (items.length === 0) return null;
 
@@ -31,10 +31,10 @@ export default function JourneyRoutes({ routes }: JourneyRoutesProps) {
         />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {items.map((route, index) => {
-            const region = getLocalizedText(route.region);
-            const title = getLocalizedText(route.title);
-            const stops = getLocalizedText(route.stops);
-            const meta = getLocalizedText(route.meta);
+            const region = getLocalizedText(route.region, lang);
+            const title = getLocalizedText(route.title, lang);
+            const stops = getLocalizedText(route.stops, lang);
+            const meta = getLocalizedText(route.meta, lang);
             return (
               <div key={index} className="overflow-hidden rounded-xl bg-white shadow-sm">
                 {route.map_image && (
@@ -42,7 +42,7 @@ export default function JourneyRoutes({ routes }: JourneyRoutesProps) {
                     <CroppedImage
                       src={getImageUrl(route.map_image)}
                       crop={route.map_image.crop}
-                      alt={getLocalizedText(route.map_image.alt) || title}
+                      alt={getLocalizedText(route.map_image.alt, lang) || title}
                       sizes="(max-width: 1024px) 100vw, 50vw"
                     />
                   </div>

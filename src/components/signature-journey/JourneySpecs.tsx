@@ -10,8 +10,10 @@ interface JourneySpecsProps {
 }
 
 export default function JourneySpecs({ specs }: JourneySpecsProps) {
-  const { t } = useLanguage();
-  const items = specs.filter((spec) => getLocalizedText(spec.key) || getLocalizedText(spec.value));
+  const { t, lang } = useLanguage();
+  const items = specs.filter(
+    (spec) => getLocalizedText(spec.key, lang) || getLocalizedText(spec.value, lang),
+  );
   if (items.length === 0) return null;
 
   return (
@@ -25,10 +27,10 @@ export default function JourneySpecs({ specs }: JourneySpecsProps) {
           {items.map((spec, index) => (
             <div key={index} className="rounded-xl bg-gray-light p-6">
               <dt className="text-[11px] font-semibold uppercase tracking-[2px] text-gold">
-                {getLocalizedText(spec.key)}
+                {getLocalizedText(spec.key, lang)}
               </dt>
               <dd className="mt-2 text-[15px] leading-relaxed text-green-dark">
-                {getLocalizedText(spec.value)}
+                {getLocalizedText(spec.value, lang)}
               </dd>
             </div>
           ))}

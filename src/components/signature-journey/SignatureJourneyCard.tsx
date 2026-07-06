@@ -12,8 +12,8 @@ interface SignatureJourneyCardProps {
 }
 
 export default function SignatureJourneyCard({ journey, cityName }: SignatureJourneyCardProps) {
-  const { t } = useLanguage();
-  const title = getLocalizedText(journey.title) || journey.slug;
+  const { t, lang } = useLanguage();
+  const title = getLocalizedText(journey.title, lang) || journey.slug;
 
   return (
     <Link
