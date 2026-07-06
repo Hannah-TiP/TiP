@@ -35,8 +35,11 @@ test.describe('signature-journey JSON-LD', () => {
     const docs = await ldJsonDocs(page);
     const agencies = docs.filter((d) => d['@type'] === 'TravelAgency');
     expect(agencies).toHaveLength(1);
-    expect(agencies[0].name).toBe('Paris Class');
-    expect(agencies[0].url).toBe('https://parisclass.com');
+    // The site-wide entity is modeled as "Travel in Your Pocket" (TiP), a
+    // member agency of Paris Class (its parentOrganization) — MAG-6.
+    expect(agencies[0].name).toBe('Travel in Your Pocket');
+    expect(agencies[0].alternateName).toBe('TiP');
+    expect((agencies[0].parentOrganization as { name?: string })?.name).toBe('Paris Class');
   });
 
   test('the SJ detail route emits all four JSON-LD types with a singleton TravelAgency', async ({
