@@ -11,13 +11,13 @@ interface JourneyUnitsProps {
 }
 
 export default function JourneyUnits({ units }: JourneyUnitsProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const items = units.filter(
     (unit) =>
       unit.image ||
-      getLocalizedText(unit.name) ||
-      getLocalizedText(unit.spec) ||
-      getLocalizedText(unit.desc),
+      getLocalizedText(unit.name, lang) ||
+      getLocalizedText(unit.spec, lang) ||
+      getLocalizedText(unit.desc, lang),
   );
   if (items.length === 0) return null;
 
@@ -30,9 +30,9 @@ export default function JourneyUnits({ units }: JourneyUnitsProps) {
         />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((unit, index) => {
-            const name = getLocalizedText(unit.name);
-            const spec = getLocalizedText(unit.spec);
-            const desc = getLocalizedText(unit.desc);
+            const name = getLocalizedText(unit.name, lang);
+            const spec = getLocalizedText(unit.spec, lang);
+            const desc = getLocalizedText(unit.desc, lang);
             return (
               <div key={index} className="overflow-hidden rounded-xl bg-gray-light">
                 {unit.image && (
@@ -40,7 +40,7 @@ export default function JourneyUnits({ units }: JourneyUnitsProps) {
                     <CroppedImage
                       src={getImageUrl(unit.image)}
                       crop={unit.image.crop}
-                      alt={getLocalizedText(unit.image.alt) || name}
+                      alt={getLocalizedText(unit.image.alt, lang) || name}
                       sizes="(max-width: 640px) 100vw, 33vw"
                     />
                   </div>

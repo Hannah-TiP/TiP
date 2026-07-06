@@ -9,10 +9,10 @@ interface HotelBenefitsProps {
 }
 
 export default function HotelBenefits({ benefits }: HotelBenefitsProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const flatBenefits = (benefits ?? []).flatMap((program) =>
-    program.benefits.map((benefit) => getLocalizedText(benefit)).filter(Boolean),
+    program.benefits.map((benefit) => getLocalizedText(benefit, lang)).filter(Boolean),
   );
 
   if (flatBenefits.length === 0) return null;

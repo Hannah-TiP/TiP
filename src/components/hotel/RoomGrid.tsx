@@ -13,7 +13,7 @@ interface RoomGridProps {
 }
 
 export default function RoomGrid({ rooms, fallbackImage }: RoomGridProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [openRoomIndex, setOpenRoomIndex] = useState<number | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -55,8 +55,8 @@ export default function RoomGrid({ rooms, fallbackImage }: RoomGridProps) {
         {rooms.map((room, index) => {
           const roomImage = room.images?.[0] ? getImageUrl(room.images[0]) : fallbackImage;
           const sizeText = room.size_sqm ? `${room.size_sqm} m²` : null;
-          const summary = getLocalizedText(room.summary);
-          const name = getLocalizedText(room.name);
+          const summary = getLocalizedText(room.summary, lang);
+          const name = getLocalizedText(room.name, lang);
           const imageCount = room.images?.length ?? 0;
           return (
             <article
@@ -108,18 +108,18 @@ export default function RoomGrid({ rooms, fallbackImage }: RoomGridProps) {
       <Modal
         isOpen={openRoom !== null}
         onClose={closeModal}
-        ariaLabel={openRoom ? `${getLocalizedText(openRoom.name)} photos` : undefined}
+        ariaLabel={openRoom ? `${getLocalizedText(openRoom.name, lang)} photos` : undefined}
       >
         {openRoom && totalImages > 0 && (
           <div className="p-6 pt-12" data-testid="room-photo-modal">
             <h2 className="mb-6 font-primary text-2xl font-light text-green-dark">
-              {getLocalizedText(openRoom.name)}
+              {getLocalizedText(openRoom.name, lang)}
             </h2>
             <div className="relative">
               <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-gray-light">
                 <Image
                   src={getImageUrl(openRoomImages[currentImageIndex])}
-                  alt={`${getLocalizedText(openRoom.name)} ${currentImageIndex + 1}`}
+                  alt={`${getLocalizedText(openRoom.name, lang)} ${currentImageIndex + 1}`}
                   fill
                   sizes="(max-width: 768px) 100vw, 800px"
                   className="object-cover"

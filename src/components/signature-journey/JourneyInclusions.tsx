@@ -10,9 +10,9 @@ interface JourneyInclusionsProps {
 }
 
 export default function JourneyInclusions({ inclusions }: JourneyInclusionsProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const items = inclusions
-    .map((inclusion) => getLocalizedText(inclusion.item))
+    .map((inclusion) => getLocalizedText(inclusion.item, lang))
     .filter((text) => text.length > 0);
   if (items.length === 0) return null;
 

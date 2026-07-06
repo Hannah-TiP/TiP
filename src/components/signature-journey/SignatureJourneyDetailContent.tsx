@@ -81,10 +81,10 @@ export default function SignatureJourneyDetailContent({
     );
   }
 
-  const title = getLocalizedText(journey.title) || journey.slug;
-  const description = getLocalizedText(journey.description);
-  const lead = getLocalizedText(journey.lead);
-  const body = getLocalizedText(journey.body);
+  const title = getLocalizedText(journey.title, lang) || journey.slug;
+  const description = getLocalizedText(journey.description, lang);
+  const lead = getLocalizedText(journey.lead, lang);
+  const body = getLocalizedText(journey.body, lang);
   const gallery = (journey.gallery ?? []).slice(0, 3);
   const hasAbout = !!lead || !!body || gallery.length > 0;
   const faqItems = toFaqItems(journey.faqs);
@@ -99,7 +99,7 @@ export default function SignatureJourneyDetailContent({
         <CroppedImage
           src={getImageUrl(journey.hero_image)}
           crop={journey.hero_image?.crop}
-          alt={getLocalizedText(journey.hero_image?.alt) || title}
+          alt={getLocalizedText(journey.hero_image?.alt, lang) || title}
           sizes="100vw"
           priority
         />
@@ -149,7 +149,7 @@ export default function SignatureJourneyDetailContent({
                     <CroppedImage
                       src={getImageUrl(image)}
                       crop={image.crop}
-                      alt={getLocalizedText(image.alt) || title}
+                      alt={getLocalizedText(image.alt, lang) || title}
                       sizes="(max-width: 768px) 50vw, 33vw"
                     />
                   </div>
