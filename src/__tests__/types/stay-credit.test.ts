@@ -3,6 +3,7 @@ import {
   STAY_CREDIT_SOURCE_LABELS,
   creditSourceLabel,
   creditsForTrip,
+  stayCreditSourceText,
   tripIdFromCredit,
   type StayCredit,
 } from '@/types/stay-credit';
@@ -92,6 +93,28 @@ describe('creditSourceLabel', () => {
   it('never appends a code for non-promo sources', () => {
     const credit = makeCredit({ source: 'welcome' });
     expect(creditSourceLabel(credit, true)).toBe('Welcome');
+  });
+
+  it('labels KB benefit sources without crashing (regression: credit page white-screen)', () => {
+    expect(creditSourceLabel(makeCredit({ source: 'kb_welcome' }), true)).toBe('KB Welcome');
+    expect(creditSourceLabel(makeCredit({ source: 'kb_welcome' }), false)).toBe('KB 웰컴');
+    expect(creditSourceLabel(makeCredit({ source: 'kb_premium_booking' }), true)).toBe(
+      'KB Premium Booking',
+    );
+  });
+});
+
+describe('stayCreditSourceText', () => {
+  it('returns the localized label for a known source', () => {
+    expect(stayCreditSourceText('birthday', true)).toBe('Birthday');
+    expect(stayCreditSourceText('birthday', false)).toBe('생일');
+  });
+
+  it('falls back to the raw source (no throw) for an unknown/new backend source', () => {
+    // Guards against the FE label map drifting behind the backend enum again.
+    const unknown = 'future_source' as unknown as StayCredit['source'];
+    expect(() => stayCreditSourceText(unknown, true)).not.toThrow();
+    expect(stayCreditSourceText(unknown, true)).toBe('future_source');
   });
 });
 
