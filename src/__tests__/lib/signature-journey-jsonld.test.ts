@@ -64,13 +64,22 @@ describe('splitRouteStops', () => {
 });
 
 describe('buildTravelAgencyJsonLd', () => {
-  it('emits the Paris Class agency with IATA + Virtuoso membership', () => {
+  it('emits the Travel in Your Pocket agency with Paris Class parent + Virtuoso membership', () => {
     const doc = buildTravelAgencyJsonLd();
     expect(doc['@type']).toBe('TravelAgency');
-    expect(doc.name).toBe('Paris Class');
-    expect(doc.url).toBe('https://parisclass.com');
+    expect(doc.name).toBe('Travel in Your Pocket');
+    expect(doc.alternateName).toBe('TiP');
     expect(doc.iataCode).toBe('17335835');
+    expect(doc.parentOrganization).toMatchObject({
+      '@type': 'Organization',
+      name: 'Paris Class',
+      url: 'https://parisclass.com',
+    });
     expect(doc.memberOf).toMatchObject({ name: 'Virtuoso' });
+    expect(doc.sameAs).toContain('https://parisclass.com');
+    expect(doc.sameAs).toContain('https://instagram.com/travelinyourpocket_official');
+    // description is reused byte-for-byte in /llms.txt
+    expect(typeof doc.description).toBe('string');
   });
 });
 
@@ -82,7 +91,7 @@ describe('buildTouristTripJsonLd', () => {
     expect(doc.description).toBe('A private yacht voyage.');
     expect(doc.url).toBe(CANONICAL);
     expect(doc.image).toBe('https://cdn.example.com/cover-1200.jpg');
-    expect(doc.provider).toMatchObject({ '@type': 'TravelAgency', name: 'Paris Class' });
+    expect(doc.provider).toMatchObject({ '@type': 'TravelAgency', name: 'Travel in Your Pocket' });
 
     const itinerary = doc.itinerary as {
       itemListElement: { position: number; item: { name: string } }[];

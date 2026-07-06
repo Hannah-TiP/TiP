@@ -6,8 +6,14 @@ import type { Hotel } from '@/types/hotel';
 import type { Activity, ActivityKind } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
 import type { SignatureJourney } from '@/types/signatureJourney';
-import type { MagazineArticleDetail, MagazineArticleType } from '@/types/magazine';
+import type {
+  MagazineArticle,
+  MagazineArticleDetail,
+  MagazineArticleType,
+  MagazineFacetOptions,
+} from '@/types/magazine';
 import type { City, Country, Region } from '@/types/location';
+import { magazineArticlesQuery, type MagazineListFilters } from '@/lib/magazine-list';
 import type {
   Trip,
   CreateTripFromHotelResponse,
@@ -364,6 +370,27 @@ class ApiClient {
     const response = await this.request<{ data: MagazineArticleDetail }>(
       `/magazine/articles/${type}/${slug}${query}`,
     );
+    return response.data;
+  }
+
+  /**
+   * List published magazine articles with facet filters (index page). Maps the
+   * filter state to query params via {@link magazineArticlesQuery} and resolves
+   * a slim `PaginatedResult` for the shared infinite-list hook.
+   */
+  async getMagazineArticles(
+    filters: MagazineListFilters = {},
+  ): Promise<PaginatedResult<MagazineArticle>> {
+    const query = magazineArticlesQuery(filters).toString();
+    const endpoint = `/magazine/articles${query ? `?${query}` : ''}`;
+    const response = await this.request<{ data: PaginatedData<MagazineArticle> }>(endpoint);
+    return toPaginatedResult(response.data);
+  }
+
+  /** Filter options (country/city/brand/tag) among published magazine articles. */
+  async getMagazineFacets(lang?: string): Promise<MagazineFacetOptions> {
+    const query = lang ? `?language=${lang}` : '';
+    const response = await this.request<{ data: MagazineFacetOptions }>(`/magazine/facets${query}`);
     return response.data;
   }
 

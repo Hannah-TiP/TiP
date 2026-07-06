@@ -1,23 +1,40 @@
 import type { Lang } from '@/contexts/LanguageContext';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import { toFaqItems, type SignatureJourney } from '@/types/signatureJourney';
-import { absoluteUrl, serverT } from '@/lib/seo/locale';
+import { SITE_ORIGIN, absoluteUrl, serverT } from '@/lib/seo/locale';
 
 /**
- * The Paris Class travel-agency entity. STATIC and site-wide: emitted once in
- * the root layout as the standalone TravelAgency block, and reused as the
- * `provider` of the per-page TouristTrip. `url` is the agency's own site
- * (parisclass.com), independent of the consumer-site publish origin.
+ * One-line description of the site-wide TravelAgency entity. Reused BYTE-FOR-BYTE
+ * as the entity blockquote in `/llms.txt` — keep this the single source of that
+ * copy (do not fork the wording).
+ */
+export const TRAVEL_AGENCY_DESCRIPTION =
+  'Travel in Your Pocket (TiP) is the luxury travel concierge of Paris Class — a Virtuoso member agency curating dream hotels, signature journeys, and expert magazine guides.';
+
+/**
+ * The site-wide travel-agency entity, modeled as "Travel in Your Pocket" (TiP),
+ * the consumer brand — a member agency of Paris Class (its `parentOrganization`)
+ * and of the Virtuoso network. STATIC and site-wide: emitted once in the root
+ * layout as the standalone TravelAgency block, and reused as the `provider` of
+ * the per-page TouristTrip. `url` is the consumer-site publish origin.
  */
 export const PARIS_CLASS_AGENCY = {
   '@type': 'TravelAgency',
-  name: 'Paris Class',
-  url: 'https://parisclass.com',
+  name: 'Travel in Your Pocket',
+  alternateName: 'TiP',
+  description: TRAVEL_AGENCY_DESCRIPTION,
+  url: SITE_ORIGIN,
   iataCode: '17335835',
+  parentOrganization: {
+    '@type': 'Organization',
+    name: 'Paris Class',
+    url: 'https://parisclass.com',
+  },
   memberOf: {
     '@type': 'Organization',
     name: 'Virtuoso',
   },
+  sameAs: ['https://parisclass.com', 'https://instagram.com/travelinyourpocket_official'],
 } as const;
 
 /** The site-wide TravelAgency JSON-LD document (root layout singleton). */

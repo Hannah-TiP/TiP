@@ -1,8 +1,32 @@
 import { cache } from 'react';
 import type { Lang } from '@/contexts/LanguageContext';
-import type { MagazineArticleDetail, MagazineArticleType } from '@/types/magazine';
+import type { PaginatedData } from '@/types/common';
+import type { MagazineArticle, MagazineArticleDetail, MagazineArticleType } from '@/types/magazine';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
+
+/**
+ * Server-side fetch of the unfiltered first page of published magazine articles
+ * for the index page's crawlable initial HTML. Returns `[]` on any failure so
+ * the page still renders (the client island re-fetches on mount / filter
+ * change). `lang` is mapped to the backend `Language` header.
+ */
+export const getMagazineIndexFirstPage = cache(
+  async (lang: Lang, perPage = 12): Promise<MagazineArticle[]> => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/v2/magazine/articles?page=1&per_page=${perPage}`,
+        { headers: { 'Content-Type': 'application/json', Language: lang } },
+      );
+      if (!response.ok) return [];
+      const payload = (await response.json()) as { data?: PaginatedData<MagazineArticle> };
+      return payload.data?.items ?? [];
+    } catch (error) {
+      console.error('Magazine index server fetch failed:', error);
+      return [];
+    }
+  },
+);
 
 /**
  * Server-side fetch of a published magazine article's full `seo_render` payload.
