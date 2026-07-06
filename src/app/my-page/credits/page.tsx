@@ -10,9 +10,9 @@ import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { formatDate as formatDateI18n } from '@/lib/format-date';
 import { apiClient } from '@/lib/api-client';
 import {
-  STAY_CREDIT_SOURCE_LABELS,
   STAY_CREDIT_STATUS_LABELS,
   creditSourceLabel,
+  stayCreditSourceText,
   tripIdFromCredit,
   type StayCredit,
 } from '@/types/stay-credit';
@@ -164,7 +164,7 @@ export default function MyCreditsPage() {
                           className="font-medium text-gray-900"
                           aria-label={creditSourceLabel(credit, en)}
                         >
-                          {STAY_CREDIT_SOURCE_LABELS[credit.source][en ? 'en' : 'kr']}
+                          {stayCreditSourceText(credit.source, en)}
                           {credit.promo_code ? (
                             <span className="text-gray-500"> · {credit.promo_code}</span>
                           ) : null}
