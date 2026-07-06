@@ -13,16 +13,11 @@ import { test, expect, type Page } from '@playwright/test';
  * The JSON-LD is SERVER-rendered from a direct backend fetch (not the browser
  * /api proxy), so it cannot be page.route-mocked; this spec runs against
  * whatever backend the e2e run targets (local / preview / prod), mirroring
- * signature-journey-detail.spec.ts. A candidate list of known published slugs
- * is tried so the test is resilient to seed differences.
+ * signature-journey-detail.spec.ts. The detail test discovers a real published
+ * slug from the live list endpoint (resilient to seed differences) and skips
+ * when the target backend has no published signature journey — the
+ * data-dependent assertions can't run without one.
  */
-
-const CANDIDATE_SLUGS = [
-  'ritz-carlton-yacht',
-  'four-seasons-yachts',
-  'amangati',
-  'fs-private-jet-golf-2026',
-];
 
 async function ldJsonDocs(page: Page): Promise<Record<string, unknown>[]> {
   const raw = await page.locator('script[type="application/ld+json"]').allTextContents();
@@ -47,9 +42,23 @@ test.describe('signature-journey JSON-LD', () => {
   test('the SJ detail route emits all four JSON-LD types with a singleton TravelAgency', async ({
     page,
   }) => {
+    // Discover published journeys from the live list (JSON-LD is server-rendered,
+    // so we need a real published slug on the target backend). Skip when the
+    // target has none seeded — the data-dependent assertions can't run.
+    const listRes = await page.request.get('/api/signature-journeys?per_page=50&language=en');
+    const slugs: string[] = listRes.ok()
+      ? (((await listRes.json())?.data?.items ?? []) as { slug?: string }[])
+          .map((item) => item.slug)
+          .filter((slug): slug is string => Boolean(slug))
+      : [];
+    test.skip(
+      slugs.length === 0,
+      'no published signature journey on the target backend — nothing to assert',
+    );
+
     let matched = false;
 
-    for (const slug of CANDIDATE_SLUGS) {
+    for (const slug of slugs) {
       const response = await page.goto(`/signature-journeys/${slug}`);
       // If routing failed entirely, try the next candidate.
       if (!response) continue;
@@ -82,7 +91,7 @@ test.describe('signature-journey JSON-LD', () => {
 
     expect(
       matched,
-      'no candidate slug resolved to a published signature journey on the target backend',
+      'published journeys exist but none emitted TouristTrip JSON-LD on the detail route',
     ).toBe(true);
   });
 });
