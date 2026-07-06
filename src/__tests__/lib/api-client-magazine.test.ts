@@ -60,3 +60,59 @@ describe('apiClient.getMagazineArticle', () => {
     );
   });
 });
+
+describe('apiClient.getMagazineArticles (list)', () => {
+  const page = {
+    items: [detail.article],
+    total: 1,
+    per_page: 12,
+    current_page: 1,
+    last_page: 1,
+    has_more: false,
+  };
+
+  it('maps active filters to the list query and resolves a PaginatedResult', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: page }));
+
+    const result = await apiClient.getMagazineArticles({
+      type: 'destination',
+      country_id: 3,
+      tag: 'honeymoon',
+      language: 'kr',
+      page: 1,
+      per_page: 12,
+    });
+
+    const url = mockFetch.mock.calls[0][0] as string;
+    expect(url).toContain('/api/magazine/articles?');
+    expect(url).toContain('type=destination');
+    expect(url).toContain('country_id=3');
+    expect(url).toContain('tag=honeymoon');
+    expect(url).toContain('language=kr');
+    expect(result.items).toEqual([detail.article]);
+    expect(result.hasMore).toBe(false);
+  });
+
+  it('hits the bare list path when no filters are set', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: page }));
+    await apiClient.getMagazineArticles();
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/magazine/articles');
+  });
+});
+
+describe('apiClient.getMagazineFacets', () => {
+  it('unwraps the facet options and forwards the language query', async () => {
+    const facets = {
+      countries: [{ id: 1, name: { en: 'Japan' } }],
+      cities: [],
+      brands: [],
+      tags: [],
+    };
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: facets }));
+
+    const result = await apiClient.getMagazineFacets('en');
+
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/magazine/facets?language=en');
+    expect(result).toEqual(facets);
+  });
+});

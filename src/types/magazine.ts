@@ -170,6 +170,28 @@ export interface MagazineArticleDetail {
 }
 
 /**
+ * A country / city / brand filter option occurring among published articles.
+ * Mirrors the backend `MagazineFacetRef`. `name` stays a `MultiLanguageString`
+ * so the FE localizes the option label itself.
+ */
+export interface MagazineFacetRef {
+  id: number;
+  name?: MultiLanguageString | null;
+}
+
+/**
+ * Filter options occurring among PUBLISHED magazine articles. Mirrors the
+ * backend `MagazineFacetOptions` (GET /api/v2/magazine/facets). `tags` are the
+ * DISTINCT inline tag values; the three FK facets are `{id, name}` refs.
+ */
+export interface MagazineFacetOptions {
+  countries: MagazineFacetRef[];
+  cities: MagazineFacetRef[];
+  brands: MagazineFacetRef[];
+  tags: MultiLanguageString[];
+}
+
+/**
  * Plural URL segment → singular backend enum. SINGLE source of truth used for
  * BOTH `notFound()` validation and the API call. Any segment not present here
  * is rejected (⇒ `notFound()`). Note `news` and `insider` are identical either
