@@ -62,8 +62,13 @@ test.describe('robots.txt', () => {
 test.describe('/magazine index', () => {
   test('renders the type tabs and a TravelAgency JSON-LD singleton', async ({ page }) => {
     await page.goto('/magazine');
-    await expect(page.getByTestId('magazine-type-tab-all')).toBeVisible();
-    await expect(page.getByTestId('magazine-type-tab-destinations')).toBeVisible();
+    // SSR + client hydration can momentarily double-render the tab row (one copy
+    // hidden mid-reconcile), so scope to the visible instance to avoid a
+    // transient strict-mode violation during the hydration window.
+    await expect(page.getByTestId('magazine-type-tab-all').filter({ visible: true })).toBeVisible();
+    await expect(
+      page.getByTestId('magazine-type-tab-destinations').filter({ visible: true }),
+    ).toBeVisible();
 
     // The site-wide TravelAgency block is emitted exactly ONCE (root layout).
     const html = await page.content();
@@ -73,7 +78,8 @@ test.describe('/magazine index', () => {
 
   test('narrows the list when a type tab is selected (URL syncs)', async ({ page }) => {
     await page.goto('/magazine');
-    await page.getByTestId('magazine-type-tab-destinations').click();
+    // Click the visible tab (see hydration-window note above).
+    await page.getByTestId('magazine-type-tab-destinations').filter({ visible: true }).click();
     await expect(page).toHaveURL(/type=destinations/);
   });
 });
