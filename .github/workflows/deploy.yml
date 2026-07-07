@@ -131,6 +131,8 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Build Application
+        env:
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: 'test-client-id.apps.googleusercontent.com'
         run: npm run build
 
       - name: Prepare standalone server
@@ -142,6 +144,7 @@ jobs:
         env:
           CI_MODE: '1'
           E2E_SKIP_AUTH_SETUP: '1'
+          AUTH_TRUST_HOST: 'true'
         run: npx playwright test --project=chromium-pr-smoke
 
       - name: Upload Test Results
