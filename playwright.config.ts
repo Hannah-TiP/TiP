@@ -40,7 +40,6 @@ const PR_SMOKE_SPECS = [
   '**/dream-hotels-map-gating.spec.ts',
   '**/more-dreams-pagination.spec.ts',
   '**/more-dreams-sections.spec.ts',
-  '**/hotel-jsonld.spec.ts',
   '**/signature-journeys.spec.ts',
   '**/signature-journey-detail.spec.ts',
   '**/signature-journey-jsonld.spec.ts',
