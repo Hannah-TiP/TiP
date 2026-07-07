@@ -7,13 +7,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { buildAuthRedirectUrl, isSafeRedirectPath } from '@/lib/redirect-validation';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
+import SocialSignInButtons from '@/components/SocialSignInButtons';
 import { startGoogleRedirect } from '@/lib/google-oauth';
+import { startSocialRedirect } from '@/lib/social-oauth';
+import type { SocialProvider } from '@/lib/social-oauth';
 import { useInAppBrowser } from '@/lib/in-app-browser';
 import PasswordInput from '@/components/PasswordInput';
 import WebviewLoginNotice from '@/components/auth/WebviewLoginNotice';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+const KAKAO_REST_API_KEY = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY || '';
+const NAVER_CLIENT_ID = process.env.NEXT_PUBLIC_NAVER_CLIENT_ID || '';
 const DEFAULT_REDIRECT = '/my-page';
 
 function SignInForm() {
@@ -61,6 +66,24 @@ function SignInForm() {
     });
   };
 
+  // Kakao / Naver mirror the Google full-page redirect (SMA-114). The
+  // /auth/{provider}/callback page completes the exchange + session.
+  const handleSocialClick = (provider: SocialProvider) => {
+    setError('');
+    setIsLoading(true);
+    startSocialRedirect({
+      provider,
+      clientId: provider === 'kakao' ? KAKAO_REST_API_KEY : NAVER_CLIENT_ID,
+      returnTo: safeRedirect,
+      ref: referralCode || null,
+      from: 'sign-in',
+    });
+  };
+
+  const showKakao = !!KAKAO_REST_API_KEY && !webview.inApp;
+  const showNaver = !!NAVER_CLIENT_ID && !webview.inApp;
+  const showAnySocial = (!!GOOGLE_CLIENT_ID && !webview.inApp) || showKakao || showNaver;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -97,9 +120,23 @@ function SignInForm() {
 
         {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
-        {GOOGLE_CLIENT_ID && !webview.inApp && (
+        {showAnySocial && (
           <>
-            <GoogleSignInButton onClick={handleGoogleClick} disabled={isLoading} />
+            <div className="flex flex-col gap-3">
+              {GOOGLE_CLIENT_ID && !webview.inApp && (
+                <GoogleSignInButton onClick={handleGoogleClick} disabled={isLoading} />
+              )}
+              {(showKakao || showNaver) && (
+                <SocialSignInButtons
+                  onProviderClick={handleSocialClick}
+                  providers={[
+                    ...(showKakao ? (['kakao'] as const) : []),
+                    ...(showNaver ? (['naver'] as const) : []),
+                  ]}
+                  disabled={isLoading}
+                />
+              )}
+            </div>
 
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-gray-200" />
