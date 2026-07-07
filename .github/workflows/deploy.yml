@@ -200,6 +200,8 @@ jobs:
           echo "gmaps_key=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}" >> $GITHUB_OUTPUT
           echo "gmaps_map_id=${NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}" >> $GITHUB_OUTPUT
           echo "google_client_id=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}" >> $GITHUB_OUTPUT
+          echo "kakao_rest_api_key=${NEXT_PUBLIC_KAKAO_REST_API_KEY}" >> $GITHUB_OUTPUT
+          echo "naver_client_id=${NEXT_PUBLIC_NAVER_CLIENT_ID}" >> $GITHUB_OUTPUT
           echo "enable_preview_mode=${NEXT_PUBLIC_ENABLE_PREVIEW_MODE}" >> $GITHUB_OUTPUT
           echo "flywire_script_url=${NEXT_PUBLIC_FLYWIRE_SCRIPT_URL}" >> $GITHUB_OUTPUT
           echo "flywire_env=${NEXT_PUBLIC_FLYWIRE_ENV}" >> $GITHUB_OUTPUT
@@ -224,6 +226,8 @@ jobs:
             NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ steps.build-env.outputs.gmaps_key }}
             NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=${{ steps.build-env.outputs.gmaps_map_id }}
             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ steps.build-env.outputs.google_client_id }}
+            NEXT_PUBLIC_KAKAO_REST_API_KEY=${{ steps.build-env.outputs.kakao_rest_api_key }}
+            NEXT_PUBLIC_NAVER_CLIENT_ID=${{ steps.build-env.outputs.naver_client_id }}
             NEXT_PUBLIC_ENABLE_PREVIEW_MODE=${{ steps.build-env.outputs.enable_preview_mode }}
             NEXT_PUBLIC_FLYWIRE_SCRIPT_URL=${{ steps.build-env.outputs.flywire_script_url }}
             NEXT_PUBLIC_FLYWIRE_ENV=${{ steps.build-env.outputs.flywire_env }}
