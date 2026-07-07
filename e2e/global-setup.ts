@@ -33,6 +33,14 @@ export default async function globalSetup(config: FullConfig) {
 
   await waitForServer(baseURL);
 
+  // The PR-smoke job runs only the auth-free `chromium-pr-smoke` project against
+  // a self-hosted frontend with no backend, so it must skip the login step (which
+  // needs a real backend). Playwright reads a project's storageState lazily, so
+  // not writing AUTH_STATE_PATH here is safe as long as no authed project runs.
+  if (process.env.E2E_SKIP_AUTH_SETUP) {
+    return;
+  }
+
   const browser = await chromium.launch();
   const context = await browser.newContext({ baseURL });
   const page = await context.newPage();

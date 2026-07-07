@@ -29,6 +29,38 @@ const AUTH_REQUIRED_SPECS = [
   '**/free-night-membership.spec.ts',
 ];
 
+// Auth-free, data-independent specs run on every PR as a fast smoke gate
+// (self-hosted frontend build, no backend/auth). Adding or removing a spec
+// here is a one-line change. Keep this list to specs that pass headless with
+// NO backend running (page.route-mocked or fully static pages).
+const PR_SMOKE_SPECS = [
+  '**/navigation.spec.ts',
+  '**/magazine-article.spec.ts',
+  '**/dream-hotels-pagination.spec.ts',
+  '**/dream-hotels-map-gating.spec.ts',
+  '**/more-dreams-pagination.spec.ts',
+  '**/more-dreams-sections.spec.ts',
+  '**/hotel-jsonld.spec.ts',
+  '**/signature-journeys.spec.ts',
+  '**/signature-journey-detail.spec.ts',
+  '**/signature-journey-jsonld.spec.ts',
+  '**/search-prefill-redirect.spec.ts',
+  '**/signup-existing-email.spec.ts',
+  '**/signup-redirect.spec.ts',
+  '**/responsive-public-pages.spec.ts',
+  '**/landing.spec.ts',
+  '**/about.spec.ts',
+  '**/health.spec.ts',
+  '**/sign-in.spec.ts',
+  '**/password-toggle.spec.ts',
+  '**/mobile-nav.spec.ts',
+  '**/responsive-auth-pages.spec.ts',
+  '**/google-signin-button.spec.ts',
+  '**/auth-redirect.spec.ts',
+  '**/sign-in-webview-gating.spec.ts',
+  '**/locale-first-paint.spec.ts',
+];
+
 // Specs that deliberately test the cookie-consent banner from a blank state.
 // They manage localStorage themselves so must NOT get pre-set consent.
 const COOKIE_CONSENT_SPECS = ['**/cookie-consent.spec.ts'];
@@ -94,6 +126,11 @@ export default defineConfig({
       name: 'chromium-cookie-consent',
       testMatch: COOKIE_CONSENT_SPECS,
       use: { browserName: 'chromium' },
+    },
+    {
+      name: 'chromium-pr-smoke',
+      testMatch: PR_SMOKE_SPECS,
+      use: { browserName: 'chromium', storageState: COOKIE_CONSENT_STATE },
     },
   ],
   // Start local server when not testing against a deployed URL
