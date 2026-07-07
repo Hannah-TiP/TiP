@@ -877,5 +877,10 @@
   "magazine.empty_none": "아직 게시된 이야기가 없습니다.",
   "magazine.loading_more": "더 많은 이야기를 불러오는 중…",
   "magazine.no_more_results": "마지막 이야기까지 확인하셨습니다.",
-  "magazine.card_read": "이야기 읽기"
+  "magazine.card_read": "이야기 읽기",
+  "error.boundary_title": "문제가 발생했어요",
+  "error.boundary_message": "페이지를 불러오는 중 예상치 못한 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+  "error.boundary_message_section": "지금은 이 섹션을 불러올 수 없어요. 잠시 후 다시 시도해 주세요.",
+  "error.try_again": "다시 시도",
+  "error.go_home": "홈으로 가기"
 }
