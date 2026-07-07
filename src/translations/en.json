@@ -884,5 +884,10 @@
   "magazine.empty_none": "No stories have been published yet.",
   "magazine.loading_more": "Loading more stories…",
   "magazine.no_more_results": "You've reached the end.",
-  "magazine.card_read": "Read story"
+  "magazine.card_read": "Read story",
+  "error.boundary_title": "Something went wrong",
+  "error.boundary_message": "We hit an unexpected problem while loading this page. Please try again in a moment.",
+  "error.boundary_message_section": "We couldn't load this section right now. Please try again in a moment.",
+  "error.try_again": "Try again",
+  "error.go_home": "Go home"
 }
