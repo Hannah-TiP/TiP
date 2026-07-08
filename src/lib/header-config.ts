@@ -17,8 +17,9 @@ export type NavKey =
   | 'dream-hotels'
   | 'more-dreams'
   | 'signature-journeys'
-  | 'about'
   | 'concierge'
+  | 'magazine'
+  | 'about'
   | 'my-page';
 
 /** SubNav tab keys (labels rendered by SubNav, only on /my-page/**). */
@@ -134,6 +135,11 @@ export function resolveHeaderConfig(rawPathname: string): HeaderConfig {
   }
   if (isPathOrSubpath(pathname, '/concierge')) {
     return { variant: 'app', activeNav: 'concierge', subNav: null };
+  }
+  // Magazine index + article routes (/magazine/[type]/[slug]). Standard app
+  // bar — NOT an overlay page.
+  if (isPathOrSubpath(pathname, '/magazine')) {
+    return { variant: 'app', activeNav: 'magazine', subNav: null };
   }
 
   // Detail / checkout pages highlight their parent section.

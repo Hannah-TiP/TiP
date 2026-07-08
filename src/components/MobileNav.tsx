@@ -102,7 +102,7 @@ export default function MobileNav({ isOpen, onClose, isAuthenticated, activeNav 
                 onClick={onClose}
                 className={`${linkClass(activeNav === link.key)} py-3`}
               >
-                {link.label}
+                {t(link.labelKey)}
               </Link>
             ))}
 

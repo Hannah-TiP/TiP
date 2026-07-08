@@ -33,8 +33,9 @@ test.describe('Mobile navigation drawer', () => {
       'DREAM HOTELS',
       'MORE DREAMS',
       'SIGNATURE JOURNEYS',
-      'ABOUT',
       'CONCIERGE',
+      'MAGAZINE',
+      'ABOUT',
     ]) {
       await expect(drawer.getByRole('link', { name: label, exact: true })).toBeVisible();
     }
