@@ -566,7 +566,7 @@ function ConciergeContent() {
         {sidebarCollapsed && (
           <button
             onClick={() => setSidebarCollapsed(false)}
-            className="hidden md:flex items-center justify-center w-8 bg-[#FAFAF8] border-r border-gray-100 hover:bg-gray-100 transition-colors"
+            className="hidden lg:landscape:flex items-center justify-center w-8 bg-[#FAFAF8] border-r border-gray-100 hover:bg-gray-100 transition-colors"
             title={t('chat.open_conversations')}
           >
             <svg
@@ -586,7 +586,7 @@ function ConciergeContent() {
           </button>
         )}
 
-        <div className="hidden md:flex">
+        <div className="hidden lg:landscape:flex" data-testid="desktop-conversation-sidebar">
           <ConversationSidebar
             sessions={sessions}
             activeSessionId={activeSessionId}
@@ -599,7 +599,10 @@ function ConciergeContent() {
 
         <div className="flex-1 flex flex-col border-r border-gray-100 min-w-0">
           {/* Mobile toolbar (< md): sidebar toggle | active session title | trip-detail toggle */}
-          <div className="flex md:hidden items-center justify-between px-4 py-2 border-b border-gray-100">
+          <div
+            className="flex lg:landscape:hidden items-center justify-between px-4 py-2 border-b border-gray-100"
+            data-testid="mobile-toolbar"
+          >
             <button
               type="button"
               onClick={() => setMobileSidebarOpen(true)}
@@ -705,7 +708,7 @@ function ConciergeContent() {
         </div>
 
         {/* Desktop trip detail panel — flex flow at >= md only. */}
-        <div className="hidden md:flex">
+        <div className="hidden lg:landscape:flex" data-testid="desktop-trip-detail-panel">
           <TripDetailPanel
             tripDetail={tripDetail}
             onSubmitTrip={
@@ -721,12 +724,12 @@ function ConciergeContent() {
         {mobileSidebarOpen && (
           <>
             <div
-              className="fixed inset-0 z-30 bg-black/30 md:hidden"
+              className="fixed inset-0 z-30 bg-black/30 lg:landscape:hidden"
               onClick={() => setMobileSidebarOpen(false)}
               data-testid="mobile-sidebar-backdrop"
             />
             <div
-              className="fixed inset-y-0 left-0 z-40 flex w-[280px] max-w-[85%] flex-col bg-[#FAFAF8] shadow-xl transition-transform duration-300 ease-in-out md:hidden translate-x-0"
+              className="fixed inset-y-0 left-0 z-40 flex w-[280px] max-w-[85%] flex-col bg-[#FAFAF8] shadow-xl transition-transform duration-300 ease-in-out lg:landscape:hidden translate-x-0"
               data-testid="mobile-sidebar-drawer"
             >
               <div className="flex justify-end px-2 pt-2">
@@ -777,12 +780,12 @@ function ConciergeContent() {
         {mobileTripPanelOpen && (
           <>
             <div
-              className="fixed inset-0 z-30 bg-black/30 md:hidden"
+              className="fixed inset-0 z-30 bg-black/30 lg:landscape:hidden"
               onClick={() => setMobileTripPanelOpen(false)}
               data-testid="mobile-trip-panel-backdrop"
             />
             <div
-              className="fixed inset-y-0 right-0 z-40 flex w-[85%] max-w-[420px] flex-col bg-[#FAFAF8] shadow-xl transition-transform duration-300 ease-in-out md:hidden translate-x-0"
+              className="fixed inset-y-0 right-0 z-40 flex w-[85%] max-w-[420px] flex-col bg-[#FAFAF8] shadow-xl transition-transform duration-300 ease-in-out lg:landscape:hidden translate-x-0"
               data-testid="mobile-trip-panel-drawer"
             >
               <div className="flex justify-end px-2 pt-2">

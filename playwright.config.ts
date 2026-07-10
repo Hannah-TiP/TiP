@@ -14,6 +14,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/cancel-trip.spec.ts',
   '**/concierge-human-takeover.spec.ts',
   '**/concierge-responsive.spec.ts',
+  '**/concierge-landscape-gate.spec.ts',
   '**/quotes.spec.ts',
   '**/checkout.spec.ts',
   '**/search-prefill-concierge.spec.ts',
