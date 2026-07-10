@@ -65,6 +65,26 @@ test.describe('Centralized header — variants & active state', () => {
     await expect(page.getByRole('link', { name: 'Upcoming Travels' })).toHaveCount(0);
   });
 
+  test('magazine is reachable from the header nav and highlights on /magazine', async ({
+    page,
+  }) => {
+    await page.goto('/about');
+    const header = page.locator('header').first();
+    const magazineLink = header.getByRole('link', { name: 'MAGAZINE', exact: true });
+    await expect(magazineLink).toHaveCount(1);
+    await expect(magazineLink).toHaveAttribute('href', '/magazine');
+
+    await magazineLink.click();
+    await expect(page).toHaveURL(/\/magazine$/);
+    // app variant (not overlay) — standard light bar, no overlay treatment.
+    await expect(header).toHaveClass(/bg-white/);
+    await expect(header).not.toHaveClass(/bg-transparent/);
+    // Active-nav highlight on the Magazine link.
+    await expect(header.getByRole('link', { name: 'MAGAZINE', exact: true })).toHaveClass(
+      /text-green-dark/,
+    );
+  });
+
   test.describe('authenticated SubNav', () => {
     // The Header is a client component; the SubNav for /my-page/** only
     // appears once it hydrates *and* the session is authenticated (otherwise
