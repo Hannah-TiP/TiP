@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { AIChatMessage, AIChatWidgetResponse } from '@/types/ai-chat';
 import WidgetRenderer from './widgets/WidgetRenderer';
 import WidgetResponseDisplay from './WidgetResponseDisplay';
@@ -45,6 +46,7 @@ export default function MessageBubble({
   widgetsDisabled,
 }: MessageBubbleProps) {
   const { t } = useLanguage();
+  const [showHistory, setShowHistory] = useState(false);
   const timestamp = formatTimestamp(message.sent_at ?? message.created_at);
   const widgets = message.widgets ?? [];
 
@@ -110,6 +112,12 @@ export default function MessageBubble({
   // affordance (gold avatar + small badge) so the source feels like the
   // same brand voice as the AI.
   const isHumanConcierge = message.role === 'human_assistant';
+  // Edit-history + soft-delete affordances only exist for human_assistant
+  // (admin takeover) messages. The customer projection carries content +
+  // timestamp per prior version, never admin identity.
+  const isDeleted = isHumanConcierge && Boolean(message.deleted_at);
+  const editHistory = isHumanConcierge && !isDeleted ? (message.edit_history ?? []) : [];
+  const hasEditHistory = editHistory.length > 0;
   // AI assistant uses a pill-shaped "Concierge" badge inline; the human
   // takeover variant keeps the legacy circular "CT" + label-above pattern.
   const avatarClasses = isHumanConcierge
@@ -137,26 +145,75 @@ export default function MessageBubble({
             {t('chat.concierge_team')}
           </div>
         )}
-        {/* The text/audio bubble. Skipped for structured messages (e.g.
-           `quote_sent`) where the widget itself is the entire message. */}
-        {message.message_type !== 'quote_sent' && (
-          <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4">
-            {message.message_type === 'text' && (
-              <p className="font-inter text-sm text-gray-800 whitespace-pre-wrap">
-                {renderMarkdown(message.content ?? '')}
-              </p>
-            )}
-            {message.message_type === 'audio' && message.media_url && (
-              <div className="w-full">
-                <audio controls className="w-full">
-                  <source src={message.media_url} />
-                  {t('chat.audio_unsupported')}
-                </audio>
+        {/* Soft-deleted concierge message: a non-hidden placeholder. No
+           content, no edit history, no "edited" indicator. */}
+        {isDeleted ? (
+          <div
+            className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4"
+            data-testid="message-removed-placeholder"
+          >
+            <p className="font-inter text-sm italic text-gray-400">{t('chat.message_removed')}</p>
+          </div>
+        ) : (
+          <>
+            {/* The text/audio bubble. Skipped for structured messages (e.g.
+               `quote_sent`) where the widget itself is the entire message. */}
+            {message.message_type !== 'quote_sent' && (
+              <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4">
+                {message.message_type === 'text' && (
+                  <p className="font-inter text-sm text-gray-800 whitespace-pre-wrap">
+                    {renderMarkdown(message.content ?? '')}
+                  </p>
+                )}
+                {message.message_type === 'audio' && message.media_url && (
+                  <div className="w-full">
+                    <audio controls className="w-full">
+                      <source src={message.media_url} />
+                      {t('chat.audio_unsupported')}
+                    </audio>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+            {hasEditHistory && (
+              <div className="mt-1 ml-1" data-testid="message-edited">
+                <button
+                  type="button"
+                  onClick={() => setShowHistory((v) => !v)}
+                  aria-expanded={showHistory}
+                  data-testid="edit-history-toggle"
+                  className="font-inter text-[11px] text-gray-400 hover:text-gray-600 inline-flex items-center gap-1"
+                >
+                  <span>{t('chat.message_edited')}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>
+                    {showHistory ? t('chat.hide_edit_history') : t('chat.view_edit_history')}
+                  </span>
+                </button>
+                {showHistory && (
+                  <div className="mt-2 space-y-2" data-testid="edit-history">
+                    {editHistory.map((entry, i) => (
+                      <div key={i} className="border-l-2 border-gray-200 pl-3">
+                        <div className="font-inter text-[10px] uppercase tracking-wider text-gray-400 mb-1">
+                          {t('chat.previous_version')}
+                        </div>
+                        <p className="font-inter text-sm text-gray-500 whitespace-pre-wrap">
+                          {renderMarkdown(entry.content)}
+                        </p>
+                        {formatTimestamp(entry.edited_at) && (
+                          <span className="font-inter text-[10px] text-gray-400 mt-1 inline-block">
+                            {formatTimestamp(entry.edited_at)}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
-        {widgets.length > 0 && (
+        {!isDeleted && widgets.length > 0 && (
           <div className={message.message_type === 'quote_sent' ? '' : 'mt-2 space-y-2'}>
             {widgets.map((widget) => (
               <WidgetRenderer
