@@ -5,11 +5,7 @@ import Footer from '@/components/Footer';
 import CroppedImage from '@/components/hotel/CroppedImage';
 import FaqAccordion from '@/components/hotel/FaqAccordion';
 import { getImageUrl, getLocalizedText } from '@/types/common';
-import type {
-  BodyBlock,
-  MagazineArticle,
-  MagazineArticleDetail,
-} from '@/types/magazine';
+import type { BodyBlock, MagazineArticle, MagazineArticleDetail } from '@/types/magazine';
 import type { FaqItem } from '@/types/hotel';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MagazineRelationSections from '@/components/magazine/MagazineRelationSections';
@@ -37,13 +33,7 @@ function toFaqItems(faqs: MagazineArticle['faqs']): FaqItem[] {
  * unknown block types render nothing (forward-compat — MAG-3/4 may add block
  * types this consumer predates). This is NOT a WYSIWYG consumer.
  */
-function BodyBlockView({
-  block,
-  lang,
-}: {
-  block: BodyBlock;
-  lang: 'en' | 'kr';
-}) {
+function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' }) {
   const heading = getLocalizedText(block.heading, lang);
   const text = getLocalizedText(block.text, lang);
   const isQuote = block.type === 'quote';
@@ -83,10 +73,7 @@ function BodyBlockView({
               <thead className="bg-green-dark text-white">
                 <tr>
                   {headerRow.map((cell, index) => (
-                    <th
-                      key={index}
-                      className="whitespace-nowrap px-4 py-3 font-semibold"
-                    >
+                    <th key={index} className="whitespace-nowrap px-4 py-3 font-semibold">
                       {cell}
                     </th>
                   ))}
@@ -95,15 +82,9 @@ function BodyBlockView({
 
               <tbody>
                 {bodyRows.map((row, rowIndex) => (
-                  <tr
-                    key={rowIndex}
-                    className="border-t border-gray-200 even:bg-gray-50"
-                  >
+                  <tr key={rowIndex} className="border-t border-gray-200 even:bg-gray-50">
                     {row.map((cell, cellIndex) => (
-                      <td
-                        key={cellIndex}
-                        className="whitespace-nowrap px-4 py-3 text-gray-text"
-                      >
+                      <td key={cellIndex} className="whitespace-nowrap px-4 py-3 text-gray-text">
                         {cell}
                       </td>
                     ))}
@@ -149,11 +130,7 @@ function BodyBlockView({
               sizes="(max-width: 768px) 100vw, 768px"
             />
           </div>
-          {text && (
-            <figcaption className="mt-2 text-[13px] text-gray-text">
-              {text}
-            </figcaption>
-          )}
+          {text && <figcaption className="mt-2 text-[13px] text-gray-text">{text}</figcaption>}
         </figure>
       );
     }
@@ -163,10 +140,7 @@ function BodyBlockView({
       return (
         <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
           {images.map((image, index) => (
-            <div
-              key={index}
-              className="relative aspect-[4/3] overflow-hidden rounded-xl"
-            >
+            <div key={index} className="relative aspect-[4/3] overflow-hidden rounded-xl">
               <CroppedImage
                 src={getImageUrl(image)}
                 crop={image.crop}
@@ -184,9 +158,7 @@ function BodyBlockView({
   }
 }
 
-export default function MagazineArticleContent({
-  detail,
-}: MagazineArticleContentProps) {
+export default function MagazineArticleContent({ detail }: MagazineArticleContentProps) {
   const { t, lang } = useLanguage();
   const { article } = detail;
 
@@ -202,14 +174,11 @@ export default function MagazineArticleContent({
     .map((tag) => getLocalizedText(tag, lang))
     .filter((tag): tag is string => !!tag);
 
-  const dateFormatter = new Intl.DateTimeFormat(
-    lang === 'kr' ? 'ko-KR' : 'en-US',
-    {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    },
-  );
+  const dateFormatter = new Intl.DateTimeFormat(lang === 'kr' ? 'ko-KR' : 'en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
   const formatDate = (iso?: string | null): string => {
     if (!iso) return '';
     const parsed = new Date(iso);
@@ -262,17 +231,13 @@ export default function MagazineArticleContent({
             {publishedLabel && (
               <span>
                 {t('magazine.published')}{' '}
-                <time dateTime={article.published_at ?? undefined}>
-                  {publishedLabel}
-                </time>
+                <time dateTime={article.published_at ?? undefined}>{publishedLabel}</time>
               </span>
             )}
             {updatedLabel && (
               <span>
                 {t('magazine.updated')}{' '}
-                <time dateTime={article.updated_at ?? undefined}>
-                  {updatedLabel}
-                </time>
+                <time dateTime={article.updated_at ?? undefined}>{updatedLabel}</time>
               </span>
             )}
           </div>
@@ -292,10 +257,7 @@ export default function MagazineArticleContent({
             </h2>
             <ul className="space-y-3">
               {takeaways.map((takeaway, index) => (
-                <li
-                  key={index}
-                  className="flex gap-3 text-[15px] leading-relaxed text-green-dark"
-                >
+                <li key={index} className="flex gap-3 text-[15px] leading-relaxed text-green-dark">
                   <span aria-hidden="true" className="mt-1 text-gold">
                     ✦
                   </span>
@@ -317,10 +279,7 @@ export default function MagazineArticleContent({
 
         {/* Tags */}
         {tags.length > 0 && (
-          <div
-            className="mt-10 flex flex-wrap gap-2"
-            data-testid="magazine-tags"
-          >
+          <div className="mt-10 flex flex-wrap gap-2" data-testid="magazine-tags">
             {tags.map((tag, index) => (
               <span
                 key={index}
@@ -340,17 +299,11 @@ export default function MagazineArticleContent({
       {/* Relation-driven sections: ranked / linked hotels, related stories,
           cluster up-link. Each block self-hides when its source is empty.
           Collection's ordered hotels render here as the ranked section. */}
-      <MagazineRelationSections
-        relations={detail.relations}
-        related={detail.related}
-      />
+      <MagazineRelationSections relations={detail.relations} related={detail.related} />
 
       {/* FAQ accordion (client island) */}
       {faqItems.length > 0 && (
-        <section
-          className="bg-gray-light px-4 py-14 md:px-10 md:py-20"
-          data-testid="magazine-faq"
-        >
+        <section className="bg-gray-light px-4 py-14 md:px-10 md:py-20" data-testid="magazine-faq">
           <div className="mx-auto max-w-3xl">
             <h2 className="mb-6 text-center font-primary text-[32px] italic text-green-dark md:text-[40px]">
               {t('magazine.faq_title')}
@@ -368,9 +321,7 @@ export default function MagazineArticleContent({
           <h2 className="font-primary text-[32px] italic leading-tight text-[#FAF5EF] md:text-[48px]">
             {t('magazine.cta_title')}
           </h2>
-          <p className="mt-4 text-[16px] leading-relaxed text-white/60">
-            {t('magazine.cta_body')}
-          </p>
+          <p className="mt-4 text-[16px] leading-relaxed text-white/60">{t('magazine.cta_body')}</p>
           <Link
             href="/concierge"
             className="mt-8 inline-block rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
