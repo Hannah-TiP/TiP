@@ -1,16 +1,20 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Footer from '@/components/Footer';
-import CroppedImage from '@/components/hotel/CroppedImage';
-import FaqAccordion from '@/components/hotel/FaqAccordion';
-import { getImageUrl, getLocalizedText } from '@/types/common';
-import type { BodyBlock, MagazineArticle, MagazineArticleDetail } from '@/types/magazine';
-import type { FaqItem } from '@/types/hotel';
-import { useLanguage } from '@/contexts/LanguageContext';
-import MagazineRelationSections from '@/components/magazine/MagazineRelationSections';
-import MagazineGuideSteps from '@/components/magazine/MagazineGuideSteps';
-import MagazineTypeMeta from '@/components/magazine/MagazineTypeMeta';
+import Link from "next/link";
+import Footer from "@/components/Footer";
+import CroppedImage from "@/components/hotel/CroppedImage";
+import FaqAccordion from "@/components/hotel/FaqAccordion";
+import { getImageUrl, getLocalizedText } from "@/types/common";
+import type {
+  BodyBlock,
+  MagazineArticle,
+  MagazineArticleDetail,
+} from "@/types/magazine";
+import type { FaqItem } from "@/types/hotel";
+import { useLanguage } from "@/contexts/LanguageContext";
+import MagazineRelationSections from "@/components/magazine/MagazineRelationSections";
+import MagazineGuideSteps from "@/components/magazine/MagazineGuideSteps";
+import MagazineTypeMeta from "@/components/magazine/MagazineTypeMeta";
 
 interface MagazineArticleContentProps {
   detail: MagazineArticleDetail;
@@ -22,7 +26,7 @@ interface MagazineArticleContentProps {
  * question or answer. This is the SAME payload the `FAQPage` JSON-LD is built
  * from — parity is asserted in the JSON-LD unit test.
  */
-function toFaqItems(faqs: MagazineArticle['faqs']): FaqItem[] {
+function toFaqItems(faqs: MagazineArticle["faqs"]): FaqItem[] {
   return (faqs ?? [])
     .filter((faq) => faq.question && faq.answer)
     .map((faq) => ({ question: faq.question!, answer: faq.answer! }));
@@ -33,26 +37,32 @@ function toFaqItems(faqs: MagazineArticle['faqs']): FaqItem[] {
  * unknown block types render nothing (forward-compat — MAG-3/4 may add block
  * types this consumer predates). This is NOT a WYSIWYG consumer.
  */
-function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' }) {
+function BodyBlockView({
+  block,
+  lang,
+}: {
+  block: BodyBlock;
+  lang: "en" | "kr";
+}) {
   const heading = getLocalizedText(block.heading, lang);
   const text = getLocalizedText(block.text, lang);
-  const isQuote = block.type === 'quote';
+  const isQuote = block.type === "quote";
 
   switch (block.type) {
-    case 'rich_text':
-    case 'section':
-    case 'quote':
-    case 'callout':
-    case 'comparison_table': {
+    case "rich_text":
+    case "section":
+    case "quote":
+    case "callout":
+    case "comparison_table": {
       if (!heading && !text) return null;
 
-      const rows = (text ?? '')
-        .split('\n')
+      const rows = (text ?? "")
+        .split("\n")
         .map((line) =>
           line
             .trim()
-            .replace(/^\||\|$/g, '')
-            .split('|')
+            .replace(/^\||\|$/g, "")
+            .split("|")
             .map((cell) => cell.trim()),
         )
         .filter((row) => row.length > 1);
@@ -105,7 +115,7 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
         </section>
       );
     }
-    case 'cta':
+    case "cta":
       if (!heading && !text) return null;
       return (
         <div className="mb-8">
@@ -118,8 +128,8 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
             <p
               className={
                 isQuote
-                  ? 'border-l-2 border-gold pl-5 font-primary text-[22px] italic leading-relaxed text-green-dark'
-                  : 'whitespace-pre-line text-[15px] leading-[1.85] text-gray-text'
+                  ? "border-l-2 border-gold pl-5 font-primary text-[22px] italic leading-relaxed text-green-dark"
+                  : "whitespace-pre-line text-[15px] leading-[1.85] text-gray-text"
               }
             >
               {text}
@@ -127,7 +137,7 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
           )}
         </div>
       );
-    case 'image': {
+    case "image": {
       if (!block.image) return null;
       return (
         <figure className="mb-8">
@@ -135,25 +145,32 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
             <CroppedImage
               src={getImageUrl(block.image)}
               crop={block.image.crop}
-              alt={getLocalizedText(block.image.alt, lang) || heading || ''}
+              alt={getLocalizedText(block.image.alt, lang) || heading || ""}
               sizes="(max-width: 768px) 100vw, 768px"
             />
           </div>
-          {text && <figcaption className="mt-2 text-[13px] text-gray-text">{text}</figcaption>}
+          {text && (
+            <figcaption className="mt-2 text-[13px] text-gray-text">
+              {text}
+            </figcaption>
+          )}
         </figure>
       );
     }
-    case 'gallery': {
+    case "gallery": {
       const images = block.images ?? [];
       if (images.length === 0) return null;
       return (
         <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
           {images.map((image, index) => (
-            <div key={index} className="relative aspect-[4/3] overflow-hidden rounded-xl">
+            <div
+              key={index}
+              className="relative aspect-[4/3] overflow-hidden rounded-xl"
+            >
               <CroppedImage
                 src={getImageUrl(image)}
                 crop={image.crop}
-                alt={getLocalizedText(image.alt, lang) || heading || ''}
+                alt={getLocalizedText(image.alt, lang) || heading || ""}
                 sizes="(max-width: 768px) 50vw, 33vw"
               />
             </div>
@@ -167,7 +184,9 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
   }
 }
 
-export default function MagazineArticleContent({ detail }: MagazineArticleContentProps) {
+export default function MagazineArticleContent({
+  detail,
+}: MagazineArticleContentProps) {
   const { t, lang } = useLanguage();
   const { article } = detail;
 
@@ -183,15 +202,18 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
     .map((tag) => getLocalizedText(tag, lang))
     .filter((tag): tag is string => !!tag);
 
-  const dateFormatter = new Intl.DateTimeFormat(lang === 'kr' ? 'ko-KR' : 'en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const dateFormatter = new Intl.DateTimeFormat(
+    lang === "kr" ? "ko-KR" : "en-US",
+    {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    },
+  );
   const formatDate = (iso?: string | null): string => {
-    if (!iso) return '';
+    if (!iso) return "";
     const parsed = new Date(iso);
-    if (Number.isNaN(parsed.getTime())) return '';
+    if (Number.isNaN(parsed.getTime())) return "";
     return dateFormatter.format(parsed);
   };
   const publishedLabel = formatDate(article.published_at);
@@ -219,7 +241,7 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
         <div className="absolute inset-0 z-10 flex flex-col justify-end px-4 pb-10 md:px-10 md:pb-16">
           <div className="mx-auto w-full max-w-4xl">
             <span className="mb-3 inline-block w-fit rounded-full bg-gold/90 px-4 py-1.5 text-[11px] font-semibold tracking-[2px] text-white">
-              {t('magazine.eyebrow')}
+              {t("magazine.eyebrow")}
             </span>
             <h1 className="font-primary text-[36px] font-normal italic leading-tight text-white md:text-[56px]">
               {title}
@@ -239,14 +261,18 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
           <div className="mb-8 flex flex-wrap gap-x-6 gap-y-1 text-[12px] text-gray-text">
             {publishedLabel && (
               <span>
-                {t('magazine.published')}{' '}
-                <time dateTime={article.published_at ?? undefined}>{publishedLabel}</time>
+                {t("magazine.published")}{" "}
+                <time dateTime={article.published_at ?? undefined}>
+                  {publishedLabel}
+                </time>
               </span>
             )}
             {updatedLabel && (
               <span>
-                {t('magazine.updated')}{' '}
-                <time dateTime={article.updated_at ?? undefined}>{updatedLabel}</time>
+                {t("magazine.updated")}{" "}
+                <time dateTime={article.updated_at ?? undefined}>
+                  {updatedLabel}
+                </time>
               </span>
             )}
           </div>
@@ -262,11 +288,14 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
             data-testid="magazine-key-takeaways"
           >
             <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[4px] text-gold">
-              {t('magazine.key_takeaways_title')}
+              {t("magazine.key_takeaways_title")}
             </h2>
             <ul className="space-y-3">
               {takeaways.map((takeaway, index) => (
-                <li key={index} className="flex gap-3 text-[15px] leading-relaxed text-green-dark">
+                <li
+                  key={index}
+                  className="flex gap-3 text-[15px] leading-relaxed text-green-dark"
+                >
                   <span aria-hidden="true" className="mt-1 text-gold">
                     ✦
                   </span>
@@ -288,7 +317,10 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
 
         {/* Tags */}
         {tags.length > 0 && (
-          <div className="mt-10 flex flex-wrap gap-2" data-testid="magazine-tags">
+          <div
+            className="mt-10 flex flex-wrap gap-2"
+            data-testid="magazine-tags"
+          >
             {tags.map((tag, index) => (
               <span
                 key={index}
@@ -308,14 +340,20 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
       {/* Relation-driven sections: ranked / linked hotels, related stories,
           cluster up-link. Each block self-hides when its source is empty.
           Collection's ordered hotels render here as the ranked section. */}
-      <MagazineRelationSections relations={detail.relations} related={detail.related} />
+      <MagazineRelationSections
+        relations={detail.relations}
+        related={detail.related}
+      />
 
       {/* FAQ accordion (client island) */}
       {faqItems.length > 0 && (
-        <section className="bg-gray-light px-4 py-14 md:px-10 md:py-20" data-testid="magazine-faq">
+        <section
+          className="bg-gray-light px-4 py-14 md:px-10 md:py-20"
+          data-testid="magazine-faq"
+        >
           <div className="mx-auto max-w-3xl">
             <h2 className="mb-6 text-center font-primary text-[32px] italic text-green-dark md:text-[40px]">
-              {t('magazine.faq_title')}
+              {t("magazine.faq_title")}
             </h2>
             <div className="rounded-xl bg-white p-6 md:p-8">
               <FaqAccordion faqs={faqItems} lang={lang} />
@@ -328,14 +366,16 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
       <section className="bg-green-dark px-4 py-16 md:px-10 md:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-primary text-[32px] italic leading-tight text-[#FAF5EF] md:text-[48px]">
-            {t('magazine.cta_title')}
+            {t("magazine.cta_title")}
           </h2>
-          <p className="mt-4 text-[16px] leading-relaxed text-white/60">{t('magazine.cta_body')}</p>
+          <p className="mt-4 text-[16px] leading-relaxed text-white/60">
+            {t("magazine.cta_body")}
+          </p>
           <Link
             href="/concierge"
             className="mt-8 inline-block rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
           >
-            {t('magazine.cta_button')}
+            {t("magazine.cta_button")}
           </Link>
         </div>
       </section>
