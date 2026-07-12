@@ -36,6 +36,7 @@ function toFaqItems(faqs: MagazineArticle['faqs']): FaqItem[] {
 function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' }) {
   const heading = getLocalizedText(block.heading, lang);
   const text = getLocalizedText(block.text, lang);
+  const isQuote = block.type === 'quote';
 
   switch (block.type) {
     case 'rich_text':
@@ -116,7 +117,7 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
           {text && (
             <p
               className={
-                block.type === 'quote'
+                isQuote
                   ? 'border-l-2 border-gold pl-5 font-primary text-[22px] italic leading-relaxed text-green-dark'
                   : 'whitespace-pre-line text-[15px] leading-[1.85] text-gray-text'
               }
