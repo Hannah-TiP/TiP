@@ -32,19 +32,18 @@ export default async function RootLayout({
 
   return (
     <html lang={htmlLang} className="h-full">
-      <head>
-        <Script
-  src="https://www.googletagmanager.com/gtag/js?id=G-VGKTCPVRSK"
-  strategy="afterInteractive"
-/>
-<Script id="google-analytics" strategy="afterInteractive">
-  {`
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-VGKTCPVRSK');
-  `}
-</Script>
+              <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-VGKTCPVRSK"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-VGKTCPVRSK');
+          `}
+        </Script>
         {/* eslint-disable-next-line @next/next/no-page-custom-font -- App Router layout, not Pages Router */}
         <link
           href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
