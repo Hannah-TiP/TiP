@@ -43,67 +43,67 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
     case 'quote':
     case 'callout':
     case 'comparison_table': {
-  if (!heading && !text) return null;
+      if (!heading && !text) return null;
 
-  const rows = (text ?? '')
-    .split('\n')
-    .map((line) =>
-      line
-        .trim()
-        .replace(/^\||\|$/g, '')
-        .split('|')
-        .map((cell) => cell.trim()),
-    )
-    .filter((row) => row.length > 1);
+      const rows = (text ?? '')
+        .split('\n')
+        .map((line) =>
+          line
+            .trim()
+            .replace(/^\||\|$/g, '')
+            .split('|')
+            .map((cell) => cell.trim()),
+        )
+        .filter((row) => row.length > 1);
 
-  const headerRow = rows[0] ?? [];
-  const bodyRows = rows.slice(2);
+      const headerRow = rows[0] ?? [];
+      const bodyRows = rows.slice(2);
 
-  return (
-    <section className="mb-10">
-      {heading && (
-        <h2 className="mb-5 font-primary text-[26px] italic leading-snug text-green-dark md:text-[32px]">
-          {heading}
-        </h2>
-      )}
+      return (
+        <section className="mb-10">
+          {heading && (
+            <h2 className="mb-5 font-primary text-[26px] italic leading-snug text-green-dark md:text-[32px]">
+              {heading}
+            </h2>
+          )}
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        <table className="min-w-[720px] w-full border-collapse text-left text-[14px]">
-          <thead className="bg-green-dark text-white">
-            <tr>
-              {headerRow.map((cell, index) => (
-                <th
-                  key={index}
-                  className="whitespace-nowrap px-4 py-3 font-semibold"
-                >
-                  {cell}
-                </th>
-              ))}
-            </tr>
-          </thead>
+          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+            <table className="min-w-[720px] w-full border-collapse text-left text-[14px]">
+              <thead className="bg-green-dark text-white">
+                <tr>
+                  {headerRow.map((cell, index) => (
+                    <th
+                      key={index}
+                      className="whitespace-nowrap px-4 py-3 font-semibold"
+                    >
+                      {cell}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
 
-          <tbody>
-            {bodyRows.map((row, rowIndex) => (
-              <tr
-                key={rowIndex}
-                className="border-t border-gray-200 even:bg-gray-50"
-              >
-                {row.map((cell, cellIndex) => (
-                  <td
-                    key={cellIndex}
-                    className="whitespace-nowrap px-4 py-3 text-gray-text"
+              <tbody>
+                {bodyRows.map((row, rowIndex) => (
+                  <tr
+                    key={rowIndex}
+                    className="border-t border-gray-200 even:bg-gray-50"
                   >
-                    {cell}
-                  </td>
+                    {row.map((cell, cellIndex) => (
+                      <td
+                        key={cellIndex}
+                        className="whitespace-nowrap px-4 py-3 text-gray-text"
+                      >
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      );
+    }
     case 'cta':
       if (!heading && !text) return null;
       return (
