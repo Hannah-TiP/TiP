@@ -42,7 +42,30 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
     case 'rich_text':
     case 'section':
     case 'quote':
-    case 'callout':
+    case 'callout': {
+      if (!heading && !text) return null;
+
+      return (
+        <section className="mb-10">
+          {heading && (
+            <h2 className="mb-5 font-primary text-[26px] italic leading-snug text-green-dark md:text-[32px]">
+              {heading}
+            </h2>
+          )}
+          {text && (
+            <p
+              className={
+                isQuote
+                  ? 'whitespace-pre-line border-l-2 border-gold pl-5 font-primary text-[22px] italic leading-relaxed text-green-dark'
+                  : 'whitespace-pre-line text-[15px] leading-[1.85] text-gray-text'
+              }
+            >
+              {text}
+            </p>
+          )}
+        </section>
+      );
+    }
     case 'comparison_table': {
       if (!heading && !text) return null;
 
