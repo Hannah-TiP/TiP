@@ -42,7 +42,7 @@ const socialLinks: SocialLink[] = [
 
 const supportLinks: FooterLink[] = [
   { labelKey: 'footer.link_help_center', href: '#' },
-  { labelKey: 'footer.link_contact_us', href: '#' },
+  { labelKey: 'footer.link_contact_us', href: 'mailto:travelmate@travelinyourpocket.com' },
   { labelKey: 'footer.link_privacy_policy', href: '/privacy-policy' },
   { labelKey: 'footer.link_terms_of_service', href: '/terms-of-service' },
   { labelKey: 'footer.link_cookie_settings', href: '#', event: true },
