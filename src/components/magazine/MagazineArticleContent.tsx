@@ -42,6 +42,8 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
     case 'section':
     case 'quote':
     case 'callout':
+    case 'comparison_table':
+    case 'cta':
       if (!heading && !text) return null;
       return (
         <div className="mb-8">
