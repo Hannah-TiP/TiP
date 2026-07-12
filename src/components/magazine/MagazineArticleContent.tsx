@@ -92,7 +92,7 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
           )}
 
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <table className="w-full min-w-[720px] border-collapse text-left text-[14px]">
+            <table className="min-w-[720px] w-full border-collapse text-left text-[14px]">
               <thead className="bg-green-dark text-white">
                 <tr>
                   {headerRow.map((cell, index) => (
