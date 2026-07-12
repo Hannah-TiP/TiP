@@ -32,8 +32,8 @@ export default async function RootLayout({
 
   return (
     <html lang={htmlLang} className="h-full">
-            <head>
-              <Script
+      <head>
+        <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-VGKTCPVRSK"
           strategy="afterInteractive"
         />
