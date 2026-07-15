@@ -40,7 +40,7 @@ export default function WelcomeOfferPopup() {
   const content = copy[lang];
 
   useEffect(() => {
-    const storageKey = `tiyp_popup_dismiss_until_${lang}`;
+    const storageKey = `tiyp_popup_dismiss_until_v2_${lang}`;
     const dismissUntil = Number.parseInt(localStorage.getItem(storageKey) || '0', 10);
     if (Date.now() <= dismissUntil) return;
 
@@ -65,7 +65,7 @@ export default function WelcomeOfferPopup() {
 
   const dismiss = useCallback(() => {
     localStorage.setItem(
-      `tiyp_popup_dismiss_until_${lang}`,
+      `tiyp_popup_dismiss_until_v2_${lang}`,
       String(Date.now() + DISMISS_DAYS * 86_400_000),
     );
     setIsClosing(true);
@@ -116,7 +116,11 @@ export default function WelcomeOfferPopup() {
 
         <div className="relative h-[190px] min-w-0 md:h-full">
           <Image
-            src="https://images.unsplash.com/photo-1561238349-24053008a28e?w=1000&h=1200&fit=crop"
+            src={
+              lang === 'kr'
+                ? '/welcome-offer/hotel-window-view.webp'
+                : '/welcome-offer/mountain-dining-view.webp'
+            }
             alt={content.imageAlt}
             fill
             sizes="(max-width: 767px) 100vw, 420px"
