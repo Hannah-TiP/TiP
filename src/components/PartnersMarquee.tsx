@@ -100,6 +100,13 @@ export const partners: Partner[] = [
     width: 820,
     height: 104,
   },
+  {
+    name: 'The Set Collection',
+    slug: 'the-set-collection',
+    logo: '/partners/the-set-collection.svg',
+    width: 283.5,
+    height: 283.5,
+  },
   { name: 'Belmond', slug: 'belmond', logo: '/partners/belmond.png', width: 380, height: 160 },
   {
     name: 'Six Senses',
