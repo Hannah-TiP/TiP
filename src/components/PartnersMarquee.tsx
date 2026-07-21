@@ -178,9 +178,9 @@ export const partners: Partner[] = [
   },
 ];
 
-// Logos render at a uniform 48px (h-12); the width/height attrs are 2x that
+// Logos render at a uniform 72px; the width/height attrs are 2x that
 // for crisp retina sourcing while preserving each logo's natural aspect ratio.
-export const LOGO_DISPLAY_HEIGHT = 96;
+export const LOGO_DISPLAY_HEIGHT = 144;
 
 export function logoDisplayWidth(partner: Partner): number {
   return Math.round((partner.width / partner.height) * LOGO_DISPLAY_HEIGHT);
@@ -190,7 +190,7 @@ export function logoDisplayWidth(partner: Partner): number {
 // page so the partner brand set can never drift between them. The track holds
 // the logo list twice; the -50% keyframe (globals.css) loops seamlessly. Hover
 // pauses it; prefers-reduced-motion disables the animation entirely. Every logo
-// renders at the uniform h-12 height in its natural aspect ratio (per-logo
+// renders at the uniform 72px height in its natural aspect ratio (per-logo
 // width/height attrs); max-w-full + object-contain cap ultra-wide wordmarks
 // (e.g. Shangri-La, Switzerland Tourism) at the cell width without distortion.
 export default function PartnersMarquee() {
@@ -210,7 +210,7 @@ export default function PartnersMarquee() {
           <div
             key={`${partner.slug}-${idx}`}
             aria-hidden={idx >= partners.length}
-            className="flex h-16 w-[140px] flex-shrink-0 items-center justify-center px-6 md:w-[180px]"
+            className="flex h-24 w-[210px] flex-shrink-0 items-center justify-center px-9 md:w-[270px]"
           >
             <Image
               src={partner.logo}
@@ -218,7 +218,7 @@ export default function PartnersMarquee() {
               width={logoDisplayWidth(partner)}
               height={LOGO_DISPLAY_HEIGHT}
               loading="eager"
-              className="h-12 w-auto max-w-full object-contain opacity-50 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0"
+              className="h-[72px] w-auto max-w-full object-contain opacity-50 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0"
             />
           </div>
         ))}
