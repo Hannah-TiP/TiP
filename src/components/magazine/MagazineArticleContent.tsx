@@ -81,7 +81,8 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
         .filter((row) => row.length > 1);
 
       const headerRow = rows[0] ?? [];
-      const bodyRows = rows.slice(2);
+      const hasMarkdownSeparator = rows[1]?.every((cell) => /^:?-{3,}:?$/.test(cell));
+      const bodyRows = rows.slice(hasMarkdownSeparator ? 2 : 1);
 
       return (
         <section className="mb-10">
