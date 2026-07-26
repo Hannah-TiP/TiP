@@ -42,7 +42,15 @@ export default function WelcomeOfferPopup() {
   useEffect(() => {
     const storageKey = `tiyp_popup_dismiss_until_v2_${lang}`;
     const dismissUntil = Number.parseInt(localStorage.getItem(storageKey) || '0', 10);
-    if (Date.now() <= dismissUntil) return;
+    if (Date.now() <= dismissUntil) {
+      // The active language can switch after first paint (SSR default → client
+      // detection ladder). If the popup already opened under the previous
+      // language and the reconciled one is dismissed, close it — a dismissed
+      // language must never keep the offer on screen.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsOpen(false);
+      return;
+    }
 
     const openTimer = window.setTimeout(() => setIsOpen(true), OPEN_DELAY_MS);
     return () => window.clearTimeout(openTimer);
