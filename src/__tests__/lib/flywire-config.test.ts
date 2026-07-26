@@ -5,8 +5,10 @@ import type { WidgetConfig } from '@/types/payment';
 function makeConfig(overrides: Partial<WidgetConfig> = {}): WidgetConfig {
   return {
     portal_code: 'PARSC',
-    amount: '1357000.00',
-    currency: 'KRW',
+    // EUR — the production Flywire settlement currency (SMA-235) — with
+    // real cents so parseFloat has to carry the fractional part.
+    amount: '1234.56',
+    currency: 'EUR',
     callback_url: 'https://api.example.com/api/v2/webhooks/flywire',
     callback_id: '77',
     callback_version: '2',
@@ -30,7 +32,7 @@ describe('buildFlywireInitiateConfig', () => {
     expect(result).toMatchObject({
       env: 'demo',
       recipientCode: 'PARSC',
-      amount: 1357000,
+      amount: 1234.56,
       callbackUrl: 'https://api.example.com/api/v2/webhooks/flywire',
       callbackId: '77',
       callbackVersion: '2',
