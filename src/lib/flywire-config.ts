@@ -22,7 +22,7 @@ export function buildFlywireInitiateConfig({
 }: BuildFlywireConfigOptions): FlywireInitiateConfig {
   // `currency` is intentionally NOT passed: it isn't a documented
   // FlywirePayment.initiate() parameter — Flywire derives currency from
-  // the portal (e.g. PARSC = KRW). `requestPayerInfo: true` keeps the
+  // the portal (e.g. PARSC = EUR). `requestPayerInfo: true` keeps the
   // widget collecting phone/address even when name/email come pre-filled.
   const initConfig: FlywireInitiateConfig = {
     env,
