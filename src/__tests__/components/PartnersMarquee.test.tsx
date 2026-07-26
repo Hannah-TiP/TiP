@@ -54,16 +54,16 @@ describe('PartnersMarquee', () => {
     }
   });
 
-  it('renders every logo at the uniform h-12 height, width-capped to the cell', () => {
+  it('renders every logo at the uniform h-[108px] height, width-capped to the cell', () => {
     render(<PartnersMarquee />);
     for (const img of screen.getAllByRole('img')) {
       const classes = img.className.split(/\s+/);
-      expect(classes).toContain('h-12');
+      expect(classes).toContain('h-[108px]');
       expect(classes).toContain('w-auto');
       expect(classes).toContain('max-w-full');
       expect(classes).toContain('object-contain');
       // The old cap-only sizing letter-boxed logos at uneven heights.
-      expect(classes).not.toContain('max-h-12');
+      expect(classes).not.toContain('max-h-[108px]');
     }
   });
 
