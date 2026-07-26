@@ -158,9 +158,10 @@ test.describe('/dream-hotels — pagination + infinite scroll (SMA-73)', () => {
     await expect(page.getByRole('heading', { name: 'Dream Hotels' })).toBeVisible();
 
     // Type a hotel-name search → map becomes visible; pagination is unchanged.
-    // The page renders a single name-search input, but it can briefly
-    // double-match during hydration; target the first to avoid a strict-mode flake.
-    await page.getByPlaceholder('Search hotels by name...').first().fill('Ritz');
+    // The page renders one name-search input, but on the CI runner a transient
+    // double-render has intermittently produced a second (hidden) match; scope to
+    // the visible input so strict mode targets the real one regardless.
+    await page.getByPlaceholder('Search hotels by name...').filter({ visible: true }).fill('Ritz');
 
     await expect(page.locator('[data-testid="hotel-map"]')).toBeVisible();
     // The removed cap banner must never render.

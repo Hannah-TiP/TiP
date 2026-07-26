@@ -1,5 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import path from 'node:path';
+import { E2E_SEED_LOCAL_STORAGE } from './e2e/storage-seed';
 
 const AUTH_STATE_PATH = path.join(__dirname, 'e2e', '.auth', 'user.json');
 
@@ -63,11 +64,11 @@ const PR_SMOKE_SPECS = [
 // They manage localStorage themselves so must NOT get pre-set consent.
 const COOKIE_CONSENT_SPECS = ['**/cookie-consent.spec.ts'];
 
-// Pre-accepted cookie consent injected into localStorage for all other specs
-// so the fixed-position banner does not intercept pointer events. The origin
-// must match the actual test target — Playwright only applies localStorage
-// from the storage state to matching origins, so a hardcoded localhost origin
-// is silently ignored when running against a deployed URL.
+// Pre-seeded localStorage (cookie consent + welcome-offer dismiss) so the
+// fixed-position overlays don't intercept pointer events. See storage-seed.ts.
+// The origin must match the actual test target — Playwright only applies
+// localStorage from the storage state to matching origins, so a hardcoded
+// localhost origin is silently ignored when running against a deployed URL.
 const COOKIE_CONSENT_STATE = {
   cookies: [] as {
     name: string;
@@ -82,16 +83,7 @@ const COOKIE_CONSENT_STATE = {
   origins: [
     {
       origin: new URL(BASE_URL).origin,
-      localStorage: [
-        {
-          name: 'tip-cookie-consent',
-          value: JSON.stringify({
-            analytics: true,
-            marketing: true,
-            timestamp: '2026-01-01T00:00:00Z',
-          }),
-        },
-      ],
+      localStorage: E2E_SEED_LOCAL_STORAGE,
     },
   ],
 };
