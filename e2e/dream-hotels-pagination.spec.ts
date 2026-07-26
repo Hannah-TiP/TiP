@@ -158,7 +158,9 @@ test.describe('/dream-hotels — pagination + infinite scroll (SMA-73)', () => {
     await expect(page.getByRole('heading', { name: 'Dream Hotels' })).toBeVisible();
 
     // Type a hotel-name search → map becomes visible; pagination is unchanged.
-    await page.getByPlaceholder('Search hotels by name...').fill('Ritz');
+    // The page renders a single name-search input, but it can briefly
+    // double-match during hydration; target the first to avoid a strict-mode flake.
+    await page.getByPlaceholder('Search hotels by name...').first().fill('Ritz');
 
     await expect(page.locator('[data-testid="hotel-map"]')).toBeVisible();
     // The removed cap banner must never render.
