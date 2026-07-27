@@ -321,6 +321,7 @@
   "trip.step_submitted": "Submitted",
   "trip.step_proposal": "Proposal",
   "trip.step_payment": "Payment",
+  "trip.step_paid": "Paid",
   "trip.step_ready": "Ready",
   "trip.step_traveling": "Traveling",
   "trip.step_completed": "Completed",
