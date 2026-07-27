@@ -18,6 +18,10 @@ export interface QuoteFee {
 export interface QuoteDiscount {
   label: string;
   amount: string;
+  // Machine-readable marker for system-managed discount kinds
+  // ('benefit_credit' | 'stay_credit'); legacy snapshots carry label-only
+  // lines with no kind.
+  kind?: string | null;
 }
 
 export interface QuoteTotalSnapshot {
@@ -62,4 +66,30 @@ export interface QuoteVersion {
 export interface QuoteWithVersion {
   quote: Quote;
   current_version?: QuoteVersion | null;
+}
+
+// Markers mirrored from the backend (v2/services/quote_credit.py). New
+// stay-credit discount lines carry kind='stay_credit'; snapshots authored
+// before SMA-237 are identified by the label prefix only.
+export const STAY_CREDIT_KIND = 'stay_credit';
+const STAY_CREDIT_LABEL_PREFIX = 'Stay credit ';
+
+/** True when the discount line is the applied ledger stay credit. */
+export function isStayCreditDiscount(discount: QuoteDiscount): boolean {
+  return discount.kind === STAY_CREDIT_KIND || discount.label.startsWith(STAY_CREDIT_LABEL_PREFIX);
+}
+
+/**
+ * Amount of the stay-credit discount actually applied to this snapshot
+ * (clamped to the amount owed — SMA-237), or null when no credit line is
+ * present. Denominated in the snapshot's currency.
+ */
+export function appliedStayCreditAmount(snapshot: QuoteTotalSnapshot): string | null {
+  const line = snapshot.discounts.find(isStayCreditDiscount);
+  return line ? line.amount : null;
+}
+
+/** True when nothing is owed on the snapshot (total is 0). */
+export function isZeroTotal(snapshot: QuoteTotalSnapshot): boolean {
+  return Number(snapshot.total) === 0;
 }

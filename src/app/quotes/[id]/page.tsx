@@ -8,7 +8,14 @@ import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/format-currency';
 import { tripDayNumber } from '@/lib/trip-utils';
-import type { QuoteLineItem, QuoteStatus, QuoteWithVersion, QuoteVersion } from '@/types/quote';
+import {
+  appliedStayCreditAmount,
+  isZeroTotal,
+  type QuoteLineItem,
+  type QuoteStatus,
+  type QuoteWithVersion,
+  type QuoteVersion,
+} from '@/types/quote';
 import type { Trip, TripVersion } from '@/types/trip';
 import type { EligibleCredit } from '@/types/stay-credit';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
@@ -145,13 +152,38 @@ function HeroCard({
   );
 }
 
-function PayNowButton({ quoteId, onError }: { quoteId: number; onError: (msg: string) => void }) {
+function PayNowButton({
+  quoteId,
+  zeroTotal,
+  onError,
+  onPaid,
+}: {
+  quoteId: number;
+  zeroTotal: boolean;
+  onError: (msg: string) => void;
+  onPaid: (bundle: QuoteWithVersion) => void;
+}) {
   const { t } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
 
   const handleClick = async () => {
     if (submitting) return;
     setSubmitting(true);
+    if (zeroTotal) {
+      // Nothing is owed (credits cover the full total) — the backend
+      // refuses a Flywire checkout for a $0 quote, so this click marks
+      // the quote PAID directly (SMA-237).
+      try {
+        const bundle = await apiClient.completeZeroTotalQuote(quoteId);
+        onPaid(bundle);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : t('quote.error_complete_zero_total');
+        onError(msg);
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
     try {
       const result = await apiClient.createCheckoutSession(quoteId);
       // Hand off to Flywire's hosted checkout (or our /checkout/flywire wrapper).
@@ -177,7 +209,7 @@ function PayNowButton({ quoteId, onError }: { quoteId: number; onError: (msg: st
             className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"
             aria-hidden
           />
-          <span>{t('quote.starting_checkout')}</span>
+          <span>{zeroTotal ? t('quote.completing_payment') : t('quote.starting_checkout')}</span>
         </>
       ) : (
         <span>{t('quote.pay_now')}</span>
@@ -397,6 +429,16 @@ function StayCreditPanel({
   // "Remove" target.
   const appliedRow = appliedId ? (eligible.find((c) => c.id === appliedId) ?? null) : null;
 
+  // The amount ACTUALLY applied comes from the snapshot's stay-credit
+  // discount line (clamped to the amount owed — SMA-237); the credit's
+  // face value (its remaining balance in quote currency) comes from the
+  // eligibility row. When they diverge we show both.
+  const snapCurrency = currentVersion.total_snapshot.currency;
+  const appliedAmount = appliedId ? appliedStayCreditAmount(currentVersion.total_snapshot) : null;
+  const faceAmount = appliedRow?.converted_amount ?? null;
+  const showBoth =
+    appliedAmount !== null && faceAmount !== null && Number(faceAmount) !== Number(appliedAmount);
+
   if (isLocked && !appliedId) {
     return null;
   }
@@ -412,11 +454,16 @@ function StayCreditPanel({
         <div className="space-y-3">
           <div className="flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3">
             <div>
-              <p className="text-sm font-semibold text-emerald-800">
-                {t('quote.applied')}
-                {appliedRow
-                  ? `: ${formatCurrency(appliedRow.converted_amount, appliedRow.converted_currency)}`
-                  : ''}
+              <p className="text-sm font-semibold text-emerald-800" data-testid="applied-credit">
+                {showBoth && appliedAmount !== null && faceAmount !== null
+                  ? t('quote.applied_partial')
+                      .replace('{face}', formatCurrency(faceAmount, snapCurrency))
+                      .replace('{applied}', formatCurrency(appliedAmount, snapCurrency))
+                  : `${t('quote.applied')}${
+                      appliedAmount !== null
+                        ? `: ${formatCurrency(appliedAmount, snapCurrency)}`
+                        : ''
+                    }`}
               </p>
               {appliedRow ? (
                 <p className="text-[11px] uppercase tracking-[2px] text-emerald-700/80">
@@ -719,7 +766,12 @@ function QuoteDetailContent() {
 
         {quote.status === 'SENT' && currentVersion && !confirmingPayment && (
           <div className="flex justify-end">
-            <PayNowButton quoteId={quote.id} onError={(msg) => pushToast(msg, 'error', 6000)} />
+            <PayNowButton
+              quoteId={quote.id}
+              zeroTotal={isZeroTotal(currentVersion.total_snapshot)}
+              onError={(msg) => pushToast(msg, 'error', 6000)}
+              onPaid={(b) => setBundle(b)}
+            />
           </div>
         )}
 
