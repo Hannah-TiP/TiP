@@ -601,6 +601,18 @@ class ApiClient {
     return response.data;
   }
 
+  /**
+   * Complete a SENT quote whose total is 0 (fully covered by credits) —
+   * marks it PAID without a Flywire checkout (SMA-237).
+   */
+  async completeZeroTotalQuote(quoteId: number): Promise<QuoteWithVersion> {
+    const response = await this.request<{ data: QuoteWithVersion }>(
+      `/quotes/${quoteId}/zero-total-payment`,
+      { method: 'POST' },
+    );
+    return response.data;
+  }
+
   // Payment methods (Flywire checkout)
   async createCheckoutSession(quoteId: number): Promise<CheckoutSessionResponse> {
     const response = await this.request<{ data: CheckoutSessionResponse }>(
