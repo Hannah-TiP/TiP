@@ -4,7 +4,14 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage, type TranslationKeys } from '@/contexts/LanguageContext';
 import { tripDayNumber, type TripWithVersion } from '@/lib/trip-utils';
-import { ITEM_COLORS, getItemLabel, formatDateLabel, formatTime } from '@/lib/trip-display';
+import {
+  ITEM_COLORS,
+  JOURNEY_STEP_ORDER,
+  getItemLabel,
+  formatDateLabel,
+  formatTime,
+  resolveJourneyStep,
+} from '@/lib/trip-display';
 import { formatDate } from '@/lib/format-date';
 import type { TripPlanItem } from '@/types/trip';
 
@@ -32,29 +39,10 @@ function parseLocalDate(dateStr: string): Date {
 }
 
 // ── Journey Stepper ─────────────────────────────────────────────────────
-
-const JOURNEY_STEPS: { key: string; labelKey: TranslationKeys }[] = [
-  { key: 'draft', labelKey: 'trip.step_planning' },
-  { key: 'waiting-for-proposal', labelKey: 'trip.step_submitted' },
-  { key: 'in-progress', labelKey: 'trip.step_proposal' },
-  { key: 'waiting-for-payment', labelKey: 'trip.step_payment' },
-  { key: 'ready-for-travel', labelKey: 'trip.step_ready' },
-  { key: 'traveling-now', labelKey: 'trip.step_traveling' },
-  { key: 'travel-completed', labelKey: 'trip.step_completed' },
-];
-
-// Map backend statuses that fall between visible steps
-const STATUS_TO_STEP: Record<string, string> = {
-  draft: 'draft',
-  'waiting-for-proposal': 'waiting-for-proposal',
-  'in-progress': 'in-progress',
-  'waiting-for-payment': 'waiting-for-payment',
-  waiting_for_booking_docs: 'waiting-for-payment',
-  'ready-for-travel': 'ready-for-travel',
-  'traveling-now': 'traveling-now',
-  'travel-completed': 'travel-completed',
-  canceled: 'canceled',
-};
+// Step order + status resolution live in `@/lib/trip-display`
+// (JOURNEY_STEP_ORDER / resolveJourneyStep) — the single source of truth.
+// `canceled` resolves to no active step, so the track renders with all
+// circles empty (deliberate — SMA-238 scope decision).
 
 function JourneyStepper({
   status,
@@ -65,48 +53,54 @@ function JourneyStepper({
 }) {
   if (!status) return null;
 
-  const mappedStatus = STATUS_TO_STEP[status] || status;
-  const currentIdx = JOURNEY_STEPS.findIndex((s) => s.key === mappedStatus);
-  const isCanceled = status === 'canceled';
+  const { currentIndex } = resolveJourneyStep(status);
+  const currentIdx = currentIndex ?? -1;
+  const trackPadding = `calc(100% / ${JOURNEY_STEP_ORDER.length * 2})`;
 
   return (
     <div className="py-4">
       <div className="flex items-start justify-between relative">
         {/* Background track line */}
-        <div className="absolute top-[11px] left-0 right-0 flex px-[calc(100%/14)]">
+        <div
+          className="absolute top-[11px] left-0 right-0 flex"
+          style={{ paddingLeft: trackPadding, paddingRight: trackPadding }}
+        >
           <div className="flex-1 h-[2px] bg-gray-200" />
         </div>
         {/* Filled progress line */}
-        <div className="absolute top-[11px] left-0 right-0 flex px-[calc(100%/14)]">
+        <div
+          className="absolute top-[11px] left-0 right-0 flex"
+          style={{ paddingLeft: trackPadding, paddingRight: trackPadding }}
+        >
           <div
-            className="h-[2px] transition-all duration-500"
+            className="h-[2px] bg-[#C4956A] transition-all duration-500"
             style={{
-              width: currentIdx > 0 ? `${(currentIdx / (JOURNEY_STEPS.length - 1)) * 100}%` : '0%',
-              background: isCanceled ? '#EF4444' : '#C4956A',
+              width:
+                currentIdx > 0 ? `${(currentIdx / (JOURNEY_STEP_ORDER.length - 1)) * 100}%` : '0%',
             }}
           />
         </div>
 
-        {JOURNEY_STEPS.map((step, idx) => {
+        {JOURNEY_STEP_ORDER.map((step, idx) => {
           const isCompleted = currentIdx >= 0 && idx < currentIdx;
           const isCurrent = idx === currentIdx;
 
           return (
             <div
               key={step.key}
+              data-testid={`journey-step-${step.key}`}
+              data-state={isCompleted ? 'completed' : isCurrent ? 'current' : 'upcoming'}
               className="flex flex-col items-center z-10"
-              style={{ width: `${100 / JOURNEY_STEPS.length}%` }}
+              style={{ width: `${100 / JOURNEY_STEP_ORDER.length}%` }}
             >
               {/* Circle */}
               <div
                 className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                  isCanceled && isCurrent
-                    ? 'border-red-500 bg-red-500'
-                    : isCompleted
-                      ? 'border-[#C4956A] bg-[#C4956A]'
-                      : isCurrent
-                        ? 'border-[#1E3D2F] bg-[#1E3D2F]'
-                        : 'border-gray-300 bg-white'
+                  isCompleted
+                    ? 'border-[#C4956A] bg-[#C4956A]'
+                    : isCurrent
+                      ? 'border-[#1E3D2F] bg-[#1E3D2F]'
+                      : 'border-gray-300 bg-white'
                 }`}
               >
                 {isCompleted && (
@@ -123,38 +117,20 @@ function JourneyStepper({
                     <polyline points="2,6 5,9 10,3" />
                   </svg>
                 )}
-                {isCurrent && !isCanceled && (
-                  <div className="w-[6px] h-[6px] rounded-full bg-white" />
-                )}
-                {isCanceled && isCurrent && (
-                  <svg
-                    width="8"
-                    height="8"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  >
-                    <line x1="3" y1="3" x2="9" y2="9" />
-                    <line x1="9" y1="3" x2="3" y2="9" />
-                  </svg>
-                )}
+                {isCurrent && <div className="w-[6px] h-[6px] rounded-full bg-white" />}
               </div>
 
               {/* Label */}
               <span
                 className={`font-inter text-[9px] mt-1.5 text-center leading-tight ${
-                  isCanceled && isCurrent
-                    ? 'text-red-500 font-semibold'
-                    : isCompleted
-                      ? 'text-[#C4956A] font-medium'
-                      : isCurrent
-                        ? 'text-[#1E3D2F] font-semibold'
-                        : 'text-gray-400'
+                  isCompleted
+                    ? 'text-[#C4956A] font-medium'
+                    : isCurrent
+                      ? 'text-[#1E3D2F] font-semibold'
+                      : 'text-gray-400'
                 }`}
               >
-                {isCanceled && isCurrent ? t('trip.step_canceled') : t(step.labelKey)}
+                {t(step.labelKey)}
               </span>
             </div>
           );

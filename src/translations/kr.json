@@ -321,6 +321,7 @@
   "trip.step_submitted": "제출됨",
   "trip.step_proposal": "제안",
   "trip.step_payment": "결제",
+  "trip.step_paid": "결제 완료",
   "trip.step_ready": "준비 완료",
   "trip.step_traveling": "여행 중",
   "trip.step_completed": "완료",

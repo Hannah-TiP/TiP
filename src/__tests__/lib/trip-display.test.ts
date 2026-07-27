@@ -1,15 +1,37 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import {
   formatDateLabel,
   formatTime,
   getItemLabel,
   getStatusLabel,
   ITEM_LABEL_KEYS,
+  JOURNEY_STEP_ORDER,
+  resolveJourneyStep,
+  STATUS_TO_JOURNEY_INDEX,
   STATUS_TO_STEP_KEY,
 } from '@/lib/trip-display';
 import en from '@/translations/en.json';
 import kr from '@/translations/kr.json';
 import type { TranslationKeys } from '@/contexts/LanguageContext';
+import type { TripStatus } from '@/types/trip';
+
+/**
+ * Runtime list of every TripStatus. The `satisfies Record<TripStatus, true>`
+ * clause makes this test file fail to COMPILE when a new status is added to
+ * the union without extending this list (and, via STATUS_TO_JOURNEY_INDEX's
+ * own `satisfies`, without defining its stepper state).
+ */
+const ALL_TRIP_STATUSES = Object.keys({
+  draft: true,
+  'waiting-for-proposal': true,
+  'in-progress': true,
+  'waiting-for-payment': true,
+  paid: true,
+  'ready-to-travel': true,
+  'traveling-now': true,
+  'travel-completed': true,
+  canceled: true,
+} satisfies Record<TripStatus, true>) as TripStatus[];
 
 describe('formatDateLabel', () => {
   it('renders the literal calendar date in EN (no UTC drift in western timezones)', () => {
@@ -78,8 +100,7 @@ describe('getStatusLabel', () => {
     expect(getStatusLabel('waiting-for-proposal', tEn)).toBe('Submitted');
     expect(getStatusLabel('in-progress', tEn)).toBe('Proposal');
     expect(getStatusLabel('waiting-for-payment', tEn)).toBe('Payment');
-    expect(getStatusLabel('waiting_for_booking_docs', tEn)).toBe('Payment');
-    expect(getStatusLabel('paid', tEn)).toBe('Payment');
+    expect(getStatusLabel('paid', tEn)).toBe('Paid');
     expect(getStatusLabel('ready-for-travel', tEn)).toBe('Ready');
     expect(getStatusLabel('ready-to-travel', tEn)).toBe('Ready');
     expect(getStatusLabel('traveling-now', tEn)).toBe('Traveling');
@@ -92,8 +113,7 @@ describe('getStatusLabel', () => {
     expect(getStatusLabel('waiting-for-proposal', tKr)).toBe('제출됨');
     expect(getStatusLabel('in-progress', tKr)).toBe('제안');
     expect(getStatusLabel('waiting-for-payment', tKr)).toBe('결제');
-    expect(getStatusLabel('waiting_for_booking_docs', tKr)).toBe('결제');
-    expect(getStatusLabel('paid', tKr)).toBe('결제');
+    expect(getStatusLabel('paid', tKr)).toBe('결제 완료');
     expect(getStatusLabel('ready-for-travel', tKr)).toBe('준비 완료');
     expect(getStatusLabel('ready-to-travel', tKr)).toBe('준비 완료');
     expect(getStatusLabel('traveling-now', tKr)).toBe('여행 중');
@@ -112,6 +132,81 @@ describe('getStatusLabel', () => {
       expect(en[key]).toBeTruthy();
       expect(kr[key]).toBeTruthy();
     }
+  });
+
+  it('no longer carries the phantom waiting_for_booking_docs key', () => {
+    expect('waiting_for_booking_docs' in STATUS_TO_STEP_KEY).toBe(false);
+  });
+});
+
+describe('JOURNEY_STEP_ORDER', () => {
+  it('defines the 8-step track with the dedicated paid step between payment and ready', () => {
+    expect(JOURNEY_STEP_ORDER.map((s) => s.key)).toEqual([
+      'draft',
+      'waiting-for-proposal',
+      'in-progress',
+      'waiting-for-payment',
+      'paid',
+      'ready-to-travel',
+      'traveling-now',
+      'travel-completed',
+    ]);
+    expect(JOURNEY_STEP_ORDER[4]).toEqual({ key: 'paid', labelKey: 'trip.step_paid' });
+  });
+
+  it('has every step label key in both catalogs (EN + KR)', () => {
+    for (const step of JOURNEY_STEP_ORDER) {
+      expect(en[step.labelKey]).toBeTruthy();
+      expect(kr[step.labelKey]).toBeTruthy();
+    }
+    expect(en['trip.step_paid']).toBe('Paid');
+    expect(kr['trip.step_paid']).toBe('결제 완료');
+  });
+});
+
+describe('resolveJourneyStep', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('maps EVERY TripStatus to a defined stepper state without warning', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    for (const status of ALL_TRIP_STATUSES) {
+      const { currentIndex } = resolveJourneyStep(status);
+      if (status === 'canceled') {
+        // Defined state for canceled: NO active step (all circles empty) —
+        // deliberate preservation of current behavior (SMA-238 scope decision).
+        expect(currentIndex).toBeNull();
+      } else {
+        expect(currentIndex).not.toBeNull();
+        expect(currentIndex).toBeGreaterThanOrEqual(0);
+        expect(currentIndex).toBeLessThan(JOURNEY_STEP_ORDER.length);
+        // The resolved step is the status's own circle.
+        expect(JOURNEY_STEP_ORDER[currentIndex!].key).toBe(status);
+      }
+    }
+    expect(warn).not.toHaveBeenCalled();
+    // The index map itself is satisfies-checked against the union.
+    expect(Object.keys(STATUS_TO_JOURNEY_INDEX).sort()).toEqual([...ALL_TRIP_STATUSES].sort());
+  });
+
+  it('marks paid as the current step with payment before it', () => {
+    expect(resolveJourneyStep('paid').currentIndex).toBe(4);
+    expect(resolveJourneyStep('waiting-for-payment').currentIndex).toBe(3);
+  });
+
+  it('normalizes the legacy ready-for-travel spelling to ready-to-travel', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(resolveJourneyStep('ready-for-travel').currentIndex).toBe(5);
+    expect(resolveJourneyStep('ready-to-travel').currentIndex).toBe(5);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('warns and falls back to the first step for an unknown status', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(resolveJourneyStep('waiting_for_booking_docs').currentIndex).toBe(0);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('waiting_for_booking_docs');
   });
 });
 
