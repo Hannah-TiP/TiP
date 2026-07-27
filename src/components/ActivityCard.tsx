@@ -7,31 +7,24 @@ import EntityRatingBadge from '@/components/reviews/EntityRatingBadge';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Activity } from '@/types/activity';
 
-export type ActivityCardVariant = 'standard' | 'signature';
-
 interface ActivityCardProps {
   activity: Activity;
-  variant: ActivityCardVariant;
   cityName?: string;
 }
 
-function getActivityTag(activity: Activity, variant: ActivityCardVariant): string {
-  if (variant === 'signature') return 'SIGNATURE JOURNEY';
+function getActivityTag(activity: Activity): string {
   if (!activity.category) return 'ACTIVITY';
   return activity.category.toUpperCase();
 }
 
-export default function ActivityCard({ activity, variant, cityName }: ActivityCardProps) {
-  // Gold accent on the category pill for premium "Signature Journey" cards.
-  const pillClassName =
-    variant === 'signature'
-      ? 'absolute left-3 top-3 rounded-full bg-gold px-3 py-1 text-[10px] font-semibold tracking-wider text-white backdrop-blur-sm'
-      : 'absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm';
-
+// The old 'signature' variant (gold pill for kind=package cards) was removed
+// in SMA-209: signature journeys now render via SignatureJourneyCard. The
+// -standard testid suffix is kept so existing test selectors stay stable.
+export default function ActivityCard({ activity, cityName }: ActivityCardProps) {
   return (
     <Link
       href={`/activity/${activity.slug}`}
-      data-testid={`activity-card-${variant}`}
+      data-testid="activity-card-standard"
       className={`group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg ${
         activity.status === 'draft' ? 'ring-2 ring-amber-400' : ''
       }`}
@@ -44,8 +37,11 @@ export default function ActivityCard({ activity, variant, cityName }: ActivityCa
           sizes="(max-width: 768px) 100vw, 25vw"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div data-testid={`activity-pill-${variant}`} className={pillClassName}>
-          {getActivityTag(activity, variant)}
+        <div
+          data-testid="activity-pill-standard"
+          className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold tracking-wider text-green-dark backdrop-blur-sm"
+        >
+          {getActivityTag(activity)}
         </div>
         <DraftBadge status={activity.status} />
       </div>

@@ -161,7 +161,6 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
 
     expect(screen.queryByRole('heading', { level: 2, name: /^Signature Journeys$/i })).toBeNull();
     expect(container.querySelector('[data-testid="section-signature-journeys"]')).toBeNull();
-    expect(screen.queryByTestId('activity-pill-signature')).toBeNull();
   });
 
   it('calls getActivities exactly once with kind=local_experience (no package fetch)', async () => {
@@ -193,7 +192,6 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
     const standardPill = screen.getByTestId('activity-pill-standard');
     expect(standardPill.className).toContain('bg-white/90');
     expect(standardPill.className).not.toContain('bg-gold');
-    expect(screen.queryByTestId('activity-pill-signature')).toBeNull();
   });
 
   it('defensively drops any package items that leak into the local_experience bucket', async () => {

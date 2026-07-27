@@ -17,8 +17,9 @@ export type NavKey =
   | 'dream-hotels'
   | 'more-dreams'
   | 'signature-journeys'
-  | 'about'
   | 'concierge'
+  | 'magazine'
+  | 'about'
   | 'my-page';
 
 /** SubNav tab keys (labels rendered by SubNav, only on /my-page/**). */
@@ -135,16 +136,19 @@ export function resolveHeaderConfig(rawPathname: string): HeaderConfig {
   if (isPathOrSubpath(pathname, '/concierge')) {
     return { variant: 'app', activeNav: 'concierge', subNav: null };
   }
+  // Magazine index + article routes (/magazine/[type]/[slug]). Standard app
+  // bar — NOT an overlay page.
+  if (isPathOrSubpath(pathname, '/magazine')) {
+    return { variant: 'app', activeNav: 'magazine', subNav: null };
+  }
 
   // Detail / checkout pages highlight their parent section.
   if (isPathOrSubpath(pathname, '/hotel')) {
     return { variant: 'app', activeNav: 'dream-hotels', subNav: null };
   }
-  // Accepted tradeoff: signature journeys (kind=package) and local
-  // experiences share one detail route (/activity/[id]). The pathname carries
-  // no `kind`, so this can't tell a package detail from a local-experience
-  // one — both highlight More Dreams. We deliberately do NOT add a separate
-  // /signature-journeys/[id] route just to recover the parent highlight.
+  // Local experiences live on /activity/[id] and highlight More Dreams.
+  // Signature journeys have their own /signature-journeys/[slug] detail
+  // route (SMA-209), matched by the section-landing branch above.
   if (isPathOrSubpath(pathname, '/restaurant') || isPathOrSubpath(pathname, '/activity')) {
     return { variant: 'app', activeNav: 'more-dreams', subNav: null };
   }

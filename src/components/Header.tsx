@@ -81,7 +81,7 @@ export default function Header() {
               prefetch={link.protected ? false : undefined}
               className={navItemClass(config.activeNav === link.key)}
             >
-              {link.label}
+              {t(link.labelKey)}
             </Link>
           ))}
 

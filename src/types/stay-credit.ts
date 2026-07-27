@@ -10,7 +10,9 @@ export type StayCreditSource =
   | 'first_trip_cashback'
   | 'review_reward'
   | 'gift'
-  | 'promo_code_redemption';
+  | 'promo_code_redemption'
+  | 'kb_welcome'
+  | 'kb_premium_booking';
 
 export const STAY_CREDIT_SOURCE_LABELS: Record<StayCreditSource, { en: string; kr: string }> = {
   welcome: { en: 'Welcome', kr: '환영' },
@@ -22,6 +24,8 @@ export const STAY_CREDIT_SOURCE_LABELS: Record<StayCreditSource, { en: string; k
   review_reward: { en: 'Review Reward', kr: '리뷰 보상' },
   gift: { en: 'Gift', kr: '선물' },
   promo_code_redemption: { en: 'Promo Code', kr: '프로모션 코드' },
+  kb_welcome: { en: 'KB Welcome', kr: 'KB 웰컴' },
+  kb_premium_booking: { en: 'KB Premium Booking', kr: 'KB 프리미엄 예약' },
 };
 
 export type StayCreditStatus = 'issued' | 'redeemed' | 'expired' | 'revoked';
@@ -78,8 +82,17 @@ export function creditsForTrip(credits: StayCredit[], tripId: number): StayCredi
 // suffixed with the redeemed promo code when present (e.g.
 // "프로모션 코드 · WELCOME26"). Older promo credits without a structured
 // promo_code fall back to the label alone — no hardcoded copy reaches the user.
+// Safe localized label for a credit source. Falls back to the raw source
+// string when the map lacks the key, so a new/unknown backend source can never
+// crash the credit page (the map has drifted out of sync with the backend enum
+// before — e.g. the kb_* sources).
+export function stayCreditSourceText(source: StayCreditSource | string, en: boolean): string {
+  const entry = STAY_CREDIT_SOURCE_LABELS[source as StayCreditSource];
+  return entry ? entry[en ? 'en' : 'kr'] : source;
+}
+
 export function creditSourceLabel(credit: StayCredit, en: boolean): string {
-  const label = STAY_CREDIT_SOURCE_LABELS[credit.source][en ? 'en' : 'kr'];
+  const label = stayCreditSourceText(credit.source, en);
   return credit.promo_code ? `${label} · ${credit.promo_code}` : label;
 }
 

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import SearchBar from '@/components/SearchBar';
 import PartnersMarquee from '@/components/PartnersMarquee';
 import Footer from '@/components/Footer';
+import WelcomeOfferPopup from '@/components/WelcomeOfferPopup';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const elevateCards = [
@@ -182,6 +183,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-black">
+      <WelcomeOfferPopup />
       {/* Hero Section */}
       <section className="relative h-screen w-full overflow-visible">
         {/* Background Image */}

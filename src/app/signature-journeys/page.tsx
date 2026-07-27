@@ -4,28 +4,16 @@ import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import PreviewBanner from '@/components/PreviewBanner';
-import ActivityCard from '@/components/ActivityCard';
+import SignatureJourneyCard from '@/components/signature-journey/SignatureJourneyCard';
 import { apiClient } from '@/lib/api-client';
-import { usePreviewMode } from '@/hooks/usePreviewMode';
 import { getLocalizedText } from '@/types/common';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { Activity, ActivityKind } from '@/types/activity';
+import type { SignatureJourney } from '@/types/signatureJourney';
 import type { City } from '@/types/location';
 
-/**
- * Defensive default: the API is the source of truth for `kind`, but if a
- * package item ever arrives without one we still want it shown here rather
- * than silently dropped (mirrors the same guard /more-dreams uses).
- */
-function resolveKind(activity: Activity): ActivityKind {
-  return activity.kind === 'package' ? 'package' : 'local_experience';
-}
-
 function SignatureJourneysContent() {
-  const [signatureJourneys, setSignatureJourneys] = useState<Activity[]>([]);
+  const [signatureJourneys, setSignatureJourneys] = useState<SignatureJourney[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { isPreview } = usePreviewMode();
   const { t, lang } = useLanguage();
 
   // Filter state
@@ -43,19 +31,12 @@ function SignatureJourneysContent() {
     async function loadData() {
       try {
         setIsLoading(true);
-        const [packageData, cityData] = await Promise.all([
-          apiClient.getActivities({
-            language: lang,
-            kind: 'package',
-            include_draft: isPreview,
-            per_page: 100,
-          }),
+        // signature_journeys_v2 list endpoint (SMA-206) — published-only.
+        const [journeyData, cityData] = await Promise.all([
+          apiClient.getSignatureJourneys({ language: lang, per_page: 100 }),
           apiClient.getCities(lang),
         ]);
-        // Defensive client-side filter: backend filtering is the source of
-        // truth, but if any items leak through with a different kind, this
-        // makes sure the grid only shows signature journeys.
-        setSignatureJourneys(packageData.items.filter((a) => resolveKind(a) === 'package'));
+        setSignatureJourneys(journeyData.items);
         setCities(cityData);
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -65,7 +46,7 @@ function SignatureJourneysContent() {
     }
 
     loadData();
-  }, [isPreview, lang]);
+  }, [lang]);
 
   // Load cities when dropdown opens
   useEffect(() => {
@@ -92,7 +73,7 @@ function SignatureJourneysContent() {
 
   const filteredSignatureJourneys = useMemo(() => {
     if (!selectedCity) return signatureJourneys;
-    return signatureJourneys.filter((a) => a.city_id === selectedCity.id);
+    return signatureJourneys.filter((journey) => journey.city_id === selectedCity.id);
   }, [signatureJourneys, selectedCity]);
 
   const filteredCities = cities.filter((c) =>
@@ -104,9 +85,7 @@ function SignatureJourneysContent() {
   }, [cities]);
 
   return (
-    <main className={`min-h-screen bg-gray-light ${isPreview ? 'pt-10' : ''}`}>
-      <PreviewBanner />
-
+    <main className="min-h-screen bg-gray-light">
       {/* Hero */}
       <section className="relative h-[720px] w-full overflow-hidden">
         <Image
@@ -293,13 +272,12 @@ function SignatureJourneysContent() {
           </div>
 
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredSignatureJourneys.map((activity) => (
-              <ActivityCard
-                key={activity.id}
-                activity={activity}
-                variant="signature"
+            {filteredSignatureJourneys.map((journey) => (
+              <SignatureJourneyCard
+                key={journey.id}
+                journey={journey}
                 cityName={
-                  activity.city_id ? (cityNameById.get(activity.city_id) ?? undefined) : undefined
+                  journey.city_id ? (cityNameById.get(journey.city_id) ?? undefined) : undefined
                 }
               />
             ))}

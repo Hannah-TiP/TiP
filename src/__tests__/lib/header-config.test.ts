@@ -101,6 +101,22 @@ describe('resolveHeaderConfig — section landing pages (app variant)', () => {
       subNav: null,
     });
   });
+
+  it('highlights Magazine on /magazine (app variant, not overlay)', () => {
+    expect(resolveHeaderConfig('/magazine')).toEqual({
+      variant: 'app',
+      activeNav: 'magazine',
+      subNav: null,
+    });
+  });
+
+  it('keeps Magazine highlighted on an article route /magazine/[type]/[slug]', () => {
+    expect(resolveHeaderConfig('/magazine/guide/some-slug')).toEqual({
+      variant: 'app',
+      activeNav: 'magazine',
+      subNav: null,
+    });
+  });
 });
 
 describe('resolveHeaderConfig — detail / checkout parent-section highlight', () => {

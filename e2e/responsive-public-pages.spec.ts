@@ -40,6 +40,7 @@ async function stubLists(page: Page) {
   await page.route('**/api/hotels**', empty);
   await page.route('**/api/activities**', empty);
   await page.route('**/api/restaurants**', empty);
+  await page.route('**/api/signature-journeys**', empty);
   // Seed one city so the Destination picker has content to render at width;
   // the off-screen regression was about positioning, not data.
   await page.route('**/api/cities**', async (route: Route) => {

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import MessageBubble from '@/components/ai-chat/MessageBubble';
 import type { AIChatMessage } from '@/types/ai-chat';
@@ -140,5 +140,114 @@ describe('MessageBubble human-concierge messages', () => {
     expect(container.textContent).not.toContain('7');
     expect(container.textContent?.toLowerCase()).not.toContain('admin');
     expect(screen.getByText('Concierge Team')).toBeDefined();
+  });
+});
+
+describe('MessageBubble edit history', () => {
+  it('renders the edited indicator for a human_assistant message with edit_history', () => {
+    const msg = makeAssistantMessage({
+      role: 'human_assistant',
+      content: 'Check-in is at 3pm.',
+      edit_history: [{ content: 'Check-in is at 2pm.', edited_at: '2026-05-01T11:00:00Z' }],
+    });
+    render(<MessageBubble message={msg} isUser={false} />);
+
+    expect(screen.getByTestId('message-edited')).toBeDefined();
+  });
+
+  it('does NOT render the edited indicator when edit_history is empty or absent', () => {
+    const noHistory = makeAssistantMessage({
+      role: 'human_assistant',
+      content: 'Check-in is at 3pm.',
+    });
+    const { rerender } = render(<MessageBubble message={noHistory} isUser={false} />);
+    expect(screen.queryByTestId('message-edited')).toBeNull();
+
+    const emptyHistory = makeAssistantMessage({
+      role: 'human_assistant',
+      content: 'Check-in is at 3pm.',
+      edit_history: [],
+    });
+    rerender(<MessageBubble message={emptyHistory} isUser={false} />);
+    expect(screen.queryByTestId('message-edited')).toBeNull();
+  });
+
+  it('expands to reveal each prior version content + timestamp with no admin identity', () => {
+    const msg = makeAssistantMessage({
+      role: 'human_assistant',
+      content: 'Final concierge note.',
+      created_by_admin_id: 7,
+      edit_history: [
+        { content: 'First draft note.', edited_at: '2026-05-01T10:00:00Z' },
+        { content: 'Second draft note.', edited_at: '2026-05-01T11:00:00Z' },
+      ],
+    } as AIChatMessage);
+
+    const { container } = render(<MessageBubble message={msg} isUser={false} />);
+
+    // Collapsed by default.
+    expect(screen.queryByTestId('edit-history')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('edit-history-toggle'));
+
+    const history = screen.getByTestId('edit-history');
+    expect(history.textContent).toContain('First draft note.');
+    expect(history.textContent).toContain('Second draft note.');
+    // Each entry labels its prior-version + renders a timestamp.
+    expect(screen.getAllByText('Previous version')).toHaveLength(2);
+
+    // Privacy invariant: no admin id or "admin" anywhere in the rendered tree.
+    expect(container.textContent).not.toContain('7');
+    expect(container.textContent?.toLowerCase()).not.toContain('admin');
+  });
+
+  it('renders the removed placeholder for a deleted message and no content/history/edited indicator', () => {
+    // Backend blanks content + drops edit_history on soft-delete, keeping deleted_at.
+    const msg = makeAssistantMessage({
+      role: 'human_assistant',
+      content: '',
+      deleted_at: '2026-05-01T12:00:00Z',
+    });
+    render(<MessageBubble message={msg} isUser={false} />);
+
+    expect(screen.getByTestId('message-removed-placeholder')).toBeDefined();
+    expect(screen.getByText('This message was removed by the concierge team.')).toBeDefined();
+    expect(screen.queryByTestId('message-edited')).toBeNull();
+    expect(screen.queryByTestId('edit-history')).toBeNull();
+  });
+
+  it('ignores deleted_at even if edit_history is somehow present on a deleted message', () => {
+    const msg = makeAssistantMessage({
+      role: 'human_assistant',
+      content: '',
+      deleted_at: '2026-05-01T12:00:00Z',
+      edit_history: [{ content: 'Should not show.', edited_at: '2026-05-01T11:00:00Z' }],
+    });
+    render(<MessageBubble message={msg} isUser={false} />);
+
+    expect(screen.getByTestId('message-removed-placeholder')).toBeDefined();
+    expect(screen.queryByTestId('message-edited')).toBeNull();
+    expect(screen.queryByText('Should not show.')).toBeNull();
+  });
+
+  it('does not apply edit-history paths to user or assistant messages', () => {
+    const userMsg = makeUserMessage({
+      content: 'Hi',
+      edit_history: [{ content: 'Hey', edited_at: '2026-05-01T10:00:00Z' }],
+      deleted_at: '2026-05-01T12:00:00Z',
+    } as AIChatMessage);
+    const { rerender } = render(<MessageBubble message={userMsg} isUser />);
+    expect(screen.queryByTestId('message-edited')).toBeNull();
+    expect(screen.queryByTestId('message-removed-placeholder')).toBeNull();
+    expect(screen.getByText('Hi')).toBeDefined();
+
+    const assistantMsg = makeAssistantMessage({
+      role: 'assistant',
+      content: 'Regular AI reply.',
+      edit_history: [{ content: 'old', edited_at: '2026-05-01T10:00:00Z' }],
+    } as AIChatMessage);
+    rerender(<MessageBubble message={assistantMsg} isUser={false} />);
+    expect(screen.queryByTestId('message-edited')).toBeNull();
+    expect(screen.getByText('Regular AI reply.')).toBeDefined();
   });
 });

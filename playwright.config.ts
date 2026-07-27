@@ -1,5 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import path from 'node:path';
+import { E2E_SEED_LOCAL_STORAGE } from './e2e/storage-seed';
 
 const AUTH_STATE_PATH = path.join(__dirname, 'e2e', '.auth', 'user.json');
 
@@ -14,8 +15,10 @@ const AUTH_REQUIRED_SPECS = [
   '**/cancel-trip.spec.ts',
   '**/concierge-human-takeover.spec.ts',
   '**/concierge-responsive.spec.ts',
+  '**/concierge-landscape-gate.spec.ts',
   '**/quotes.spec.ts',
   '**/checkout.spec.ts',
+  '**/zero-total-quote.spec.ts',
   '**/search-prefill-concierge.spec.ts',
   '**/reviews.spec.ts',
   '**/sma-55-hotel-benefits.spec.ts',
@@ -29,15 +32,44 @@ const AUTH_REQUIRED_SPECS = [
   '**/free-night-membership.spec.ts',
 ];
 
+// Auth-free, data-independent specs run on every PR as a fast smoke gate
+// (self-hosted frontend build, no backend/auth). Adding or removing a spec
+// here is a one-line change. Keep this list to specs that pass headless with
+// NO backend running (page.route-mocked or fully static pages).
+const PR_SMOKE_SPECS = [
+  '**/navigation.spec.ts',
+  '**/magazine-article.spec.ts',
+  '**/dream-hotels-pagination.spec.ts',
+  '**/dream-hotels-map-gating.spec.ts',
+  '**/more-dreams-sections.spec.ts',
+  '**/signature-journeys.spec.ts',
+  '**/signature-journey-detail.spec.ts',
+  '**/signature-journey-jsonld.spec.ts',
+  '**/search-prefill-redirect.spec.ts',
+  '**/signup-existing-email.spec.ts',
+  '**/signup-redirect.spec.ts',
+  '**/responsive-public-pages.spec.ts',
+  '**/landing.spec.ts',
+  '**/about.spec.ts',
+  '**/health.spec.ts',
+  '**/password-toggle.spec.ts',
+  '**/mobile-nav.spec.ts',
+  '**/responsive-auth-pages.spec.ts',
+  '**/google-signin-button.spec.ts',
+  '**/auth-redirect.spec.ts',
+  '**/sign-in-webview-gating.spec.ts',
+  '**/locale-first-paint.spec.ts',
+];
+
 // Specs that deliberately test the cookie-consent banner from a blank state.
 // They manage localStorage themselves so must NOT get pre-set consent.
 const COOKIE_CONSENT_SPECS = ['**/cookie-consent.spec.ts'];
 
-// Pre-accepted cookie consent injected into localStorage for all other specs
-// so the fixed-position banner does not intercept pointer events. The origin
-// must match the actual test target — Playwright only applies localStorage
-// from the storage state to matching origins, so a hardcoded localhost origin
-// is silently ignored when running against a deployed URL.
+// Pre-seeded localStorage (cookie consent + welcome-offer dismiss) so the
+// fixed-position overlays don't intercept pointer events. See storage-seed.ts.
+// The origin must match the actual test target — Playwright only applies
+// localStorage from the storage state to matching origins, so a hardcoded
+// localhost origin is silently ignored when running against a deployed URL.
 const COOKIE_CONSENT_STATE = {
   cookies: [] as {
     name: string;
@@ -52,16 +84,7 @@ const COOKIE_CONSENT_STATE = {
   origins: [
     {
       origin: new URL(BASE_URL).origin,
-      localStorage: [
-        {
-          name: 'tip-cookie-consent',
-          value: JSON.stringify({
-            analytics: true,
-            marketing: true,
-            timestamp: '2026-01-01T00:00:00Z',
-          }),
-        },
-      ],
+      localStorage: E2E_SEED_LOCAL_STORAGE,
     },
   ],
 };
@@ -94,6 +117,11 @@ export default defineConfig({
       name: 'chromium-cookie-consent',
       testMatch: COOKIE_CONSENT_SPECS,
       use: { browserName: 'chromium' },
+    },
+    {
+      name: 'chromium-pr-smoke',
+      testMatch: PR_SMOKE_SPECS,
+      use: { browserName: 'chromium', storageState: COOKIE_CONSENT_STATE },
     },
   ],
   // Start local server when not testing against a deployed URL

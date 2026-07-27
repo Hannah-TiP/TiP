@@ -1,8 +1,9 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import TripDetailPanel from '@/components/ai-chat/TripDetailPanel';
+import { JOURNEY_STEP_ORDER } from '@/lib/trip-display';
 import type { TripWithVersion } from '@/lib/trip-utils';
-import type { TripDay } from '@/types/trip';
+import type { TripDay, TripStatus } from '@/types/trip';
 import enTranslations from '@/translations/en.json';
 
 vi.mock('@/contexts/LanguageContext', () => ({
@@ -17,12 +18,12 @@ afterEach(() => {
   cleanup();
 });
 
-function makeTripWithVersion(plan: TripDay[]): TripWithVersion {
+function makeTripWithVersion(plan: TripDay[], status: TripStatus = 'draft'): TripWithVersion {
   return {
     trip: {
       id: 1,
       user_id: 1,
-      status: 'draft',
+      status,
       current_trip_version_id: 1,
       schema_version: 1,
     },
@@ -183,5 +184,87 @@ describe('TripDetailPanel — detailed itinerary view', () => {
     render(<TripDetailPanel tripDetail={null} />);
 
     expect(screen.queryByTestId('trip-detail-panel-view-trip-link')).toBeNull();
+  });
+});
+
+describe('TripDetailPanel — journey stepper', () => {
+  function stepStates(): Record<string, string> {
+    const states: Record<string, string> = {};
+    for (const step of JOURNEY_STEP_ORDER) {
+      states[step.key] = screen.getByTestId(`journey-step-${step.key}`).getAttribute('data-state')!;
+    }
+    return states;
+  }
+
+  it('renders all 8 steps including the dedicated Paid step', () => {
+    render(<TripDetailPanel tripDetail={makeTripWithVersion([], 'paid')} />);
+
+    expect(JOURNEY_STEP_ORDER).toHaveLength(8);
+    for (const step of JOURNEY_STEP_ORDER) {
+      expect(screen.getByTestId(`journey-step-${step.key}`)).toBeDefined();
+    }
+    expect(screen.getByTestId('journey-step-paid').textContent).toContain('Paid');
+  });
+
+  it('marks a paid trip as filled through Payment with Paid current', () => {
+    render(<TripDetailPanel tripDetail={makeTripWithVersion([], 'paid')} />);
+
+    expect(stepStates()).toEqual({
+      draft: 'completed',
+      'waiting-for-proposal': 'completed',
+      'in-progress': 'completed',
+      'waiting-for-payment': 'completed',
+      paid: 'current',
+      'ready-to-travel': 'upcoming',
+      'traveling-now': 'upcoming',
+      'travel-completed': 'upcoming',
+    });
+  });
+
+  it('marks a ready-to-travel trip as filled through Paid with Ready current', () => {
+    render(<TripDetailPanel tripDetail={makeTripWithVersion([], 'ready-to-travel')} />);
+
+    const states = stepStates();
+    expect(states.paid).toBe('completed');
+    expect(states['ready-to-travel']).toBe('current');
+    expect(states['traveling-now']).toBe('upcoming');
+  });
+
+  it('renders every non-canceled status with an active step (no blank track)', () => {
+    const statuses: TripStatus[] = [
+      'draft',
+      'waiting-for-proposal',
+      'in-progress',
+      'waiting-for-payment',
+      'paid',
+      'ready-to-travel',
+      'traveling-now',
+      'travel-completed',
+    ];
+    for (const status of statuses) {
+      render(<TripDetailPanel tripDetail={makeTripWithVersion([], status)} />);
+      const states = stepStates();
+      expect(Object.values(states).filter((s) => s === 'current')).toHaveLength(1);
+      cleanup();
+    }
+  });
+
+  it('renders a canceled trip with NO active or completed step (current behavior preserved)', () => {
+    render(<TripDetailPanel tripDetail={makeTripWithVersion([], 'canceled')} />);
+
+    const states = stepStates();
+    expect(Object.values(states).every((s) => s === 'upcoming')).toBe(true);
+  });
+
+  it('falls back to the first step (with a console warning) for an unknown status', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    render(
+      <TripDetailPanel tripDetail={makeTripWithVersion([], 'mystery-status' as TripStatus)} />,
+    );
+
+    expect(stepStates().draft).toBe('current');
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('mystery-status');
+    warn.mockRestore();
   });
 });

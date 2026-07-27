@@ -14,6 +14,12 @@ vi.mock('next-auth/react', () => ({
 }));
 
 const I18N: Record<string, string> = {
+  'nav.dream_hotels': 'DREAM HOTELS',
+  'nav.more_dreams': 'MORE DREAMS',
+  'nav.signature_journeys': 'SIGNATURE JOURNEYS',
+  'nav.concierge': 'CONCIERGE',
+  'nav.magazine': 'MAGAZINE',
+  'nav.about': 'ABOUT',
   'nav.language_toggle': 'EN | KR',
   'nav.menu_open': 'Open menu',
   'nav.menu_close': 'Close menu',
@@ -91,25 +97,34 @@ describe('Header — desktop auth controls render exactly once', () => {
     expect(nav.getAllByText('DREAM HOTELS')).toHaveLength(1);
     expect(nav.getAllByText('MORE DREAMS')).toHaveLength(1);
     expect(nav.getAllByText('SIGNATURE JOURNEYS')).toHaveLength(1);
-    expect(nav.getAllByText('ABOUT')).toHaveLength(1);
     expect(nav.getAllByText('CONCIERGE')).toHaveLength(1);
+    expect(nav.getAllByText('MAGAZINE')).toHaveLength(1);
+    expect(nav.getAllByText('ABOUT')).toHaveLength(1);
   });
 
-  it('orders the nav: Dream Hotels, More Dreams, Signature Journeys, About, Concierge', () => {
+  it('orders the nav: Dream Hotels, More Dreams, Signature Journeys, Concierge, Magazine, About', () => {
     sessionRef.current = { data: null };
     render(<Header />);
     const labels = Array.from(
       desktopNav().querySelectorAll(
-        'a[href^="/dream-hotels"], a[href^="/more-dreams"], a[href^="/signature-journeys"], a[href^="/about"], a[href^="/concierge"]',
+        'a[href^="/dream-hotels"], a[href^="/more-dreams"], a[href^="/signature-journeys"], a[href^="/concierge"], a[href^="/magazine"], a[href^="/about"]',
       ),
     ).map((a) => a.textContent);
     expect(labels).toEqual([
       'DREAM HOTELS',
       'MORE DREAMS',
       'SIGNATURE JOURNEYS',
-      'ABOUT',
       'CONCIERGE',
+      'MAGAZINE',
+      'ABOUT',
     ]);
+  });
+
+  it('points the Magazine link at /magazine', () => {
+    sessionRef.current = { data: null };
+    render(<Header />);
+    const link = within(desktopNav()).getByText('MAGAZINE').closest('a');
+    expect(link?.getAttribute('href')).toBe('/magazine');
   });
 
   it('points the Signature Journeys link at /signature-journeys', () => {
@@ -132,6 +147,28 @@ describe('Header — Signature Journeys active state', () => {
     expect(link.className).toContain('font-semibold');
     // sibling nav items are not in their active state
     expect(desktop.getByText('MORE DREAMS').className).toContain('text-white/70');
+  });
+});
+
+describe('Header — Magazine active state', () => {
+  it('highlights Magazine on /magazine (app variant)', () => {
+    pathnameRef.current = '/magazine';
+    sessionRef.current = { data: null };
+    render(<Header />);
+    const desktop = within(screen.getByTestId('desktop-nav'));
+    const link = desktop.getByText('MAGAZINE');
+    expect(link.className).toContain('text-green-dark');
+    // app variant → light bar, logo not inverted
+    const logo = screen.getByAltText('TiP') as HTMLImageElement;
+    expect(logo.style.filter).toBe('');
+  });
+
+  it('highlights Magazine on an article route /magazine/guide/some-slug', () => {
+    pathnameRef.current = '/magazine/guide/some-slug';
+    sessionRef.current = { data: null };
+    render(<Header />);
+    const link = within(screen.getByTestId('desktop-nav')).getByText('MAGAZINE');
+    expect(link.className).toContain('text-green-dark');
   });
 });
 

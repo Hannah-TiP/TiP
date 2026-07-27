@@ -100,6 +100,13 @@ export const partners: Partner[] = [
     width: 820,
     height: 104,
   },
+  {
+    name: 'The Set Collection',
+    slug: 'the-set-collection',
+    logo: '/partners/the-set-collection.svg',
+    width: 283.5,
+    height: 283.5,
+  },
   { name: 'Belmond', slug: 'belmond', logo: '/partners/belmond.png', width: 380, height: 160 },
   {
     name: 'Six Senses',
@@ -171,9 +178,9 @@ export const partners: Partner[] = [
   },
 ];
 
-// Logos render at a uniform 48px (h-12); the width/height attrs are 2x that
+// Logos render at a uniform 108px; the width/height attrs are 2x that
 // for crisp retina sourcing while preserving each logo's natural aspect ratio.
-export const LOGO_DISPLAY_HEIGHT = 96;
+export const LOGO_DISPLAY_HEIGHT = 216;
 
 export function logoDisplayWidth(partner: Partner): number {
   return Math.round((partner.width / partner.height) * LOGO_DISPLAY_HEIGHT);
@@ -183,7 +190,7 @@ export function logoDisplayWidth(partner: Partner): number {
 // page so the partner brand set can never drift between them. The track holds
 // the logo list twice; the -50% keyframe (globals.css) loops seamlessly. Hover
 // pauses it; prefers-reduced-motion disables the animation entirely. Every logo
-// renders at the uniform h-12 height in its natural aspect ratio (per-logo
+// renders at the uniform 108px height in its natural aspect ratio (per-logo
 // width/height attrs); max-w-full + object-contain cap ultra-wide wordmarks
 // (e.g. Shangri-La, Switzerland Tourism) at the cell width without distortion.
 export default function PartnersMarquee() {
@@ -203,7 +210,7 @@ export default function PartnersMarquee() {
           <div
             key={`${partner.slug}-${idx}`}
             aria-hidden={idx >= partners.length}
-            className="flex h-16 w-[140px] flex-shrink-0 items-center justify-center px-6 md:w-[180px]"
+            className="flex h-36 w-[315px] flex-shrink-0 items-center justify-center px-[54px] md:w-[405px]"
           >
             <Image
               src={partner.logo}
@@ -211,7 +218,7 @@ export default function PartnersMarquee() {
               width={logoDisplayWidth(partner)}
               height={LOGO_DISPLAY_HEIGHT}
               loading="eager"
-              className="h-12 w-auto max-w-full object-contain opacity-50 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0"
+              className="h-[108px] w-auto max-w-full object-contain opacity-50 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0"
             />
           </div>
         ))}

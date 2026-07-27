@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { apiClient } from '@/lib/api-client';
 import type { CheckoutSessionResponse, WidgetConfig } from '@/types/payment';
+import type { QuoteWithVersion } from '@/types/quote';
 
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
@@ -57,6 +58,44 @@ describe('apiClient.createCheckoutSession', () => {
     await expect(apiClient.createCheckoutSession(1)).rejects.toThrow();
     expect(handler).toHaveBeenCalled();
     window.removeEventListener('auth:unauthorized', handler);
+  });
+});
+
+describe('apiClient.completeZeroTotalQuote', () => {
+  it('POSTs /api/quotes/{id}/zero-total-payment and unwraps `data`', async () => {
+    const payload: QuoteWithVersion = {
+      quote: {
+        id: 42,
+        trip_id: 7,
+        trip_version_id: 1,
+        user_id: 3,
+        current_quote_version_id: 9,
+        status: 'PAID',
+        paid_at: '2026-07-26T00:00:00Z',
+        schema_version: 1,
+      },
+      current_version: null,
+    };
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: payload }));
+
+    const result = await apiClient.completeZeroTotalQuote(42);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/quotes/42/zero-total-payment',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+      }),
+    );
+    expect(result.quote.status).toBe('PAID');
+  });
+
+  it('throws backend error message when the quote still owes money', async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ message: 'This quote still has an amount due' }, 400),
+    );
+
+    await expect(apiClient.completeZeroTotalQuote(11)).rejects.toThrow(/amount due/i);
   });
 });
 

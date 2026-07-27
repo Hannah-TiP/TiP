@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { provider, auth_code, id_token } = body;
+    const { provider, auth_code, id_token, state } = body;
     const language = request.headers.get('Language') || 'en';
 
     const response = await fetch(`${API_BASE_URL}/api/v2/auth/social-login`, {
@@ -18,12 +18,15 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         Language: language,
       },
-      // auth_code is the OAuth auth-code popup flow (SMA-119); id_token is
-      // the legacy GIS credential — the backend accepts either.
+      // auth_code is the OAuth auth-code redirect flow (Google SMA-133,
+      // Kakao/Naver SMA-114); id_token is the legacy Google GIS credential —
+      // the backend accepts either. `state` is forwarded for Naver, which
+      // requires it echoed back in the token exchange.
       body: JSON.stringify({
         provider,
         ...(auth_code ? { auth_code } : {}),
         ...(id_token ? { id_token } : {}),
+        ...(state ? { state } : {}),
       }),
     });
 

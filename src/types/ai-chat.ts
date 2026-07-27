@@ -223,8 +223,20 @@ export interface AIChatMessage {
   // Team" badge is shown instead. Kept in the type so other consumers don't
   // strip the field.
   created_by_admin_id?: number | null;
+  // Non-destructive edit history for HUMAN_ASSISTANT messages. Each entry is a
+  // PREVIOUS (superseded) version; the live text stays in `content`. Entries
+  // accumulate oldest-first. The customer projection carries NO admin identity.
+  edit_history?: AIChatMessageEditHistoryEntry[] | null;
+  // Set when a HUMAN_ASSISTANT message has been soft-deleted by the concierge
+  // team. When set, the backend blanks `content` and drops `edit_history`.
+  deleted_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+export interface AIChatMessageEditHistoryEntry {
+  content: string;
+  edited_at: string;
 }
 
 export interface AIChatSessionResponse {

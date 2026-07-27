@@ -5,7 +5,15 @@ import type { Lang } from '@/contexts/LanguageContext';
 import type { Hotel } from '@/types/hotel';
 import type { Activity, ActivityKind } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
+import type { SignatureJourney } from '@/types/signatureJourney';
+import type {
+  MagazineArticle,
+  MagazineArticleDetail,
+  MagazineArticleType,
+  MagazineFacetOptions,
+} from '@/types/magazine';
 import type { City, Country, Region } from '@/types/location';
+import { magazineArticlesQuery, type MagazineListFilters } from '@/lib/magazine-list';
 import type {
   Trip,
   CreateTripFromHotelResponse,
@@ -318,6 +326,74 @@ class ApiClient {
     return response.data;
   }
 
+  // Signature journey methods
+  async getSignatureJourneys(params?: {
+    city_id?: number;
+    language?: string;
+    page?: number;
+    per_page?: number;
+  }): Promise<PaginatedResult<SignatureJourney>> {
+    const searchParams = new URLSearchParams();
+    if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
+    if (params?.language) searchParams.set('language', params.language);
+    if (params?.page !== undefined) searchParams.set('page', params.page.toString());
+    if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
+
+    const query = searchParams.toString();
+    const endpoint = `/signature-journeys${query ? `?${query}` : ''}`;
+
+    const response = await this.request<{ data: PaginatedData<SignatureJourney> }>(endpoint);
+    return toPaginatedResult(response.data);
+  }
+
+  async getSignatureJourneyBySlug(slug: string, language?: string): Promise<SignatureJourney> {
+    const query = language ? `?language=${language}` : '';
+    const response = await this.request<{ data: SignatureJourney }>(
+      `/signature-journeys/${slug}${query}`,
+    );
+    return response.data;
+  }
+
+  // Magazine methods
+  /**
+   * Browser path for a magazine article detail (client-island needs). `type` is
+   * the SINGULAR backend enum — the plural URL segment must be mapped to it by
+   * the caller (via `typeEnumFromSegment`). Forwards the UI language as
+   * `?language=`.
+   */
+  async getMagazineArticle(
+    type: MagazineArticleType,
+    slug: string,
+    lang?: string,
+  ): Promise<MagazineArticleDetail> {
+    const query = lang ? `?language=${lang}` : '';
+    const response = await this.request<{ data: MagazineArticleDetail }>(
+      `/magazine/articles/${type}/${slug}${query}`,
+    );
+    return response.data;
+  }
+
+  /**
+   * List published magazine articles with facet filters (index page). Maps the
+   * filter state to query params via {@link magazineArticlesQuery} and resolves
+   * a slim `PaginatedResult` for the shared infinite-list hook.
+   */
+  async getMagazineArticles(
+    filters: MagazineListFilters = {},
+  ): Promise<PaginatedResult<MagazineArticle>> {
+    const query = magazineArticlesQuery(filters).toString();
+    const endpoint = `/magazine/articles${query ? `?${query}` : ''}`;
+    const response = await this.request<{ data: PaginatedData<MagazineArticle> }>(endpoint);
+    return toPaginatedResult(response.data);
+  }
+
+  /** Filter options (country/city/brand/tag) among published magazine articles. */
+  async getMagazineFacets(lang?: string): Promise<MagazineFacetOptions> {
+    const query = lang ? `?language=${lang}` : '';
+    const response = await this.request<{ data: MagazineFacetOptions }>(`/magazine/facets${query}`);
+    return response.data;
+  }
+
   // Restaurant methods
   async getRestaurants(params?: {
     city_id?: number;
@@ -521,6 +597,18 @@ class ApiClient {
     const response = await this.request<{ data: QuoteWithVersion }>(
       `/quotes/${quoteId}/credits/${creditId}`,
       { method: 'DELETE' },
+    );
+    return response.data;
+  }
+
+  /**
+   * Complete a SENT quote whose total is 0 (fully covered by credits) —
+   * marks it PAID without a Flywire checkout (SMA-237).
+   */
+  async completeZeroTotalQuote(quoteId: number): Promise<QuoteWithVersion> {
+    const response = await this.request<{ data: QuoteWithVersion }>(
+      `/quotes/${quoteId}/zero-total-payment`,
+      { method: 'POST' },
     );
     return response.data;
   }

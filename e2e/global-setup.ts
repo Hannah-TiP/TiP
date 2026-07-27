@@ -1,6 +1,7 @@
 import { chromium, request, FullConfig } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
+import { E2E_SEED_LOCAL_STORAGE } from './storage-seed';
 
 const E2E_EMAIL = process.env.E2E_USER_EMAIL || 'test@test.com';
 const E2E_PASSWORD = process.env.E2E_USER_PASSWORD || 'testtest';
@@ -33,6 +34,14 @@ export default async function globalSetup(config: FullConfig) {
 
   await waitForServer(baseURL);
 
+  // The PR-smoke job runs only the auth-free `chromium-pr-smoke` project against
+  // a self-hosted frontend with no backend, so it must skip the login step (which
+  // needs a real backend). Playwright reads a project's storageState lazily, so
+  // not writing AUTH_STATE_PATH here is safe as long as no authed project runs.
+  if (process.env.E2E_SKIP_AUTH_SETUP) {
+    return;
+  }
+
   const browser = await chromium.launch();
   const context = await browser.newContext({ baseURL });
   const page = await context.newPage();
@@ -49,6 +58,13 @@ export default async function globalSetup(config: FullConfig) {
   await page.getByPlaceholder(/password/i).fill(E2E_PASSWORD);
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await page.waitForURL(/\/my-page|\/onboarding/, { timeout: 30_000 });
+
+  // Seed the same consent + welcome-offer-dismiss localStorage the logged-out
+  // projects get via COOKIE_CONSENT_STATE, so the popup's full-screen overlay
+  // doesn't intercept clicks in authed specs either.
+  await page.evaluate((entries) => {
+    for (const { name, value } of entries) localStorage.setItem(name, value);
+  }, E2E_SEED_LOCAL_STORAGE);
 
   await context.storageState({ path: AUTH_STATE_PATH });
   await browser.close();
