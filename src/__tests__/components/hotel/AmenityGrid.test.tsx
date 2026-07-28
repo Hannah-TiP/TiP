@@ -232,6 +232,90 @@ describe('AmenityGrid', () => {
     expect(spans.length).toBe(2); // icon + name, no description span
   });
 
+  it('keyword icon renders a lucide glyph instead of the literal word (plain tile)', () => {
+    const feature: HotelFeature = {
+      feature_type: 'amenity',
+      name: { en: 'Fine Dining', kr: '파인 다이닝' },
+      icon: 'restaurant',
+    };
+    render(<AmenityGrid features={[feature]} />);
+
+    // The literal keyword must never appear as text
+    expect(screen.queryByText('restaurant')).toBeNull();
+    // A lucide glyph span renders the mapped codepoint (utensils)
+    const tile = screen.getByText('Fine Dining').closest('li');
+    const glyph = tile!.querySelector<HTMLElement>('span.icon-lucide');
+    expect(glyph).toBeTruthy();
+    expect(glyph!.textContent).toBe('\ue2f6');
+    // Inline size beats lucide.css's unlayered `font-size: inherit` override
+    expect(glyph!.style.fontSize).toBe('22px');
+  });
+
+  it('keyword icon renders a lucide glyph instead of the literal word (photo-bearing tile)', () => {
+    const feature: HotelFeature = {
+      feature_type: 'facility',
+      name: { en: 'Kids Club', kr: '키즈 클럽' },
+      icon: 'child_care',
+      images: [{ original: 'https://example.com/kids.jpg' }],
+    };
+    render(<AmenityGrid features={[feature]} />);
+
+    const button = screen.getByTestId('amenity-photo-button-0');
+    expect(screen.queryByText('child_care')).toBeNull();
+    const glyph = button.querySelector<HTMLElement>('span.icon-lucide');
+    expect(glyph).toBeTruthy();
+    // child_care aliases to the "child" entry (baby glyph)
+    expect(glyph!.textContent).toBe('\ue2ce');
+    expect(glyph!.style.fontSize).toBe('22px');
+  });
+
+  it('alias keywords render the same glyph as their canonical keyword', () => {
+    const features: HotelFeature[] = [
+      { feature_type: 'amenity', name: { en: 'Bikes', kr: '자전거' }, icon: 'bike' },
+      { feature_type: 'amenity', name: { en: 'Cycling', kr: '사이클링' }, icon: 'pedal_bike' },
+    ];
+    render(<AmenityGrid features={features} />);
+
+    const bikeGlyph = screen.getByText('Bikes').closest('li')!.querySelector('span.icon-lucide');
+    const pedalGlyph = screen.getByText('Cycling').closest('li')!.querySelector('span.icon-lucide');
+    expect(bikeGlyph).toBeTruthy();
+    expect(pedalGlyph).toBeTruthy();
+    expect(pedalGlyph!.textContent).toBe(bikeGlyph!.textContent);
+  });
+
+  it('unmapped non-emoji icon renders no icon at all', () => {
+    const feature: HotelFeature = {
+      feature_type: 'amenity',
+      name: { en: 'Mystery Perk', kr: '미스터리 혜택' },
+      icon: 'some_unknown_keyword',
+    };
+    render(<AmenityGrid features={[feature]} />);
+
+    expect(screen.queryByText('some_unknown_keyword')).toBeNull();
+    const tile = screen.getByText('Mystery Perk').closest('li');
+    const spans = tile!.querySelectorAll('span');
+    expect(spans.length).toBe(1); // name only, no icon span
+  });
+
+  it('junk labels like "amenity" render no icon', () => {
+    const feature: HotelFeature = {
+      feature_type: 'amenity',
+      name: { en: 'General Amenity', kr: '일반 편의시설' },
+      icon: 'amenity',
+    };
+    render(<AmenityGrid features={[feature]} />);
+
+    const tile = screen.getByText('General Amenity').closest('li');
+    expect(tile!.querySelectorAll('span').length).toBe(1);
+  });
+
+  it('emoji icons keep rendering exactly as before in a plain span (no icon-lucide class)', () => {
+    render(<AmenityGrid features={[featureWithoutImages]} />);
+
+    const icon = screen.getByText('🍳');
+    expect(icon.classList.contains('icon-lucide')).toBe(false);
+  });
+
   it('modal omits description paragraph when feature has no description', () => {
     render(<AmenityGrid features={[facilityWithImages]} />);
 

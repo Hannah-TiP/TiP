@@ -52,7 +52,9 @@ export default async function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
           rel="stylesheet"
         />
-        <link href="https://unpkg.com/lucide-static@latest/font/lucide.css" rel="stylesheet" />
+        {/* Pinned version: src/lib/amenity-icon.ts maps codepoints from this exact
+            release — bump both together and re-verify codepoints. */}
+        <link href="https://unpkg.com/lucide-static@1.27.0/font/lucide.css" rel="stylesheet" />
         {/* Site-wide TravelAgency structured data (Paris Class). Emitted ONCE
             here; per-page signature-journey blocks reference it as provider. */}
         <script
