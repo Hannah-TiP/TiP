@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import Modal from '@/components/Modal';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { resolveAmenityIcon } from '@/lib/amenity-icon';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { HotelFeature } from '@/types/hotel';
 
@@ -13,6 +14,19 @@ interface AmenityGridProps {
 
 function hasPhotos(feature: HotelFeature): boolean {
   return (feature.images?.length ?? 0) > 0;
+}
+
+function AmenityIcon({ icon }: { icon?: string | null }) {
+  const resolved = resolveAmenityIcon(icon);
+  if (!resolved) return null;
+  if (resolved.kind === 'lucide') {
+    return (
+      <span className="icon-lucide text-[22px] text-gold" aria-hidden="true">
+        {resolved.char}
+      </span>
+    );
+  }
+  return <span className="text-[22px] text-gold">{resolved.char}</span>;
 }
 
 export default function AmenityGrid({ features }: AmenityGridProps) {
@@ -38,7 +52,7 @@ export default function AmenityGrid({ features }: AmenityGridProps) {
                   className="flex w-full flex-col items-center gap-2 border border-gray-border bg-white px-3 py-5 text-center transition-colors hover:border-gold hover:bg-gray-light"
                   data-testid={`amenity-photo-button-${index}`}
                 >
-                  {feature.icon && <span className="text-[22px] text-gold">{feature.icon}</span>}
+                  <AmenityIcon icon={feature.icon} />
                   <span className="text-[13px] tracking-[0.5px] text-gray-text">{name}</span>
                   {description && (
                     <span className="line-clamp-2 text-[11px] text-gray-text">{description}</span>
@@ -57,7 +71,7 @@ export default function AmenityGrid({ features }: AmenityGridProps) {
               className="flex flex-col items-center gap-2 border border-gray-border bg-white px-3 py-5 text-center"
               title={description || undefined}
             >
-              {feature.icon && <span className="text-[22px] text-gold">{feature.icon}</span>}
+              <AmenityIcon icon={feature.icon} />
               <span className="text-[13px] tracking-[0.5px] text-gray-text">{name}</span>
               {description && (
                 <span className="line-clamp-2 text-[11px] text-gray-text">{description}</span>
