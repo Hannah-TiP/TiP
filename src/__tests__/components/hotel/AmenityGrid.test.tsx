@@ -244,9 +244,11 @@ describe('AmenityGrid', () => {
     expect(screen.queryByText('restaurant')).toBeNull();
     // A lucide glyph span renders the mapped codepoint (utensils)
     const tile = screen.getByText('Fine Dining').closest('li');
-    const glyph = tile!.querySelector('span.icon-lucide');
+    const glyph = tile!.querySelector<HTMLElement>('span.icon-lucide');
     expect(glyph).toBeTruthy();
     expect(glyph!.textContent).toBe('\ue2f6');
+    // Inline size beats lucide.css's unlayered `font-size: inherit` override
+    expect(glyph!.style.fontSize).toBe('22px');
   });
 
   it('keyword icon renders a lucide glyph instead of the literal word (photo-bearing tile)', () => {
@@ -260,10 +262,11 @@ describe('AmenityGrid', () => {
 
     const button = screen.getByTestId('amenity-photo-button-0');
     expect(screen.queryByText('child_care')).toBeNull();
-    const glyph = button.querySelector('span.icon-lucide');
+    const glyph = button.querySelector<HTMLElement>('span.icon-lucide');
     expect(glyph).toBeTruthy();
     // child_care aliases to the "child" entry (baby glyph)
     expect(glyph!.textContent).toBe('\ue2ce');
+    expect(glyph!.style.fontSize).toBe('22px');
   });
 
   it('alias keywords render the same glyph as their canonical keyword', () => {

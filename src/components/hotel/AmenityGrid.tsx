@@ -20,8 +20,11 @@ function AmenityIcon({ icon }: { icon?: string | null }) {
   const resolved = resolveAmenityIcon(icon);
   if (!resolved) return null;
   if (resolved.kind === 'lucide') {
+    // Inline fontSize: lucide.css ships an UNLAYERED `[class^="icon-"] { font-size: inherit }`
+    // rule that beats Tailwind v4's @layer utilities, so `text-[22px]` alone is overridden
+    // and the glyph would inherit the tile's 16px. Inline style wins the cascade.
     return (
-      <span className="icon-lucide text-[22px] text-gold" aria-hidden="true">
+      <span className="icon-lucide text-gold" style={{ fontSize: '22px' }} aria-hidden="true">
         {resolved.char}
       </span>
     );
