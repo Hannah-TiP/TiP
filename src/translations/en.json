@@ -904,5 +904,13 @@
   "error.boundary_message": "We hit an unexpected problem while loading this page. Please try again in a moment.",
   "error.boundary_message_section": "We couldn't load this section right now. Please try again in a moment.",
   "error.try_again": "Try again",
-  "error.go_home": "Go home"
+  "error.go_home": "Go home",
+  "account.delete.disclosure_title": "Delete your account",
+  "account.delete.disclosure_intro": "Deleting your account permanently removes your personal information from Travel in your Pocket. Please review what this means before you continue.",
+  "account.delete.disclosure_deleted": "Your profile, trips and itineraries, reviews, AI concierge conversations, wishlist, uploaded files, and sign-in details will be permanently deleted.",
+  "account.delete.disclosure_retained_intro": "Some records must be kept for a limited time under Korean e-commerce law. They are anonymized so they no longer identify you, and stored separately until they are erased:",
+  "account.delete.disclosure_retained_financial": "Payment, booking, and contract records are kept in anonymized form for 5 years.",
+  "account.delete.disclosure_retained_disputes": "Customer inquiry and dispute records are kept in anonymized form for 3 years.",
+  "account.delete.disclosure_grace": "Your account is deactivated and signed out of all devices immediately. If you change your mind, contact support within 30 days to cancel the deletion.",
+  "account.delete.disclosure_irreversible": "After 30 days, your data is permanently erased. This cannot be undone."
 }

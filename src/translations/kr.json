@@ -904,5 +904,13 @@
   "error.boundary_message": "페이지를 불러오는 중 예상치 못한 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
   "error.boundary_message_section": "지금은 이 섹션을 불러올 수 없어요. 잠시 후 다시 시도해 주세요.",
   "error.try_again": "다시 시도",
-  "error.go_home": "홈으로 가기"
+  "error.go_home": "홈으로 가기",
+  "account.delete.disclosure_title": "계정 삭제",
+  "account.delete.disclosure_intro": "계정을 삭제하시면 회원님의 개인정보가 Travel in your Pocket에서 영구적으로 삭제됩니다. 진행하기 전에 아래 내용을 확인해 주세요.",
+  "account.delete.disclosure_deleted": "프로필, 여행 및 일정, 리뷰, AI 컨시어지 대화, 위시리스트, 업로드한 파일, 로그인 정보가 영구적으로 삭제됩니다.",
+  "account.delete.disclosure_retained_intro": "다만 전자상거래법에 따라 일부 기록은 일정 기간 보존해야 합니다. 해당 기록은 회원님을 식별할 수 없도록 비식별 처리하여 분리 보관한 후 파기됩니다:",
+  "account.delete.disclosure_retained_financial": "대금결제·예약·계약 관련 기록은 비식별 처리 후 5년간 보관됩니다.",
+  "account.delete.disclosure_retained_disputes": "소비자 불만 및 분쟁처리 기록은 비식별 처리 후 3년간 보관됩니다.",
+  "account.delete.disclosure_grace": "탈퇴 신청 즉시 계정이 비활성화되고 모든 기기에서 로그아웃됩니다. 마음이 바뀌신 경우 30일 이내에 고객센터로 연락하시면 탈퇴를 취소할 수 있습니다.",
+  "account.delete.disclosure_irreversible": "30일이 지나면 모든 데이터가 영구적으로 파기되며, 이후에는 복구할 수 없습니다."
 }
