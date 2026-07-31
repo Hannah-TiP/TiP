@@ -30,6 +30,20 @@ export interface User {
   // onboarding referral step, so resume logic doesn't re-prompt.
   referral_onboarding_seen?: boolean;
   travel_styles?: string[];
+  // Mirrors the v2 me response — false for social-only accounts, which must
+  // re-authenticate with an email OTP instead of a password (SMA-187/188).
+  has_password?: boolean;
+}
+
+// Mirrors the backend DeleteAccountResponse (POST /api/v2/auth/me/delete).
+export interface DeleteAccountResponse {
+  deletion_requested_at: string;
+  purge_after: string;
+}
+
+export interface DeleteAccountRequest {
+  password?: string;
+  verification_code?: string;
 }
 
 export interface UpdateProfileData {

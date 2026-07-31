@@ -1,6 +1,11 @@
 import type { PaginatedData, PaginatedResult } from '@/types/common';
 import { toPaginatedResult } from '@/types/common';
-import type { User, UpdateProfileData } from '@/types/auth';
+import type {
+  User,
+  UpdateProfileData,
+  DeleteAccountRequest,
+  DeleteAccountResponse,
+} from '@/types/auth';
 import type { Lang } from '@/contexts/LanguageContext';
 import type { Hotel } from '@/types/hotel';
 import type { Activity, ActivityKind } from '@/types/activity';
@@ -102,12 +107,17 @@ class ApiClient {
     });
   }
 
-  async sendVerificationCode(email: string, type: 'register' | 'forgot-password') {
+  async sendVerificationCode(
+    email: string,
+    type: 'register' | 'forgot-password' | 'account_deletion',
+  ) {
     return this.request('/auth/send-verification', {
       method: 'POST',
       body: JSON.stringify({
         email,
-        code_type: type === 'register' ? 'register' : 'forgot-password',
+        // The proxy forwards `code_type` verbatim; every union member maps 1:1
+        // to a backend code_type.
+        code_type: type,
       }),
     });
   }
@@ -121,6 +131,24 @@ class ApiClient {
         password,
       }),
     });
+  }
+
+  // Self-service account deletion (SMA-187/188). Re-auth payload: password
+  // accounts send `password`, social-only accounts send a fresh
+  // `verification_code` (code_type `account_deletion`). `language` is
+  // forwarded to the backend so re-auth error messages come back localized.
+  async deleteAccount(
+    payload: DeleteAccountRequest,
+    language: Lang = 'en',
+  ): Promise<DeleteAccountResponse> {
+    const response = await this.request<{ data: DeleteAccountResponse }>(
+      `/me/delete?language=${language}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    );
+    return response.data;
   }
 
   async changePassword(currentPassword: string, newPassword: string) {
