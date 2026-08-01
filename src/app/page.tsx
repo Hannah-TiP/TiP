@@ -7,6 +7,7 @@ import PartnersMarquee from '@/components/PartnersMarquee';
 import Footer from '@/components/Footer';
 import WelcomeOfferPopup from '@/components/WelcomeOfferPopup';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { LUCIDE_ICONS } from '@/lib/lucide-icons';
 
 const elevateCards = [
   {
@@ -217,7 +218,7 @@ export default function HomePage() {
               href="/concierge"
               className="flex items-center gap-2 rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
             >
-              <span className="icon-lucide">&#xe986;</span>
+              <span className="icon-lucide">{LUCIDE_ICONS.sparkles}</span>
               {t('home.start_planning')}
             </Link>
             <Link
@@ -295,7 +296,7 @@ export default function HomePage() {
               </p>
               <div className="mt-4 flex items-center gap-1 text-[13px] font-medium text-gold transition-colors group-hover:text-green-dark">
                 {t('home.learn_more')}
-                <span className="icon-lucide text-sm">&#xe817;</span>
+                <span className="icon-lucide text-sm">{LUCIDE_ICONS.arrowRight}</span>
               </div>
             </Link>
           ))}
@@ -329,7 +330,7 @@ export default function HomePage() {
               href="/concierge"
               className="flex items-center gap-2 rounded-full bg-green-dark px-8 py-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
             >
-              <span className="icon-lucide">&#xe986;</span>
+              <span className="icon-lucide">{LUCIDE_ICONS.sparkles}</span>
               {t('home.chat_with_concierge')}
             </Link>
             <Link
