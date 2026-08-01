@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
+import DeleteAccountModal from '@/components/DeleteAccountModal';
 import { apiClient } from '@/lib/api-client';
 import type { User } from '@/types/auth';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -41,6 +42,9 @@ export default function MyProfile() {
 
   // Change-password modal
   const [showChangePassword, setShowChangePassword] = useState(false);
+
+  // Delete-account modal (SMA-187)
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
 
   useEffect(() => {
     if (sessionStatus === 'unauthenticated') {
@@ -302,6 +306,31 @@ export default function MyProfile() {
               )}
             </div>
 
+            {/* Danger Zone */}
+            <div className="bg-white rounded-xl border border-red-200 p-6 mb-6">
+              <h2 className="text-lg font-bold text-red-700 mb-5">
+                {t('delete_account.danger_zone_title')}
+              </h2>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">
+                    {t('delete_account.danger_zone_label')}
+                  </p>
+                  <p className="text-sm text-gray-400 mt-0.5">
+                    {t('delete_account.danger_zone_description')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteAccount(true)}
+                  className="px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-300 rounded-lg hover:bg-red-50 transition"
+                  data-testid="open-delete-account"
+                >
+                  {t('delete_account.danger_zone_button')}
+                </button>
+              </div>
+            </div>
+
             {/* Action Buttons */}
             <div className="flex justify-end gap-3">
               <button
@@ -331,6 +360,15 @@ export default function MyProfile() {
           setSuccess(t('change_password.success'));
         }}
       />
+
+      {profile && (
+        <DeleteAccountModal
+          open={showDeleteAccount}
+          onClose={() => setShowDeleteAccount(false)}
+          email={profile.email || session?.user?.email || ''}
+          hasPassword={profile.has_password === true}
+        />
+      )}
 
       <Footer />
     </div>
