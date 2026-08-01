@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { LUCIDE_ICONS } from '@/lib/lucide-icons';
 
 interface TripTypeDropdownProps {
   value: string;
@@ -58,7 +59,9 @@ export default function TripTypeDropdown({
             </p>
             <p className="text-[12px] text-gray-500">{type.description}</p>
           </div>
-          {value === type.value && <span className="icon-lucide text-green-dark">&#xe86c;</span>}
+          {value === type.value && (
+            <span className="icon-lucide text-green-dark">{LUCIDE_ICONS.check}</span>
+          )}
         </button>
       ))}
     </div>

@@ -8,6 +8,7 @@ import DestinationDropdown, { type SelectedDestination } from './DestinationDrop
 import TripTypeDropdown from './TripTypeDropdown';
 import TravelStyleDropdown from './TravelStyleDropdown';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { LUCIDE_ICONS } from '@/lib/lucide-icons';
 
 export default function SearchBar() {
   const { t } = useLanguage();
@@ -186,7 +187,7 @@ export default function SearchBar() {
             className="ml-auto mr-3 flex h-12 items-center gap-2 rounded-lg bg-green-dark px-6 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
             onClick={handleSearch}
           >
-            <span className="icon-lucide">&#xe8b6;</span>
+            <span className="icon-lucide">{LUCIDE_ICONS.search}</span>
             {t('search.plan_my_trip')}
           </button>
         </div>
@@ -252,7 +253,7 @@ export default function SearchBar() {
         data-testid="searchbar-mobile-cta"
         className="flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-green-dark text-[14px] font-semibold text-white shadow-lg transition-opacity hover:opacity-90 md:hidden"
       >
-        <span className="icon-lucide">&#xe8b6;</span>
+        <span className="icon-lucide">{LUCIDE_ICONS.search}</span>
         {t('search.plan_my_trip')}
       </button>
 
@@ -416,7 +417,7 @@ export default function SearchBar() {
                 onClick={handleSearch}
                 className="flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-green-dark text-[14px] font-semibold text-white transition-opacity hover:opacity-90"
               >
-                <span className="icon-lucide">&#xe8b6;</span>
+                <span className="icon-lucide">{LUCIDE_ICONS.search}</span>
                 {t('search.plan_my_trip')}
               </button>
             </div>

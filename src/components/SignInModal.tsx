@@ -5,6 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { startGoogleRedirect } from '@/lib/google-oauth';
 import { startSocialRedirect } from '@/lib/social-oauth';
 import type { SocialProvider } from '@/lib/social-oauth';
+import { LUCIDE_ICONS } from '@/lib/lucide-icons';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const KAKAO_REST_API_KEY = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY || '';
@@ -149,7 +150,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
           {/* Continue Button */}
           <button className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-green-dark text-[14px] font-semibold text-white transition-opacity hover:opacity-90">
             {t('signin_modal.continue')}
-            <span className="icon-lucide">&#xe817;</span>
+            <span className="icon-lucide">{LUCIDE_ICONS.arrowRight}</span>
           </button>
         </div>
 
@@ -172,7 +173,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
           onClick={onClose}
           className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200"
         >
-          <span className="icon-lucide text-sm">&#xe8db;</span>
+          <span className="icon-lucide text-sm">{LUCIDE_ICONS.x}</span>
         </button>
       </div>
     </div>

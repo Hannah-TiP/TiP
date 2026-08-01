@@ -5,6 +5,7 @@ import { getLocalizedText } from '@/types/common';
 import { useLanguage, type TranslationKeys } from '@/contexts/LanguageContext';
 import { useDestinationSearch } from '@/hooks/useDestinationSearch';
 import type { DestinationSuggestion } from '@/types/destination';
+import { LUCIDE_ICONS } from '@/lib/lucide-icons';
 
 export interface SelectedDestination {
   id: number;
@@ -75,7 +76,7 @@ export default function DestinationDropdown({
       {/* Search input */}
       <div className="border-b border-gray-100 p-4">
         <div className="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-3">
-          <span className="icon-lucide text-gray-400">&#xe8b6;</span>
+          <span className="icon-lucide text-gray-400">{LUCIDE_ICONS.search}</span>
           <input
             type="text"
             placeholder={t('destination.search_placeholder')}
@@ -111,7 +112,7 @@ export default function DestinationDropdown({
                 className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-50"
               >
                 <div className="flex items-center gap-3">
-                  <span className="icon-lucide text-gray-400">&#xe551;</span>
+                  <span className="icon-lucide text-gray-400">{LUCIDE_ICONS.mapPin}</span>
                   <div>
                     <p className="text-[14px] font-medium text-green-dark">
                       {getLocalizedText(dest.name, lang)}
