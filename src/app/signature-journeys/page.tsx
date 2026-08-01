@@ -209,7 +209,9 @@ function SignatureJourneysContent() {
               />
             </div>
 
-            {isPanelOpen && (
+            {/* The panel only opens when it has something to offer — a
+                zero-match search is reported by the grid empty state. */}
+            {isPanelOpen && (isSearching || hasSuggestions) && (
               <div
                 className="absolute left-0 top-full z-50 mt-2 max-h-[320px] w-full overflow-auto rounded-xl bg-white p-2 shadow-xl"
                 data-testid="signature-journey-suggestions"
@@ -218,7 +220,7 @@ function SignatureJourneysContent() {
                   <div className="flex items-center justify-center py-6">
                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
                   </div>
-                ) : hasSuggestions ? (
+                ) : (
                   <>
                     {suggestions.cities.length > 0 && (
                       <div className="mb-1">
@@ -258,10 +260,6 @@ function SignatureJourneysContent() {
                       </div>
                     )}
                   </>
-                ) : (
-                  <p className="px-3 py-4 text-center text-[13px] text-gray-500">
-                    {t('signature_journeys.no_results')}
-                  </p>
                 )}
               </div>
             )}
