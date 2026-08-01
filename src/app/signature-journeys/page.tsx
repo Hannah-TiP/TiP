@@ -8,24 +8,31 @@ import SignatureJourneyCard from '@/components/signature-journey/SignatureJourne
 import { apiClient } from '@/lib/api-client';
 import { getLocalizedText } from '@/types/common';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { buildSuggestions, deriveRelatedCities } from '@/lib/signature-journey-search';
+import type { CitySuggestion } from '@/lib/signature-journey-search';
 import type { SignatureJourney } from '@/types/signatureJourney';
 import type { City } from '@/types/location';
 
+/** Debounce window for the server-side `q` search. */
+const SEARCH_DEBOUNCE_MS = 280;
+
 function SignatureJourneysContent() {
   const [signatureJourneys, setSignatureJourneys] = useState<SignatureJourney[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { t, lang } = useLanguage();
 
-  // Filter state
-  const [selectedCity, setSelectedCity] = useState<City | null>(null);
-
-  // Dropdown state
-  const [openDropdown, setOpenDropdown] = useState<'destination' | null>(null);
-  const [citySearch, setCitySearch] = useState('');
-  const [cities, setCities] = useState<City[]>([]);
-  const [citiesLoading, setCitiesLoading] = useState(false);
+  // Unified typeahead state (SMA-229). `query` drives a debounced server search
+  // over journey titles AND city names; picking a suggestion narrows the grid.
+  const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SignatureJourney[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<CitySuggestion | null>(null);
+  const [selectedJourney, setSelectedJourney] = useState<SignatureJourney | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const requestSeq = useRef(0);
 
   useEffect(() => {
     async function loadData() {
@@ -48,41 +55,108 @@ function SignatureJourneysContent() {
     loadData();
   }, [lang]);
 
-  // Load cities when dropdown opens
-  useEffect(() => {
-    if (openDropdown === 'destination' && cities.length === 0) {
-      setCitiesLoading(true);
-      apiClient
-        .getCities(lang)
-        .then(setCities)
-        .catch(() => {})
-        .finally(() => setCitiesLoading(false));
-    }
-  }, [openDropdown, cities.length, lang]);
+  const trimmedQuery = query.trim();
 
-  // Close dropdown on outside click
+  // Debounced `q` search with a sequence-number stale-response guard, so fast
+  // typing can never render results for an earlier prefix.
+  useEffect(() => {
+    const seq = ++requestSeq.current;
+
+    if (!trimmedQuery) {
+      setSearchResults(null);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const timer = setTimeout(() => {
+      apiClient
+        .getSignatureJourneys({ q: trimmedQuery, language: lang, per_page: 100 })
+        .then((data) => {
+          if (seq !== requestSeq.current) return;
+          setSearchResults(data.items);
+          setIsSearching(false);
+        })
+        .catch(() => {
+          if (seq !== requestSeq.current) return;
+          setSearchResults([]);
+          setIsSearching(false);
+        });
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [trimmedQuery, lang]);
+
+  // Close the suggestion panel on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpenDropdown(null);
+        setIsPanelOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredSignatureJourneys = useMemo(() => {
-    if (!selectedCity) return signatureJourneys;
-    return signatureJourneys.filter((journey) => journey.city_id === selectedCity.id);
-  }, [signatureJourneys, selectedCity]);
-
-  const filteredCities = cities.filter((c) =>
-    getLocalizedText(c.name).toLowerCase().includes(citySearch.toLowerCase()),
+  // Only cities with at least one published journey are ever offered.
+  const relatedCities = useMemo(
+    () => deriveRelatedCities(signatureJourneys, cities),
+    [signatureJourneys, cities],
   );
 
-  const cityNameById = useMemo(() => {
-    return new Map(cities.map((city) => [city.id, getLocalizedText(city.name)]));
-  }, [cities]);
+  const cityNameById = useMemo(
+    () => new Map(relatedCities.map((city) => [city.id, getLocalizedText(city.name, lang)])),
+    [relatedCities, lang],
+  );
+
+  const suggestions = useMemo(
+    () => buildSuggestions(searchResults ?? signatureJourneys, cityNameById, lang),
+    [searchResults, signatureJourneys, cityNameById, lang],
+  );
+
+  const hasSuggestions = suggestions.cities.length > 0 || suggestions.journeys.length > 0;
+
+  // Single source of truth for the grid: a picked journey wins, then the server
+  // results for an active query, then the selected city, then everything.
+  const filteredSignatureJourneys = useMemo(() => {
+    if (selectedJourney) return [selectedJourney];
+    if (trimmedQuery) return searchResults ?? [];
+    if (selectedCity) return signatureJourneys.filter((j) => j.city_id === selectedCity.id);
+    return signatureJourneys;
+  }, [selectedJourney, trimmedQuery, searchResults, selectedCity, signatureJourneys]);
+
+  const hasActiveFilter = Boolean(trimmedQuery || selectedCity || selectedJourney);
+
+  function handleQueryChange(value: string) {
+    setQuery(value);
+    setSelectedJourney(null);
+    setSelectedCity(null);
+    setIsPanelOpen(true);
+  }
+
+  function handleSelectCity(city: CitySuggestion) {
+    setSelectedCity(city);
+    setSelectedJourney(null);
+    setQuery('');
+    setIsPanelOpen(false);
+  }
+
+  function handleSelectJourney(journeyId: number) {
+    const pool = searchResults ?? signatureJourneys;
+    const journey = pool.find((j) => j.id === journeyId);
+    if (!journey) return;
+    setSelectedJourney(journey);
+    setSelectedCity(null);
+    setQuery(getLocalizedText(journey.title, lang));
+    setIsPanelOpen(false);
+  }
+
+  function handleClear() {
+    setQuery('');
+    setSelectedCity(null);
+    setSelectedJourney(null);
+    setIsPanelOpen(false);
+  }
 
   return (
     <main className="min-h-screen bg-gray-light">
@@ -111,109 +185,103 @@ function SignatureJourneysContent() {
         </div>
       </section>
 
-      {/* Destination filter */}
+      {/* Unified name search — matches city names AND journey titles (SMA-229) */}
       <section className="bg-white px-6 py-10 sm:px-10 lg:px-20" ref={dropdownRef}>
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
-            <button
-              onClick={() => {
-                setOpenDropdown(openDropdown === 'destination' ? null : 'destination');
-                setCitySearch('');
-              }}
-              className={`w-full rounded-lg border bg-white px-5 py-4 text-left transition-colors ${
-                openDropdown === 'destination'
-                  ? 'border-gold'
-                  : 'border-gray-border hover:border-gray-400'
-              }`}
-            >
-              <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
-                {t('discover.destination_label')}
-              </p>
-              <p className="text-[14px] font-medium text-green-dark">
-                {selectedCity
-                  ? getLocalizedText(selectedCity.name)
-                  : t('discover.all_destinations')}
-              </p>
-            </button>
-            {openDropdown === 'destination' && (
-              <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl bg-white shadow-xl">
-                <div className="border-b border-gray-100 p-4">
-                  <input
-                    type="text"
-                    placeholder={t('discover.search_destinations')}
-                    value={citySearch}
-                    onChange={(e) => setCitySearch(e.target.value)}
-                    className="w-full rounded-lg bg-gray-50 px-4 py-3 text-[14px] text-green-dark outline-none placeholder:text-gray-400"
-                    autoFocus
-                  />
-                </div>
-                <div className="max-h-[280px] overflow-auto p-2">
-                  {citiesLoading ? (
-                    <div className="flex items-center justify-center py-6">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
-                    </div>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => {
-                          setSelectedCity(null);
-                          setOpenDropdown(null);
-                        }}
-                        className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
-                          !selectedCity ? 'font-semibold text-gold' : 'text-green-dark'
-                        }`}
-                      >
-                        {t('discover.all_destinations')}
-                      </button>
-                      {filteredCities.map((city) => (
-                        <button
-                          key={city.id}
-                          onClick={() => {
-                            setSelectedCity(city);
-                            setOpenDropdown(null);
-                          }}
-                          className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 ${
-                            selectedCity?.id === city.id
-                              ? 'font-semibold text-gold'
-                              : 'text-green-dark'
-                          }`}
-                        >
-                          {getLocalizedText(city.name)}
-                        </button>
-                      ))}
-                      {filteredCities.length === 0 && !citiesLoading && (
-                        <p className="px-3 py-4 text-center text-[13px] text-gray-500">
-                          {t('discover.no_destinations')}
+            <div className="rounded-lg border border-gray-border bg-white px-5 py-3 transition-colors focus-within:border-gold">
+              <label
+                htmlFor="signature-journey-search"
+                className="block text-[10px] font-medium uppercase tracking-wider text-gray-400"
+              >
+                {t('signature_journeys.search_label')}
+              </label>
+              <input
+                id="signature-journey-search"
+                data-testid="signature-journey-search"
+                type="text"
+                autoComplete="off"
+                placeholder={t('signature_journeys.search_placeholder')}
+                value={query}
+                onChange={(e) => handleQueryChange(e.target.value)}
+                onFocus={() => setIsPanelOpen(true)}
+                className="w-full bg-transparent text-[14px] font-medium text-green-dark outline-none placeholder:font-normal placeholder:text-gray-400"
+              />
+            </div>
+
+            {isPanelOpen && (
+              <div
+                className="absolute left-0 top-full z-50 mt-2 max-h-[320px] w-full overflow-auto rounded-xl bg-white p-2 shadow-xl"
+                data-testid="signature-journey-suggestions"
+              >
+                {isSearching && !hasSuggestions ? (
+                  <div className="flex items-center justify-center py-6">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
+                  </div>
+                ) : hasSuggestions ? (
+                  <>
+                    {suggestions.cities.length > 0 && (
+                      <div className="mb-1">
+                        <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                          {t('signature_journeys.suggestions_cities')}
                         </p>
-                      )}
-                    </>
-                  )}
-                </div>
+                        {suggestions.cities.map((city) => (
+                          <button
+                            key={`city-${city.id}`}
+                            data-testid="suggestion-city"
+                            onClick={() => handleSelectCity(city)}
+                            className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-[14px] text-green-dark transition-colors hover:bg-gray-50"
+                          >
+                            {city.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {suggestions.journeys.length > 0 && (
+                      <div>
+                        <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                          {t('signature_journeys.suggestions_journeys')}
+                        </p>
+                        {suggestions.journeys.map((journey) => (
+                          <button
+                            key={`journey-${journey.id}`}
+                            data-testid="suggestion-journey"
+                            onClick={() => handleSelectJourney(journey.id)}
+                            className="flex w-full flex-col items-start rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
+                          >
+                            <span className="text-[14px] text-green-dark">{journey.title}</span>
+                            {journey.cityName && (
+                              <span className="text-[12px] text-gray-text">{journey.cityName}</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="px-3 py-4 text-center text-[13px] text-gray-500">
+                    {t('signature_journeys.no_results')}
+                  </p>
+                )}
               </div>
             )}
           </div>
 
-          {selectedCity ? (
+          {hasActiveFilter && (
             <button
-              onClick={() => {
-                setSelectedCity(null);
-                setOpenDropdown(null);
-              }}
+              onClick={handleClear}
+              data-testid="signature-journey-clear"
               className="rounded-lg border border-green-dark px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-green-dark hover:text-white"
             >
-              {t('discover.clear')}
-            </button>
-          ) : (
-            <button className="rounded-lg bg-green-dark px-8 py-4 text-[13px] font-semibold text-white">
-              {t('discover.search')}
+              {t('signature_journeys.clear_search')}
             </button>
           )}
         </div>
 
-        {selectedCity && (
+        {selectedCity && !trimmedQuery && (
           <p className="mt-3 text-[13px] text-gray-text">
             {t('signature_journeys.showing')} {filteredSignatureJourneys.length}{' '}
-            {t('signature_journeys.journeys_in')} {getLocalizedText(selectedCity.name)}
+            {t('signature_journeys.journeys_in')} {selectedCity.name}
           </p>
         )}
       </section>
@@ -227,21 +295,23 @@ function SignatureJourneysContent() {
         </section>
       )}
 
-      {/* Empty state — shown when the filter excludes everything */}
-      {!isLoading && filteredSignatureJourneys.length === 0 && (
+      {/* Empty state — a zero-match search or a filter that excludes everything */}
+      {!isLoading && !isSearching && filteredSignatureJourneys.length === 0 && (
         <section
           className="bg-gray-light px-6 py-16 sm:px-10 lg:px-20 lg:py-20"
           data-testid="signature-journeys-empty"
         >
           <div className="py-20 text-center">
             <p className="text-gray-text">
-              {selectedCity
-                ? t('signature_journeys.empty_destination')
-                : t('signature_journeys.empty_none')}
+              {trimmedQuery
+                ? t('signature_journeys.no_results')
+                : selectedCity
+                  ? t('signature_journeys.empty_destination')
+                  : t('signature_journeys.empty_none')}
             </p>
-            {selectedCity && (
+            {hasActiveFilter && (
               <button
-                onClick={() => setSelectedCity(null)}
+                onClick={handleClear}
                 className="mt-4 text-[14px] font-medium text-gold underline hover:no-underline"
               >
                 {t('discover.clear_filter')}

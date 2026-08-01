@@ -10,8 +10,13 @@ export async function GET(request: NextRequest) {
     const language = searchParams.get('language') || 'en';
     const page = searchParams.get('page');
     const perPage = searchParams.get('per_page');
+    // Free-text name search over journey titles AND city names (SMA-229).
+    // Matching is language-independent server-side, so `q` is forwarded
+    // untouched while the `lang` header still governs the display language.
+    const q = searchParams.get('q');
 
     if (cityId) backendSearchParams.set('city_id', cityId);
+    if (q) backendSearchParams.set('q', q);
     if (page) backendSearchParams.set('page', page);
     if (perPage) backendSearchParams.set('per_page', perPage);
 

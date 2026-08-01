@@ -357,12 +357,15 @@ class ApiClient {
   // Signature journey methods
   async getSignatureJourneys(params?: {
     city_id?: number;
+    /** Free-text search over journey titles AND city names, EN + KR (SMA-229). */
+    q?: string;
     language?: string;
     page?: number;
     per_page?: number;
   }): Promise<PaginatedResult<SignatureJourney>> {
     const searchParams = new URLSearchParams();
     if (params?.city_id !== undefined) searchParams.set('city_id', params.city_id.toString());
+    if (params?.q) searchParams.set('q', params.q);
     if (params?.language) searchParams.set('language', params.language);
     if (params?.page !== undefined) searchParams.set('page', params.page.toString());
     if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());

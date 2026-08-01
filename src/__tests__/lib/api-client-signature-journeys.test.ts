@@ -65,6 +65,33 @@ describe('apiClient.getSignatureJourneys', () => {
     expect(url).toContain('per_page=100');
   });
 
+  it('sets q on the query string when a search text is given (SMA-229)', async () => {
+    mockFetch.mockResolvedValueOnce(paginated([]));
+    await apiClient.getSignatureJourneys({ q: 'Ritz Yacht', language: 'en', per_page: 100 });
+
+    const url = mockFetch.mock.calls[0][0] as string;
+    expect(url).toContain('q=Ritz+Yacht');
+  });
+
+  it('omits q when the search text is empty', async () => {
+    mockFetch.mockResolvedValueOnce(paginated([]));
+    await apiClient.getSignatureJourneys({ q: '', language: 'en' });
+
+    const url = mockFetch.mock.calls[0][0] as string;
+    expect(url).not.toContain('q=');
+  });
+
+  it('composes q with city_id and pagination', async () => {
+    mockFetch.mockResolvedValueOnce(paginated([]));
+    await apiClient.getSignatureJourneys({ q: '모나코', city_id: 10, page: 2, per_page: 50 });
+
+    const url = mockFetch.mock.calls[0][0] as string;
+    expect(url).toContain(`q=${encodeURIComponent('모나코')}`);
+    expect(url).toContain('city_id=10');
+    expect(url).toContain('page=2');
+    expect(url).toContain('per_page=50');
+  });
+
   it('maps the envelope into a PaginatedResult of journeys', async () => {
     mockFetch.mockResolvedValueOnce(paginated([journey]));
 
