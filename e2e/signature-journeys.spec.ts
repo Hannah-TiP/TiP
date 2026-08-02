@@ -130,6 +130,29 @@ async function stubJourneyRoutes(
   });
 }
 
+/**
+ * Navigate to the page and wait for React's streaming reveal to finish.
+ *
+ * The page body lives inside a page-level `<Suspense>` (as do /dream-hotels,
+ * /more-dreams and /magazine), so a production build streams it: the shell
+ * ships `<!--$?--><template id="B:0"></template>`, the real markup arrives
+ * later inside a `<div hidden id="S:0">` buffer, and React splices that buffer
+ * into the boundary on a THROTTLED timer (~300 ms after first paint). React
+ * force-client-renders the boundary as soon as it hydrates, so between
+ * hydration and that splice the document holds two copies of the page — the
+ * live one plus the not-yet-consumed hidden buffer — and every page-level test
+ * id resolves to 2 elements. `page.goto` resolves on `load`, which on a loaded
+ * CI runner lands inside that window (the SMA-247 `e2e-pr-smoke` failure).
+ *
+ * Waiting for the buffer to be consumed is the narrowest possible guard: it
+ * only tolerates React's own hidden staging node, so a genuine double render
+ * (two LIVE copies) still trips strict mode exactly as before.
+ */
+async function gotoSignatureJourneys(page: import('@playwright/test').Page) {
+  await page.goto('/signature-journeys');
+  await expect(page.locator('[id^="S:"]')).toHaveCount(0);
+}
+
 test.describe('/signature-journeys', () => {
   test.beforeEach(async ({ page }) => {
     // Oslo has no journey, so the published-journey-derived destinations
@@ -145,7 +168,7 @@ test.describe('/signature-journeys', () => {
   test('renders the 4 journeys from the new endpoint with the gold signature pill', async ({
     page,
   }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     await expect(
       page.getByRole('heading', { level: 1, name: /Signature Journeys/i }),
@@ -166,7 +189,7 @@ test.describe('/signature-journeys', () => {
   });
 
   test('cards link to the /signature-journeys/[slug] detail route', async ({ page }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     const cards = page.locator('[data-testid="signature-journey-card"]');
     await expect(cards.first()).toHaveAttribute('href', '/signature-journeys/ritz-carlton-yacht');
@@ -175,7 +198,7 @@ test.describe('/signature-journeys', () => {
   test('uses the overlay header variant and highlights the Signature Journeys nav', async ({
     page,
   }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     await expect(page.locator('header')).toHaveCount(1);
     const header = page.locator('header').first();
@@ -193,7 +216,7 @@ test.describe('/signature-journeys', () => {
   });
 
   test('all 5 top-level nav items render once and in order without overflow', async ({ page }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     const header = page.locator('header').first();
     for (const label of [
@@ -213,7 +236,7 @@ test.describe('/signature-journeys', () => {
   });
 
   test('typing a journey title narrows the grid to that journey', async ({ page }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     const grid = page.locator('[data-testid="section-signature-journeys"]');
     await expect(grid.locator('[data-testid="signature-journey-card"]')).toHaveCount(4);
@@ -227,7 +250,7 @@ test.describe('/signature-journeys', () => {
   test('typing a city name narrows the grid to that city and suggests the city', async ({
     page,
   }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     await page.getByTestId('signature-journey-search').fill('Monaco');
 
@@ -247,7 +270,7 @@ test.describe('/signature-journeys', () => {
   });
 
   test('never offers a city that has no journeys', async ({ page }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     await page.getByTestId('signature-journey-search').click();
 
@@ -259,7 +282,7 @@ test.describe('/signature-journeys', () => {
   test('an unmatched search shows the empty state and clearing restores the grid', async ({
     page,
   }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     const search = page.getByTestId('signature-journey-search');
     await search.fill('zzzznothing');
@@ -310,7 +333,7 @@ test.describe('/signature-journeys — destinations beyond the city-catalog cap'
       if (cityId) cityIdRequests.push(cityId);
     });
 
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     const grid = page.locator('[data-testid="section-signature-journeys"]');
     await expect(grid.locator('[data-testid="signature-journey-card"]')).toHaveCount(2);
