@@ -80,6 +80,10 @@ vi.mock('@/lib/api-client', () => ({
     getActivities: vi.fn(),
     getRestaurants: vi.fn(),
     getExperienceDestinations: vi.fn(),
+    // Mirrors the real client, which still exports getCities (it is just no
+    // longer called from src/app/) — so the "page never calls it" assertion
+    // below is a real check and not a claim about this factory's key list.
+    getCities: vi.fn().mockResolvedValue([]),
     getReviewsByEntity: vi.fn().mockResolvedValue({
       reviews: [],
       aggregate: { average_rating: null, review_count: 0 },
@@ -255,8 +259,8 @@ describe('MoreDreamsPage — destination options (SMA-247)', () => {
       expect(vi.mocked(apiClient.getExperienceDestinations).mock.calls.length).toBe(1);
     });
     expect(vi.mocked(apiClient.getExperienceDestinations).mock.calls[0][0]).toBe('en');
-    // The catalog method must not exist on the page's API surface any more.
-    expect('getCities' in apiClient).toBe(false);
+    // The global city catalog must never be consulted for the dropdown.
+    expect(apiClient.getCities).not.toHaveBeenCalled();
   });
 
   it('offers a far-catalog city in the destination dropdown', async () => {
