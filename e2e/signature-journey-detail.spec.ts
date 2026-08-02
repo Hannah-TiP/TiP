@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Route } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E for the /signature-journeys/[slug] detail page (SMA-209).
@@ -103,7 +104,7 @@ async function mockJourney(page: Page, requestedLanguages: string[]) {
 test.describe('/signature-journeys/[slug]', () => {
   test('renders every populated section and hides the empty Units section', async ({ page }) => {
     await mockJourney(page, []);
-    await page.goto(`/signature-journeys/${SLUG}`);
+    await gotoPage(page, `/signature-journeys/${SLUG}`);
 
     await expect(
       page.getByRole('heading', { level: 1, name: 'Grand Mediterranean Voyage' }),
@@ -147,7 +148,7 @@ test.describe('/signature-journeys/[slug]', () => {
 
   test('FAQ accordion opens one item at a time', async ({ page }) => {
     await mockJourney(page, []);
-    await page.goto(`/signature-journeys/${SLUG}`);
+    await gotoPage(page, `/signature-journeys/${SLUG}`);
 
     const firstQuestion = page.getByRole('button', { name: 'Is airfare included?' });
     const secondQuestion = page.getByRole('button', {
@@ -171,7 +172,7 @@ test.describe('/signature-journeys/[slug]', () => {
   test('language toggle re-fetches with kr and renders Korean content', async ({ page }) => {
     const requestedLanguages: string[] = [];
     await mockJourney(page, requestedLanguages);
-    await page.goto(`/signature-journeys/${SLUG}`);
+    await gotoPage(page, `/signature-journeys/${SLUG}`);
 
     // English first paint (Playwright's default locale is en-US).
     await expect(page.getByText('AT A GLANCE')).toBeVisible();
@@ -194,7 +195,7 @@ test.describe('/signature-journeys/[slug]', () => {
       });
     });
 
-    await page.goto('/signature-journeys/nope');
+    await gotoPage(page, '/signature-journeys/nope');
 
     await expect(page.getByText('Journey Not Found')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Back to Signature Journeys' })).toBeVisible();

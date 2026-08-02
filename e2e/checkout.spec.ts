@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * Flywire checkout flow e2e.
@@ -36,7 +37,7 @@ test.describe('Flywire checkout', () => {
       });
     });
 
-    await page.goto(`/quotes/${SENT_QUOTE_ID}`);
+    await gotoPage(page, `/quotes/${SENT_QUOTE_ID}`);
     const payNow = page.getByTestId('pay-now-button');
     await expect(payNow).toBeVisible({ timeout: 15_000 });
 
@@ -51,7 +52,7 @@ test.describe('Flywire checkout', () => {
   test('?paid=1 on a PAID quote shows the success state', async ({ page }) => {
     test.skip(!PAID_QUOTE_ID, 'E2E_QUOTE_PAID_ID is not set; skipping');
 
-    await page.goto(`/quotes/${PAID_QUOTE_ID}?paid=1`);
+    await gotoPage(page, `/quotes/${PAID_QUOTE_ID}?paid=1`);
 
     // Polling either flips to PAID immediately (if the quote is already PAID
     // when the first /api/quotes call resolves) or after a poll cycle. Either
@@ -88,7 +89,7 @@ test.describe('Flywire checkout', () => {
       });
     });
 
-    await page.goto(`/checkout/flywire?payment_id=${PENDING_PAYMENT_ID}`);
+    await gotoPage(page, `/checkout/flywire?payment_id=${PENDING_PAYMENT_ID}`);
 
     // Header is present.
     await expect(page.getByRole('heading', { name: /complete payment/i })).toBeVisible({

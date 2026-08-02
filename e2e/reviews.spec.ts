@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * Post-trip review flow e2e.
@@ -21,7 +22,7 @@ test.describe('Post-trip review session', () => {
   test('travel-history list and detail link into the session', async ({ page }) => {
     test.skip(!COMPLETED_TRIP_ID, 'E2E_COMPLETED_TRIP_ID not set; skipping');
 
-    await page.goto(`/my-page/travel-history/${COMPLETED_TRIP_ID}`);
+    await gotoPage(page, `/my-page/travel-history/${COMPLETED_TRIP_ID}`);
 
     // The completed-trip detail surfaces the entry CTA.
     const reviewCta = page.getByRole('link', { name: /review your experience/i });
@@ -39,7 +40,7 @@ test.describe('Post-trip review session', () => {
   }) => {
     test.skip(!COMPLETED_TRIP_ID, 'E2E_COMPLETED_TRIP_ID not set; skipping');
 
-    await page.goto(`/my-page/travel-history/${COMPLETED_TRIP_ID}/reviews`);
+    await gotoPage(page, `/my-page/travel-history/${COMPLETED_TRIP_ID}/reviews`);
 
     // At least one item card with a status pill + a rating control.
     await expect(page.getByRole('radiogroup').first()).toBeVisible({ timeout: 15_000 });
@@ -55,7 +56,7 @@ test.describe('Post-trip review session', () => {
   test('rate items then submit with the single trip-level button', async ({ page }) => {
     test.skip(!COMPLETED_TRIP_ID, 'E2E_COMPLETED_TRIP_ID not set; skipping');
 
-    await page.goto(`/my-page/travel-history/${COMPLETED_TRIP_ID}/reviews`);
+    await gotoPage(page, `/my-page/travel-history/${COMPLETED_TRIP_ID}/reviews`);
 
     const ratingGroups = page.getByRole('radiogroup');
     await expect(ratingGroups.first()).toBeVisible({ timeout: 15_000 });
@@ -77,7 +78,7 @@ test.describe('Post-trip review session', () => {
   test('skipping an item excludes it and shows an Unskip affordance', async ({ page }) => {
     test.skip(!COMPLETED_TRIP_ID, 'E2E_COMPLETED_TRIP_ID not set; skipping');
 
-    await page.goto(`/my-page/travel-history/${COMPLETED_TRIP_ID}/reviews`);
+    await gotoPage(page, `/my-page/travel-history/${COMPLETED_TRIP_ID}/reviews`);
 
     const skip = page.getByRole('button', { name: 'Skip' }).first();
     await expect(skip).toBeVisible({ timeout: 15_000 });
@@ -90,7 +91,7 @@ test.describe('Post-trip review session', () => {
   test('entity detail page shows the reviews section', async ({ page }) => {
     test.skip(!REVIEW_HOTEL_SLUG, 'E2E_REVIEW_HOTEL_SLUG not set; skipping');
 
-    await page.goto(`/hotel/${REVIEW_HOTEL_SLUG}`);
+    await gotoPage(page, `/hotel/${REVIEW_HOTEL_SLUG}`);
 
     // The shared <EntityReviews> renders either the aggregate/list or the
     // empty-state copy — both prove the placeholder was replaced.
@@ -103,7 +104,7 @@ test.describe('Review session — unauthenticated', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test('redirects to /sign-in', async ({ page }) => {
-    await page.goto('/my-page/travel-history/1/reviews');
+    await gotoPage(page, '/my-page/travel-history/1/reviews');
     await expect(page).toHaveURL(/sign-in/, { timeout: 10_000 });
   });
 });

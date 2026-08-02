@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E: /about page renders and the auth-aware CTA points the right way.
@@ -11,7 +12,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('About page', () => {
   test('renders the hero + closing CTA pointing to /register (logged out)', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
 
     // Hero is visible.
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Thoughtfully Redefined');
@@ -31,7 +32,7 @@ test.describe('About page', () => {
   });
 
   test('FAQ accordion opens and closes one item at a time', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
 
     const faq = page.getByTestId('about-faq');
     const questions = faq.getByRole('button');
@@ -51,7 +52,7 @@ test.describe('About page', () => {
   });
 
   test('footer "About Us" link routes to /about', async ({ page }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
     await page.getByRole('link', { name: 'About Us' }).click();
     await expect(page).toHaveURL('/about');
   });

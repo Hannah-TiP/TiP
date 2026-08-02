@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E: /kbem KB금융그룹 employee-benefits landing page.
@@ -11,7 +12,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('KB employee landing page', () => {
   test('loads for an anonymous visitor with key sections + CTAs', async ({ page }) => {
-    await page.goto('/kbem');
+    await gotoPage(page, '/kbem');
 
     // Hero H1 renders.
     await expect(page.getByRole('heading', { level: 1 })).toContainText('럭셔리 여행');

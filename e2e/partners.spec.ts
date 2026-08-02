@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 test.describe('Homepage — Our Partners section', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
   });
 
   test('renders the Our Partners heading between Membership and Footer', async ({ page }) => {

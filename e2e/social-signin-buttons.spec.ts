@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E: the Kakao + Naver social sign-in buttons (SMA-114).
@@ -29,7 +30,7 @@ for (const route of ['/sign-in', '/register']) {
       test(`${provider.name} button renders and click navigates toward the provider`, async ({
         page,
       }) => {
-        await page.goto(route);
+        await gotoPage(page, route);
 
         const button = page.getByTestId(provider.testId);
         if ((await button.count()) === 0) {

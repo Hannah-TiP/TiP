@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E: Unauthenticated SearchBar click → /sign-in with prefill URL.
@@ -38,7 +39,7 @@ test.describe('SearchBar → unauthed redirect preserves prefill params', () => 
   test('clicking Search unauthed lands on /sign-in?redirect=/concierge?prefill=1...', async ({
     page,
   }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
 
     // Label renders as "DESTINATION" via CSS `uppercase`, but the DOM text
     // node is "Destination" (i18n value); match the actual text content.

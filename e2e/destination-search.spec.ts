@@ -1,4 +1,5 @@
 import { test, expect, type Route } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * SMA-91 — unified destination search.
@@ -73,7 +74,7 @@ test.describe('SMA-91 unified destination search', () => {
   test('Dream Hotels: typing Paris surfaces the real Paris (France) at the top', async ({
     page,
   }) => {
-    await page.goto('/dream-hotels');
+    await gotoPage(page, '/dream-hotels');
     await expect(page.getByRole('heading', { name: 'Dream Hotels' })).toBeVisible();
 
     const destInput = page.getByPlaceholder('Search country, region, or city...');
@@ -90,7 +91,7 @@ test.describe('SMA-91 unified destination search', () => {
   });
 
   test('Home hero: typing Paris surfaces the real Paris (France) at the top', async ({ page }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
 
     // Open the destination dropdown in the hero search bar (desktop layout).
     await page.getByText('Destination', { exact: true }).first().click();
@@ -106,7 +107,7 @@ test.describe('SMA-91 unified destination search', () => {
   });
 
   test('Home hero: shows a popular bookable set before typing', async ({ page }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
     await page.getByText('Destination', { exact: true }).first().click();
 
     // The empty-state header + the stubbed bookable set render immediately.
@@ -121,7 +122,7 @@ test.describe('SMA-91 unified destination search', () => {
   test('Home hero: selecting a CITY carries cityId into the concierge prefill', async ({
     page,
   }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
     await page.getByText('Destination', { exact: true }).first().click();
 
     const destInput = page.getByPlaceholder('Search destinations...');
@@ -144,7 +145,7 @@ test.describe('SMA-91 unified destination search', () => {
   test('Home hero: selecting a COUNTRY does NOT set cityId (no cityId poisoning)', async ({
     page,
   }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
     await page.getByText('Destination', { exact: true }).first().click();
 
     const destInput = page.getByPlaceholder('Search destinations...');

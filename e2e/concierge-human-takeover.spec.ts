@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 const TRIP_ID = 9998;
 
@@ -109,7 +110,7 @@ test.describe('Concierge chat takeover -- customer-facing surface', () => {
       });
     });
 
-    await page.goto('/concierge');
+    await gotoPage(page, '/concierge');
 
     // Banner appears
     await expect(page.getByTestId('human-takeover-banner')).toBeVisible({ timeout: 15000 });
@@ -176,7 +177,7 @@ test.describe('Concierge chat takeover -- customer-facing surface', () => {
       });
     });
 
-    await page.goto('/concierge');
+    await gotoPage(page, '/concierge');
 
     // The chat input must be ready (page has loaded).
     await expect(page.getByPlaceholder(/.+/).first()).toBeVisible({ timeout: 15000 });

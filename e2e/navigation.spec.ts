@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // Stored auth state produced by global-setup (signs in the seeded
 // test@test.com user). The SubNav only renders for an *authenticated*
@@ -11,22 +12,22 @@ const AUTH_STATE_PATH = path.join(__dirname, '.auth', 'user.json');
 
 test.describe('Page navigation', () => {
   test('dream-hotels page loads', async ({ page }) => {
-    await page.goto('/dream-hotels');
+    await gotoPage(page, '/dream-hotels');
     await expect(page).toHaveURL(/dream-hotels/);
   });
 
   test('sign-in page loads', async ({ page }) => {
-    await page.goto('/sign-in');
+    await gotoPage(page, '/sign-in');
     await expect(page).toHaveURL(/sign-in/);
   });
 
   test('register page loads', async ({ page }) => {
-    await page.goto('/register');
+    await gotoPage(page, '/register');
     await expect(page).toHaveURL(/register/);
   });
 
   test('about page loads', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
     await expect(page).toHaveURL(/about/);
   });
 });
@@ -35,7 +36,7 @@ test.describe('Centralized header — variants & active state', () => {
   test('marketing page (/dream-hotels) shows the overlay header over the hero', async ({
     page,
   }) => {
-    await page.goto('/dream-hotels');
+    await gotoPage(page, '/dream-hotels');
     // Exactly one centralized <header> on the page (no per-page TopBar).
     await expect(page.locator('header')).toHaveCount(1);
     const header = page.locator('header').first();
@@ -54,7 +55,7 @@ test.describe('Centralized header — variants & active state', () => {
   });
 
   test('app page (/about) shows the standard light header bar', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
     // Exactly one centralized <header> on the page (no per-page TopBar).
     await expect(page.locator('header')).toHaveCount(1);
     const header = page.locator('header').first();
@@ -68,7 +69,7 @@ test.describe('Centralized header — variants & active state', () => {
   test('magazine is reachable from the header nav and highlights on /magazine', async ({
     page,
   }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
     const header = page.locator('header').first();
     const magazineLink = header.getByRole('link', { name: 'MAGAZINE', exact: true });
     await expect(magazineLink).toHaveCount(1);
@@ -97,7 +98,7 @@ test.describe('Centralized header — variants & active state', () => {
     test.use({ storageState: AUTH_STATE_PATH });
 
     test('my-page subsection renders the SubNav with the active tab', async ({ page }) => {
-      await page.goto('/my-page/credits');
+      await gotoPage(page, '/my-page/credits');
       await expect(page).toHaveURL(/\/my-page\/credits/);
       const subnav = page.locator('nav', { hasText: 'Upcoming Travels' }).last();
       await expect(subnav.getByRole('link', { name: 'Credits', exact: true })).toBeVisible();
@@ -110,7 +111,7 @@ test.describe('Centralized header — variants & active state', () => {
   });
 
   test('auth page (/sign-in) renders NO header at all', async ({ page }) => {
-    await page.goto('/sign-in');
+    await gotoPage(page, '/sign-in');
     await expect(page).toHaveURL(/sign-in/);
     await expect(page.locator('header')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'DREAM HOTELS' })).toHaveCount(0);
@@ -209,7 +210,7 @@ test.describe('Centralized header — variants & active state', () => {
         }),
       );
 
-      await page.goto('/concierge');
+      await gotoPage(page, '/concierge');
 
       // The chat input only renders once the page has authed, bootstrapped,
       // and laid out the chat area — so its visibility proves we are NOT on

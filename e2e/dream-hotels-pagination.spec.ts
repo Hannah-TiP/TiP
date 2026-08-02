@@ -1,4 +1,5 @@
 import { test, expect, type Route } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * /dream-hotels — server-side pagination + infinite scroll (SMA-73).
@@ -96,7 +97,7 @@ test.describe('/dream-hotels — pagination + infinite scroll (SMA-73)', () => {
       });
     });
 
-    await page.goto('/dream-hotels');
+    await gotoPage(page, '/dream-hotels');
     await expect(page.getByRole('heading', { name: 'Dream Hotels' })).toBeVisible();
 
     // Page 1 rendered, map hidden.
@@ -154,7 +155,7 @@ test.describe('/dream-hotels — pagination + infinite scroll (SMA-73)', () => {
       });
     });
 
-    await page.goto('/dream-hotels');
+    await gotoPage(page, '/dream-hotels');
     await expect(page.getByRole('heading', { name: 'Dream Hotels' })).toBeVisible();
 
     // Type a hotel-name search → map becomes visible; pagination is unchanged.

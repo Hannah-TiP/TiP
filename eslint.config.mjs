@@ -30,6 +30,17 @@ const eslintConfig = defineConfig([
       'i18n/no-literal-string': 'error',
     },
   },
+  // Streaming-reveal guard: e2e specs must navigate through gotoPage()
+  // (e2e/support/navigation.ts) so React's Suspense streaming buffer is
+  // consumed before locators run. New bare page.goto() calls fail
+  // `npm run lint`. Per-line opt-out: // eslint-disable-next-line e2e/no-bare-page-goto
+  {
+    files: ['e2e/**/*.spec.ts'],
+    plugins: { e2e: i18nPlugin },
+    rules: {
+      'e2e/no-bare-page-goto': 'error',
+    },
+  },
 ]);
 
 export default eslintConfig;

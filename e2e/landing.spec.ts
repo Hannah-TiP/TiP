@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 test.describe('Landing page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
   });
 
   test('loads with key navigation links', async ({ page }) => {

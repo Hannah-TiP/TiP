@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E for the SJ detail-page structured data (SMA-210 / SJ-5).
@@ -30,7 +31,7 @@ function typesOf(docs: Record<string, unknown>[]): string[] {
 
 test.describe('signature-journey JSON-LD', () => {
   test('TravelAgency is a site-wide singleton on a static route', async ({ page }) => {
-    await page.goto('/signature-journeys');
+    await gotoPage(page, '/signature-journeys');
 
     const docs = await ldJsonDocs(page);
     const agencies = docs.filter((d) => d['@type'] === 'TravelAgency');
@@ -62,7 +63,7 @@ test.describe('signature-journey JSON-LD', () => {
     let matched = false;
 
     for (const slug of slugs) {
-      const response = await page.goto(`/signature-journeys/${slug}`);
+      const response = await gotoPage(page, `/signature-journeys/${slug}`);
       // If routing failed entirely, try the next candidate.
       if (!response) continue;
 

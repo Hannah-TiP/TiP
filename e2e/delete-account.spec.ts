@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // /my-page/my-profile is auth-gated; this spec runs in the chromium-authed
 // project (see change-password.spec.ts — the same pattern). We stub the
@@ -37,7 +38,7 @@ async function stubProfile(page: Page, hasPassword: boolean) {
 }
 
 async function openModal(page: Page) {
-  await page.goto('/my-page/my-profile');
+  await gotoPage(page, '/my-page/my-profile');
   await page.getByTestId('open-delete-account').click();
   await expect(page.getByTestId('delete-account-form')).toBeVisible({ timeout: 10_000 });
 }

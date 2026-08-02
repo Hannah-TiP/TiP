@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E for /magazine/[type]/[slug] (SMA-220).
@@ -19,18 +20,19 @@ const PUBLISHED_SLUG = process.env.E2E_MAGAZINE_SLUG || '';
 
 test.describe('/magazine/[type]/[slug]', () => {
   test('an unknown plural type segment renders a 404', async ({ page }) => {
-    const response = await page.goto('/magazine/hotels/anything');
+    const response = await gotoPage(page, '/magazine/hotels/anything');
     expect(response?.status()).toBe(404);
   });
 
   test('the singular type value is not a valid URL segment (404)', async ({ page }) => {
     // The consumer URL uses plurals; the singular enum must NOT resolve.
-    const response = await page.goto('/magazine/destination/best-hotels-in-japan');
+    const response = await gotoPage(page, '/magazine/destination/best-hotels-in-japan');
     expect(response?.status()).toBe(404);
   });
 
   test('an unknown slug under a valid type renders a 404', async ({ page }) => {
-    const response = await page.goto(
+    const response = await gotoPage(
+      page,
       `/magazine/${PUBLISHED_TYPE_SEGMENT}/__definitely-not-a-real-slug__`,
     );
     expect(response?.status()).toBe(404);
@@ -41,7 +43,7 @@ test.describe('/magazine/[type]/[slug]', () => {
   }) => {
     test.skip(!PUBLISHED_SLUG, 'Set E2E_MAGAZINE_SLUG to a published article to run this check');
 
-    const response = await page.goto(`/magazine/${PUBLISHED_TYPE_SEGMENT}/${PUBLISHED_SLUG}`);
+    const response = await gotoPage(page, `/magazine/${PUBLISHED_TYPE_SEGMENT}/${PUBLISHED_SLUG}`);
     expect(response?.status()).toBe(200);
 
     // Assert on the raw HTML the SERVER sent (View-Source), not the hydrated DOM,
@@ -70,7 +72,7 @@ test.describe('/magazine/[type]/[slug]', () => {
       'Set E2E_MAGAZINE_SLUG to a published DESTINATION article with ranked hotels to run this check',
     );
 
-    const response = await page.goto(`/magazine/${PUBLISHED_TYPE_SEGMENT}/${PUBLISHED_SLUG}`);
+    const response = await gotoPage(page, `/magazine/${PUBLISHED_TYPE_SEGMENT}/${PUBLISHED_SLUG}`);
     expect(response?.status()).toBe(200);
 
     const html = await response!.text();
@@ -125,7 +127,7 @@ test.describe('/magazine/[type]/[slug] — MAG-4 type sets', () => {
     const slug = process.env.E2E_MAGAZINE_GUIDE_SLUG || '';
     test.skip(!slug, 'Set E2E_MAGAZINE_GUIDE_SLUG to a published guide with steps');
 
-    const response = await page.goto(`/magazine/guides/${slug}`);
+    const response = await gotoPage(page, `/magazine/guides/${slug}`);
     expect(response?.status()).toBe(200);
     const html = await response!.text();
     const types = await ldTypesInInitialHtml(html);
@@ -141,7 +143,7 @@ test.describe('/magazine/[type]/[slug] — MAG-4 type sets', () => {
     const slug = process.env.E2E_MAGAZINE_NEWS_SLUG || '';
     test.skip(!slug, 'Set E2E_MAGAZINE_NEWS_SLUG to a published news article');
 
-    const response = await page.goto(`/magazine/news/${slug}`);
+    const response = await gotoPage(page, `/magazine/news/${slug}`);
     expect(response?.status()).toBe(200);
     const html = await response!.text();
     const types = await ldTypesInInitialHtml(html);
@@ -157,7 +159,7 @@ test.describe('/magazine/[type]/[slug] — MAG-4 type sets', () => {
     const slug = process.env.E2E_MAGAZINE_INSIDER_SLUG || '';
     test.skip(!slug, 'Set E2E_MAGAZINE_INSIDER_SLUG to a published insider article');
 
-    const response = await page.goto(`/magazine/insider/${slug}`);
+    const response = await gotoPage(page, `/magazine/insider/${slug}`);
     expect(response?.status()).toBe(200);
     const html = await response!.text();
     const types = await ldTypesInInitialHtml(html);

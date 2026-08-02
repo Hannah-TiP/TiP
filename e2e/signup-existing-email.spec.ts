@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E: signing up with an already-registered email.
@@ -34,7 +35,7 @@ test.describe('Signup with an already-registered email', () => {
   });
 
   async function submitSignup(page: import('@playwright/test').Page) {
-    await page.goto('/register');
+    await gotoPage(page, '/register');
     await page.getByPlaceholder('Enter your email').fill(EMAIL);
     await page.getByPlaceholder('Create a password').fill('password123');
     await page.getByPlaceholder('Confirm password').fill('password123');

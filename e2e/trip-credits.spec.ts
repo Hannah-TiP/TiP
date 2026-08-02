@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // The /my-page/credits page is auth-gated; this spec runs in the
 // chromium-authed project. We mock the backend proxy route so the test is
@@ -51,7 +52,7 @@ test.describe('Trip-linked credits on /my-page/credits', () => {
       });
     });
 
-    await page.goto('/my-page/credits');
+    await gotoPage(page, '/my-page/credits');
 
     await expect(page.getByText('Trip cashback — 2%')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('First-trip bonus — 3%')).toBeVisible();

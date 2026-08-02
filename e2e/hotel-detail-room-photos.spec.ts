@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 test.describe('Hotel detail — room photo gallery', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to Aman Tokyo which has seeded rooms with images
-    await page.goto('/hotel/aman-tokyo');
+    await gotoPage(page, '/hotel/aman-tokyo');
     // Wait for the rooms section to load
     await page.waitForSelector('[aria-labelledby="rooms-title"]', { timeout: 15000 });
   });

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 test.describe('welcome offer popup', () => {
   test.beforeEach(async ({ page }) => {
@@ -17,7 +18,7 @@ test.describe('welcome offer popup', () => {
   });
 
   test('opens on the homepage and links to registration', async ({ page }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
 
     const popup = page.getByTestId('welcome-offer-popup');
     await expect(popup).toBeVisible();
@@ -25,7 +26,7 @@ test.describe('welcome offer popup', () => {
   });
 
   test('stays dismissed for the active language', async ({ page }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
     await page.getByTestId('welcome-offer-popup').getByRole('button').click();
     await expect(page.getByTestId('welcome-offer-popup')).toBeHidden();
 

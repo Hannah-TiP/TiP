@@ -87,6 +87,11 @@ Reusable components in `src/components/`:
 - Remote images from Unsplash configured in `next.config.ts`
 - Using Next.js `<Image>` component for optimized loading (where applicable)
 
+## E2E Tests (Playwright)
+
+- Navigate with `gotoPage(page, path, options?)` from `e2e/support/navigation.ts` — never bare `page.goto` (enforced by the local `e2e/no-bare-page-goto` ESLint rule on `e2e/**/*.spec.ts`).
+- Why: production builds stream Suspense-wrapped pages, so right after `page.goto` the DOM briefly holds TWO copies of the page (React's hidden `S:`/`B:` staging markers) and strict-mode locators flake with "resolved to 2 elements". `gotoPage` waits for those markers to clear; see the helper's docblock and `e2e/streaming-reveal-guard.spec.ts`.
+
 ## Design Guidelines
 
 ### Visual Hierarchy

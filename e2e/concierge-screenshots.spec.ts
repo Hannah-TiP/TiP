@@ -1,4 +1,5 @@
 import { test, type Page, type BrowserContext } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 import path from 'node:path';
 
 const SESSION_UUID = 'sess-uuid-screens';
@@ -117,7 +118,7 @@ async function mockChatSequence(context: BrowserContext, responses: MockChatResp
 }
 
 async function openConcierge(page: Page) {
-  await page.goto('/concierge');
+  await gotoPage(page, '/concierge');
   const input = page.getByPlaceholder(/ask your concierge/i);
   await input.waitFor({ state: 'visible', timeout: 15_000 });
 }

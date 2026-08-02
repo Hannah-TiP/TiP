@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * Zero-total quote completion (SMA-237).
@@ -92,7 +93,7 @@ test.describe('Zero-total quote', () => {
       });
     });
 
-    await page.goto(`/quotes/${ZERO_TOTAL_QUOTE_ID}`);
+    await gotoPage(page, `/quotes/${ZERO_TOTAL_QUOTE_ID}`);
 
     // AC6: the pay button REMAINS visible on a $0-total SENT quote.
     const payNow = page.getByTestId('pay-now-button');
@@ -121,7 +122,7 @@ test.describe('Zero-total quote', () => {
     );
 
     // No stubs — this asserts against the real seeded snapshot + eligibility.
-    await page.goto(`/quotes/${ZERO_TOTAL_QUOTE_ID}`);
+    await gotoPage(page, `/quotes/${ZERO_TOTAL_QUOTE_ID}`);
 
     const applied = page.getByTestId('applied-credit');
     await expect(applied).toBeVisible({ timeout: 15_000 });

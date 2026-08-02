@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * Quote detail page e2e.
@@ -15,7 +16,7 @@ test.describe('Quote detail page', () => {
   test('renders trip title, total, and at least one line item', async ({ page }) => {
     test.skip(!SEEDED_QUOTE_ID, 'E2E_QUOTE_ID is not set; skipping');
 
-    await page.goto(`/quotes/${SEEDED_QUOTE_ID}`);
+    await gotoPage(page, `/quotes/${SEEDED_QUOTE_ID}`);
 
     // Hero shows the quote label + a status badge.
     await expect(page.getByText(/QUOTE/i).first()).toBeVisible({ timeout: 15_000 });
@@ -37,7 +38,7 @@ test.describe('Quote detail page', () => {
     test.use({ storageState: { cookies: [], origins: [] } });
 
     test('redirects unauthenticated users to /sign-in', async ({ page }) => {
-      await page.goto('/quotes/1');
+      await gotoPage(page, '/quotes/1');
       await expect(page).toHaveURL(/sign-in/, { timeout: 10_000 });
     });
   });

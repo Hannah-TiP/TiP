@@ -1,4 +1,5 @@
 import { test, expect, type Route } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * /more-dreams — independent infinite scroll for Activities + Restaurants and a
@@ -157,7 +158,7 @@ test.describe('/more-dreams — pagination + server-side city filter (SMA-73)', 
       });
     });
 
-    await page.goto('/more-dreams');
+    await gotoPage(page, '/more-dreams');
     await expect(page.getByRole('heading', { name: /Activities & Experiences/i })).toBeVisible();
 
     // Page 1 of each grid.
@@ -229,7 +230,7 @@ test.describe('/more-dreams — pagination + server-side city filter (SMA-73)', 
       });
     });
 
-    await page.goto('/more-dreams');
+    await gotoPage(page, '/more-dreams');
     await expect(page.getByText('Activity 1')).toBeVisible();
 
     // Initial activity fetch carries no city_id.
