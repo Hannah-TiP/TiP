@@ -23,7 +23,7 @@ test.describe('Flywire checkout', () => {
 
     // Stub the checkout-session endpoint so we don't need to hit Flywire's
     // demo provider (and don't burn through real session ids).
-    await page.route('**/api/quotes/*/checkout-session', async (route) => {
+    await page.route('**/api/quotes/*/checkout-session*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -68,7 +68,7 @@ test.describe('Flywire checkout', () => {
     // Stub the widget-config response so the page mounts even if the seeded
     // payment isn't in a state the backend will return widget-config for. We
     // only assert structural rendering here, not the actual Flywire widget.
-    await page.route('**/api/payments/*/widget-config', async (route) => {
+    await page.route('**/api/payments/*/widget-config*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

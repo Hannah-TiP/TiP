@@ -50,7 +50,7 @@ test.describe('Plan My Trip redirect survives the sign-up chain', () => {
   }) => {
     // The verification step is in-page React state, so the URL (and its
     // redirect param) must remain intact when advancing to the code screen.
-    await context.route('**/api/auth/send-verification', async (route) => {
+    await context.route('**/api/auth/send-verification*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

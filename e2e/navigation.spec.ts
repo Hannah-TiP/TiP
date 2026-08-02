@@ -186,7 +186,7 @@ test.describe('Centralized header — variants & active state', () => {
           body: JSON.stringify({ success: true, data: [{ session, trip }] }),
         }),
       );
-      await context.route(`**/api/trip/${TRIP_ID}`, (route) =>
+      await context.route(`**/api/trip/${TRIP_ID}*`, (route) =>
         route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -194,7 +194,7 @@ test.describe('Centralized header — variants & active state', () => {
           body: JSON.stringify({ data: { trip, active_quote: null } }),
         }),
       );
-      await context.route(`**/api/trip/${TRIP_ID}/current-version`, (route) =>
+      await context.route(`**/api/trip/${TRIP_ID}/current-version*`, (route) =>
         route.fulfill({
           status: 200,
           contentType: 'application/json',

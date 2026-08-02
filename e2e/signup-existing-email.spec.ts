@@ -21,7 +21,7 @@ const ENCODED = encodeURIComponent(EMAIL); // existing%40example.com
 
 test.describe('Signup with an already-registered email', () => {
   test.beforeEach(async ({ context }) => {
-    await context.route('**/api/auth/send-verification', async (route) => {
+    await context.route('**/api/auth/send-verification*', async (route) => {
       await route.fulfill({
         status: 409,
         contentType: 'application/json',

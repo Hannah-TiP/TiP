@@ -33,7 +33,7 @@ test.describe('Zero-total quote', () => {
     // Stub the $0 mark-paid endpoint so the test doesn't consume the seeded
     // fixture (the real endpoint transitions the quote to PAID permanently).
     let zeroTotalCalled = false;
-    await page.route('**/api/quotes/*/zero-total-payment', async (route) => {
+    await page.route('**/api/quotes/*/zero-total-payment*', async (route) => {
       zeroTotalCalled = true;
       await route.fulfill({
         status: 200,
@@ -83,7 +83,7 @@ test.describe('Zero-total quote', () => {
 
     // The Flywire checkout-session endpoint must never be hit on a $0 quote.
     let checkoutSessionCalled = false;
-    await page.route('**/api/quotes/*/checkout-session', async (route) => {
+    await page.route('**/api/quotes/*/checkout-session*', async (route) => {
       checkoutSessionCalled = true;
       await route.fulfill({
         status: 500,

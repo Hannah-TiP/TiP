@@ -85,14 +85,14 @@ async function mockSessionAndCarousel(
       body: JSON.stringify({ success: true, data: [{ session: baseSession, trip: baseTrip }] }),
     }),
   );
-  await context.route(`**/api/trip/${TRIP_ID}`, (route) =>
+  await context.route(`**/api/trip/${TRIP_ID}*`, (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ data: { trip: baseTrip, active_quote: null } }),
     }),
   );
-  await context.route(`**/api/trip/${TRIP_ID}/current-version`, (route) =>
+  await context.route(`**/api/trip/${TRIP_ID}/current-version*`, (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',

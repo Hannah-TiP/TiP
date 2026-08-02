@@ -71,7 +71,7 @@ test.describe('Customer-initiated request for human concierge', () => {
       });
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -79,7 +79,7 @@ test.describe('Customer-initiated request for human concierge', () => {
       });
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}/current-version`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}/current-version*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
