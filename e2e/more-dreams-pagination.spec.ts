@@ -82,7 +82,10 @@ test.describe('/more-dreams — pagination + server-side city filter (SMA-73)', 
         }),
       });
     });
-    await page.route('**/api/cities**', async (route: Route) => {
+    // The destination dropdown is fed by the published-experience destinations
+    // endpoint (SMA-247), NOT the global city catalog. Leaving this unstubbed
+    // falls through to the real backend and the Paris option never renders.
+    await page.route('**/api/destinations/experiences**', async (route: Route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -184,7 +187,10 @@ test.describe('/more-dreams — pagination + server-side city filter (SMA-73)', 
         }),
       });
     });
-    await page.route('**/api/cities**', async (route: Route) => {
+    // The destination dropdown is fed by the published-experience destinations
+    // endpoint (SMA-247), NOT the global city catalog. Leaving this unstubbed
+    // falls through to the real backend and the Paris option never renders.
+    await page.route('**/api/destinations/experiences**', async (route: Route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

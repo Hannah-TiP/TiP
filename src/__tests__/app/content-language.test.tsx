@@ -96,7 +96,8 @@ vi.mock('@/lib/api-client', () => ({
     getActivities: vi.fn(),
     getRestaurants: vi.fn(),
     getSignatureJourneys: vi.fn(),
-    getCities: vi.fn(),
+    getSignatureJourneyDestinations: vi.fn(),
+    getExperienceDestinations: vi.fn(),
     getWishlist: vi.fn(),
     getReviewsByEntity: vi.fn().mockResolvedValue({
       reviews: [],
@@ -251,29 +252,29 @@ describe('Content surfaces thread the active language into their fetches (SMA-13
   });
 
   describe('more-dreams', () => {
-    it('fetches activities, restaurants, and cities with the active KR language', async () => {
+    it('fetches activities, restaurants, and destinations with the active KR language', async () => {
       languageState.lang = 'kr';
       vi.mocked(apiClient.getActivities).mockResolvedValue(listPage([krActivity]));
       vi.mocked(apiClient.getRestaurants).mockResolvedValue(listPage([krRestaurant]));
-      vi.mocked(apiClient.getCities).mockResolvedValue([krCity]);
+      vi.mocked(apiClient.getExperienceDestinations).mockResolvedValue([krCity]);
 
       render(<MoreDreamsPage />);
 
       await waitFor(() => {
         expect(vi.mocked(apiClient.getActivities).mock.calls.length).toBeGreaterThan(0);
         expect(vi.mocked(apiClient.getRestaurants).mock.calls.length).toBeGreaterThan(0);
-        expect(vi.mocked(apiClient.getCities).mock.calls.length).toBeGreaterThan(0);
+        expect(vi.mocked(apiClient.getExperienceDestinations).mock.calls.length).toBeGreaterThan(0);
       });
 
       expect(vi.mocked(apiClient.getActivities).mock.calls[0][0]?.language).toBe('kr');
       expect(vi.mocked(apiClient.getRestaurants).mock.calls[0][0]?.language).toBe('kr');
-      expect(vi.mocked(apiClient.getCities).mock.calls[0][0]).toBe('kr');
+      expect(vi.mocked(apiClient.getExperienceDestinations).mock.calls[0][0]).toBe('kr');
     });
 
     it('fetches with EN when the active language is EN', async () => {
       vi.mocked(apiClient.getActivities).mockResolvedValue(listPage([krActivity]));
       vi.mocked(apiClient.getRestaurants).mockResolvedValue(listPage([krRestaurant]));
-      vi.mocked(apiClient.getCities).mockResolvedValue([krCity]);
+      vi.mocked(apiClient.getExperienceDestinations).mockResolvedValue([krCity]);
 
       render(<MoreDreamsPage />);
 
@@ -285,10 +286,10 @@ describe('Content surfaces thread the active language into their fetches (SMA-13
   });
 
   describe('signature-journeys', () => {
-    it('fetches journeys and cities with the active KR language', async () => {
+    it('fetches journeys and destinations with the active KR language', async () => {
       languageState.lang = 'kr';
       vi.mocked(apiClient.getSignatureJourneys).mockResolvedValue(listPage([krJourney]));
-      vi.mocked(apiClient.getCities).mockResolvedValue([krCity]);
+      vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([krCity]);
 
       render(<SignatureJourneysPage />);
 
@@ -296,12 +297,12 @@ describe('Content surfaces thread the active language into their fetches (SMA-13
         expect(vi.mocked(apiClient.getSignatureJourneys).mock.calls.length).toBeGreaterThan(0),
       );
       expect(vi.mocked(apiClient.getSignatureJourneys).mock.calls[0][0]?.language).toBe('kr');
-      expect(vi.mocked(apiClient.getCities).mock.calls[0][0]).toBe('kr');
+      expect(vi.mocked(apiClient.getSignatureJourneyDestinations).mock.calls[0][0]).toBe('kr');
     });
 
     it('fetches with EN when the active language is EN', async () => {
       vi.mocked(apiClient.getSignatureJourneys).mockResolvedValue(listPage([krJourney]));
-      vi.mocked(apiClient.getCities).mockResolvedValue([krCity]);
+      vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([krCity]);
 
       render(<SignatureJourneysPage />);
 

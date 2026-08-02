@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element, @typescript-eslint/no-unused-vars */
 import type { AnchorHTMLAttributes, ImgHTMLAttributes } from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import MoreDreamsPage from '@/app/more-dreams/page';
 import { apiClient } from '@/lib/api-client';
@@ -79,7 +79,11 @@ vi.mock('@/lib/api-client', () => ({
   apiClient: {
     getActivities: vi.fn(),
     getRestaurants: vi.fn(),
-    getCities: vi.fn(),
+    getExperienceDestinations: vi.fn(),
+    // Mirrors the real client, which still exports getCities (it is just no
+    // longer called from src/app/) — so the "page never calls it" assertion
+    // below is a real check and not a claim about this factory's key list.
+    getCities: vi.fn().mockResolvedValue([]),
     getReviewsByEntity: vi.fn().mockResolvedValue({
       reviews: [],
       aggregate: { average_rating: null, review_count: 0 },
@@ -140,7 +144,7 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
   it('renders the Activities & Experiences + Curated Restaurants titles', async () => {
     vi.mocked(apiClient.getActivities).mockResolvedValue(page([localExperience]));
     vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([restaurant]));
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
+    vi.mocked(apiClient.getExperienceDestinations).mockResolvedValue([paris]);
 
     render(<MoreDreamsPage />);
 
@@ -153,7 +157,7 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
   it('never renders a Signature Journeys section on More Dreams', async () => {
     vi.mocked(apiClient.getActivities).mockResolvedValue(page([localExperience]));
     vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([restaurant]));
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
+    vi.mocked(apiClient.getExperienceDestinations).mockResolvedValue([paris]);
 
     const { container } = render(<MoreDreamsPage />);
 
@@ -166,7 +170,7 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
   it('calls getActivities exactly once with kind=local_experience (no package fetch)', async () => {
     vi.mocked(apiClient.getActivities).mockResolvedValue(page([localExperience]));
     vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([]));
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
+    vi.mocked(apiClient.getExperienceDestinations).mockResolvedValue([paris]);
 
     render(<MoreDreamsPage />);
 
@@ -183,7 +187,7 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
   it('renders the standard (neutral) pill — never the gold signature pill', async () => {
     vi.mocked(apiClient.getActivities).mockResolvedValue(page([localExperience]));
     vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([]));
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
+    vi.mocked(apiClient.getExperienceDestinations).mockResolvedValue([paris]);
 
     render(<MoreDreamsPage />);
 
@@ -199,7 +203,7 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
     // package on More Dreams even if one leaks into the local_experience call.
     vi.mocked(apiClient.getActivities).mockResolvedValue(page([localExperience, signatureJourney]));
     vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([]));
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
+    vi.mocked(apiClient.getExperienceDestinations).mockResolvedValue([paris]);
 
     render(<MoreDreamsPage />);
 
@@ -219,7 +223,7 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
     };
     vi.mocked(apiClient.getActivities).mockResolvedValue(page([noKindActivity]));
     vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([]));
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
+    vi.mocked(apiClient.getExperienceDestinations).mockResolvedValue([paris]);
 
     render(<MoreDreamsPage />);
 
@@ -227,5 +231,49 @@ describe('MoreDreamsPage — Activities + Restaurants only (no Signature Journey
       await screen.findByRole('heading', { level: 2, name: /Activities & Experiences/i }),
     ).toBeTruthy();
     expect(screen.getByText('No Kind Activity')).toBeTruthy();
+  });
+});
+
+/**
+ * SMA-247: the destination dropdown is fed by the published-content-derived
+ * experiences endpoint, never by the global city catalog (whose first-100-row
+ * cap used to hide destinations entirely).
+ */
+describe('MoreDreamsPage — destination options (SMA-247)', () => {
+  /** A city that would never appear in the first 100 rows of the catalog. */
+  const ushuaia: City = {
+    ...paris,
+    id: 84231,
+    name: { en: 'Ushuaia', kr: '우수아이아' },
+    slug: 'ushuaia',
+  };
+
+  it('reads destinations from getExperienceDestinations, not the city catalog', async () => {
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([localExperience]));
+    vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([]));
+    vi.mocked(apiClient.getExperienceDestinations).mockResolvedValue([ushuaia]);
+
+    render(<MoreDreamsPage />);
+
+    await waitFor(() => {
+      expect(vi.mocked(apiClient.getExperienceDestinations).mock.calls.length).toBe(1);
+    });
+    expect(vi.mocked(apiClient.getExperienceDestinations).mock.calls[0][0]).toBe('en');
+    // The global city catalog must never be consulted for the dropdown.
+    expect(apiClient.getCities).not.toHaveBeenCalled();
+  });
+
+  it('offers a far-catalog city in the destination dropdown', async () => {
+    vi.mocked(apiClient.getActivities).mockResolvedValue(page([localExperience]));
+    vi.mocked(apiClient.getRestaurants).mockResolvedValue(page([]));
+    vi.mocked(apiClient.getExperienceDestinations).mockResolvedValue([ushuaia]);
+
+    render(<MoreDreamsPage />);
+
+    await screen.findByRole('heading', { level: 2, name: /Activities & Experiences/i });
+
+    fireEvent.click(screen.getByRole('button', { name: /All Destinations/i }));
+
+    expect(await screen.findByRole('button', { name: 'Ushuaia' })).toBeTruthy();
   });
 });

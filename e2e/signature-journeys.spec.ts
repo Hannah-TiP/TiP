@@ -10,6 +10,10 @@ import { test, expect, type Route } from '@playwright/test';
  * SMA-229: the browse-a-city dropdown is replaced by a unified typeahead that
  * matches BOTH city names and journey titles server-side (`?q=`).
  *
+ * SMA-247: DESTINATIONS come from the published-journey-derived
+ * /api/signature-journeys/destinations endpoint (never the global city
+ * catalog), and picking one refetches the grid server-side with `city_id`.
+ *
  * Asserts:
  *   - the page renders the 4 known journeys from the new endpoint
  *   - cards link to /signature-journeys/[slug]
@@ -19,10 +23,12 @@ import { test, expect, type Route } from '@playwright/test';
  *   - typing a city name narrows the grid to that city
  *   - a journey-less city is never suggested
  *   - clearing the search restores the full grid
+ *   - a city far beyond the first 100 catalog rows is still offered, renders as
+ *     the card subtitle, and issues a `city_id` request when picked
  *
- * Strategy: intercept /api/signature-journeys + /api/cities so the test is
- * deterministic against any backend (preview, prod, local). The route handler
- * emulates the backend `q` filter over journey titles + city names.
+ * Strategy: intercept /api/signature-journeys + its /destinations sibling so
+ * the test is deterministic against any backend (preview, prod, local). The
+ * route handler emulates the backend `q` and `city_id` filters.
  */
 
 const JOURNEYS = [
@@ -60,48 +66,109 @@ function journeyFixture(item: { id: number; slug: string; name: string; city_id:
   };
 }
 
+function cityFixture(city: { id: number; slug: string; name: { en: string; kr: string } }) {
+  return {
+    id: city.id,
+    slug: city.slug,
+    name: city.name,
+    region_id: 1,
+    status: true,
+    link_services: true,
+    schema_version: 1,
+  };
+}
+
+/**
+ * Stub the list endpoint (emulating the backend `q` + `city_id` filters) and
+ * its `/destinations` sibling. The list matcher is a RegExp anchored on the
+ * end of the path so it can never swallow the `/destinations` request.
+ */
+async function stubJourneyRoutes(
+  page: import('@playwright/test').Page,
+  journeys: typeof JOURNEYS,
+  destinations: (typeof CITIES)[number][],
+  cityNameById: Map<number, string>,
+) {
+  await page.route(/\/api\/signature-journeys(\?|$)/, async (route: Route) => {
+    const params = new URL(route.request().url()).searchParams;
+    const q = params.get('q')?.toLowerCase() ?? '';
+    const cityId = params.get('city_id');
+    let matched = journeys;
+    if (q) {
+      matched = journeys.filter(
+        (j) =>
+          j.name.toLowerCase().includes(q) ||
+          (cityNameById.get(j.city_id) ?? '').toLowerCase().includes(q),
+      );
+    } else if (cityId) {
+      matched = journeys.filter((j) => j.city_id === Number(cityId));
+    }
+    const items = matched.map(journeyFixture);
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      // v2 list endpoints return the standard pagination envelope.
+      body: JSON.stringify({
+        data: {
+          items,
+          total: items.length,
+          per_page: 100,
+          current_page: 1,
+          last_page: 1,
+          has_more: false,
+        },
+      }),
+    });
+  });
+
+  await page.route(/\/api\/signature-journeys\/destinations/, async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: destinations.map(cityFixture) }),
+    });
+  });
+}
+
+/**
+ * Navigate to the page and wait for React's streaming reveal to finish.
+ *
+ * The page body lives inside a page-level `<Suspense>` (as do /dream-hotels,
+ * /more-dreams and /magazine), so a production build streams it: the shell
+ * ships `<!--$?--><template id="B:0"></template>`, the real markup arrives
+ * later inside a `<div hidden id="S:0">` buffer, and React splices that buffer
+ * into the boundary on a THROTTLED timer (~300 ms after first paint). React
+ * force-client-renders the boundary as soon as it hydrates, so between
+ * hydration and that splice the document holds two copies of the page — the
+ * live one plus the not-yet-consumed hidden buffer — and every page-level test
+ * id resolves to 2 elements. `page.goto` resolves on `load`, which on a loaded
+ * CI runner lands inside that window (the SMA-247 `e2e-pr-smoke` failure).
+ *
+ * Waiting for the buffer to be consumed is the narrowest possible guard: it
+ * only tolerates React's own hidden staging node, so a genuine double render
+ * (two LIVE copies) still trips strict mode exactly as before.
+ */
+async function gotoSignatureJourneys(page: import('@playwright/test').Page) {
+  await page.goto('/signature-journeys');
+  await expect(page.locator('[id^="S:"]')).toHaveCount(0);
+}
+
 test.describe('/signature-journeys', () => {
   test.beforeEach(async ({ page }) => {
-    await page.route('**/api/signature-journeys**', async (route: Route) => {
-      const q = new URL(route.request().url()).searchParams.get('q')?.toLowerCase() ?? '';
-      const matched = q
-        ? JOURNEYS.filter(
-            (j) =>
-              j.name.toLowerCase().includes(q) ||
-              (CITY_NAME_BY_ID.get(j.city_id) ?? '').toLowerCase().includes(q),
-          )
-        : JOURNEYS;
-      const items = matched.map(journeyFixture);
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        // v2 list endpoints return the standard pagination envelope.
-        body: JSON.stringify({
-          data: {
-            items,
-            total: items.length,
-            per_page: 100,
-            current_page: 1,
-            last_page: 1,
-            has_more: false,
-          },
-        }),
-      });
-    });
-
-    await page.route('**/api/cities**', async (route: Route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ data: CITIES }),
-      });
-    });
+    // Oslo has no journey, so the published-journey-derived destinations
+    // endpoint never returns it.
+    await stubJourneyRoutes(
+      page,
+      JOURNEYS,
+      CITIES.filter((c) => c.slug !== 'oslo'),
+      CITY_NAME_BY_ID,
+    );
   });
 
   test('renders the 4 journeys from the new endpoint with the gold signature pill', async ({
     page,
   }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     await expect(
       page.getByRole('heading', { level: 1, name: /Signature Journeys/i }),
@@ -122,7 +189,7 @@ test.describe('/signature-journeys', () => {
   });
 
   test('cards link to the /signature-journeys/[slug] detail route', async ({ page }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     const cards = page.locator('[data-testid="signature-journey-card"]');
     await expect(cards.first()).toHaveAttribute('href', '/signature-journeys/ritz-carlton-yacht');
@@ -131,7 +198,7 @@ test.describe('/signature-journeys', () => {
   test('uses the overlay header variant and highlights the Signature Journeys nav', async ({
     page,
   }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     await expect(page.locator('header')).toHaveCount(1);
     const header = page.locator('header').first();
@@ -149,7 +216,7 @@ test.describe('/signature-journeys', () => {
   });
 
   test('all 5 top-level nav items render once and in order without overflow', async ({ page }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     const header = page.locator('header').first();
     for (const label of [
@@ -169,7 +236,7 @@ test.describe('/signature-journeys', () => {
   });
 
   test('typing a journey title narrows the grid to that journey', async ({ page }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     const grid = page.locator('[data-testid="section-signature-journeys"]');
     await expect(grid.locator('[data-testid="signature-journey-card"]')).toHaveCount(4);
@@ -183,7 +250,7 @@ test.describe('/signature-journeys', () => {
   test('typing a city name narrows the grid to that city and suggests the city', async ({
     page,
   }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     await page.getByTestId('signature-journey-search').fill('Monaco');
 
@@ -203,7 +270,7 @@ test.describe('/signature-journeys', () => {
   });
 
   test('never offers a city that has no journeys', async ({ page }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     await page.getByTestId('signature-journey-search').click();
 
@@ -215,7 +282,7 @@ test.describe('/signature-journeys', () => {
   test('an unmatched search shows the empty state and clearing restores the grid', async ({
     page,
   }) => {
-    await page.goto('/signature-journeys');
+    await gotoSignatureJourneys(page);
 
     const search = page.getByTestId('signature-journey-search');
     await search.fill('zzzznothing');
@@ -228,5 +295,65 @@ test.describe('/signature-journeys', () => {
     const grid = page.locator('[data-testid="section-signature-journeys"]');
     await expect(grid.locator('[data-testid="signature-journey-card"]')).toHaveCount(4);
     await expect(page.getByTestId('signature-journeys-empty')).toHaveCount(0);
+  });
+});
+
+/**
+ * SMA-247 regression: destinations used to be the intersection of the loaded
+ * journeys with `getCities()`, which returns only the first 100 rows of an
+ * ~84k-row catalog. Ushuaia (id 84231) models a city that could never survive
+ * that intersection.
+ */
+test.describe('/signature-journeys — destinations beyond the city-catalog cap', () => {
+  const USHUAIA = {
+    id: 84231,
+    slug: 'ushuaia',
+    name: { en: 'Ushuaia', kr: '우수아이아' },
+    schema_version: 1,
+  };
+
+  const FAR_JOURNEYS = [
+    { id: 4, slug: 'ritz-carlton-yacht', name: 'The Ritz-Carlton Yacht', city_id: 10 },
+    { id: 11, slug: 'end-of-the-world', name: 'End of the World', city_id: USHUAIA.id },
+  ];
+
+  const FAR_CITIES = [CITIES[0], USHUAIA];
+  const FAR_CITY_NAME_BY_ID = new Map(FAR_CITIES.map((c) => [c.id, c.name.en]));
+
+  test.beforeEach(async ({ page }) => {
+    await stubJourneyRoutes(page, FAR_JOURNEYS, FAR_CITIES, FAR_CITY_NAME_BY_ID);
+  });
+
+  test('offers the far-catalog city, subtitles its card, and refetches by city_id', async ({
+    page,
+  }) => {
+    const cityIdRequests: string[] = [];
+    page.on('request', (request) => {
+      const cityId = new URL(request.url()).searchParams.get('city_id');
+      if (cityId) cityIdRequests.push(cityId);
+    });
+
+    await gotoSignatureJourneys(page);
+
+    const grid = page.locator('[data-testid="section-signature-journeys"]');
+    await expect(grid.locator('[data-testid="signature-journey-card"]')).toHaveCount(2);
+
+    // The card resolves its city name from the destinations endpoint.
+    const farCard = grid.locator('[data-testid="signature-journey-card"]', {
+      hasText: 'End of the World',
+    });
+    await expect(farCard.getByText('Ushuaia', { exact: true })).toBeVisible();
+
+    // The city is offered under DESTINATIONS despite its catalog rank.
+    await page.getByTestId('signature-journey-search').click();
+    const panel = page.getByTestId('signature-journey-suggestions');
+    await expect(panel.getByTestId('suggestion-city')).toHaveText(['Monaco', 'Ushuaia']);
+
+    // Picking it narrows the grid via a server-side `city_id` request.
+    await panel.getByRole('button', { name: 'Ushuaia', exact: true }).click();
+
+    await expect(grid.locator('[data-testid="signature-journey-card"]')).toHaveCount(1);
+    await expect(grid.getByText('End of the World', { exact: true })).toBeVisible();
+    expect(cityIdRequests).toEqual([String(USHUAIA.id)]);
   });
 });
