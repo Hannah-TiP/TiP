@@ -57,14 +57,14 @@ function SharedTripCard({ item }: { item: SharedTripItem }) {
 }
 
 export default function SharedTripsPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<SharedTripItem[]>([]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        setItems(await apiClient.getSharedTrips());
+        setItems(await apiClient.getSharedTrips(lang));
       } catch {
         setItems([]);
       } finally {
@@ -72,7 +72,7 @@ export default function SharedTripsPage() {
       }
     };
     load();
-  }, []);
+  }, [lang]);
 
   return (
     <div className="min-h-screen bg-gray-50">

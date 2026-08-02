@@ -47,7 +47,7 @@ export default function TravelHistory() {
   useEffect(() => {
     const load = async () => {
       try {
-        const loaded = await getTripsWithVersions();
+        const loaded = await getTripsWithVersions({ language: lang });
         const completed = loaded.filter(({ trip }) => trip.status === 'travel-completed');
         setTrips(completed);
 
@@ -56,14 +56,14 @@ export default function TravelHistory() {
         // is the only way to derive "did I review this" — there is no
         // list-my-reviews endpoint).
         try {
-          const user = await apiClient.getProfile();
+          const user = await apiClient.getProfile(lang);
           const statuses = await Promise.all(
             completed.map(async ({ trip, currentVersion }) => {
               const entities = toReviewableEntities(getTripReviewableItems(currentVersion));
               if (entities.length === 0) return null;
               const lists = await Promise.all(
                 entities.map((e) =>
-                  apiClient.getReviewsByEntity(e.entityType, e.entityId).catch(() => null),
+                  apiClient.getReviewsByEntity(e.entityType, e.entityId, lang).catch(() => null),
                 ),
               );
               const reviewed = lists.filter((list) =>
@@ -81,14 +81,14 @@ export default function TravelHistory() {
           // Leave badges absent on failure.
         }
       } catch {
-        setError('Failed to load travel history.');
+        setError(t('travel_history.error_load'));
       } finally {
         setLoading(false);
       }
     };
 
     load();
-  }, []);
+  }, [lang, t]);
 
   return (
     <div className="min-h-screen bg-gray-50">

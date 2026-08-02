@@ -92,7 +92,7 @@ function OnboardingFlow() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([apiClient.getProfile(), apiClient.getMyReferrals().catch(() => null)])
+    Promise.all([apiClient.getProfile(lang), apiClient.getMyReferrals().catch(() => null)])
       .then(([profile, referrals]) => {
         if (cancelled) return;
 
@@ -115,6 +115,9 @@ function OnboardingFlow() {
     return () => {
       cancelled = true;
     };
+    // Mount-only profile load — the active lang is read at call time and a
+    // toggle mid-onboarding must not restart the wizard.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function toggleStyle(value: string) {
@@ -144,13 +147,13 @@ function OnboardingFlow() {
         }
         // Mark the step as seen regardless of claim outcome — this is the
         // skip-persistence the whole step hinges on.
-        await apiClient.updateProfile({ referral_onboarding_seen: true });
+        await apiClient.updateProfile({ referral_onboarding_seen: true }, lang);
       } else if (currentStep === 2) {
-        await apiClient.updateProfile({ first_name: firstName, last_name: lastName });
+        await apiClient.updateProfile({ first_name: firstName, last_name: lastName }, lang);
       } else if (currentStep === 3) {
-        await apiClient.updateProfile({ city_id: cityId });
+        await apiClient.updateProfile({ city_id: cityId }, lang);
       } else if (currentStep === 4) {
-        await apiClient.updateProfile({ birthday: formatBirth() });
+        await apiClient.updateProfile({ birthday: formatBirth() }, lang);
       }
       // Step 5 is saved in handleComplete
       return true;
@@ -167,10 +170,13 @@ function OnboardingFlow() {
     setError('');
 
     try {
-      await apiClient.updateProfile({
-        travel_styles: selectedStyles.length > 0 ? selectedStyles : undefined,
-        onboarding_completed: true,
-      });
+      await apiClient.updateProfile(
+        {
+          travel_styles: selectedStyles.length > 0 ? selectedStyles : undefined,
+          onboarding_completed: true,
+        },
+        lang,
+      );
       router.push(isSafeRedirectPath(rawRedirect) ? rawRedirect : '/my-page');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('onboarding.error_generic'));

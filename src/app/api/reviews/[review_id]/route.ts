@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { languageHeader } from '@/lib/proxy-language';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ review_id: string }> },
 ) {
   try {
@@ -13,7 +14,7 @@ export async function GET(
     const response = await fetch(`${API_BASE_URL}/api/v2/reviews/${review_id}`, {
       headers: {
         'Content-Type': 'application/json',
-        Language: 'en',
+        ...languageHeader(request),
       },
     });
 
@@ -53,7 +54,7 @@ export async function PUT(
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        Language: 'en',
+        ...languageHeader(request),
       },
       body: JSON.stringify(body),
     });
@@ -75,7 +76,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ review_id: string }> },
 ) {
   try {
@@ -93,7 +94,7 @@ export async function DELETE(
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        Language: 'en',
+        ...languageHeader(request),
       },
     });
 

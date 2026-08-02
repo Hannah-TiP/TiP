@@ -20,7 +20,7 @@ const GENDER_OPTIONS = [
 ] as const;
 
 export default function MyProfile() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
 
@@ -63,7 +63,7 @@ export default function MyProfile() {
     try {
       setLoading(true);
       setError('');
-      const data = await apiClient.getProfile();
+      const data = await apiClient.getProfile(lang);
       setProfile(data);
       setFirstName(data.first_name || '');
       setLastName(data.last_name || '');
@@ -91,13 +91,16 @@ export default function MyProfile() {
       setSaving(true);
       setError('');
       setSuccess('');
-      await apiClient.updateProfile({
-        first_name: firstName,
-        last_name: lastName,
-        gender: gender || undefined,
-        birthday: birthday || undefined,
-        city_id: cityId,
-      });
+      await apiClient.updateProfile(
+        {
+          first_name: firstName,
+          last_name: lastName,
+          gender: gender || undefined,
+          birthday: birthday || undefined,
+          city_id: cityId,
+        },
+        lang,
+      );
       setSuccess(t('profile.success_saved'));
       setIsDirty(false);
       // Reload profile to get fresh data

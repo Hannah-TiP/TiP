@@ -26,7 +26,7 @@ const NAVER_CLIENT_ID = process.env.NEXT_PUBLIC_NAVER_CLIENT_ID || '';
 const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{4,16}$/i;
 
 function RegisterForm() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const webview = useInAppBrowser();
   const searchParams = useSearchParams();
   const rawRef = searchParams?.get('ref') ?? '';
@@ -97,7 +97,7 @@ function RegisterForm() {
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/auth/send-verification', {
+      const res = await fetch(`/api/auth/send-verification?language=${lang}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code_type: 'register' }),
@@ -129,7 +129,7 @@ function RegisterForm() {
 
     try {
       // Step 1: Verify email code
-      const verifyRes = await fetch('/api/auth/verify-email', {
+      const verifyRes = await fetch(`/api/auth/verify-email?language=${lang}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -144,7 +144,7 @@ function RegisterForm() {
       }
 
       // Step 2: Register via backend
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch(`/api/auth/register?language=${lang}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

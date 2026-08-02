@@ -50,7 +50,7 @@ export default function SharedTripDetailPage() {
       try {
         setLoading(true);
         setError(null);
-        const data = await apiClient.getSharedTripDetail(Number(id));
+        const data = await apiClient.getSharedTripDetail(Number(id), lang);
         if (!cancelled) setDetail(data);
       } catch (err) {
         if (!cancelled) {
@@ -64,7 +64,7 @@ export default function SharedTripDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, sessionStatus, router, t]);
+  }, [id, sessionStatus, router, t, lang]);
 
   if (sessionStatus !== 'authenticated' || loading) {
     return (

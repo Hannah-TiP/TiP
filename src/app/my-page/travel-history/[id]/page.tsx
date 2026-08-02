@@ -89,7 +89,7 @@ export default function TravelHistoryTripDetailPage() {
     const load = async () => {
       try {
         const tripId = Number(id);
-        const loaded = await getTripWithVersion(tripId);
+        const loaded = await getTripWithVersion(tripId, lang);
         setTripWithVersion(loaded);
 
         try {
@@ -102,10 +102,10 @@ export default function TravelHistoryTripDetailPage() {
         const entities = toReviewableEntities(getTripReviewableItems(loaded.currentVersion));
         if (entities.length > 0) {
           try {
-            const user = await apiClient.getProfile();
+            const user = await apiClient.getProfile(lang);
             const lists = await Promise.all(
               entities.map((e) =>
-                apiClient.getReviewsByEntity(e.entityType, e.entityId).catch(() => null),
+                apiClient.getReviewsByEntity(e.entityType, e.entityId, lang).catch(() => null),
               ),
             );
             const reviewed = lists.filter((list) =>
@@ -124,7 +124,7 @@ export default function TravelHistoryTripDetailPage() {
     };
 
     load();
-  }, [id, t]);
+  }, [id, t, lang]);
 
   if (loading) {
     return (

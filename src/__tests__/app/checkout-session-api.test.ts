@@ -54,7 +54,6 @@ describe('POST /api/quotes/[id]/checkout-session', () => {
         method: 'POST',
         headers: expect.objectContaining({
           Authorization: 'Bearer tok-xyz',
-          Language: 'en',
         }),
       }),
     );

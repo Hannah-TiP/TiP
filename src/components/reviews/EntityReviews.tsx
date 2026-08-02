@@ -55,7 +55,7 @@ function ReviewItem({ entry }: { entry: ReviewWithAuthor }) {
 }
 
 export default function EntityReviews({ entityType, entityId }: EntityReviewsProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [data, setData] = useState<ReviewListResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -65,14 +65,14 @@ export default function EntityReviews({ entityType, entityId }: EntityReviewsPro
     try {
       setIsLoading(true);
       setHasError(false);
-      const result = await apiClient.getReviewsByEntity(entityType, entityId);
+      const result = await apiClient.getReviewsByEntity(entityType, entityId, lang);
       setData(result);
     } catch {
       setHasError(true);
     } finally {
       setIsLoading(false);
     }
-  }, [entityType, entityId]);
+  }, [entityType, entityId, lang]);
 
   useEffect(() => {
     if (!entityId) return;

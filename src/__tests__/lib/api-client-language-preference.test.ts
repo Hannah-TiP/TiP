@@ -23,8 +23,10 @@ describe('ApiClient.updateLanguagePreference', () => {
 
     await apiClient.updateLanguagePreference('kr');
 
+    // The chosen language also rides as ?language= so the proxy forwards it
+    // as the backend Language header (SMA-260).
     expect(mockFetch).toHaveBeenCalledWith(
-      '/api/profile/update',
+      '/api/profile/update?language=kr',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ language_preference: 'kr' }),

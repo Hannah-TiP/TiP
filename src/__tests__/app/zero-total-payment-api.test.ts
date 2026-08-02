@@ -56,7 +56,6 @@ describe('POST /api/quotes/[id]/zero-total-payment', () => {
         method: 'POST',
         headers: expect.objectContaining({
           Authorization: 'Bearer tok-xyz',
-          Language: 'en',
         }),
       }),
     );

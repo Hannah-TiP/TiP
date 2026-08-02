@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client';
+import type { Lang } from '@/contexts/LanguageContext';
 import type { Quote } from '@/types/quote';
 import type { Trip, TripDocument, TripPlanItem, TripVersion } from '@/types/trip';
 import type { ReviewEntityType } from '@/types/review';
@@ -54,10 +55,10 @@ export interface TripWithVersion {
   activeQuote: Quote | null;
 }
 
-export async function getTripWithVersion(id: number): Promise<TripWithVersion> {
+export async function getTripWithVersion(id: number, language?: Lang): Promise<TripWithVersion> {
   const [bundle, currentVersion] = await Promise.all([
-    apiClient.getTripById(id),
-    apiClient.getCurrentTripVersion(id).catch(() => null),
+    apiClient.getTripById(id, language),
+    apiClient.getCurrentTripVersion(id, language).catch(() => null),
   ]);
 
   return { trip: bundle.trip, currentVersion, activeQuote: bundle.active_quote };
@@ -68,13 +69,14 @@ export async function getTripsWithVersions(params?: {
   page?: number;
   per_page?: number;
   exclude_canceled?: boolean;
+  language?: Lang;
 }): Promise<TripWithVersion[]> {
   const trips = await apiClient.getTrips(params);
   return Promise.all(
     trips.map(async (trip) => ({
       trip,
       currentVersion: trip.current_trip_version_id
-        ? await apiClient.getCurrentTripVersion(trip.id).catch(() => null)
+        ? await apiClient.getCurrentTripVersion(trip.id, params?.language).catch(() => null)
         : null,
       // `GET /trips` returns bare Trip rows (list shape). Don't fan out N+1
       // active-quote lookups here -- the concierge right pane fetches the

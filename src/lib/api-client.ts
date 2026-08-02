@@ -67,6 +67,18 @@ import type {
 class ApiClient {
   private baseUrl = '/api';
 
+  /**
+   * Append `?language=` to a proxy endpoint (SMA-260). The proxy layer
+   * forwards the param as the backend `Language` header ONLY when present —
+   * it never invents a default — so omitting `language` lets the backend
+   * ladder resolve (stored preference → Accept-Language → EN).
+   */
+  private withLanguage(endpoint: string, language?: string): string {
+    if (!language) return endpoint;
+    const sep = endpoint.includes('?') ? '&' : '?';
+    return `${endpoint}${sep}language=${encodeURIComponent(language)}`;
+  }
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       ...options,
@@ -95,8 +107,8 @@ class ApiClient {
     });
   }
 
-  async register(email: string, password: string, code: string) {
-    return this.request('/auth/register', {
+  async register(email: string, password: string, code: string, language?: Lang) {
+    return this.request(this.withLanguage('/auth/register', language), {
       method: 'POST',
       body: JSON.stringify({
         email,
@@ -110,8 +122,9 @@ class ApiClient {
   async sendVerificationCode(
     email: string,
     type: 'register' | 'forgot-password' | 'account_deletion',
+    language?: Lang,
   ) {
-    return this.request('/auth/send-verification', {
+    return this.request(this.withLanguage('/auth/send-verification', language), {
       method: 'POST',
       body: JSON.stringify({
         email,
@@ -122,8 +135,8 @@ class ApiClient {
     });
   }
 
-  async resetPassword(email: string, code: string, password: string) {
-    return this.request('/auth/reset-password', {
+  async resetPassword(email: string, code: string, password: string, language?: Lang) {
+    return this.request(this.withLanguage('/auth/reset-password', language), {
       method: 'POST',
       body: JSON.stringify({
         email,
@@ -222,13 +235,13 @@ class ApiClient {
   }
 
   // Profile methods
-  async getProfile(): Promise<User> {
-    const response = await this.request<{ data: User }>('/profile');
+  async getProfile(language?: Lang): Promise<User> {
+    const response = await this.request<{ data: User }>(this.withLanguage('/profile', language));
     return response.data;
   }
 
-  async updateProfile(data: UpdateProfileData): Promise<void> {
-    await this.request('/profile/update', {
+  async updateProfile(data: UpdateProfileData, language?: Lang): Promise<void> {
+    await this.request(this.withLanguage('/profile/update', language), {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -238,7 +251,7 @@ class ApiClient {
   // request-language resolution (and transactional emails) use the right locale.
   async updateLanguagePreference(language: Lang): Promise<void> {
     const body: UpdateProfileData = { language_preference: language };
-    await this.request('/profile/update', {
+    await this.request(this.withLanguage('/profile/update', language), {
       method: 'POST',
       body: JSON.stringify(body),
     });
@@ -507,6 +520,7 @@ class ApiClient {
     page?: number;
     per_page?: number;
     exclude_canceled?: boolean;
+    language?: Lang;
   }): Promise<Trip[]> {
     const searchParams = new URLSearchParams();
     if (params?.status) searchParams.set('status', params.status);
@@ -514,6 +528,7 @@ class ApiClient {
     if (params?.per_page !== undefined) searchParams.set('per_page', params.per_page.toString());
     if (params?.exclude_canceled !== undefined)
       searchParams.set('exclude_canceled', params.exclude_canceled.toString());
+    if (params?.language) searchParams.set('language', params.language);
 
     const query = searchParams.toString();
     const endpoint = `/trip/list${query ? `?${query}` : ''}`;
@@ -522,23 +537,30 @@ class ApiClient {
     return response.data;
   }
 
-  async getTripById(id: number): Promise<TripWithActiveQuote> {
-    const response = await this.request<{ data: TripWithActiveQuote }>(`/trip/${id}`);
+  async getTripById(id: number, language?: Lang): Promise<TripWithActiveQuote> {
+    const response = await this.request<{ data: TripWithActiveQuote }>(
+      this.withLanguage(`/trip/${id}`, language),
+    );
     return response.data;
   }
 
-  async getCurrentTripVersion(id: number): Promise<TripVersion> {
-    const response = await this.request<{ data: TripVersion }>(`/trip/${id}/current-version`);
+  async getCurrentTripVersion(id: number, language?: Lang): Promise<TripVersion> {
+    const response = await this.request<{ data: TripVersion }>(
+      this.withLanguage(`/trip/${id}/current-version`, language),
+    );
     return response.data;
   }
 
-  async createTrip(currentVersion: Partial<TripVersion> = {}): Promise<Trip> {
-    const response = await this.request<{ data: Trip }>('/trip/create', {
-      method: 'POST',
-      body: JSON.stringify({
-        current_version: currentVersion,
-      }),
-    });
+  async createTrip(currentVersion: Partial<TripVersion> = {}, language?: Lang): Promise<Trip> {
+    const response = await this.request<{ data: Trip }>(
+      this.withLanguage('/trip/create', language),
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          current_version: currentVersion,
+        }),
+      },
+    );
     return response.data;
   }
 
@@ -547,14 +569,17 @@ class ApiClient {
    * plus the AI chat session for that trip. Used by the hotel detail page's
    * Reserve / Ask Concierge CTAs.
    */
-  async createTripFromHotel(payload: {
-    hotel_id: number;
-    start_date?: string;
-    end_date?: string;
-    adults?: number;
-  }): Promise<CreateTripFromHotelResponse> {
+  async createTripFromHotel(
+    payload: {
+      hotel_id: number;
+      start_date?: string;
+      end_date?: string;
+      adults?: number;
+    },
+    language?: Lang,
+  ): Promise<CreateTripFromHotelResponse> {
     const response = await this.request<{ data: CreateTripFromHotelResponse }>(
-      '/trips/from-hotel',
+      this.withLanguage('/trips/from-hotel', language),
       {
         method: 'POST',
         body: JSON.stringify(payload),
@@ -569,15 +594,18 @@ class ApiClient {
    * the chat thread with a confirmation message — no AI back-and-forth.
    * Used by the hotel detail page's Submit Request CTA.
    */
-  async submitRequestFromHotel(payload: {
-    hotel_id: number;
-    start_date: string;
-    end_date: string;
-    adults: number;
-    kids: number;
-  }): Promise<CreateTripFromHotelResponse> {
+  async submitRequestFromHotel(
+    payload: {
+      hotel_id: number;
+      start_date: string;
+      end_date: string;
+      adults: number;
+      kids: number;
+    },
+    language?: Lang,
+  ): Promise<CreateTripFromHotelResponse> {
     const response = await this.request<{ data: CreateTripFromHotelResponse }>(
-      '/trips/submit-request-from-hotel',
+      this.withLanguage('/trips/submit-request-from-hotel', language),
       {
         method: 'POST',
         body: JSON.stringify(payload),
@@ -592,29 +620,42 @@ class ApiClient {
    * recipients who reshare cannot escalate beyond their own permissions —
    * the backend clamps and echoes the applied settings.
    */
-  async shareTrip(tripId: number, payload: ShareTripRequest): Promise<ShareTripResponse> {
-    const response = await this.request<{ data: ShareTripResponse }>(`/trip/${tripId}/share`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+  async shareTrip(
+    tripId: number,
+    payload: ShareTripRequest,
+    language?: Lang,
+  ): Promise<ShareTripResponse> {
+    const response = await this.request<{ data: ShareTripResponse }>(
+      this.withLanguage(`/trip/${tripId}/share`, language),
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    );
     return response.data;
   }
 
   /** List trips shared TO the current user. */
-  async getSharedTrips(): Promise<SharedTripItem[]> {
-    const response = await this.request<{ data: SharedTripItem[] }>('/me/shared-trips');
+  async getSharedTrips(language?: Lang): Promise<SharedTripItem[]> {
+    const response = await this.request<{ data: SharedTripItem[] }>(
+      this.withLanguage('/me/shared-trips', language),
+    );
     return response.data;
   }
 
   /** Read-only detail of a single shared trip (auth-gated server-side). */
-  async getSharedTripDetail(tripId: number): Promise<SharedTripDetail> {
-    const response = await this.request<{ data: SharedTripDetail }>(`/shared-trips/${tripId}`);
+  async getSharedTripDetail(tripId: number, language?: Lang): Promise<SharedTripDetail> {
+    const response = await this.request<{ data: SharedTripDetail }>(
+      this.withLanguage(`/shared-trips/${tripId}`, language),
+    );
     return response.data;
   }
 
   // Quote methods
-  async getQuote(id: number): Promise<QuoteWithVersion> {
-    const response = await this.request<{ data: QuoteWithVersion }>(`/quotes/${id}`);
+  async getQuote(id: number, language?: Lang): Promise<QuoteWithVersion> {
+    const response = await this.request<{ data: QuoteWithVersion }>(
+      this.withLanguage(`/quotes/${id}`, language),
+    );
     return response.data;
   }
 
@@ -626,8 +667,10 @@ class ApiClient {
    * yet — callers can render conditionally without distinguishing missing
    * vs. empty.
    */
-  async getLatestQuoteForTrip(tripId: number): Promise<QuoteWithVersion | null> {
-    const response = await this.request<{ data: QuoteWithVersion[] }>(`/quotes?trip_id=${tripId}`);
+  async getLatestQuoteForTrip(tripId: number, language?: Lang): Promise<QuoteWithVersion | null> {
+    const response = await this.request<{ data: QuoteWithVersion[] }>(
+      this.withLanguage(`/quotes?trip_id=${tripId}`, language),
+    );
     return response.data[0] ?? null;
   }
 
@@ -659,26 +702,26 @@ class ApiClient {
    * Complete a SENT quote whose total is 0 (fully covered by credits) —
    * marks it PAID without a Flywire checkout (SMA-237).
    */
-  async completeZeroTotalQuote(quoteId: number): Promise<QuoteWithVersion> {
+  async completeZeroTotalQuote(quoteId: number, language?: Lang): Promise<QuoteWithVersion> {
     const response = await this.request<{ data: QuoteWithVersion }>(
-      `/quotes/${quoteId}/zero-total-payment`,
+      this.withLanguage(`/quotes/${quoteId}/zero-total-payment`, language),
       { method: 'POST' },
     );
     return response.data;
   }
 
   // Payment methods (Flywire checkout)
-  async createCheckoutSession(quoteId: number): Promise<CheckoutSessionResponse> {
+  async createCheckoutSession(quoteId: number, language?: Lang): Promise<CheckoutSessionResponse> {
     const response = await this.request<{ data: CheckoutSessionResponse }>(
-      `/quotes/${quoteId}/checkout-session`,
+      this.withLanguage(`/quotes/${quoteId}/checkout-session`, language),
       { method: 'POST' },
     );
     return response.data;
   }
 
-  async getWidgetConfig(paymentId: number): Promise<WidgetConfig> {
+  async getWidgetConfig(paymentId: number, language?: Lang): Promise<WidgetConfig> {
     const response = await this.request<{ data: WidgetConfig }>(
-      `/payments/${paymentId}/widget-config`,
+      this.withLanguage(`/payments/${paymentId}/widget-config`, language),
     );
     return response.data;
   }
@@ -836,9 +879,10 @@ class ApiClient {
   async getReviewsByEntity(
     entityType: ReviewEntityType,
     entityId: number,
+    language?: Lang,
   ): Promise<ReviewListResponse> {
     const response = await this.request<{ data: ReviewListResponse }>(
-      `/reviews/by-entity/${entityType}/${entityId}`,
+      this.withLanguage(`/reviews/by-entity/${entityType}/${entityId}`, language),
     );
     return response.data;
   }
@@ -846,6 +890,7 @@ class ApiClient {
   async getReviewAggregates(
     entityType: ReviewEntityType,
     entityIds: number[],
+    language?: Lang,
   ): Promise<Record<number, ReviewAggregate>> {
     if (entityIds.length === 0) return {};
     const searchParams = new URLSearchParams({
@@ -853,34 +898,46 @@ class ApiClient {
       entity_ids: entityIds.join(','),
     });
     const response = await this.request<{ data: Record<number, ReviewAggregate> }>(
-      `/reviews/aggregates?${searchParams.toString()}`,
+      this.withLanguage(`/reviews/aggregates?${searchParams.toString()}`, language),
     );
     return response.data;
   }
 
-  async getReview(reviewId: number): Promise<ReviewWithAuthor> {
-    const response = await this.request<{ data: ReviewWithAuthor }>(`/reviews/${reviewId}`);
+  async getReview(reviewId: number, language?: Lang): Promise<ReviewWithAuthor> {
+    const response = await this.request<{ data: ReviewWithAuthor }>(
+      this.withLanguage(`/reviews/${reviewId}`, language),
+    );
     return response.data;
   }
 
-  async createReview(payload: CreateReview): Promise<ReviewWithAuthor> {
-    const response = await this.request<{ data: ReviewWithAuthor }>('/reviews', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+  async createReview(payload: CreateReview, language?: Lang): Promise<ReviewWithAuthor> {
+    const response = await this.request<{ data: ReviewWithAuthor }>(
+      this.withLanguage('/reviews', language),
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    );
     return response.data;
   }
 
-  async updateReview(reviewId: number, payload: UpdateReview): Promise<ReviewWithAuthor> {
-    const response = await this.request<{ data: ReviewWithAuthor }>(`/reviews/${reviewId}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    });
+  async updateReview(
+    reviewId: number,
+    payload: UpdateReview,
+    language?: Lang,
+  ): Promise<ReviewWithAuthor> {
+    const response = await this.request<{ data: ReviewWithAuthor }>(
+      this.withLanguage(`/reviews/${reviewId}`, language),
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      },
+    );
     return response.data;
   }
 
-  async deleteReview(reviewId: number): Promise<void> {
-    await this.request(`/reviews/${reviewId}`, {
+  async deleteReview(reviewId: number, language?: Lang): Promise<void> {
+    await this.request(this.withLanguage(`/reviews/${reviewId}`, language), {
       method: 'DELETE',
     });
   }

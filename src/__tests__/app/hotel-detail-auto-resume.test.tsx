@@ -125,11 +125,14 @@ describe('HotelDetailIsland — auto-resume after sign-in', () => {
     await waitFor(() => {
       expect(apiClient.createTripFromHotel).toHaveBeenCalledTimes(1);
     });
-    expect(apiClient.createTripFromHotel).toHaveBeenCalledWith({
-      hotel_id: 42,
-      start_date: '2099-06-10',
-      end_date: '2099-06-13',
-    });
+    expect(apiClient.createTripFromHotel).toHaveBeenCalledWith(
+      {
+        hotel_id: 42,
+        start_date: '2099-06-10',
+        end_date: '2099-06-13',
+      },
+      'en',
+    );
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith('/concierge?trip_id=77');
     });
@@ -150,7 +153,7 @@ describe('HotelDetailIsland — auto-resume after sign-in', () => {
     await waitFor(() => {
       expect(apiClient.createTripFromHotel).toHaveBeenCalledTimes(1);
     });
-    expect(apiClient.createTripFromHotel).toHaveBeenCalledWith({ hotel_id: 42 });
+    expect(apiClient.createTripFromHotel).toHaveBeenCalledWith({ hotel_id: 42 }, 'en');
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith('/concierge?trip_id=88');
     });
@@ -172,13 +175,16 @@ describe('HotelDetailIsland — auto-resume after sign-in', () => {
     await waitFor(() => {
       expect(apiClient.submitRequestFromHotel).toHaveBeenCalledTimes(1);
     });
-    expect(apiClient.submitRequestFromHotel).toHaveBeenCalledWith({
-      hotel_id: 42,
-      start_date: '2099-06-10',
-      end_date: '2099-06-13',
-      adults: 3,
-      kids: 1,
-    });
+    expect(apiClient.submitRequestFromHotel).toHaveBeenCalledWith(
+      {
+        hotel_id: 42,
+        start_date: '2099-06-10',
+        end_date: '2099-06-13',
+        adults: 3,
+        kids: 1,
+      },
+      'en',
+    );
     // Reserve flow must NOT have been used.
     expect(apiClient.createTripFromHotel).not.toHaveBeenCalled();
     await waitFor(() => {
@@ -203,13 +209,16 @@ describe('HotelDetailIsland — auto-resume after sign-in', () => {
     await waitFor(() => {
       expect(apiClient.submitRequestFromHotel).toHaveBeenCalledTimes(1);
     });
-    expect(apiClient.submitRequestFromHotel).toHaveBeenCalledWith({
-      hotel_id: 42,
-      start_date: '2099-06-10',
-      end_date: '2099-06-13',
-      adults: 2,
-      kids: 0,
-    });
+    expect(apiClient.submitRequestFromHotel).toHaveBeenCalledWith(
+      {
+        hotel_id: 42,
+        start_date: '2099-06-10',
+        end_date: '2099-06-13',
+        adults: 2,
+        kids: 0,
+      },
+      'en',
+    );
   });
 
   it('does not auto-fire when the user is unauthed (post-redirect mount before auth lands)', async () => {

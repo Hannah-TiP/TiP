@@ -202,14 +202,14 @@ function TripCard({ item }: { item: TripWithVersion }) {
 }
 
 export default function MyPageUpcomingTravels() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [trips, setTrips] = useState<TripWithVersion[]>([]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const loaded = await getTripsWithVersions();
+        const loaded = await getTripsWithVersions({ language: lang });
         const shown = loaded.filter(({ trip }) => trip.status !== 'travel-completed');
         setTrips(sortByPriority(shown));
       } finally {
@@ -218,7 +218,7 @@ export default function MyPageUpcomingTravels() {
     };
 
     load();
-  }, []);
+  }, [lang]);
 
   const featured = trips[0] ?? null;
   const otherTrips = trips.slice(1);

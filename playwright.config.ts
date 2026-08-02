@@ -31,6 +31,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/change-password.spec.ts',
   '**/delete-account.spec.ts',
   '**/free-night-membership.spec.ts',
+  '**/submit-request-kr.spec.ts',
 ];
 
 // Auth-free, data-independent specs run on every PR as a fast smoke gate

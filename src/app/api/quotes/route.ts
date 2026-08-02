@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { languageHeader } from '@/lib/proxy-language';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        Language: 'en',
+        ...languageHeader(request),
       },
     });
 

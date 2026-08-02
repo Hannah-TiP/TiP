@@ -7,9 +7,11 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
 async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
+    // No Language header (SMA-260: forward, never invent) — the backend
+    // ladder resolves via the user's stored language_preference.
     const res = await fetch(`${API_BASE_URL}/api/v2/auth/refresh`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Language: 'en' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         refresh_token: token.refreshToken,
       }),
@@ -39,7 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const loginRes = await fetch(`${API_BASE_URL}/api/v2/auth/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Language: 'en' },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password,
@@ -51,7 +53,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const meRes = await fetch(`${API_BASE_URL}/api/v2/auth/me`, {
             headers: {
               Authorization: `Bearer ${data.access_token}`,
-              Language: 'en',
             },
           });
           if (!meRes.ok) return null;
@@ -79,7 +80,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const meRes = await fetch(`${API_BASE_URL}/api/v2/auth/me`, {
             headers: {
               Authorization: `Bearer ${credentials.access_token}`,
-              Language: 'en',
             },
           });
           if (!meRes.ok) return null;

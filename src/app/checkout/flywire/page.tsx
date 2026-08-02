@@ -63,7 +63,7 @@ export default function FlywireCheckoutPage() {
 }
 
 function FlywireCheckoutContent() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { status: sessionStatus } = useSession();
@@ -100,7 +100,7 @@ function FlywireCheckoutContent() {
       try {
         setLoading(true);
         setError(null);
-        const cfg = await apiClient.getWidgetConfig(paymentId);
+        const cfg = await apiClient.getWidgetConfig(paymentId, lang);
         if (cancelled) return;
         setConfig(cfg);
 
@@ -109,11 +109,11 @@ function FlywireCheckoutContent() {
           setErrorBackHref(`/quotes/${quoteId}`);
           // Best-effort: pull the trip title via the existing trip APIs.
           try {
-            const bundle = await apiClient.getQuote(quoteId);
+            const bundle = await apiClient.getQuote(quoteId, lang);
             if (cancelled) return;
             const [, tripVersion] = (await Promise.all([
-              apiClient.getTripById(bundle.quote.trip_id).catch(() => null),
-              apiClient.getCurrentTripVersion(bundle.quote.trip_id).catch(() => null),
+              apiClient.getTripById(bundle.quote.trip_id, lang).catch(() => null),
+              apiClient.getCurrentTripVersion(bundle.quote.trip_id, lang).catch(() => null),
             ])) as [TripWithActiveQuote | null, TripVersion | null];
             if (!cancelled && tripVersion?.title) {
               setTripTitle(tripVersion.title);
@@ -144,7 +144,7 @@ function FlywireCheckoutContent() {
     return () => {
       cancelled = true;
     };
-  }, [sessionStatus, paymentIdRaw, paymentId, t]);
+  }, [sessionStatus, paymentIdRaw, paymentId, t, lang]);
 
   // Script-failure timeout. If FlywirePayment isn't on window 5s after we
   // injected the <Script>, give up and show a refresh CTA. Successful

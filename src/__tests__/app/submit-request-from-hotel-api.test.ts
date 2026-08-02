@@ -11,8 +11,8 @@ vi.stubGlobal('fetch', mockFetch);
 
 const { POST } = await import('@/app/api/trips/submit-request-from-hotel/route');
 
-function mockRequest(body: unknown): NextRequest {
-  return new NextRequest('http://localhost:3000/api/trips/submit-request-from-hotel', {
+function mockRequest(body: unknown, query = ''): NextRequest {
+  return new NextRequest(`http://localhost:3000/api/trips/submit-request-from-hotel${query}`, {
     method: 'POST',
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' },
@@ -83,9 +83,11 @@ describe('POST /api/trips/submit-request-from-hotel', () => {
       expect.objectContaining({
         Authorization: 'Bearer tok-abc',
         'Content-Type': 'application/json',
-        Language: 'en',
       }),
     );
+    // No `?language=` on the proxy request -> no Language header is invented
+    // (SMA-260: the backend ladder resolves the user's stored preference).
+    expect(init.headers).not.toHaveProperty('Language');
     expect(JSON.parse(init.body as string)).toEqual({
       hotel_id: 42,
       start_date: '2026-06-10',
@@ -95,6 +97,33 @@ describe('POST /api/trips/submit-request-from-hotel', () => {
     });
     expect(body.data.trip.id).toBe(77);
     expect(body.data.trip.status).toBe('waiting-for-proposal');
+  });
+
+  it('forwards a caller-supplied ?language= as the backend Language header', async () => {
+    mockAuth.mockResolvedValue({ accessToken: 'tok-abc' });
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ data: {} }),
+    });
+
+    await POST(
+      mockRequest(
+        {
+          hotel_id: 42,
+          start_date: '2026-06-10',
+          end_date: '2026-06-13',
+          adults: 2,
+          kids: 0,
+        },
+        '?language=kr',
+      ),
+    );
+
+    const [, init] = mockFetch.mock.calls[0];
+    // The seeded concierge confirmation message is persisted in this
+    // language — a KR user's first chat message must be stored in Korean.
+    expect(init.headers).toEqual(expect.objectContaining({ Language: 'kr' }));
   });
 
   it('propagates backend error status and message', async () => {
