@@ -12,41 +12,53 @@ import { gotoPage, STREAMING_MARKER_SELECTOR } from './support/navigation';
  * immediately on every page and the guard would silently degrade to a no-op
  * while the "resolved to 2 elements" strict-mode flake came back.
  *
- * This spec proves the streaming buffer is genuinely observed at least once:
- * it navigates a known-streaming route (/signature-journeys wraps its whole
- * page in a `<Suspense>`) with `waitUntil: 'domcontentloaded'` — which
- * resolves before React's throttled reveal (~first paint + 300 ms) consumes
- * the boundary — asserts a marker IS present, then asserts `gotoPage` clears
- * it. If React changes its marker scheme, THIS test goes red instead of the
- * guard rotting.
+ * This spec proves the streaming buffer is genuinely observed at least once
+ * on a known-streaming route (/signature-journeys wraps its whole page in a
+ * `<Suspense>`). The markers are recorded with a MutationObserver installed
+ * BEFORE the document starts parsing (`page.addInitScript`): sampling the DOM
+ * after `page.goto` resolves is racy on a fast local stream, because React's
+ * throttled reveal can consume the markers between `domcontentloaded` and the
+ * first protocol round-trip. The observer sees every parser-inserted node, so
+ * if the shell ever contained a `B:` boundary template or an `S:` staging
+ * buffer, the flag is set — deterministically. If React changes its marker
+ * scheme, THIS test goes red instead of the guard rotting.
  *
  * NOTE: only a production build streams (playwright.config.ts CI_MODE runs
  * `node scripts/start-standalone.mjs`); this spec is in PR_SMOKE_SPECS, which
  * runs against that production path.
  */
 
+declare global {
+  interface Window {
+    __streamingMarkerSeen?: boolean;
+  }
+}
+
 test.describe('streaming reveal guard integrity', () => {
   test('the streaming buffer is observable on a Suspense route and gotoPage clears it', async ({
     page,
   }) => {
-    // Bare page.goto is deliberate here: gotoPage would consume the very
-    // window this test needs to observe.
-    // eslint-disable-next-line e2e/no-bare-page-goto
-    await page.goto('/signature-journeys', { waitUntil: 'domcontentloaded' });
+    await page.addInitScript((selector) => {
+      window.__streamingMarkerSeen = false;
+      const observer = new MutationObserver(() => {
+        if (!window.__streamingMarkerSeen && document.querySelector(selector)) {
+          window.__streamingMarkerSeen = true;
+          observer.disconnect();
+        }
+      });
+      observer.observe(document, { childList: true, subtree: true });
+    }, STREAMING_MARKER_SELECTOR);
 
-    // At domcontentloaded the boundary is not yet revealed: at minimum the
-    // `B:` boundary template (shipped with the shell) must still be present;
-    // on a fully-arrived stream the hidden `S:` staging buffer is too.
-    const markerCount = await page.locator(STREAMING_MARKER_SELECTOR).count();
-    expect(
-      markerCount,
-      `expected at least one React streaming marker (${STREAMING_MARKER_SELECTOR}) ` +
-        'right after domcontentloaded on a Suspense-wrapped route — if this fails, ' +
-        'React changed its marker scheme and gotoPage has degraded to a no-op',
-    ).toBeGreaterThan(0);
-
-    // The same navigation through gotoPage must clear every marker.
+    // gotoPage itself must clear every marker before it returns…
     await gotoPage(page, '/signature-journeys');
     await expect(page.locator(STREAMING_MARKER_SELECTOR)).toHaveCount(0);
+
+    // …and the observer proves the markers genuinely existed mid-stream.
+    expect(
+      await page.evaluate(() => window.__streamingMarkerSeen),
+      `expected at least one React streaming marker (${STREAMING_MARKER_SELECTOR}) ` +
+        'to appear while /signature-journeys streamed — if this fails, React changed ' +
+        'its marker scheme and gotoPage has degraded to a no-op',
+    ).toBe(true);
   });
 });

@@ -12,8 +12,7 @@
  * receiver name `page`) so renaming the variable can't dodge it. The helper
  * itself lives outside the `e2e/**\/*.spec.ts` lint scope and is unaffected.
  *
- * Per-line opt-out (e.g. the guard-integrity spec that must observe the
- * pre-reveal window):
+ * Per-line opt-out for a deliberate exception:
  *   // eslint-disable-next-line e2e/no-bare-page-goto
  */
 
