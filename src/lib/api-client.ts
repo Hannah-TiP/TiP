@@ -377,6 +377,18 @@ class ApiClient {
     return toPaginatedResult(response.data);
   }
 
+  /**
+   * Cities that have at least one PUBLISHED signature journey (SMA-247).
+   * Published-journey-derived, so a destination is offered regardless of its
+   * rank in the global (~84k row) city catalog.
+   */
+  async getSignatureJourneyDestinations(language: string = 'en'): Promise<City[]> {
+    const response = await this.request<{ data: City[] }>(
+      `/signature-journeys/destinations?language=${language}`,
+    );
+    return response.data;
+  }
+
   async getSignatureJourneyBySlug(slug: string, language?: string): Promise<SignatureJourney> {
     const query = language ? `?language=${language}` : '';
     const response = await this.request<{ data: SignatureJourney }>(
@@ -462,6 +474,17 @@ class ApiClient {
   // City methods
   async getCities(language: string = 'en'): Promise<City[]> {
     const response = await this.request<{ data: City[] }>(`/cities?language=${language}`);
+    return response.data;
+  }
+
+  /**
+   * Cities with at least one published local-experience activity or published
+   * restaurant — the /more-dreams destination dropdown (SMA-247).
+   */
+  async getExperienceDestinations(language: string = 'en'): Promise<City[]> {
+    const response = await this.request<{ data: City[] }>(
+      `/destinations/experiences?language=${language}`,
+    );
     return response.data;
   }
 

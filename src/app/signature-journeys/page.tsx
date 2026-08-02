@@ -8,7 +8,7 @@ import SignatureJourneyCard from '@/components/signature-journey/SignatureJourne
 import { apiClient } from '@/lib/api-client';
 import { getLocalizedText } from '@/types/common';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { buildSuggestions, deriveRelatedCities } from '@/lib/signature-journey-search';
+import { buildSuggestions } from '@/lib/signature-journey-search';
 import type { CitySuggestion } from '@/lib/signature-journey-search';
 import type { SignatureJourney } from '@/types/signatureJourney';
 import type { City } from '@/types/location';
@@ -26,7 +26,8 @@ function SignatureJourneysContent() {
   // over journey titles AND city names; picking a suggestion narrows the grid.
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SignatureJourney[] | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const [cityResults, setCityResults] = useState<SignatureJourney[] | null>(null);
+  const [isFetching, setIsFetching] = useState(false);
   const [selectedCity, setSelectedCity] = useState<CitySuggestion | null>(null);
   const [selectedJourney, setSelectedJourney] = useState<SignatureJourney | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -39,9 +40,11 @@ function SignatureJourneysContent() {
       try {
         setIsLoading(true);
         // signature_journeys_v2 list endpoint (SMA-206) — published-only.
+        // Destinations come from the published-journey-derived endpoint
+        // (SMA-247), NOT the global city catalog, in ONE request at page load.
         const [journeyData, cityData] = await Promise.all([
           apiClient.getSignatureJourneys({ language: lang, per_page: 100 }),
-          apiClient.getCities(lang),
+          apiClient.getSignatureJourneyDestinations(lang),
         ]);
         setSignatureJourneys(journeyData.items);
         setCities(cityData);
@@ -56,36 +59,59 @@ function SignatureJourneysContent() {
   }, [lang]);
 
   const trimmedQuery = query.trim();
+  const selectedCityId = selectedCity?.id ?? null;
 
-  // Debounced `q` search with a sequence-number stale-response guard, so fast
-  // typing can never render results for an earlier prefix.
+  // One effect owns every server-side narrowing of the grid: the debounced `q`
+  // search AND the `city_id` refetch (SMA-247). They are mutually exclusive by
+  // construction — picking a destination clears the query and typing clears the
+  // destination — so a single monotonic sequence number guards both, and a slow
+  // response can never overwrite a newer intent. The `city_id` request fires
+  // once per destination pick, never per keystroke.
   useEffect(() => {
     const seq = ++requestSeq.current;
 
-    if (!trimmedQuery) {
-      setSearchResults(null);
-      setIsSearching(false);
-      return;
+    if (trimmedQuery) {
+      setIsFetching(true);
+      const timer = setTimeout(() => {
+        apiClient
+          .getSignatureJourneys({ q: trimmedQuery, language: lang, per_page: 100 })
+          .then((data) => {
+            if (seq !== requestSeq.current) return;
+            setSearchResults(data.items);
+            setIsFetching(false);
+          })
+          .catch(() => {
+            if (seq !== requestSeq.current) return;
+            setSearchResults([]);
+            setIsFetching(false);
+          });
+      }, SEARCH_DEBOUNCE_MS);
+
+      return () => clearTimeout(timer);
     }
 
-    setIsSearching(true);
-    const timer = setTimeout(() => {
+    setSearchResults(null);
+
+    if (selectedCityId !== null) {
+      setIsFetching(true);
       apiClient
-        .getSignatureJourneys({ q: trimmedQuery, language: lang, per_page: 100 })
+        .getSignatureJourneys({ city_id: selectedCityId, language: lang, per_page: 100 })
         .then((data) => {
           if (seq !== requestSeq.current) return;
-          setSearchResults(data.items);
-          setIsSearching(false);
+          setCityResults(data.items);
+          setIsFetching(false);
         })
         .catch(() => {
           if (seq !== requestSeq.current) return;
-          setSearchResults([]);
-          setIsSearching(false);
+          setCityResults([]);
+          setIsFetching(false);
         });
-    }, SEARCH_DEBOUNCE_MS);
+      return;
+    }
 
-    return () => clearTimeout(timer);
-  }, [trimmedQuery, lang]);
+    setCityResults(null);
+    setIsFetching(false);
+  }, [trimmedQuery, selectedCityId, lang]);
 
   // Close the suggestion panel on outside click
   useEffect(() => {
@@ -98,15 +124,14 @@ function SignatureJourneysContent() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Only cities with at least one published journey are ever offered.
-  const relatedCities = useMemo(
-    () => deriveRelatedCities(signatureJourneys, cities),
-    [signatureJourneys, cities],
-  );
-
+  // Destination names come straight from the published-journey-derived
+  // destinations endpoint (SMA-247) — no intersection with the global city
+  // catalog — so a city ranked beyond that catalog's first page still resolves,
+  // and the "journey-less cities are never offered" guarantee is enforced
+  // server-side by the endpoint itself.
   const cityNameById = useMemo(
-    () => new Map(relatedCities.map((city) => [city.id, getLocalizedText(city.name, lang)])),
-    [relatedCities, lang],
+    () => new Map(cities.map((city) => [city.id, getLocalizedText(city.name, lang)])),
+    [cities, lang],
   );
 
   const suggestions = useMemo(
@@ -117,13 +142,21 @@ function SignatureJourneysContent() {
   const hasSuggestions = suggestions.cities.length > 0 || suggestions.journeys.length > 0;
 
   // Single source of truth for the grid: a picked journey wins, then the server
-  // results for an active query, then the selected city, then everything.
+  // results for an active query, then the server results for the selected
+  // destination, then everything. Nothing is filtered client-side.
   const filteredSignatureJourneys = useMemo(() => {
     if (selectedJourney) return [selectedJourney];
     if (trimmedQuery) return searchResults ?? [];
-    if (selectedCity) return signatureJourneys.filter((j) => j.city_id === selectedCity.id);
+    if (selectedCityId !== null) return cityResults ?? [];
     return signatureJourneys;
-  }, [selectedJourney, trimmedQuery, searchResults, selectedCity, signatureJourneys]);
+  }, [
+    selectedJourney,
+    trimmedQuery,
+    searchResults,
+    selectedCityId,
+    cityResults,
+    signatureJourneys,
+  ]);
 
   const hasActiveFilter = Boolean(trimmedQuery || selectedCity || selectedJourney);
 
@@ -211,12 +244,12 @@ function SignatureJourneysContent() {
 
             {/* The panel only opens when it has something to offer — a
                 zero-match search is reported by the grid empty state. */}
-            {isPanelOpen && (isSearching || hasSuggestions) && (
+            {isPanelOpen && (isFetching || hasSuggestions) && (
               <div
                 className="absolute left-0 top-full z-50 mt-2 max-h-[320px] w-full overflow-auto rounded-xl bg-white p-2 shadow-xl"
                 data-testid="signature-journey-suggestions"
               >
-                {isSearching && !hasSuggestions ? (
+                {isFetching && !hasSuggestions ? (
                   <div className="flex items-center justify-center py-6">
                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-dark border-t-transparent" />
                   </div>
@@ -276,7 +309,7 @@ function SignatureJourneysContent() {
           )}
         </div>
 
-        {selectedCity && !trimmedQuery && (
+        {selectedCity && !trimmedQuery && !isFetching && (
           <p className="mt-3 text-[13px] text-gray-text">
             {t('signature_journeys.showing')} {filteredSignatureJourneys.length}{' '}
             {t('signature_journeys.journeys_in')} {selectedCity.name}
@@ -294,7 +327,7 @@ function SignatureJourneysContent() {
       )}
 
       {/* Empty state — a zero-match search or a filter that excludes everything */}
-      {!isLoading && !isSearching && filteredSignatureJourneys.length === 0 && (
+      {!isLoading && !isFetching && filteredSignatureJourneys.length === 0 && (
         <section
           className="bg-gray-light px-6 py-16 sm:px-10 lg:px-20 lg:py-20"
           data-testid="signature-journeys-empty"

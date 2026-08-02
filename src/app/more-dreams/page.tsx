@@ -95,11 +95,14 @@ function MoreDreamsContent() {
     [lang, isPreview, cityId],
   );
 
-  // Load cities for the destination dropdown once on mount.
+  // Load the destination options once on mount. Sourced from the published
+  // activity/restaurant catalogs (SMA-247), NOT the global city catalog, so a
+  // city ranked beyond that catalog's first page is still offered — and a city
+  // with no local experience and no restaurant never is.
   useEffect(() => {
     let cancelled = false;
     apiClient
-      .getCities(lang)
+      .getExperienceDestinations(lang)
       .then((data) => {
         if (!cancelled) setCities(data);
       })

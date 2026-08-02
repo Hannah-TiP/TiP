@@ -59,7 +59,7 @@ vi.mock('@/contexts/LanguageContext', () => ({
 vi.mock('@/lib/api-client', () => ({
   apiClient: {
     getSignatureJourneys: vi.fn(),
-    getCities: vi.fn(),
+    getSignatureJourneyDestinations: vi.fn(),
   },
 }));
 
@@ -112,16 +112,29 @@ const oslo: City = {
 };
 
 /**
- * Wire the journeys endpoint: the unfiltered load returns everything, a `q`
- * search returns whatever `bySearch` resolves for the typed text.
+ * Wire the journeys endpoint the way the backend behaves: the unfiltered load
+ * returns everything, a `q` search returns whatever `bySearch` resolves for the
+ * typed text, and a `city_id` request narrows server-side (SMA-247).
  */
 function mockJourneys(
   all: SignatureJourney[],
   bySearch: (q: string) => SignatureJourney[] = () => all,
 ) {
-  vi.mocked(apiClient.getSignatureJourneys).mockImplementation(async (params) =>
-    page(params?.q ? bySearch(params.q) : all),
-  );
+  vi.mocked(apiClient.getSignatureJourneys).mockImplementation(async (params) => {
+    if (params?.q) return page(bySearch(params.q));
+    if (params?.city_id !== undefined) {
+      return page(all.filter((journey) => journey.city_id === params.city_id));
+    }
+    return page(all);
+  });
+}
+
+/** The `city_id` values every server-side destination refetch carried. */
+function cityIdRequests(): (number | undefined)[] {
+  return vi
+    .mocked(apiClient.getSignatureJourneys)
+    .mock.calls.map(([params]) => params?.city_id)
+    .filter((cityId): cityId is number => cityId !== undefined);
 }
 
 function suggestionsPanel() {
@@ -139,7 +152,7 @@ function gridTitles(): string[] {
 describe('SignatureJourneysPage', () => {
   it('fetches from the signature-journeys endpoint and renders cards with the gold pill', async () => {
     mockJourneys([ritzYacht, fsYacht]);
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome]);
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
 
@@ -162,7 +175,7 @@ describe('SignatureJourneysPage', () => {
 
   it('links each card to the /signature-journeys/[slug] detail route', async () => {
     mockJourneys([ritzYacht]);
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris]);
 
     render(<SignatureJourneysPage />);
 
@@ -174,7 +187,7 @@ describe('SignatureJourneysPage', () => {
 
   it('renders grouped city and journey suggestions, offering only related cities', async () => {
     mockJourneys([ritzYacht, fsYacht]);
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome, oslo]);
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris, rome, oslo]);
 
     render(<SignatureJourneysPage />);
     await screen.findByText('The Ritz-Carlton Yacht');
@@ -199,7 +212,7 @@ describe('SignatureJourneysPage', () => {
     mockJourneys([ritzYacht, fsYacht], (q) =>
       q.toLowerCase().includes('ritz') ? [ritzYacht] : [ritzYacht, fsYacht],
     );
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome]);
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
     await screen.findByText('The Ritz-Carlton Yacht');
@@ -218,9 +231,41 @@ describe('SignatureJourneysPage', () => {
     expect(panel.getAllByTestId('suggestion-journey')).toHaveLength(1);
   });
 
-  it('filters the grid to the picked city suggestion', async () => {
+  it('refetches server-side with city_id when a destination is picked', async () => {
     mockJourneys([ritzYacht, fsYacht]);
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome]);
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris, rome]);
+
+    render(<SignatureJourneysPage />);
+    await screen.findByText('The Ritz-Carlton Yacht');
+
+    expect(cityIdRequests()).toEqual([]);
+
+    fireEvent.focus(screen.getByTestId('signature-journey-search'));
+    fireEvent.click(suggestionsPanel().getByRole('button', { name: 'Paris' }));
+
+    await waitFor(() => {
+      expect(gridTitles()).toHaveLength(1);
+    });
+    // Exactly one refetch, carrying the picked city — never a client-side filter.
+    expect(cityIdRequests()).toEqual([paris.id]);
+    expect(gridTitles()[0]).toContain('The Ritz-Carlton Yacht');
+    expect(screen.getByText(/Showing 1 signature journeys in Paris/i)).toBeTruthy();
+  });
+
+  it('renders whatever the city_id refetch returns, without client-side filtering', async () => {
+    // The server returns a journey whose city_id does NOT match the picked
+    // destination; a surviving client-side filter would drop it.
+    const serverOnly: SignatureJourney = {
+      ...ritzYacht,
+      id: 9,
+      slug: 'server-picked',
+      city_id: 999,
+      title: { en: 'Server Picked Journey', kr: '서버 선택 여정' },
+    };
+    vi.mocked(apiClient.getSignatureJourneys).mockImplementation(async (params) =>
+      page(params?.city_id !== undefined ? [serverOnly] : [ritzYacht, fsYacht]),
+    );
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
     await screen.findByText('The Ritz-Carlton Yacht');
@@ -231,13 +276,70 @@ describe('SignatureJourneysPage', () => {
     await waitFor(() => {
       expect(gridTitles()).toHaveLength(1);
     });
-    expect(gridTitles()[0]).toContain('The Ritz-Carlton Yacht');
-    expect(screen.getByText(/Showing 1 signature journeys in Paris/i)).toBeTruthy();
+    expect(gridTitles()[0]).toContain('Server Picked Journey');
+  });
+
+  it('offers a destination ranked far beyond the first 100 catalog cities', async () => {
+    // Regression for SMA-247: the destination list used to be intersected with
+    // `getCities()`, which only ever returned the first 100 catalog rows.
+    const ushuaia: City = {
+      ...paris,
+      id: 84231,
+      name: { en: 'Ushuaia', kr: '우수아이아' },
+      slug: 'ushuaia',
+    };
+    const farJourney: SignatureJourney = {
+      ...ritzYacht,
+      id: 11,
+      slug: 'end-of-the-world',
+      city_id: ushuaia.id,
+      title: { en: 'End of the World', kr: '세상의 끝' },
+    };
+    mockJourneys([farJourney]);
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([ushuaia]);
+
+    render(<SignatureJourneysPage />);
+
+    // The card renders the city name as its subtitle.
+    expect(await screen.findByText('End of the World')).toBeTruthy();
+    expect(screen.getByText('Ushuaia')).toBeTruthy();
+
+    fireEvent.focus(screen.getByTestId('signature-journey-search'));
+    expect(
+      suggestionsPanel()
+        .getAllByTestId('suggestion-city')
+        .map((b) => b.textContent),
+    ).toEqual(['Ushuaia']);
+
+    fireEvent.click(suggestionsPanel().getByRole('button', { name: 'Ushuaia' }));
+
+    await waitFor(() => {
+      expect(cityIdRequests()).toEqual([ushuaia.id]);
+    });
+    expect(gridTitles()[0]).toContain('End of the World');
+  });
+
+  it('does not fire a city_id refetch per keystroke', async () => {
+    mockJourneys([ritzYacht, fsYacht], () => [ritzYacht]);
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris, rome]);
+
+    render(<SignatureJourneysPage />);
+    await screen.findByText('The Ritz-Carlton Yacht');
+
+    const input = screen.getByTestId('signature-journey-search');
+    fireEvent.change(input, { target: { value: 'r' } });
+    fireEvent.change(input, { target: { value: 'ri' } });
+    fireEvent.change(input, { target: { value: 'rit' } });
+
+    await waitFor(() => {
+      expect(gridTitles()).toHaveLength(1);
+    });
+    expect(cityIdRequests()).toEqual([]);
   });
 
   it('surfaces a single journey when a journey suggestion is picked', async () => {
     mockJourneys([ritzYacht, fsYacht]);
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome]);
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
     await screen.findByText('The Ritz-Carlton Yacht');
@@ -257,7 +359,7 @@ describe('SignatureJourneysPage', () => {
 
   it('shows the empty state when a search matches nothing and restores the grid on clear', async () => {
     mockJourneys([ritzYacht, fsYacht], () => []);
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome]);
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
     await screen.findByText('The Ritz-Carlton Yacht');
@@ -289,7 +391,7 @@ describe('SignatureJourneysPage', () => {
       if (params.q === 'ritz') return firstResponse;
       return page([fsYacht]);
     });
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris, rome]);
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
     await screen.findByText('The Ritz-Carlton Yacht');
@@ -318,7 +420,7 @@ describe('SignatureJourneysPage', () => {
 
   it('renders the page-level empty state when there are no journeys at all', async () => {
     mockJourneys([]);
-    vi.mocked(apiClient.getCities).mockResolvedValue([paris]);
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris]);
 
     render(<SignatureJourneysPage />);
 
