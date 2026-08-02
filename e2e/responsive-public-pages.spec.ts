@@ -40,23 +40,38 @@ async function stubLists(page: Page) {
   await page.route('**/api/hotels**', empty);
   await page.route('**/api/activities**', empty);
   await page.route('**/api/restaurants**', empty);
-  await page.route('**/api/signature-journeys**', empty);
-  // Seed one city so the Destination picker has content to render at width;
-  // the off-screen regression was about positioning, not data.
-  await page.route('**/api/cities**', async (route: Route) => {
+  // Anchored on the end of the path so the journey LIST matcher can never
+  // swallow its /destinations sibling (a paginated envelope there would make
+  // the page render `cities.map` over an object and blank the hero).
+  await page.route(/\/api\/signature-journeys(\?|$)/, empty);
+
+  // Seed one city so the Destination pickers have content to render at width;
+  // the off-screen regression was about positioning, not data. Both published-
+  // destination endpoints (SMA-247) return a BARE City[] under `data` — never a
+  // paginated { items } envelope. The pages map over it directly, so an
+  // envelope here throws during render, and the fallback-less <Suspense> on
+  // more-dreams/signature-journeys swallows that, blanking the hero.
+  const destinations = async (route: Route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      // getCities() returns response.data directly as a City[] (it does NOT
-      // unwrap a paginated { items } envelope). The page calls cities.filter,
-      // so data MUST be a bare array — an { items } envelope here throws
-      // "cities.filter is not a function", which the fallback-less <Suspense>
-      // on more-dreams/signature-journeys swallows, blanking the hero.
       body: JSON.stringify({
-        data: [{ id: 7, name: 'Paris', country_id: 1 }],
+        data: [
+          {
+            id: 7,
+            slug: 'paris',
+            name: { en: 'Paris', kr: '파리' },
+            region_id: 1,
+            status: true,
+            link_services: true,
+            schema_version: 1,
+          },
+        ],
       }),
     });
-  });
+  };
+  await page.route(/\/api\/signature-journeys\/destinations/, destinations);
+  await page.route(/\/api\/destinations\/experiences/, destinations);
   await page.route('**/api/reviews/aggregates**', async (route: Route) => {
     await route.fulfill({
       status: 200,

@@ -9,7 +9,7 @@ import { apiClient } from '@/lib/api-client';
 import { getLocalizedText } from '@/types/common';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { buildSuggestions } from '@/lib/signature-journey-search';
-import type { CitySuggestion } from '@/lib/signature-journey-search';
+import type { CitySuggestion, SignatureJourneySuggestions } from '@/lib/signature-journey-search';
 import type { SignatureJourney } from '@/types/signatureJourney';
 import type { City } from '@/types/location';
 
@@ -94,6 +94,9 @@ function SignatureJourneysContent() {
 
     if (selectedCityId !== null) {
       setIsFetching(true);
+      // Drop the previous destination's cards immediately so switching A -> B
+      // never leaves A's grid standing while B is in flight.
+      setCityResults(null);
       apiClient
         .getSignatureJourneys({ city_id: selectedCityId, language: lang, per_page: 100 })
         .then((data) => {
@@ -134,9 +137,38 @@ function SignatureJourneysContent() {
     [cities, lang],
   );
 
-  const suggestions = useMemo(
+  // Every destination the published-journey endpoint returned, in server order.
+  // The Map dedupes by id for free and preserves insertion order; a city whose
+  // name is blank in the active language is dropped rather than rendered as an
+  // empty button.
+  const allDestinations = useMemo<CitySuggestion[]>(
+    () =>
+      Array.from(cityNameById, ([id, name]) => ({ id, name })).filter(
+        (city) => city.name.length > 0,
+      ),
+    [cityNameById],
+  );
+
+  const searchSuggestions = useMemo(
     () => buildSuggestions(searchResults ?? signatureJourneys, cityNameById, lang),
     [searchResults, signatureJourneys, cityNameById, lang],
+  );
+
+  // Two sources for the DESTINATIONS group, never merged (so a city can never
+  // be rendered twice):
+  //  - idle: EVERY published destination, not just those whose journey happens
+  //    to sit on the first page of the journey list (SMA-247).
+  //  - active query: the cities of the SERVER search results. `q` matches city
+  //    names server-side across EN + KR, while `cityNameById` only carries the
+  //    active language — filtering these client-side would silently drop the
+  //    cross-language matching SMA-229 added.
+  // The JOURNEYS group is always the server-driven one.
+  const suggestions = useMemo<SignatureJourneySuggestions>(
+    () =>
+      trimmedQuery
+        ? searchSuggestions
+        : { cities: allDestinations, journeys: searchSuggestions.journeys },
+    [trimmedQuery, searchSuggestions, allDestinations],
   );
 
   const hasSuggestions = suggestions.cities.length > 0 || suggestions.journeys.length > 0;

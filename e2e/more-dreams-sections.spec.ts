@@ -109,7 +109,10 @@ test.describe('/more-dreams — Activities + Restaurants only (no Signature Jour
       });
     });
 
-    await page.route('**/api/cities**', async (route: Route) => {
+    // Destinations come from the published-experience endpoint (SMA-247);
+    // these tests never open the dropdown, so an empty list is enough — it just
+    // must not leak an unstubbed request to the real backend.
+    await page.route('**/api/destinations/experiences**', async (route: Route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

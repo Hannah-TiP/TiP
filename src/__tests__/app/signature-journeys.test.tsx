@@ -103,14 +103,6 @@ const rome: City = {
   slug: 'rome',
 };
 
-/** A city with zero journeys — must never be offered as a suggestion. */
-const oslo: City = {
-  ...paris,
-  id: 30,
-  name: { en: 'Oslo', kr: '오슬로' },
-  slug: 'oslo',
-};
-
 /**
  * Wire the journeys endpoint the way the backend behaves: the unfiltered load
  * returns everything, a `q` search returns whatever `bySearch` resolves for the
@@ -185,9 +177,9 @@ describe('SignatureJourneysPage', () => {
     expect(card.getAttribute('href')).toBe('/signature-journeys/ritz-carlton-yacht');
   });
 
-  it('renders grouped city and journey suggestions, offering only related cities', async () => {
+  it('renders grouped suggestions with the published destinations verbatim', async () => {
     mockJourneys([ritzYacht, fsYacht]);
-    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris, rome, oslo]);
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris, rome]);
 
     render(<SignatureJourneysPage />);
     await screen.findByText('The Ritz-Carlton Yacht');
@@ -198,14 +190,60 @@ describe('SignatureJourneysPage', () => {
     expect(panel.getByText('Destinations')).toBeTruthy();
     expect(panel.getByText('Journeys')).toBeTruthy();
 
+    // The idle DESTINATIONS group is exactly what the published-destinations
+    // endpoint returned — the journey-less-city guarantee is server-side.
     const cityNames = panel.getAllByTestId('suggestion-city').map((b) => b.textContent);
     expect(cityNames).toEqual(['Paris', 'Rome']);
-    // Oslo has no journey — it is never offered.
-    expect(panel.queryByText('Oslo')).toBeNull();
 
     const journeyNames = panel.getAllByTestId('suggestion-journey').map((b) => b.textContent);
     expect(journeyNames[0]).toContain('The Ritz-Carlton Yacht');
     expect(journeyNames[1]).toContain('Four Seasons Yachts');
+  });
+
+  it('offers a destination that has no journey in the loaded page at all', async () => {
+    // Regression for SMA-247: the DESTINATIONS group used to be derived from
+    // the LOADED journeys, so a city whose journeys all sit beyond page 1 of
+    // `getSignatureJourneys({ per_page: 100 })` was never offered even though
+    // the destinations endpoint returned it.
+    const ushuaia: City = {
+      ...paris,
+      id: 84231,
+      name: { en: 'Ushuaia', kr: '우수아이아' },
+      slug: 'ushuaia',
+    };
+    const offPageJourney: SignatureJourney = {
+      ...ritzYacht,
+      id: 11,
+      slug: 'end-of-the-world',
+      city_id: ushuaia.id,
+      title: { en: 'End of the World', kr: '세상의 끝' },
+    };
+    // The loaded page carries NO journey for Ushuaia; only the `city_id`
+    // refetch surfaces one.
+    vi.mocked(apiClient.getSignatureJourneys).mockImplementation(async (params) =>
+      page(params?.city_id === ushuaia.id ? [offPageJourney] : [ritzYacht, fsYacht]),
+    );
+    vi.mocked(apiClient.getSignatureJourneyDestinations).mockResolvedValue([paris, rome, ushuaia]);
+
+    render(<SignatureJourneysPage />);
+    await screen.findByText('The Ritz-Carlton Yacht');
+
+    fireEvent.focus(screen.getByTestId('signature-journey-search'));
+    expect(
+      suggestionsPanel()
+        .getAllByTestId('suggestion-city')
+        .map((b) => b.textContent),
+    ).toEqual(['Paris', 'Rome', 'Ushuaia']);
+
+    fireEvent.click(suggestionsPanel().getByRole('button', { name: 'Ushuaia' }));
+
+    await waitFor(() => {
+      expect(cityIdRequests()).toEqual([ushuaia.id]);
+    });
+    await waitFor(() => {
+      expect(gridTitles()).toHaveLength(1);
+    });
+    expect(gridTitles()[0]).toContain('End of the World');
   });
 
   it('narrows the suggestions to the server results for the typed text', async () => {
@@ -226,8 +264,14 @@ describe('SignatureJourneysPage', () => {
     });
     expect(gridTitles()[0]).toContain('The Ritz-Carlton Yacht');
 
+    // With a query active the DESTINATIONS group must stay driven by the SERVER
+    // results — `q` matches city names across EN + KR server-side, so switching
+    // this path to a client-side filter over the destinations list would drop
+    // cross-language matching. Rome is a published destination but is not in
+    // the server results, so it must not be offered here.
     const panel = suggestionsPanel();
     expect(panel.getAllByTestId('suggestion-city').map((b) => b.textContent)).toEqual(['Paris']);
+    expect(panel.queryByText('Rome')).toBeNull();
     expect(panel.getAllByTestId('suggestion-journey')).toHaveLength(1);
   });
 
