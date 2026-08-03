@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+import { gotoPage } from './support/navigation';
+
 /**
  * SMA-260 — KR Submit Request end-to-end.
  *
@@ -37,15 +39,14 @@ test.describe('Submit Request in Korean', () => {
   });
 
   test('persists a Korean confirmation message into the chat thread', async ({ page }) => {
-    const detailResponse = await page.goto(`/hotel/${HOTEL_SLUG}`);
+    // SMA-257: gotoPage waits out React's streaming reveal (both the `B:`
+    // boundary template and the `S:` staging buffer) before the test touches
+    // the page, and still returns the navigation response for the skip check.
+    const detailResponse = await gotoPage(page, `/hotel/${HOTEL_SLUG}`);
     test.skip(
       !detailResponse || !detailResponse.ok(),
       `Hotel /hotel/${HOTEL_SLUG} not available in this environment`,
     );
-
-    // SMA-257: wait out React's streaming reveal before touching the page —
-    // Suspense placeholders can briefly duplicate DOM nodes.
-    await expect(page.locator('[id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
 
     const checkIn = page.locator('#hotel-booking-checkin');
     await checkIn.scrollIntoViewIfNeeded();
