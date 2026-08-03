@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 const SESSION_UUID = 'sess-uuid-e2e';
 const TRIP_ID = 9999;
@@ -156,7 +157,7 @@ test.describe('Concierge chat message flow', () => {
   });
 
   test('text → widget render → widget interact → trip highlight', async ({ page }) => {
-    await page.goto('/concierge');
+    await gotoPage(page, '/concierge');
 
     // Type a message and send
     const input = page.getByPlaceholder(/.+/).first();
@@ -274,7 +275,7 @@ test.describe('Concierge Your Itinerary panel — detailed plan view', () => {
   test('renders detailed plan items and an empty-day note for days with no items', async ({
     page,
   }) => {
-    await page.goto('/concierge');
+    await gotoPage(page, '/concierge');
 
     // Day 1 — populated
     const day1 = page.getByTestId('trip-day-0');

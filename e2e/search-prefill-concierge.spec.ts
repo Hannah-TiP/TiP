@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E: Home SearchBar → /concierge prefilled and seeded (authenticated).
@@ -167,7 +168,7 @@ test.describe('SearchBar → Concierge prefill (authed)', () => {
   test('SearchBar click lands on /concierge with TripDetailPanel prefilled and URL cleaned', async ({
     page,
   }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
     // Label renders as "DESTINATION" via CSS `uppercase`, but the DOM text
     // node is "Destination" (i18n value); match the actual text content.
     await page.getByText('Destination', { exact: true }).click();

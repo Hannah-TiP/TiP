@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // Hotel slug known to be seeded with hero images, rooms, and photo-bearing
 // amenities (same fixture used by hotel-detail-amenity-photos.spec.ts).
@@ -8,7 +9,7 @@ test.describe('Hotel detail — responsive at 375px', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(`/hotel/${HOTEL_SLUG}`);
+    await gotoPage(page, `/hotel/${HOTEL_SLUG}`);
     await page.waitForSelector('[aria-labelledby="amenities-title"]', { timeout: 15000 });
   });
 

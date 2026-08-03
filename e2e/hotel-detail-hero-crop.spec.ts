@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 test.describe('Hotel detail — hero gallery (render-time crop)', () => {
   test('hero renders the hotel name and at least one hero image', async ({ page }) => {
-    await page.goto('/hotel/aman-tokyo');
+    await gotoPage(page, '/hotel/aman-tokyo');
 
     const hero = page.locator('section').first();
     await expect(hero).toBeVisible({ timeout: 15000 });

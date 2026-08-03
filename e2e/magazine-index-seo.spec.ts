@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E for MAG-6 (SMA-218): sitemap.xml, llms.txt, robots.txt, the /magazine
@@ -15,7 +16,7 @@ const SEEDED_ARTICLE_PATH = process.env.E2E_MAGAZINE_ARTICLE_PATH || '';
 
 test.describe('sitemap.xml', () => {
   test('serves an XML sitemap containing the static magazine root', async ({ page }) => {
-    const response = await page.goto('/sitemap.xml');
+    const response = await gotoPage(page, '/sitemap.xml');
     expect(response?.status()).toBe(200);
     const body = await response!.text();
     expect(body).toContain('<urlset');
@@ -27,7 +28,7 @@ test.describe('sitemap.xml', () => {
       !SEEDED_HOTEL_SLUG || !SEEDED_ARTICLE_PATH,
       'Set E2E_HOTEL_SLUG + E2E_MAGAZINE_ARTICLE_PATH to run',
     );
-    const response = await page.goto('/sitemap.xml');
+    const response = await gotoPage(page, '/sitemap.xml');
     const body = await response!.text();
     expect(body).toContain(`/hotel/${SEEDED_HOTEL_SLUG}`);
     expect(body).toContain(SEEDED_ARTICLE_PATH);
@@ -36,7 +37,7 @@ test.describe('sitemap.xml', () => {
 
 test.describe('llms.txt', () => {
   test('serves a text/plain entity block', async ({ page }) => {
-    const response = await page.goto('/llms.txt');
+    const response = await gotoPage(page, '/llms.txt');
     expect(response?.status()).toBe(200);
     expect(response?.headers()['content-type']).toContain('text/plain');
     const body = await response!.text();
@@ -50,7 +51,7 @@ test.describe('robots.txt', () => {
   test('serves a robots file that references the sitemap and disallows /my-page', async ({
     page,
   }) => {
-    const response = await page.goto('/robots.txt');
+    const response = await gotoPage(page, '/robots.txt');
     expect(response?.status()).toBe(200);
     const body = await response!.text();
     expect(body).toContain('Sitemap:');
@@ -61,7 +62,7 @@ test.describe('robots.txt', () => {
 
 test.describe('/magazine index', () => {
   test('renders the type tabs and a TravelAgency JSON-LD singleton', async ({ page }) => {
-    await page.goto('/magazine');
+    await gotoPage(page, '/magazine');
     // SSR + client hydration can momentarily double-render the tab row (one copy
     // hidden mid-reconcile), so scope to the visible instance to avoid a
     // transient strict-mode violation during the hydration window.
@@ -77,7 +78,7 @@ test.describe('/magazine index', () => {
   });
 
   test('narrows the list when a type tab is selected (URL syncs)', async ({ page }) => {
-    await page.goto('/magazine');
+    await gotoPage(page, '/magazine');
     // Click the visible tab (see hydration-window note above).
     await page.getByTestId('magazine-type-tab-destinations').filter({ visible: true }).click();
     await expect(page).toHaveURL(/type=destinations/);

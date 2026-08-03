@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 test.describe('Hotel detail — amenity & facility photos lightbox', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to Aman Tokyo which has seeded features with images
-    await page.goto('/hotel/aman-tokyo');
+    await gotoPage(page, '/hotel/aman-tokyo');
     // Wait for the amenities section to load
     await page.waitForSelector('[aria-labelledby="amenities-title"]', { timeout: 15000 });
   });

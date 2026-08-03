@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Route } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * SMA-65 — responsive public pages at a 375px phone viewport.
@@ -98,7 +99,7 @@ test.describe('Responsive public pages (375px)', () => {
   });
 
   test('landing page has no horizontal scroll', async ({ page }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
     await expect(
       page.getByRole('heading', { name: 'Dream Hotels, Thoughtfully Curated.' }),
     ).toBeVisible();
@@ -106,13 +107,13 @@ test.describe('Responsive public pages (375px)', () => {
   });
 
   test('dream-hotels has no horizontal scroll', async ({ page }) => {
-    await page.goto('/dream-hotels');
+    await gotoPage(page, '/dream-hotels');
     await expect(page.getByRole('heading', { name: 'Dream Hotels' })).toBeVisible();
     await expectNoHorizontalScroll(page);
   });
 
   test('more-dreams has no horizontal scroll', async ({ page }) => {
-    await page.goto('/more-dreams');
+    await gotoPage(page, '/more-dreams');
     // This page wraps its hero in a top-level <Suspense> (it reads
     // useSearchParams), so the hero <section>/heading is painted only after
     // client hydration — later than the default 5s assertion window under
@@ -125,7 +126,7 @@ test.describe('Responsive public pages (375px)', () => {
   });
 
   test('signature-journeys has no horizontal scroll', async ({ page }) => {
-    await page.goto('/signature-journeys');
+    await gotoPage(page, '/signature-journeys');
     // Same Suspense-gated hydration as more-dreams: wait for the network to
     // settle before asserting the hero region is present.
     await page.waitForLoadState('networkidle');
@@ -145,7 +146,7 @@ test.describe('SearchBar mobile collapse (375px)', () => {
   test('collapses to a single CTA that opens and closes a full-screen overlay', async ({
     page,
   }) => {
-    await page.goto('/');
+    await gotoPage(page, '/');
 
     const cta = page.getByTestId('searchbar-mobile-cta');
     await expect(cta).toBeVisible();
@@ -203,7 +204,7 @@ test.describe('SearchBar mobile collapse (375px)', () => {
     test(`opening the ${field.label} picker in the overlay stays within the 375px viewport`, async ({
       page,
     }) => {
-      await page.goto('/');
+      await gotoPage(page, '/');
 
       await page.getByTestId('searchbar-mobile-cta').click();
       const overlay = page.getByTestId('searchbar-overlay');

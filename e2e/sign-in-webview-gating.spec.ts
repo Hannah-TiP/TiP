@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // Runs in the DEFAULT (unauthenticated) chromium project — middleware
 // bounces authed sessions off /sign-in, and these pages are public.
@@ -11,7 +12,7 @@ test.describe('webview login gating — KakaoTalk UA', () => {
   test.use({ userAgent: KAKAOTALK_UA });
 
   test('/sign-in hides Google login and shows the notice + escape hatch', async ({ page }) => {
-    await page.goto('/sign-in');
+    await gotoPage(page, '/sign-in');
 
     const notice = page.getByTestId('webview-login-notice');
     await expect(notice).toBeVisible();
@@ -36,7 +37,7 @@ test.describe('webview login gating — KakaoTalk UA', () => {
   });
 
   test('/register hides Google login and shows the notice', async ({ page }) => {
-    await page.goto('/register');
+    await gotoPage(page, '/register');
 
     await expect(page.getByTestId('webview-login-notice')).toBeVisible();
     await expect(page.getByTestId('google-signin-button')).toHaveCount(0);
@@ -50,7 +51,7 @@ test.describe('webview login gating — KakaoTalk UA', () => {
 
 test.describe('webview login gating — normal browser UA', () => {
   test('/sign-in still renders the Google sign-in button, no notice', async ({ page }) => {
-    await page.goto('/sign-in');
+    await gotoPage(page, '/sign-in');
 
     // The auth-code sign-in button (SMA-119) renders synchronously in a
     // normal browser — no remote GSI script injection to wait on.
@@ -59,7 +60,7 @@ test.describe('webview login gating — normal browser UA', () => {
   });
 
   test('/register still renders the Google sign-in button, no notice', async ({ page }) => {
-    await page.goto('/register');
+    await gotoPage(page, '/register');
 
     await expect(page.getByTestId('google-signin-button')).toBeVisible();
     await expect(page.getByTestId('webview-login-notice')).toHaveCount(0);

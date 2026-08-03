@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // SMA-180: first-visit language must be locale-aware with NO flash of the wrong
 // language. A Korean-locale browser (Accept-Language: ko) must get the SSR
@@ -14,7 +15,7 @@ test.describe('First-visit locale detection (SSR, no flash)', () => {
     });
     const page = await context.newPage();
 
-    const response = await page.goto('/');
+    const response = await gotoPage(page, '/');
     const html = await response!.text();
 
     // SSR first paint: the raw server HTML already carries the Korean copy and
@@ -39,7 +40,7 @@ test.describe('First-visit locale detection (SSR, no flash)', () => {
     });
     const page = await context.newPage();
 
-    const response = await page.goto('/');
+    const response = await gotoPage(page, '/');
     const html = await response!.text();
 
     expect(html).toContain('lang="en"');

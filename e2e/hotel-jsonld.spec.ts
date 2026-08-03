@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E for the hotel detail-page server-shell conversion (SMA-217 / MAG-5).
@@ -41,7 +42,7 @@ test.describe('hotel detail JSON-LD (server-rendered)', () => {
   test('the hotel route emits Hotel + BreadcrumbList and a singleton TravelAgency', async ({
     page,
   }) => {
-    await page.goto(`/hotel/${HOTEL_SLUG}`);
+    await gotoPage(page, `/hotel/${HOTEL_SLUG}`);
 
     const docs = await ldJsonDocs(page);
     const types = docs.map((d) => String(d['@type']));
@@ -61,7 +62,10 @@ test.describe('hotel detail JSON-LD (server-rendered)', () => {
   });
 
   test('booking inputs prefill from the URL query', async ({ page }) => {
-    await page.goto(`/hotel/${HOTEL_SLUG}?checkin=2099-01-10&checkout=2099-01-14&adults=3&kids=1`);
+    await gotoPage(
+      page,
+      `/hotel/${HOTEL_SLUG}?checkin=2099-01-10&checkout=2099-01-14&adults=3&kids=1`,
+    );
 
     // The check-in date input reflects the prefilled query value.
     const checkIn = page.locator('input[type="date"]').first();
@@ -71,7 +75,7 @@ test.describe('hotel detail JSON-LD (server-rendered)', () => {
 
 test.describe('From the Magazine section', () => {
   test('section renders when featured articles exist, absent otherwise', async ({ page }) => {
-    await page.goto(`/hotel/${HOTEL_SLUG}`);
+    await gotoPage(page, `/hotel/${HOTEL_SLUG}`);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 15000 });
 
     const section = page.getByTestId('from-the-magazine');

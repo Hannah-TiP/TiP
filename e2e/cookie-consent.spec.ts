@@ -1,14 +1,15 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 test.describe('Cookie consent banner', () => {
   test.beforeEach(async ({ page }) => {
     // Use /about rather than / so the search-bar overlay does not cover the banner.
-    await page.goto('/about');
+    await gotoPage(page, '/about');
     await page.evaluate(() => localStorage.removeItem('tip-cookie-consent'));
   });
 
   test('banner appears on first visit and disappears after accepting', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
 
     const banner = page.getByTestId('cookie-consent-banner');
     await expect(banner).toBeVisible();
@@ -20,7 +21,7 @@ test.describe('Cookie consent banner', () => {
   });
 
   test('banner does not reappear after accepting and reloading', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
 
     await page.getByTestId('cookie-accept-all').click();
     await expect(page.getByTestId('cookie-consent-banner')).not.toBeVisible();
@@ -33,7 +34,7 @@ test.describe('Cookie consent banner', () => {
   });
 
   test('Manage Preferences opens the modal with category toggles', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
 
     const banner = page.getByTestId('cookie-consent-banner');
     await expect(banner).toBeVisible();
@@ -50,7 +51,7 @@ test.describe('Cookie consent banner', () => {
   });
 
   test('saving custom preferences hides banner and persists', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
 
     // Open preferences
     await page.getByText('Manage Preferences').click();
@@ -78,7 +79,7 @@ test.describe('Cookie consent banner', () => {
 
 test.describe('Legal pages', () => {
   test('privacy policy page renders content', async ({ page }) => {
-    await page.goto('/privacy-policy');
+    await gotoPage(page, '/privacy-policy');
     await expect(page).toHaveURL(/privacy-policy/);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Privacy Policy');
     await expect(page.getByRole('heading', { name: 'Information We Collect' })).toBeVisible();
@@ -88,7 +89,7 @@ test.describe('Legal pages', () => {
   });
 
   test('terms of service page renders content', async ({ page }) => {
-    await page.goto('/terms-of-service');
+    await gotoPage(page, '/terms-of-service');
     await expect(page).toHaveURL(/terms-of-service/);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Terms of Service');
     await expect(page.getByRole('heading', { name: 'Eligibility' })).toBeVisible();
@@ -98,7 +99,7 @@ test.describe('Legal pages', () => {
 
 test.describe('Footer links', () => {
   test('Privacy Policy link navigates to /privacy-policy', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
 
     // Scroll to footer and click
     const footer = page.locator('footer');
@@ -109,7 +110,7 @@ test.describe('Footer links', () => {
   });
 
   test('Terms of Service link navigates to /terms-of-service', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
 
     const footer = page.locator('footer');
     await footer.scrollIntoViewIfNeeded();
@@ -120,7 +121,7 @@ test.describe('Footer links', () => {
 
   test('Cookie Settings link opens the preferences modal', async ({ page }) => {
     // First accept cookies so the banner is hidden
-    await page.goto('/about');
+    await gotoPage(page, '/about');
     await page.evaluate(() => {
       localStorage.setItem(
         'tip-cookie-consent',

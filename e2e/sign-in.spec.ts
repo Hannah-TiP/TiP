@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 test.describe('Sign-in page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/sign-in');
+    await gotoPage(page, '/sign-in');
   });
 
   test('displays email and password fields', async ({ page }) => {

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E: the custom Google auth-code button (SMA-119).
@@ -15,7 +16,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Custom Google sign-in button', () => {
   test('renders on /sign-in with the branded label and logo', async ({ page }) => {
-    await page.goto('/sign-in');
+    await gotoPage(page, '/sign-in');
 
     const button = page.getByTestId('google-signin-button');
     await expect(button).toBeVisible();
@@ -24,7 +25,7 @@ test.describe('Custom Google sign-in button', () => {
   });
 
   test('renders on /register with the branded label and logo', async ({ page }) => {
-    await page.goto('/register');
+    await gotoPage(page, '/register');
 
     const button = page.getByTestId('google-signin-button');
     await expect(button).toBeVisible();
@@ -33,7 +34,7 @@ test.describe('Custom Google sign-in button', () => {
   });
 
   test('no GIS iframe button is rendered on /sign-in', async ({ page }) => {
-    await page.goto('/sign-in');
+    await gotoPage(page, '/sign-in');
 
     await expect(page.getByTestId('google-signin-button')).toBeVisible();
     // The old <GoogleLogin> rendered inside an accounts.google.com iframe.

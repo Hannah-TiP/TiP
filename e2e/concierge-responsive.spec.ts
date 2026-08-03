@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // Mobile concierge layout (SMA-67). The 3-panel desktop layout collapses to a
 // chat-only view at < md, with the conversation sidebar and trip detail panel
@@ -103,7 +104,7 @@ test.describe('Concierge responsive layout (375px)', () => {
   });
 
   test('chat panel is visible and side panels are hidden by default', async ({ page }) => {
-    await page.goto('/concierge');
+    await gotoPage(page, '/concierge');
 
     // The mobile toolbar drives the chat-only view.
     await expect(page.getByTestId('mobile-toolbar-title')).toBeVisible({ timeout: 10_000 });
@@ -124,7 +125,7 @@ test.describe('Concierge responsive layout (375px)', () => {
   });
 
   test('the concierge chat container does not overflow horizontally', async ({ page }) => {
-    await page.goto('/concierge');
+    await gotoPage(page, '/concierge');
     await expect(page.getByTestId('mobile-toolbar-title')).toBeVisible({ timeout: 10_000 });
 
     // NOTE: we scope the no-horizontal-overflow check to the concierge chat
@@ -142,7 +143,7 @@ test.describe('Concierge responsive layout (375px)', () => {
   test('sidebar drawer opens via toggle and closes via backdrop, X, and Escape', async ({
     page,
   }) => {
-    await page.goto('/concierge');
+    await gotoPage(page, '/concierge');
     await expect(page.getByTestId('mobile-sidebar-toggle')).toBeVisible({ timeout: 10_000 });
 
     // Open via toggle.
@@ -171,7 +172,7 @@ test.describe('Concierge responsive layout (375px)', () => {
   test('trip detail drawer opens via toggle and closes via backdrop and Escape', async ({
     page,
   }) => {
-    await page.goto('/concierge');
+    await gotoPage(page, '/concierge');
     await expect(page.getByTestId('mobile-trip-panel-toggle')).toBeVisible({ timeout: 10_000 });
 
     await page.getByTestId('mobile-trip-panel-toggle').click();
@@ -190,7 +191,7 @@ test.describe('Concierge responsive layout (375px)', () => {
   });
 
   test('message input is usable and sends a message', async ({ page }) => {
-    await page.goto('/concierge');
+    await gotoPage(page, '/concierge');
     const input = page.getByPlaceholder(/.+/).first();
     await expect(input).toBeVisible({ timeout: 10_000 });
 

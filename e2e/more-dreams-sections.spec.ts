@@ -1,4 +1,5 @@
 import { test, expect, type Route } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * Smoke-tests the /more-dreams page after Signature Journeys was promoted to
@@ -124,7 +125,7 @@ test.describe('/more-dreams — Activities + Restaurants only (no Signature Jour
   test('renders Activities & Experiences but NOT a Signature Journeys section', async ({
     page,
   }) => {
-    await page.goto('/more-dreams');
+    await gotoPage(page, '/more-dreams');
 
     await expect(
       page.getByRole('heading', { level: 2, name: /Activities & Experiences/i }),
@@ -146,7 +147,7 @@ test.describe('/more-dreams — Activities + Restaurants only (no Signature Jour
   });
 
   test('none of the 4 known packages appear anywhere on More Dreams', async ({ page }) => {
-    await page.goto('/more-dreams');
+    await gotoPage(page, '/more-dreams');
 
     await expect(
       page.getByRole('heading', { level: 2, name: /Activities & Experiences/i }),

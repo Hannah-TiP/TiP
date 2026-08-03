@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * Mobile responsiveness for the PUBLIC (unauthenticated) auth pages (SMA-68).
@@ -30,7 +31,7 @@ test.use({ viewport: MOBILE_VIEWPORT });
 
 test.describe('Responsive public auth pages (375px)', () => {
   test('sign-in form is full-width and does not overflow', async ({ page }) => {
-    await page.goto('/sign-in');
+    await gotoPage(page, '/sign-in');
     await expect(page.getByPlaceholder(/email/i)).toBeVisible();
 
     // The form container must not exceed the viewport width.
@@ -43,7 +44,7 @@ test.describe('Responsive public auth pages (375px)', () => {
   });
 
   test('register form does not overflow', async ({ page }) => {
-    await page.goto('/register');
+    await gotoPage(page, '/register');
     await expect(page.getByPlaceholder(/email/i)).toBeVisible();
     await expectNoHorizontalScroll(page);
   });

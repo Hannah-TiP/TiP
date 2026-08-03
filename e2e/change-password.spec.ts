@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // /my-page/my-profile is auth-gated; this spec runs in the chromium-authed
 // project. We stub the profile fetch so the page renders deterministically,
@@ -26,7 +27,7 @@ async function stubProfile(page: import('@playwright/test').Page) {
 }
 
 async function openModal(page: import('@playwright/test').Page) {
-  await page.goto('/my-page/my-profile');
+  await gotoPage(page, '/my-page/my-profile');
   await page.getByTestId('open-change-password').click();
   await expect(page.getByTestId('change-password-form')).toBeVisible({ timeout: 10_000 });
 }

@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 test.describe('Cancel trip feature', () => {
   test('trip detail page shows cancel button for draft trip', async ({ page }) => {
-    await page.goto('/my-page');
+    await gotoPage(page, '/my-page');
 
     // Navigate to a trip detail page (assumes seeded trips exist)
     const tripLink = page.locator('a[href^="/my-page/trip/"]').first();
@@ -28,7 +29,7 @@ test.describe('Cancel trip feature', () => {
   });
 
   test('cancel dialog opens and can be dismissed', async ({ page }) => {
-    await page.goto('/my-page');
+    await gotoPage(page, '/my-page');
 
     // Navigate to a trip detail page
     const tripLink = page.locator('a[href^="/my-page/trip/"]').first();
@@ -56,7 +57,7 @@ test.describe('Cancel trip feature', () => {
   });
 
   test('cancel button is not shown for paid trips', async ({ page }) => {
-    await page.goto('/my-page');
+    await gotoPage(page, '/my-page');
 
     // Look for any trip with a paid/completed status badge
     const paidBadge = page
@@ -81,7 +82,7 @@ test.describe('Cancel trip feature', () => {
 
     test('unauthenticated user cannot access trip detail page', async ({ page }) => {
       // Directly navigate to a trip detail page without signing in
-      await page.goto('/my-page/trip/1');
+      await gotoPage(page, '/my-page/trip/1');
       // Should redirect to sign-in
       await expect(page).toHaveURL(/sign-in/, { timeout: 10000 });
     });

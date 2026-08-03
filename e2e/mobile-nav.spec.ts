@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // Mobile navigation drawer behaviour at a phone viewport. The /about page is a
 // public app-variant page that always renders the centralized header, so it is
@@ -7,7 +8,7 @@ test.describe('Mobile navigation drawer', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
   test('hamburger is visible and desktop nav links are hidden at 375px', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
 
     const hamburger = page.getByRole('button', { name: /open menu/i });
     await expect(hamburger).toBeVisible();
@@ -20,7 +21,7 @@ test.describe('Mobile navigation drawer', () => {
   });
 
   test('tapping the hamburger opens the drawer with all nav links', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
 
     const drawer = page.getByTestId('mobile-nav-drawer');
     // Closed: slid off-screen to the right.
@@ -44,7 +45,7 @@ test.describe('Mobile navigation drawer', () => {
   });
 
   test('drawer closes on the X button', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
     const drawer = page.getByTestId('mobile-nav-drawer');
 
     await page.getByRole('button', { name: /open menu/i }).click();
@@ -55,7 +56,7 @@ test.describe('Mobile navigation drawer', () => {
   });
 
   test('drawer closes on backdrop tap', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
     const drawer = page.getByTestId('mobile-nav-drawer');
 
     await page.getByRole('button', { name: /open menu/i }).click();
@@ -66,7 +67,7 @@ test.describe('Mobile navigation drawer', () => {
   });
 
   test('drawer closes on Escape', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
     const drawer = page.getByTestId('mobile-nav-drawer');
 
     await page.getByRole('button', { name: /open menu/i }).click();
@@ -77,7 +78,7 @@ test.describe('Mobile navigation drawer', () => {
   });
 
   test('tapping a nav link navigates and closes the drawer', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
     const drawer = page.getByTestId('mobile-nav-drawer');
 
     await page.getByRole('button', { name: /open menu/i }).click();
@@ -88,7 +89,7 @@ test.describe('Mobile navigation drawer', () => {
   });
 
   test('no horizontal page scroll when the drawer is closed', async ({ page }) => {
-    await page.goto('/about');
+    await gotoPage(page, '/about');
     const overflow = await page.evaluate(() => {
       const el = document.documentElement;
       return { scrollWidth: el.scrollWidth, clientWidth: el.clientWidth };

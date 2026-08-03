@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // The /my-page/credits page is auth-gated; this spec runs in the
 // chromium-authed project. We mock the backend proxy route so the test is
@@ -50,7 +51,7 @@ test.describe('Promo-code credit history on /my-page/credits', () => {
       });
     });
 
-    await page.goto('/my-page/credits');
+    await gotoPage(page, '/my-page/credits');
 
     // The localized source label renders (English in the default project).
     await expect(page.getByText('Promo Code', { exact: true }).first()).toBeVisible({

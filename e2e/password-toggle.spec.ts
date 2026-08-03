@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 test.describe('Password visibility toggle', () => {
   test('toggles the sign-in password field between hidden and visible', async ({ page }) => {
-    await page.goto('/sign-in');
+    await gotoPage(page, '/sign-in');
 
     const password = page.getByPlaceholder('Enter your password');
     await expect(password).toHaveAttribute('type', 'password');
@@ -15,7 +16,7 @@ test.describe('Password visibility toggle', () => {
   });
 
   test('toggles register password fields independently', async ({ page }) => {
-    await page.goto('/register');
+    await gotoPage(page, '/register');
 
     const password = page.getByPlaceholder('Create a password');
     const confirm = page.getByPlaceholder('Confirm password');
@@ -33,7 +34,7 @@ test.describe('Password visibility toggle', () => {
   test('shows the toggle on both forgot-password fields after requesting a code', async ({
     page,
   }) => {
-    await page.goto('/forgot-password');
+    await gotoPage(page, '/forgot-password');
     await expect(page.getByPlaceholder('Enter your email')).toBeVisible();
     // The two password fields live on the reset step; this asserts the email
     // step renders without a password toggle (no password input yet).

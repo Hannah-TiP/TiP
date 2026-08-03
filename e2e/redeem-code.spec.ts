@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // The /my-page/credits page is auth-gated; this spec runs in the
 // chromium-authed project. We mock the backend proxy routes so the test is
@@ -30,7 +31,7 @@ test.describe('Redeem promo code on /my-page/credits', () => {
       });
     });
 
-    await page.goto('/my-page/credits');
+    await gotoPage(page, '/my-page/credits');
 
     const section = page.getByTestId('redeem-code-section');
     await expect(section).toBeVisible({ timeout: 15_000 });
@@ -63,7 +64,7 @@ test.describe('Redeem promo code on /my-page/credits', () => {
         });
       });
 
-      await page.goto('/my-page/credits');
+      await gotoPage(page, '/my-page/credits');
       await expect(page.getByTestId('redeem-code-section')).toBeVisible({
         timeout: 15_000,
       });

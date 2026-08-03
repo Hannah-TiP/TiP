@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 import path from 'node:path';
 import fs from 'node:fs';
 
@@ -124,7 +125,7 @@ test.describe('Customer-initiated request for human concierge', () => {
       });
     });
 
-    await page.goto('/concierge');
+    await gotoPage(page, '/concierge');
 
     // CTA must be visible in AI mode
     const cta = page.getByTestId('request-human-cta');

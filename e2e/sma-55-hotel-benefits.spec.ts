@@ -1,4 +1,5 @@
 import { test, type Page, type BrowserContext, type APIRequestContext } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 import path from 'node:path';
 
 // SMA-55: Hotel benefits panel inside the concierge hotel-preview modal, and
@@ -144,7 +145,7 @@ async function mockSessionAndCarousel(
 }
 
 async function openCarousel(page: Page, waitForId: number) {
-  await page.goto('/concierge');
+  await gotoPage(page, '/concierge');
   const input = page.getByPlaceholder(/ask your concierge/i);
   await input.waitFor({ state: 'visible', timeout: 15_000 });
   await input.fill('Show me hotels in Tokyo');
@@ -229,7 +230,7 @@ test.describe('SMA-55 hotel benefits', () => {
     // Real backend, no mocks.
     await context.unrouteAll().catch(() => {});
     // The public [id] route param is actually the hotel slug (getHotelBySlug).
-    await page.goto('/hotel/aman-tokyo', { waitUntil: 'networkidle' });
+    await gotoPage(page, '/hotel/aman-tokyo', { waitUntil: 'networkidle' });
     await page
       .getByText(/TiP exclusive benefits included/i)
       .first()

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // The /my-page/membership page is auth-gated; this spec runs in the
 // chromium-authed project. We mock the /api/me/free-nights proxy so the test
@@ -35,7 +36,7 @@ test.describe('Free-night section on /my-page/membership', () => {
       awarded: [],
     });
 
-    await page.goto('/my-page/membership');
+    await gotoPage(page, '/my-page/membership');
 
     const section = page.getByTestId('free-night-summary');
     await expect(section).toBeVisible({ timeout: 15_000 });
@@ -72,7 +73,7 @@ test.describe('Free-night section on /my-page/membership', () => {
       ],
     });
 
-    await page.goto('/my-page/membership');
+    await gotoPage(page, '/my-page/membership');
 
     await expect(page.getByTestId('free-night-summary')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('free-night-awarded-list')).toBeVisible();
@@ -89,7 +90,7 @@ test.describe('Free-night section on /my-page/membership', () => {
       awarded: [],
     });
 
-    await page.goto('/my-page/membership');
+    await gotoPage(page, '/my-page/membership');
 
     // The membership page still renders (brand heading), but the free-night
     // section is absent for a non-accruing tier.

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 // SMA-150: the AI-concierge passenger-count stepper must render localized
 // "Adults (12+)" / "Kids (under 12)" labels — never the English backend-supplied
@@ -118,7 +119,7 @@ test.describe('Concierge passenger picker — Korean i18n', () => {
   });
 
   test('renders 성인 / 어린이 labels (not English) in the stepper', async ({ page }) => {
-    await page.goto('/concierge');
+    await gotoPage(page, '/concierge');
 
     const input = page.getByPlaceholder(/.+/).first();
     await expect(input).toBeVisible({ timeout: 10_000 });

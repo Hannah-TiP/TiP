@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * Mobile responsiveness for the authenticated my-page surface and the
@@ -34,13 +35,13 @@ test.describe('Responsive my-page + onboarding (375px)', () => {
   test('onboarding flow does not overflow', async ({ page }) => {
     // An authed user lands on a resumed onboarding step (or is bounced to
     // /my-page if already complete) — either way the layout must fit 375px.
-    await page.goto('/onboarding');
+    await gotoPage(page, '/onboarding');
     await page.waitForLoadState('networkidle');
     await expectNoHorizontalScroll(page);
   });
 
   test('my-page dashboard does not overflow', async ({ page }) => {
-    await page.goto('/my-page');
+    await gotoPage(page, '/my-page');
     // Either trips render or the empty state does; both must fit the viewport.
     await page.waitForLoadState('networkidle');
     await expectNoHorizontalScroll(page);
@@ -57,14 +58,14 @@ test.describe('Responsive my-page + onboarding (375px)', () => {
     ];
 
     for (const route of routes) {
-      await page.goto(route);
+      await gotoPage(page, route);
       await page.waitForLoadState('networkidle');
       await expectNoHorizontalScroll(page);
     }
   });
 
   test('trip detail page does not overflow (when a trip exists)', async ({ page }) => {
-    await page.goto('/my-page');
+    await gotoPage(page, '/my-page');
     await page.waitForLoadState('networkidle');
 
     const tripLink = page.locator('a[href^="/my-page/trip/"]').first();

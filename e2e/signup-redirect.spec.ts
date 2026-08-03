@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * E2E (SMA-92): the "Plan My Trip" context (`redirect` param) must survive the
@@ -15,7 +16,7 @@ const ENCODED = encodeURIComponent(REDIRECT);
 
 test.describe('Plan My Trip redirect survives the sign-up chain', () => {
   test('sign-in "Sign up" link forwards the redirect (and ref) to /register', async ({ page }) => {
-    await page.goto(`/sign-in?redirect=${ENCODED}&ref=ABCD1234`);
+    await gotoPage(page, `/sign-in?redirect=${ENCODED}&ref=ABCD1234`);
 
     const signUp = page.getByRole('link', { name: /sign up/i });
     const href = await signUp.getAttribute('href');
@@ -30,7 +31,7 @@ test.describe('Plan My Trip redirect survives the sign-up chain', () => {
   test('sign-in "Sign up" link drops an external redirect (open-redirect guard)', async ({
     page,
   }) => {
-    await page.goto(`/sign-in?redirect=${encodeURIComponent('https://evil.com')}`);
+    await gotoPage(page, `/sign-in?redirect=${encodeURIComponent('https://evil.com')}`);
 
     const href = await page.getByRole('link', { name: /sign up/i }).getAttribute('href');
     const url = new URL(href!, 'http://localhost');
@@ -39,7 +40,7 @@ test.describe('Plan My Trip redirect survives the sign-up chain', () => {
   });
 
   test('sign-in "Sign up" link with no redirect points at bare /register', async ({ page }) => {
-    await page.goto('/sign-in');
+    await gotoPage(page, '/sign-in');
     const href = await page.getByRole('link', { name: /sign up/i }).getAttribute('href');
     expect(href).toBe('/register');
   });
@@ -58,7 +59,7 @@ test.describe('Plan My Trip redirect survives the sign-up chain', () => {
       });
     });
 
-    await page.goto(`/register?redirect=${ENCODED}`);
+    await gotoPage(page, `/register?redirect=${ENCODED}`);
     await page.getByPlaceholder('Enter your email').fill('new-user@example.com');
     await page.getByPlaceholder('Create a password').fill('password123');
     await page.getByPlaceholder('Confirm password').fill('password123');

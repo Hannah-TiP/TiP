@@ -1,4 +1,5 @@
 import { test, expect, type Route } from '@playwright/test';
+import { gotoPage } from './support/navigation';
 
 /**
  * /dream-hotels — the HotelMap is gated (SMA-72). It must only render once the
@@ -84,7 +85,7 @@ test.describe('/dream-hotels — map gating (SMA-72)', () => {
   });
 
   test('map is absent on load, appears on search, disappears when cleared', async ({ page }) => {
-    await page.goto('/dream-hotels');
+    await gotoPage(page, '/dream-hotels');
 
     // The hero copy and grid render regardless.
     await expect(page.getByRole('heading', { name: 'Dream Hotels' })).toBeVisible();
@@ -108,7 +109,7 @@ test.describe('/dream-hotels — map gating (SMA-72)', () => {
   test('selecting a destination shows the map; clearing it hides the map again', async ({
     page,
   }) => {
-    await page.goto('/dream-hotels');
+    await gotoPage(page, '/dream-hotels');
     await expect(page.getByRole('heading', { name: 'Dream Hotels' })).toBeVisible();
     await expect(page.locator('[data-testid="hotel-map"]')).toHaveCount(0);
 
@@ -126,7 +127,7 @@ test.describe('/dream-hotels — map gating (SMA-72)', () => {
   });
 
   test('star-rating filter alone does NOT show the map', async ({ page }) => {
-    await page.goto('/dream-hotels');
+    await gotoPage(page, '/dream-hotels');
     await expect(page.getByRole('heading', { name: 'Dream Hotels' })).toBeVisible();
     await expect(page.locator('[data-testid="hotel-map"]')).toHaveCount(0);
 
