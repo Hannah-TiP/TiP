@@ -152,7 +152,7 @@ function ConciergeContent() {
 
   async function hydrateTripDetail(tripId: number): Promise<TripWithVersion | null> {
     try {
-      const detail = await getTripWithVersion(tripId);
+      const detail = await getTripWithVersion(tripId, lang);
       setDetailsByTripId((prev) => ({ ...prev, [tripId]: detail }));
       return detail;
     } catch (err) {
@@ -194,7 +194,7 @@ function ConciergeContent() {
   async function handleNewChat() {
     try {
       setError(null);
-      const { session: createdSession } = await createTripChatSession();
+      const { session: createdSession } = await createTripChatSession(undefined, lang);
       // Refetch the canonical bundle list so the new session arrives with
       // its trip joined — we don't have the trip from the create response
       // alone.
@@ -204,7 +204,7 @@ function ConciergeContent() {
       await selectSession(createdSession.id, refreshed);
     } catch (err) {
       console.error('[Concierge] Failed to create new chat:', err);
-      setError('Failed to create new chat session.');
+      setError(t('chat.new_chat_error'));
     }
   }
 
@@ -229,7 +229,7 @@ function ConciergeContent() {
         if (prefill) {
           try {
             const version = buildPrefillTripVersion(prefill);
-            const { session: createdSession } = await createTripChatSession(version);
+            const { session: createdSession } = await createTripChatSession(version, lang);
             if (cancelled) return;
 
             const refreshed = await apiClient.listChatSessions();
@@ -414,7 +414,7 @@ function ConciergeContent() {
       let hydratedDetail: TripWithVersion | null = null;
       let hydrateError: unknown;
       try {
-        hydratedDetail = await getTripWithVersion(tripId);
+        hydratedDetail = await getTripWithVersion(tripId, lang);
         setDetailsByTripId((prev) => ({ ...prev, [tripId]: hydratedDetail }));
       } catch (err) {
         hydrateError = err;

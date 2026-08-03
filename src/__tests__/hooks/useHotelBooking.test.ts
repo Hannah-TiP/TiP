@@ -228,11 +228,14 @@ describe('useHotelBooking — Reserve flow', () => {
       await result.current.reserve('2099-06-10', '2099-06-13');
     });
 
-    expect(spy).toHaveBeenCalledWith({
-      hotel_id: 42,
-      start_date: '2099-06-10',
-      end_date: '2099-06-13',
-    });
+    expect(spy).toHaveBeenCalledWith(
+      {
+        hotel_id: 42,
+        start_date: '2099-06-10',
+        end_date: '2099-06-13',
+      },
+      'en',
+    );
     expect(pushMock).toHaveBeenCalledWith('/concierge?trip_id=77');
     spy.mockRestore();
   });
@@ -285,7 +288,7 @@ describe('useHotelBooking — Ask Concierge flow', () => {
       await result.current.askConcierge();
     });
 
-    expect(spy).toHaveBeenCalledWith({ hotel_id: 42 });
+    expect(spy).toHaveBeenCalledWith({ hotel_id: 42 }, 'en');
     expect(pushMock).toHaveBeenCalledWith('/concierge?trip_id=88');
     spy.mockRestore();
   });
@@ -303,11 +306,14 @@ describe('useHotelBooking — Ask Concierge flow', () => {
       await result.current.askConcierge('2099-06-10', '2099-06-13');
     });
 
-    expect(spy).toHaveBeenCalledWith({
-      hotel_id: 42,
-      start_date: '2099-06-10',
-      end_date: '2099-06-13',
-    });
+    expect(spy).toHaveBeenCalledWith(
+      {
+        hotel_id: 42,
+        start_date: '2099-06-10',
+        end_date: '2099-06-13',
+      },
+      'en',
+    );
     spy.mockRestore();
   });
 });
@@ -373,13 +379,16 @@ describe('useHotelBooking — Submit Request flow', () => {
       await result.current.submitRequest('2099-06-10', '2099-06-13', 2, 0);
     });
 
-    expect(spy).toHaveBeenCalledWith({
-      hotel_id: 42,
-      start_date: '2099-06-10',
-      end_date: '2099-06-13',
-      adults: 2,
-      kids: 0,
-    });
+    expect(spy).toHaveBeenCalledWith(
+      {
+        hotel_id: 42,
+        start_date: '2099-06-10',
+        end_date: '2099-06-13',
+        adults: 2,
+        kids: 0,
+      },
+      'en',
+    );
     expect(pushMock).toHaveBeenCalledWith('/concierge?trip_id=77');
     spy.mockRestore();
   });

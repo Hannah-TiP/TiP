@@ -61,7 +61,7 @@ async function mockTripAndSession(
       }),
     }),
   );
-  await context.route(`**/api/trip/${TRIP_ID}`, (route) =>
+  await context.route(`**/api/trip/${TRIP_ID}*`, (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -69,7 +69,7 @@ async function mockTripAndSession(
       body: JSON.stringify({ data: { trip: baseTrip, active_quote: null } }),
     }),
   );
-  await context.route(`**/api/trip/${TRIP_ID}/current-version`, (route) =>
+  await context.route(`**/api/trip/${TRIP_ID}/current-version*`, (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -395,7 +395,7 @@ test.describe('Concierge visual captures', () => {
         }),
       }),
     );
-    await context.route(`**/api/trip/${TRIP_ID}`, (route) =>
+    await context.route(`**/api/trip/${TRIP_ID}*`, (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -403,7 +403,7 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({ data: { trip: baseTrip, active_quote: null } }),
       }),
     );
-    await context.route(`**/api/trip/${TRIP_ID}/current-version`, (route) =>
+    await context.route(`**/api/trip/${TRIP_ID}/current-version*`, (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',

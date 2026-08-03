@@ -142,13 +142,16 @@ describe('Review session page', () => {
     fireEvent.click(screen.getByText('Submit Reviews'));
 
     await waitFor(() => expect(createReview).toHaveBeenCalledTimes(2));
-    expect(createReview).toHaveBeenCalledWith({
-      trip_id: 3,
-      entity_type: 'hotel',
-      entity_id: 10,
-      rating: 4,
-      comment: null,
-    });
+    expect(createReview).toHaveBeenCalledWith(
+      {
+        trip_id: 3,
+        entity_type: 'hotel',
+        entity_id: 10,
+        rating: 4,
+        comment: null,
+      },
+      'en',
+    );
     expect(await screen.findByText(/2 reviews submitted/)).toBeTruthy();
   });
 
@@ -171,6 +174,7 @@ describe('Review session page', () => {
     await waitFor(() => expect(createReview).toHaveBeenCalledTimes(1));
     expect(createReview).toHaveBeenCalledWith(
       expect.objectContaining({ entity_type: 'hotel', entity_id: 10 }),
+      'en',
     );
 
     // Skip persisted across remount.
@@ -201,6 +205,7 @@ describe('Review session page', () => {
     await waitFor(() => expect(createReview).toHaveBeenCalledTimes(1));
     expect(createReview).toHaveBeenCalledWith(
       expect.objectContaining({ entity_type: 'restaurant', entity_id: 20 }),
+      'en',
     );
   });
 
@@ -220,7 +225,7 @@ describe('Review session page', () => {
     fireEvent.click(screen.getByText('Submit Reviews'));
 
     await waitFor(() => expect(updateReview).toHaveBeenCalledTimes(1));
-    expect(updateReview).toHaveBeenCalledWith(10, { rating: 3, comment: 'Loved it' });
+    expect(updateReview).toHaveBeenCalledWith(10, { rating: 3, comment: 'Loved it' }, 'en');
     expect(createReview).not.toHaveBeenCalled();
   });
 

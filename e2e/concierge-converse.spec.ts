@@ -50,7 +50,7 @@ test.describe('Concierge chat message flow', () => {
 
     let tripVersionState = tripVersion();
 
-    await context.route(`**/api/trip/${TRIP_ID}`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -59,7 +59,7 @@ test.describe('Concierge chat message flow', () => {
       });
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}/current-version`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}/current-version*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -243,7 +243,7 @@ test.describe('Concierge Your Itinerary panel — detailed plan view', () => {
       ],
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -252,7 +252,7 @@ test.describe('Concierge Your Itinerary panel — detailed plan view', () => {
       });
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}/current-version`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}/current-version*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

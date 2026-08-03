@@ -185,7 +185,7 @@ function DreamHotelsContent() {
         return;
       }
       try {
-        const aggregates = await apiClient.getReviewAggregates('hotel', hotelIds);
+        const aggregates = await apiClient.getReviewAggregates('hotel', hotelIds, lang);
         if (!cancelled) {
           setReviewAggregates(aggregates);
         }
@@ -198,7 +198,7 @@ function DreamHotelsContent() {
     return () => {
       cancelled = true;
     };
-  }, [hotels]);
+  }, [hotels, lang]);
 
   // Close dropdown / suggestion panel on outside click
   useEffect(() => {

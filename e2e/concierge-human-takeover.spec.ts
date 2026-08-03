@@ -48,7 +48,7 @@ test.describe('Concierge chat takeover -- customer-facing surface', () => {
       });
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -57,7 +57,7 @@ test.describe('Concierge chat takeover -- customer-facing surface', () => {
       });
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}/current-version`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}/current-version*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -140,7 +140,7 @@ test.describe('Concierge chat takeover -- customer-facing surface', () => {
       });
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -149,7 +149,7 @@ test.describe('Concierge chat takeover -- customer-facing surface', () => {
       });
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}/current-version`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}/current-version*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

@@ -34,7 +34,7 @@ export default function ShareTripModal({
   tripId,
   canControlVisibility = true,
 }: ShareTripModalProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [emailsInput, setEmailsInput] = useState('');
   const [showCost, setShowCost] = useState(true);
   const [showBookingDocuments, setShowBookingDocuments] = useState(true);
@@ -77,11 +77,15 @@ export default function ShareTripModal({
 
     setSubmitting(true);
     try {
-      const result = await apiClient.shareTrip(tripId, {
-        emails,
-        show_cost: canControlVisibility ? showCost : true,
-        show_booking_documents: canControlVisibility ? showBookingDocuments : true,
-      });
+      const result = await apiClient.shareTrip(
+        tripId,
+        {
+          emails,
+          show_cost: canControlVisibility ? showCost : true,
+          show_booking_documents: canControlVisibility ? showBookingDocuments : true,
+        },
+        lang,
+      );
       setSuccessCount(result.shared_count);
       setEmailsInput('');
     } catch (err) {

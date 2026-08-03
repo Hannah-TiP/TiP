@@ -15,7 +15,7 @@ const SUCCESS_BODY = JSON.stringify({
 });
 
 async function stubProfile(page: Page, hasPassword: boolean) {
-  await page.route('**/api/profile', async (route) => {
+  await page.route('**/api/profile*', async (route) => {
     if (route.request().method() !== 'GET') return route.fallback();
     await route.fulfill({
       status: 200,
@@ -164,7 +164,7 @@ test.describe('Delete account flow on /my-page/my-profile', () => {
     await stubProfile(page, false);
 
     let sentCodeType: string | undefined;
-    await page.route('**/api/auth/send-verification', async (route) => {
+    await page.route('**/api/auth/send-verification*', async (route) => {
       sentCodeType = route.request().postDataJSON()?.code_type;
       await route.fulfill({
         status: 200,

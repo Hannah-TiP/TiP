@@ -61,7 +61,6 @@ describe('GET /api/quotes', () => {
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer tok-abc',
-          Language: 'en',
         }),
       }),
     );

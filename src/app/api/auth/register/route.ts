@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { languageHeader } from '@/lib/proxy-language';
 
 const API_BASE_URL = process.env.API_BASE_URL;
 
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Language: 'en',
+        ...languageHeader(request),
       },
       body: JSON.stringify({
         email,
@@ -26,9 +27,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
+      // The v2 backend error envelope carries `message` (never `detail`) —
+      // surface it so users see the real reason, not the generic fallback.
       return NextResponse.json(
-        { message: error.detail || 'Registration failed' },
+        { message: error.message || 'Registration failed' },
         { status: response.status },
       );
     }

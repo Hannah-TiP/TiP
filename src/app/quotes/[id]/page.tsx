@@ -163,7 +163,7 @@ function PayNowButton({
   onError: (msg: string) => void;
   onPaid: (bundle: QuoteWithVersion) => void;
 }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
 
   const handleClick = async () => {
@@ -174,7 +174,7 @@ function PayNowButton({
       // refuses a Flywire checkout for a $0 quote, so this click marks
       // the quote PAID directly (SMA-237).
       try {
-        const bundle = await apiClient.completeZeroTotalQuote(quoteId);
+        const bundle = await apiClient.completeZeroTotalQuote(quoteId, lang);
         onPaid(bundle);
       } catch (err) {
         const msg = err instanceof Error ? err.message : t('quote.error_complete_zero_total');
@@ -185,7 +185,7 @@ function PayNowButton({
       return;
     }
     try {
-      const result = await apiClient.createCheckoutSession(quoteId);
+      const result = await apiClient.createCheckoutSession(quoteId, lang);
       // Hand off to Flywire's hosted checkout (or our /checkout/flywire wrapper).
       window.location.assign(result.checkout_url);
     } catch (err) {
@@ -580,7 +580,7 @@ export default function QuoteDetailPage() {
 }
 
 function QuoteDetailContent() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -622,13 +622,13 @@ function QuoteDetailContent() {
       try {
         setLoading(true);
         setError(null);
-        const data = await apiClient.getQuote(Number(id));
+        const data = await apiClient.getQuote(Number(id), lang);
         if (cancelled) return;
         setBundle(data);
         try {
           const [tripBundle, v] = await Promise.all([
-            apiClient.getTripById(data.quote.trip_id),
-            apiClient.getCurrentTripVersion(data.quote.trip_id),
+            apiClient.getTripById(data.quote.trip_id, lang),
+            apiClient.getCurrentTripVersion(data.quote.trip_id, lang),
           ]);
           if (!cancelled) {
             setTrip(tripBundle.trip);
@@ -648,7 +648,7 @@ function QuoteDetailContent() {
     return () => {
       cancelled = true;
     };
-  }, [id, sessionStatus, router, t]);
+  }, [id, sessionStatus, router, t, lang]);
 
   // Cancel handling: ?cancelled=1 → toast + strip query string. No state change.
   useEffect(() => {
@@ -678,7 +678,7 @@ function QuoteDetailContent() {
       if (controller.signal.aborted) return;
       attempts += 1;
       try {
-        const data = await apiClient.getQuote(Number(id));
+        const data = await apiClient.getQuote(Number(id), lang);
         if (controller.signal.aborted) return;
         if (data.quote.status === 'PAID') {
           setBundle(data);
@@ -712,7 +712,7 @@ function QuoteDetailContent() {
     // and the loaded quote status. Re-running this effect on every bundle
     // refresh would cancel itself on each tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, sessionStatus, id]);
+  }, [searchParams, sessionStatus, id, lang]);
 
   if (sessionStatus === 'loading' || loading) {
     return (

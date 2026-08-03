@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
 // and stub the change-password proxy so the flow doesn't mutate real data.
 
 async function stubProfile(page: import('@playwright/test').Page) {
-  await page.route('**/api/profile', async (route) => {
+  await page.route('**/api/profile*', async (route) => {
     if (route.request().method() !== 'GET') return route.fallback();
     await route.fulfill({
       status: 200,

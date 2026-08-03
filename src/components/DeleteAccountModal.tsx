@@ -67,7 +67,7 @@ export default function DeleteAccountModal({
     setError('');
     try {
       setSendingCode(true);
-      await apiClient.sendVerificationCode(email, 'account_deletion');
+      await apiClient.sendVerificationCode(email, 'account_deletion', lang);
       setCodeSent(true);
     } catch {
       setError(t('delete_account.error_send_code'));

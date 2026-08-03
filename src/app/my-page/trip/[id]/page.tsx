@@ -159,7 +159,7 @@ export default function TripDetailPage() {
 
     const load = async () => {
       try {
-        setTripWithVersion(await getTripWithVersion(Number(id)));
+        setTripWithVersion(await getTripWithVersion(Number(id), lang));
       } catch {
         setError(t('trip_detail.error_load'));
       } finally {
@@ -168,7 +168,7 @@ export default function TripDetailPage() {
     };
 
     load();
-  }, [id, t]);
+  }, [id, t, lang]);
 
   // Best-effort: fetch the trip's latest quote so we can render a "View
   // quote" affordance. Failures are swallowed — the link simply does not
@@ -178,7 +178,7 @@ export default function TripDetailPage() {
     let canceled = false;
 
     apiClient
-      .getLatestQuoteForTrip(Number(id))
+      .getLatestQuoteForTrip(Number(id), lang)
       .then((bundle) => {
         if (canceled) return;
         setLatestQuoteId(bundle ? bundle.quote.id : null);
@@ -191,7 +191,7 @@ export default function TripDetailPage() {
     return () => {
       canceled = true;
     };
-  }, [id]);
+  }, [id, lang]);
 
   const handleCancelTrip = useCallback(async () => {
     if (!id) return;

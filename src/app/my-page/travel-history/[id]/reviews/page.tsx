@@ -15,7 +15,7 @@ import {
 } from '@/lib/trip-utils';
 import { clearDraft, getDraft, isSkipped, saveDraft, setSkipped } from '@/lib/review-drafts';
 import type { Review } from '@/types/review';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 
 interface SessionState {
   trip: TripWithVersion;
@@ -34,9 +34,13 @@ function entityKey(entity: ReviewableEntity): string {
   return `${entity.entityType}:${entity.entityId}`;
 }
 
-async function findUserReview(entity: ReviewableEntity, userId: number): Promise<Review | null> {
+async function findUserReview(
+  entity: ReviewableEntity,
+  userId: number,
+  lang: Lang,
+): Promise<Review | null> {
   try {
-    const list = await apiClient.getReviewsByEntity(entity.entityType, entity.entityId);
+    const list = await apiClient.getReviewsByEntity(entity.entityType, entity.entityId, lang);
     const match = list.reviews.find((r) => r.author.id === userId && r.review.deleted_at == null);
     return match?.review ?? null;
   } catch {
@@ -58,7 +62,7 @@ function seedValue(
 }
 
 export default function ReviewsPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const tripId = Number(id);
   const [state, setState] = useState<SessionState | null>(null);
@@ -75,9 +79,12 @@ export default function ReviewsPage() {
     if (!tripId) return;
     try {
       setError(null);
-      const [trip, user] = await Promise.all([getTripWithVersion(tripId), apiClient.getProfile()]);
+      const [trip, user] = await Promise.all([
+        getTripWithVersion(tripId, lang),
+        apiClient.getProfile(lang),
+      ]);
       const entities = toReviewableEntities(getTripReviewableItems(trip.currentVersion));
-      const reviews = await Promise.all(entities.map((e) => findUserReview(e, user.id)));
+      const reviews = await Promise.all(entities.map((e) => findUserReview(e, user.id, lang)));
       const reviewsByEntity: Record<string, Review | null> = {};
       const nextValues: Record<string, ReviewItemValue> = {};
       entities.forEach((e, i) => {
@@ -93,7 +100,7 @@ export default function ReviewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [tripId, t]);
+  }, [tripId, t, lang]);
 
   useEffect(() => {
     load();
@@ -146,18 +153,18 @@ export default function ReviewsPage() {
         return next;
       });
       try {
-        await apiClient.deleteReview(review.id);
+        await apiClient.deleteReview(review.id, lang);
         await load();
       } catch (err) {
         setItemErrors((prev) => ({
           ...prev,
-          [key]: err instanceof Error ? err.message : 'Failed to delete your review.',
+          [key]: err instanceof Error ? err.message : t('review_session.error_delete'),
         }));
       } finally {
         setDeletingKey(null);
       }
     },
-    [load],
+    [load, lang, t],
   );
 
   const eligibleEntities = useMemo(() => {
@@ -192,18 +199,25 @@ export default function ReviewsPage() {
         const existing = state.reviewsByEntity[key];
         try {
           if (existing) {
-            await apiClient.updateReview(existing.id, {
-              rating: value.rating,
-              comment: value.comment.trim() || null,
-            });
+            await apiClient.updateReview(
+              existing.id,
+              {
+                rating: value.rating,
+                comment: value.comment.trim() || null,
+              },
+              lang,
+            );
           } else {
-            await apiClient.createReview({
-              trip_id: tripId,
-              entity_type: entity.entityType,
-              entity_id: entity.entityId,
-              rating: value.rating,
-              comment: value.comment.trim() || null,
-            });
+            await apiClient.createReview(
+              {
+                trip_id: tripId,
+                entity_type: entity.entityType,
+                entity_id: entity.entityId,
+                rating: value.rating,
+                comment: value.comment.trim() || null,
+              },
+              lang,
+            );
             clearDraft(tripId, entity.entityType, entity.entityId);
           }
           return { key, ok: true as const, title: entity.title };
@@ -212,7 +226,7 @@ export default function ReviewsPage() {
             key,
             ok: false as const,
             title: entity.title,
-            message: err instanceof Error ? err.message : 'Failed to submit your review.',
+            message: err instanceof Error ? err.message : t('review_session.error_submit_item'),
           };
         }
       }),
@@ -235,7 +249,7 @@ export default function ReviewsPage() {
     // the failure errors that the reload cleared so they stay visible.
     await load();
     setItemErrors(nextErrors);
-  }, [state, eligibleEntities, values, tripId, load]);
+  }, [state, eligibleEntities, values, tripId, load, lang, t]);
 
   if (loading) {
     return (

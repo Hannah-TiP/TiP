@@ -9,7 +9,7 @@ import PasswordInput from '@/components/PasswordInput';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 function ForgotPasswordForm() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<'email' | 'reset'>('email');
   // Pre-fill the email when arriving from the signup screen's "account
@@ -27,7 +27,7 @@ function ForgotPasswordForm() {
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/auth/send-verification', {
+      const res = await fetch(`/api/auth/send-verification?language=${lang}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code_type: 'forgot-password' }),
@@ -56,7 +56,7 @@ function ForgotPasswordForm() {
 
     try {
       // Step 1: Reset password via backend
-      const res = await fetch('/api/auth/reset-password', {
+      const res = await fetch(`/api/auth/reset-password?language=${lang}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

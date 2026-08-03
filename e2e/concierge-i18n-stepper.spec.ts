@@ -52,7 +52,7 @@ test.describe('Concierge passenger picker — Korean i18n', () => {
       });
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -60,7 +60,7 @@ test.describe('Concierge passenger picker — Korean i18n', () => {
       });
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}/current-version`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}/current-version*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

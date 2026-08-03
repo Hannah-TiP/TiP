@@ -144,7 +144,7 @@ export function useHotelBooking({
 }: UseHotelBookingArgs): UseHotelBookingResult {
   const router = useRouter();
   const { status: sessionStatus } = useSession();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const [dateError, setDateError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -184,11 +184,14 @@ export function useHotelBooking({
 
       setIsSubmitting(true);
       try {
-        const bundle = await apiClient.createTripFromHotel({
-          hotel_id: hotelId,
-          start_date: checkIn,
-          end_date: checkOut,
-        });
+        const bundle = await apiClient.createTripFromHotel(
+          {
+            hotel_id: hotelId,
+            start_date: checkIn,
+            end_date: checkOut,
+          },
+          lang,
+        );
         router.push(`/concierge?trip_id=${bundle.trip.id}`);
       } catch (err) {
         console.error('Failed to create trip from hotel:', err);
@@ -197,7 +200,7 @@ export function useHotelBooking({
         setIsSubmitting(false);
       }
     },
-    [hotelId, sessionStatus, redirectToSignIn, router, clearErrors, t],
+    [hotelId, sessionStatus, redirectToSignIn, router, clearErrors, t, lang],
   );
 
   const askConcierge = useCallback(
@@ -212,12 +215,15 @@ export function useHotelBooking({
 
       setIsSubmitting(true);
       try {
-        const bundle = await apiClient.createTripFromHotel({
-          hotel_id: hotelId,
-          // Pass dates only when both are filled — partial dates would skew
-          // the AI's first turn and the trip-version snapshot.
-          ...(checkIn && checkOut ? { start_date: checkIn, end_date: checkOut } : {}),
-        });
+        const bundle = await apiClient.createTripFromHotel(
+          {
+            hotel_id: hotelId,
+            // Pass dates only when both are filled — partial dates would skew
+            // the AI's first turn and the trip-version snapshot.
+            ...(checkIn && checkOut ? { start_date: checkIn, end_date: checkOut } : {}),
+          },
+          lang,
+        );
         router.push(`/concierge?trip_id=${bundle.trip.id}`);
       } catch (err) {
         console.error('Failed to create trip from hotel:', err);
@@ -226,7 +232,7 @@ export function useHotelBooking({
         setIsSubmitting(false);
       }
     },
-    [hotelId, sessionStatus, redirectToSignIn, router, clearErrors, t],
+    [hotelId, sessionStatus, redirectToSignIn, router, clearErrors, t, lang],
   );
 
   const submitRequest = useCallback(
@@ -252,13 +258,18 @@ export function useHotelBooking({
 
       setIsSubmitting(true);
       try {
-        const bundle = await apiClient.submitRequestFromHotel({
-          hotel_id: hotelId,
-          start_date: checkIn,
-          end_date: checkOut,
-          adults,
-          kids,
-        });
+        // Forward the active UI language so the backend persists the seeded
+        // concierge confirmation message in the user's language (SMA-260).
+        const bundle = await apiClient.submitRequestFromHotel(
+          {
+            hotel_id: hotelId,
+            start_date: checkIn,
+            end_date: checkOut,
+            adults,
+            kids,
+          },
+          lang,
+        );
         router.push(`/concierge?trip_id=${bundle.trip.id}`);
       } catch (err) {
         console.error('Failed to submit request from hotel:', err);
@@ -267,7 +278,7 @@ export function useHotelBooking({
         setIsSubmitting(false);
       }
     },
-    [hotelId, sessionStatus, redirectToSignIn, router, clearErrors, t],
+    [hotelId, sessionStatus, redirectToSignIn, router, clearErrors, t, lang],
   );
 
   return {

@@ -64,9 +64,11 @@ describe('POST /api/trips/from-hotel', () => {
       expect.objectContaining({
         Authorization: 'Bearer tok-abc',
         'Content-Type': 'application/json',
-        Language: 'en',
       }),
     );
+    // No `?language=` on the proxy request -> no Language header is invented
+    // (SMA-260: the backend ladder resolves the user's stored preference).
+    expect(init.headers).not.toHaveProperty('Language');
     expect(JSON.parse(init.body as string)).toEqual({
       hotel_id: 42,
       start_date: '2026-06-10',

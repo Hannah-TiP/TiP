@@ -82,7 +82,7 @@ test.describe('SearchBar → Concierge prefill (authed)', () => {
       });
     });
 
-    await context.route('**/api/trip/create', async (route) => {
+    await context.route('**/api/trip/create*', async (route) => {
       sessionsList = [{ session: createdSession, trip: createdTrip }];
       await route.fulfill({
         status: 200,
@@ -99,7 +99,7 @@ test.describe('SearchBar → Concierge prefill (authed)', () => {
       });
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -108,7 +108,7 @@ test.describe('SearchBar → Concierge prefill (authed)', () => {
       });
     });
 
-    await context.route(`**/api/trip/${TRIP_ID}/current-version`, async (route) => {
+    await context.route(`**/api/trip/${TRIP_ID}/current-version*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

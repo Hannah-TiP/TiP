@@ -108,7 +108,11 @@ describe('DeleteAccountModal', () => {
     expect(screen.queryByTestId('delete-password-input')).toBeNull();
 
     fireEvent.click(screen.getByTestId('send-code-button'));
-    expect(sendVerificationCodeMock).toHaveBeenCalledWith('user@example.com', 'account_deletion');
+    expect(sendVerificationCodeMock).toHaveBeenCalledWith(
+      'user@example.com',
+      'account_deletion',
+      'en',
+    );
     await screen.findByTestId('delete-code-sent');
 
     fireEvent.change(screen.getByTestId('delete-code-input'), { target: { value: '123456' } });
