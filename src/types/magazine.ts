@@ -77,8 +77,10 @@ export interface Seo {
  * (rich_text / section / image / gallery / comparison_table / quote / callout /
  * cta / related). The consumer renderer handles a minimal known subset; unknown
  * block types render nothing (forward-compat). `button_label` / `button_url`
- * power the `cta` block's button (SMA-266): internal when the URL starts with
- * `/` (next/link), external otherwise (`target="_blank" rel="noopener"`).
+ * power the `cta` block's button (SMA-266). URLs are allowlist-classified by
+ * `classifyCtaButtonUrl` (MagazineArticleContent): leading `/` (not `//`) →
+ * internal next/link; `http(s)://` → external `target="_blank" rel="noopener"`;
+ * anything else (javascript:, data:, //host, …) renders no button.
  */
 export interface BodyBlock {
   type: string;

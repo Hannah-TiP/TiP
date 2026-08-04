@@ -4,7 +4,9 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import enTranslations from '@/translations/en.json';
 import krTranslations from '@/translations/kr.json';
-import MagazineArticleContent from '@/components/magazine/MagazineArticleContent';
+import MagazineArticleContent, {
+  classifyCtaButtonUrl,
+} from '@/components/magazine/MagazineArticleContent';
 import type { BodyBlock, MagazineArticle, MagazineArticleDetail } from '@/types/magazine';
 
 vi.mock('next/image', () => ({
@@ -133,12 +135,65 @@ describe('MagazineArticleContent — cta block button (SMA-266)', () => {
     );
   });
 
-  it('does not render a button when the URL is set but the label is empty in both locales', () => {
+  it('renders no button but keeps the footer CTA when the URL is set and the label is empty in both locales', () => {
+    // Suppression keys on the SAME predicate as button visibility — a URL
+    // without a label must not strip the article of every CTA.
     render(
       <MagazineArticleContent
         detail={buildDetail([{ ...ctaWithoutButton, button_url: '/concierge' }])}
       />,
     );
     expect(screen.queryByTestId('magazine-cta-button')).toBeNull();
+    expect(screen.getByTestId('magazine-footer-cta')).toBeTruthy();
+  });
+
+  it.each(['javascript:alert(1)', 'data:text/html,evil'])(
+    'treats a %s URL as no button and keeps the footer CTA (stored-XSS hardening)',
+    (url) => {
+      render(
+        <MagazineArticleContent detail={buildDetail([{ ...ctaWithButton, button_url: url }])} />,
+      );
+      expect(screen.queryByTestId('magazine-cta-button')).toBeNull();
+      expect(screen.getByTestId('magazine-footer-cta')).toBeTruthy();
+    },
+  );
+
+  it('does not treat a protocol-relative //host URL as internal — no button, footer CTA kept', () => {
+    render(
+      <MagazineArticleContent
+        detail={buildDetail([{ ...ctaWithButton, button_url: '//evil.com/phish' }])}
+      />,
+    );
+    // Not internal (would leave the site via a next/link), not http(s) either
+    // -> classifier says none: no button at all.
+    expect(screen.queryByTestId('magazine-cta-button')).toBeNull();
+    expect(screen.getByTestId('magazine-footer-cta')).toBeTruthy();
+  });
+
+  it('does not render a button for a relative (non-slash) URL', () => {
+    render(
+      <MagazineArticleContent
+        detail={buildDetail([{ ...ctaWithButton, button_url: 'concierge' }])}
+      />,
+    );
+    expect(screen.queryByTestId('magazine-cta-button')).toBeNull();
+    expect(screen.getByTestId('magazine-footer-cta')).toBeTruthy();
+  });
+});
+
+describe('classifyCtaButtonUrl', () => {
+  it('classifies per the allowlist', () => {
+    expect(classifyCtaButtonUrl('/concierge')).toBe('internal');
+    expect(classifyCtaButtonUrl('/')).toBe('internal');
+    expect(classifyCtaButtonUrl('https://example.com')).toBe('external');
+    expect(classifyCtaButtonUrl('http://example.com')).toBe('external');
+    expect(classifyCtaButtonUrl('//evil.com')).toBe('none');
+    expect(classifyCtaButtonUrl('javascript:alert(1)')).toBe('none');
+    expect(classifyCtaButtonUrl('data:text/html,x')).toBe('none');
+    expect(classifyCtaButtonUrl('mailto:x@y.com')).toBe('none');
+    expect(classifyCtaButtonUrl('concierge')).toBe('none');
+    expect(classifyCtaButtonUrl('')).toBe('none');
+    expect(classifyCtaButtonUrl(null)).toBe('none');
+    expect(classifyCtaButtonUrl(undefined)).toBe('none');
   });
 });
