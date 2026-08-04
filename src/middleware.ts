@@ -1,19 +1,23 @@
 import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
+import { isSecureAuthCookie } from '@/lib/auth-cookie';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const secureCookie = process.env.NODE_ENV === 'production';
+  // Mirror Auth.js core: cookie security follows the AUTH_URL scheme (request
+  // protocol as fallback), NOT NODE_ENV — a local prod build over http must
+  // read the non-`__Secure-` cookie. NOTE: `secureCookie` must stay explicit;
+  // @auth/core's getToken defaults it to false, which would break https deploys.
+  const secureCookie = isSecureAuthCookie(
+    process.env.AUTH_URL ?? process.env.NEXTAUTH_URL,
+    request.nextUrl.protocol,
+  );
 
-  // NextAuth v5 uses 'authjs' cookie prefix; try both in case of version differences
-  const token =
-    (await getToken({ req: request, secret: process.env.AUTH_SECRET, secureCookie })) ??
-    (await getToken({
-      req: request,
-      secret: process.env.AUTH_SECRET,
-      secureCookie,
-      cookieName: secureCookie ? '__Secure-authjs.session-token' : 'authjs.session-token',
-    }));
+  const token = await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+    secureCookie,
+  });
 
   const isLoggedIn = !!token && !token.error;
   const isProtectedRoute =
