@@ -119,8 +119,16 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
         </section>
       );
     }
-    case 'cta':
-      if (!heading && !text) return null;
+    case 'cta': {
+      // SMA-266: an authored button (label + URL). Internal URLs (leading `/`)
+      // route via next/link; anything else opens in a new tab. No button
+      // fields → exactly the legacy heading + text output.
+      const buttonLabel = getLocalizedText(block.button_label, lang);
+      const buttonUrl = block.button_url ?? '';
+      const showButton = !!buttonUrl && !!buttonLabel;
+      if (!heading && !text && !showButton) return null;
+      const buttonClassName =
+        'mt-6 inline-block rounded-full bg-green-dark px-8 py-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90';
       return (
         <div className="mb-8">
           {heading && (
@@ -139,8 +147,25 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
               {text}
             </p>
           )}
+          {showButton &&
+            (buttonUrl.startsWith('/') ? (
+              <Link href={buttonUrl} className={buttonClassName} data-testid="magazine-cta-button">
+                {buttonLabel}
+              </Link>
+            ) : (
+              <a
+                href={buttonUrl}
+                target="_blank"
+                rel="noopener"
+                className={buttonClassName}
+                data-testid="magazine-cta-button"
+              >
+                {buttonLabel}
+              </a>
+            ))}
         </div>
       );
+    }
     case 'image': {
       if (!block.image) return null;
       return (
@@ -210,6 +235,10 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
   };
   const publishedLabel = formatDate(article.published_at);
   const updatedLabel = formatDate(article.updated_at);
+
+  // SMA-266 (Q2 option b): an authored cta block with a button replaces the
+  // generic footer Concierge CTA. Articles without one stay pixel-identical.
+  const hasAuthoredCta = article.body?.some((b) => b.type === 'cta' && b.button_url) ?? false;
 
   return (
     <main className="min-h-screen bg-background">
@@ -338,21 +367,29 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
         </section>
       )}
 
-      {/* Concierge CTA */}
-      <section className="bg-green-dark px-4 py-16 md:px-10 md:py-20">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-primary text-[32px] italic leading-tight text-[#FAF5EF] md:text-[48px]">
-            {t('magazine.cta_title')}
-          </h2>
-          <p className="mt-4 text-[16px] leading-relaxed text-white/60">{t('magazine.cta_body')}</p>
-          <Link
-            href="/concierge"
-            className="mt-8 inline-block rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
-          >
-            {t('magazine.cta_button')}
-          </Link>
-        </div>
-      </section>
+      {/* Concierge CTA — suppressed when the article authors its own cta
+          button (SMA-266 Q2 option b) */}
+      {!hasAuthoredCta && (
+        <section
+          className="bg-green-dark px-4 py-16 md:px-10 md:py-20"
+          data-testid="magazine-footer-cta"
+        >
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="font-primary text-[32px] italic leading-tight text-[#FAF5EF] md:text-[48px]">
+              {t('magazine.cta_title')}
+            </h2>
+            <p className="mt-4 text-[16px] leading-relaxed text-white/60">
+              {t('magazine.cta_body')}
+            </p>
+            <Link
+              href="/concierge"
+              className="mt-8 inline-block rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
+            >
+              {t('magazine.cta_button')}
+            </Link>
+          </div>
+        </section>
+      )}
 
       <Footer />
     </main>

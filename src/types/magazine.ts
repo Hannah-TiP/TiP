@@ -76,7 +76,9 @@ export interface Seo {
  * A single modular body block. `type` is one of the spec block types
  * (rich_text / section / image / gallery / comparison_table / quote / callout /
  * cta / related). The consumer renderer handles a minimal known subset; unknown
- * block types render nothing (forward-compat).
+ * block types render nothing (forward-compat). `button_label` / `button_url`
+ * power the `cta` block's button (SMA-266): internal when the URL starts with
+ * `/` (next/link), external otherwise (`target="_blank" rel="noopener"`).
  */
 export interface BodyBlock {
   type: string;
@@ -84,6 +86,8 @@ export interface BodyBlock {
   heading?: MultiLanguageString | null;
   image?: Image | null;
   images?: Image[] | null;
+  button_label?: MultiLanguageString | null;
+  button_url?: string | null;
 }
 
 /** Flat magazine article read schema (base row, no expansions). */
