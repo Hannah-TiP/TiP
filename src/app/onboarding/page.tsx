@@ -136,17 +136,9 @@ function OnboardingFlow() {
     setIsSaving(true);
     try {
       if (currentStep === 1) {
-        // Only attempt a claim when the user actually has an unclaimed code
-        // typed in AND isn't already attributed. The backend treats unknown
-        // codes as no-op (returns referred_by=null) so a stale value won't
-        // throw — but we still don't want to round-trip when there's
-        // nothing to do.
-        if (!referredBy && referralCode) {
-          const result = await apiClient.claimReferral(referralCode);
-          setReferredBy(result.referred_by);
-        }
-        // Mark the step as seen regardless of claim outcome — this is the
-        // skip-persistence the whole step hinges on.
+        // Mark the step as seen — this is the skip-persistence the whole
+        // step hinges on. Claiming a referral code is an explicit action
+        // handled in handleNext only; Skip must never claim (SMA-267).
         await apiClient.updateProfile({ referral_onboarding_seen: true }, lang);
       } else if (currentStep === 2) {
         await apiClient.updateProfile({ first_name: firstName, last_name: lastName }, lang);
@@ -198,6 +190,25 @@ function OnboardingFlow() {
       return;
     }
     setError('');
+
+    // Claiming a referral only happens on explicit Next — never on Skip
+    // (SMA-267). Only attempt a claim when the user actually has an
+    // unclaimed code typed in AND isn't already attributed. The backend
+    // treats unknown codes as no-op (returns referred_by=null) so a stale
+    // value won't throw — but we still don't want to round-trip when
+    // there's nothing to do.
+    if (step === 1 && !referredBy && referralCode) {
+      setIsSaving(true);
+      try {
+        const result = await apiClient.claimReferral(referralCode);
+        setReferredBy(result.referred_by);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : t('onboarding.error_save_failed'));
+        return;
+      } finally {
+        setIsSaving(false);
+      }
+    }
 
     if (step < TOTAL_STEPS) {
       const saved = await saveStep(step);
