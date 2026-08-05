@@ -29,6 +29,35 @@ function toFaqItems(faqs: MagazineArticle['faqs']): FaqItem[] {
 }
 
 /**
+ * Classify an authored cta `button_url` (SMA-266 hardening). Allowlist only:
+ * - internal: leading `/` but NOT `//` (protocol-relative would silently point
+ *   an "internal" next/link at an external origin)
+ * - external: explicit `http://` / `https://`
+ * - none: anything else (`javascript:`, `data:`, `//evil.com`, relative paths,
+ *   …) — treated as no button at all, closing the stored-XSS vector.
+ */
+export function classifyCtaButtonUrl(url?: string | null): 'internal' | 'external' | 'none' {
+  if (!url) return 'none';
+  if (url.startsWith('/')) return url.startsWith('//') ? 'none' : 'internal';
+  if (url.startsWith('http://') || url.startsWith('https://')) return 'external';
+  return 'none';
+}
+
+/**
+ * The SINGLE predicate for "this cta block renders a button": a valid URL per
+ * the classifier AND a non-empty localized label. The footer Concierge CTA
+ * suppression keys off this exact predicate so an article can never lose the
+ * footer CTA without gaining a visible in-body button.
+ */
+export function ctaBlockHasButton(block: BodyBlock, lang: 'en' | 'kr'): boolean {
+  return (
+    block.type === 'cta' &&
+    classifyCtaButtonUrl(block.button_url) !== 'none' &&
+    !!getLocalizedText(block.button_label, lang)
+  );
+}
+
+/**
  * Minimal per-block-type body renderer. Only a small known subset is handled;
  * unknown block types render nothing (forward-compat — MAG-3/4 may add block
  * types this consumer predates). This is NOT a WYSIWYG consumer.
@@ -119,8 +148,18 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
         </section>
       );
     }
-    case 'cta':
-      if (!heading && !text) return null;
+    case 'cta': {
+      // SMA-266: an authored button (label + URL). Allowlisted URLs only —
+      // internal (`/…`) route via next/link, external (`http(s)://…`) open in
+      // a new tab; anything else renders no button. No visible button →
+      // exactly the legacy heading + text output.
+      const buttonKind = classifyCtaButtonUrl(block.button_url);
+      const buttonLabel = getLocalizedText(block.button_label, lang);
+      const buttonUrl = block.button_url ?? '';
+      const showButton = ctaBlockHasButton(block, lang);
+      if (!heading && !text && !showButton) return null;
+      const buttonClassName =
+        'mt-6 inline-block rounded-full bg-green-dark px-8 py-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90';
       return (
         <div className="mb-8">
           {heading && (
@@ -139,8 +178,25 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
               {text}
             </p>
           )}
+          {showButton &&
+            (buttonKind === 'internal' ? (
+              <Link href={buttonUrl} className={buttonClassName} data-testid="magazine-cta-button">
+                {buttonLabel}
+              </Link>
+            ) : (
+              <a
+                href={buttonUrl}
+                target="_blank"
+                rel="noopener"
+                className={buttonClassName}
+                data-testid="magazine-cta-button"
+              >
+                {buttonLabel}
+              </a>
+            ))}
         </div>
       );
+    }
     case 'image': {
       if (!block.image) return null;
       return (
@@ -210,6 +266,13 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
   };
   const publishedLabel = formatDate(article.published_at);
   const updatedLabel = formatDate(article.updated_at);
+
+  // SMA-266 (Q2 option b): an authored cta block with a VISIBLE button (same
+  // predicate the render path uses — valid allowlisted URL + non-empty
+  // localized label) replaces the generic footer Concierge CTA. Articles
+  // without one stay pixel-identical, so a bad URL or missing label can never
+  // leave the article with no CTA at all.
+  const hasAuthoredCta = article.body?.some((b) => ctaBlockHasButton(b, lang)) ?? false;
 
   return (
     <main className="min-h-screen bg-background">
@@ -338,21 +401,29 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
         </section>
       )}
 
-      {/* Concierge CTA */}
-      <section className="bg-green-dark px-4 py-16 md:px-10 md:py-20">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-primary text-[32px] italic leading-tight text-[#FAF5EF] md:text-[48px]">
-            {t('magazine.cta_title')}
-          </h2>
-          <p className="mt-4 text-[16px] leading-relaxed text-white/60">{t('magazine.cta_body')}</p>
-          <Link
-            href="/concierge"
-            className="mt-8 inline-block rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
-          >
-            {t('magazine.cta_button')}
-          </Link>
-        </div>
-      </section>
+      {/* Concierge CTA — suppressed when the article authors its own cta
+          button (SMA-266 Q2 option b) */}
+      {!hasAuthoredCta && (
+        <section
+          className="bg-green-dark px-4 py-16 md:px-10 md:py-20"
+          data-testid="magazine-footer-cta"
+        >
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="font-primary text-[32px] italic leading-tight text-[#FAF5EF] md:text-[48px]">
+              {t('magazine.cta_title')}
+            </h2>
+            <p className="mt-4 text-[16px] leading-relaxed text-white/60">
+              {t('magazine.cta_body')}
+            </p>
+            <Link
+              href="/concierge"
+              className="mt-8 inline-block rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
+            >
+              {t('magazine.cta_button')}
+            </Link>
+          </div>
+        </section>
+      )}
 
       <Footer />
     </main>

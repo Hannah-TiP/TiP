@@ -168,3 +168,78 @@ test.describe('/magazine/[type]/[slug] — MAG-4 type sets', () => {
     expect(html).not.toContain('"@type":"Person"');
   });
 });
+
+/**
+ * SMA-266 — cta body-block button + footer-CTA suppression.
+ *
+ * The article data is fetched by the Next SERVER (not the browser), so
+ * `page.route` mocks can't reach it — these checks are env-gated on seeded
+ * published fixtures, matching the pattern of the JSON-LD specs above.
+ * Deterministic coverage of the same behavior lives in the Vitest suite
+ * `src/__tests__/components/magazine/MagazineArticleContent.test.tsx`.
+ *
+ * Fixture contract:
+ * - E2E_MAGAZINE_CTA_SLUG: a published article (type segment via
+ *   E2E_MAGAZINE_CTA_TYPE, default `destinations`) containing a `cta` body
+ *   block with `button_url` (E2E_MAGAZINE_CTA_HREF) and a KR `button_label`
+ *   (E2E_MAGAZINE_CTA_LABEL_KR).
+ * - E2E_MAGAZINE_SLUG (reused from above): a published article with NO
+ *   authored cta button — exercises the legacy footer CTA path.
+ */
+test.describe('/magazine/[type]/[slug] — cta block button (SMA-266)', () => {
+  const CTA_TYPE_SEGMENT = process.env.E2E_MAGAZINE_CTA_TYPE || 'destinations';
+  const CTA_SLUG = process.env.E2E_MAGAZINE_CTA_SLUG || '';
+  const CTA_HREF = process.env.E2E_MAGAZINE_CTA_HREF || '';
+  const CTA_LABEL_KR = process.env.E2E_MAGAZINE_CTA_LABEL_KR || '';
+
+  test('an authored cta button renders the KR label + authored href in KR mode, suppressing the footer CTA', async ({
+    page,
+  }) => {
+    test.skip(
+      !CTA_SLUG,
+      'Set E2E_MAGAZINE_CTA_SLUG to a published article whose cta block has button fields',
+    );
+
+    // KR mode: the content island reads the saved preference from localStorage.
+    await page.addInitScript(() => {
+      window.localStorage.setItem('tip-lang', 'kr');
+    });
+    const response = await gotoPage(page, `/magazine/${CTA_TYPE_SEGMENT}/${CTA_SLUG}`);
+    expect(response?.status()).toBe(200);
+
+    const button = page.getByTestId('magazine-cta-button');
+    await expect(button).toBeVisible();
+    if (CTA_HREF) {
+      await expect(button).toHaveAttribute('href', CTA_HREF);
+    }
+    if (CTA_LABEL_KR) {
+      await expect(button).toHaveText(CTA_LABEL_KR);
+    }
+
+    // External URLs must open in a new tab with noopener; internal ones must not.
+    const href = (await button.getAttribute('href')) ?? '';
+    if (href.startsWith('/')) {
+      await expect(button).not.toHaveAttribute('target', '_blank');
+    } else {
+      await expect(button).toHaveAttribute('target', '_blank');
+      expect((await button.getAttribute('rel')) ?? '').toContain('noopener');
+    }
+
+    // Q2 option (b): the hardcoded footer Concierge CTA is suppressed.
+    await expect(page.getByTestId('magazine-footer-cta')).toHaveCount(0);
+  });
+
+  test('an article without an authored cta button keeps the legacy footer CTA and shows no in-body button', async ({
+    page,
+  }) => {
+    test.skip(!PUBLISHED_SLUG, 'Set E2E_MAGAZINE_SLUG to a published article WITHOUT a cta button');
+
+    const response = await gotoPage(page, `/magazine/${PUBLISHED_TYPE_SEGMENT}/${PUBLISHED_SLUG}`);
+    expect(response?.status()).toBe(200);
+
+    const footer = page.getByTestId('magazine-footer-cta');
+    await expect(footer).toBeVisible();
+    await expect(footer.locator('a')).toHaveAttribute('href', '/concierge');
+    await expect(page.getByTestId('magazine-cta-button')).toHaveCount(0);
+  });
+});
