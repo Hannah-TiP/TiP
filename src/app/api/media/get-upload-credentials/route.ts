@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/media/get-upload-credentials`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/media/get-upload-credentials`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
