@@ -58,8 +58,12 @@ test.describe('Pending earnings on /my-page/credits', () => {
     await expect(section).toBeVisible({ timeout: 15_000 });
 
     // Awaiting-review trip: ~amount + review CTA to the reviews session.
+    // exact: true — the amount also appears inside the blocker copy
+    // ("Review this trip to earn ~USD 5.00"), so a substring match would
+    // resolve to 2 elements under strict mode.
     await expect(section.getByText('Kyoto Escape')).toBeVisible();
-    await expect(section.getByText('~USD 5.00')).toBeVisible();
+    await expect(section.getByText('~USD 5.00', { exact: true })).toBeVisible();
+    await expect(section.getByText('Review this trip to earn ~USD 5.00')).toBeVisible();
     await expect(section.getByRole('link', { name: /Write a review/i })).toHaveAttribute(
       'href',
       '/my-page/travel-history/55/reviews',
@@ -67,7 +71,7 @@ test.describe('Pending earnings on /my-page/credits', () => {
 
     // Not-finished trip: ~amount + view-trip CTA to the trip page.
     await expect(section.getByText('Nice in Autumn')).toBeVisible();
-    await expect(section.getByText('~USD 10.00')).toBeVisible();
+    await expect(section.getByText('~USD 10.00', { exact: true })).toBeVisible();
     await expect(section.getByRole('link', { name: /View trip/i })).toHaveAttribute(
       'href',
       '/my-page/travel-history/66',
