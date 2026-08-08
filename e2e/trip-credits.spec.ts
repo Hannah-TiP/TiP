@@ -51,6 +51,20 @@ test.describe('Trip-linked credits on /my-page/credits', () => {
         body: JSON.stringify({ code: 200, message: 'Success', data: TRIP_LINKED_CREDITS }),
       });
     });
+    // Stub the pending-earn projection (SMA-276) empty so the Pending
+    // earnings section (which has its own "View trip →" links) can never
+    // collide with the View-trip count asserted below.
+    await page.route('**/api/me/credits/projected', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          message: 'Success',
+          data: { user_id: 1, has_paid_trips: true, projections: [] },
+        }),
+      });
+    });
 
     await gotoPage(page, '/my-page/credits');
 

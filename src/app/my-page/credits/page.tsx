@@ -14,6 +14,7 @@ import {
   creditSourceLabel,
   stayCreditSourceText,
   tripIdFromCredit,
+  type ProjectedTripEarn,
   type StayCredit,
 } from '@/types/stay-credit';
 
@@ -58,11 +59,12 @@ function sumIssuedCents(credits: StayCredit[]): { cents: number; currency: strin
 export default function MyCreditsPage() {
   const { status } = useSession();
   const router = useRouter();
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const en = lang === 'en';
 
   const [loading, setLoading] = useState(true);
   const [credits, setCredits] = useState<StayCredit[]>([]);
+  const [projections, setProjections] = useState<ProjectedTripEarn[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const loadCredits = useCallback(() => {
@@ -78,14 +80,25 @@ export default function MyCreditsPage() {
       });
   }, []);
 
+  const loadProjection = useCallback(() => {
+    // Estimates only — a projection failure must never break the page, so
+    // degrade by hiding the section.
+    return apiClient
+      .getMyCreditProjection()
+      .then((res) => setProjections(res.projections))
+      .catch(() => setProjections([]));
+  }, []);
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/sign-in');
       return;
     }
     if (status !== 'authenticated') return;
+    // Fired in parallel — neither fetch blocks the other.
     loadCredits();
-  }, [status, router, loadCredits]);
+    loadProjection();
+  }, [status, router, loadCredits, loadProjection]);
 
   const balance = sumIssuedCents(credits);
 
@@ -125,6 +138,74 @@ export default function MyCreditsPage() {
                 : '주요 통화의 크레딧이 표시됩니다. 크레딧은 현금으로 교환할 수 없습니다.'}
             </div>
           </div>
+
+          {/* Pending earnings — projected review-gated credit. Estimates
+              only: never added to the balance or mixed into the history. */}
+          {projections.length > 0 && (
+            <div
+              className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100 mb-10"
+              data-testid="pending-earnings"
+            >
+              <h2 className="font-primary text-[26px] italic text-[#1E3D2F]">
+                {t('credits.pending_title')}
+              </h2>
+              <p className="mt-2 text-[13px] text-gray-500">{t('credits.pending_subtitle')}</p>
+              <div className="mt-6 divide-y divide-gray-100">
+                {projections.map((projection) => {
+                  const amount = `~${formatAmount(
+                    projection.projected_amount_cents,
+                    projection.currency,
+                  )}`;
+                  const awaitingReview = projection.blocking_reason === 'awaiting_review';
+                  return (
+                    <div
+                      key={projection.trip_id}
+                      className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <div className="text-[14px] font-medium text-gray-900">
+                          {projection.trip_title?.trim() ||
+                            t('credits.pending_untitled_trip').replace(
+                              '{id}',
+                              String(projection.trip_id),
+                            )}
+                        </div>
+                        <div className="mt-0.5 text-[13px] text-gray-500">
+                          {t(
+                            awaitingReview
+                              ? 'credits.pending_awaiting_review'
+                              : 'credits.pending_trip_not_finished',
+                          ).replace('{amount}', amount)}
+                        </div>
+                        <Link
+                          href={
+                            awaitingReview
+                              ? `/my-page/travel-history/${projection.trip_id}/reviews`
+                              : `/my-page/travel-history/${projection.trip_id}`
+                          }
+                          className="mt-1 inline-block text-[12px] font-medium text-[#C4956A] hover:underline"
+                        >
+                          {t(
+                            awaitingReview
+                              ? 'credits.pending_cta_review'
+                              : 'credits.pending_cta_view_trip',
+                          )}
+                        </Link>
+                      </div>
+                      <div className="sm:text-right">
+                        <div className="font-primary text-[22px] italic text-[#C4956A]">
+                          {amount}
+                        </div>
+                        <span className="inline-block rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold text-[#C4956A]">
+                          {t('credits.pending_estimated')}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Redeem a code */}
           <RedeemCodeSection onRedeemed={loadCredits} />

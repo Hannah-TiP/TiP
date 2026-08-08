@@ -96,6 +96,33 @@ export function creditSourceLabel(credit: StayCredit, en: boolean): string {
   return credit.promo_code ? `${label} · ${credit.promo_code}` : label;
 }
 
+// ── Projected (not-yet-earned) post-trip credits — SMA-274/SMA-276 ─────────
+
+// Mirrors tip-backend/v2/data_model/enums.py::CreditProjectionBlocker.
+export type CreditProjectionBlocker = 'trip_not_finished' | 'awaiting_review';
+
+// Mirrors tip-backend/v2/data_model/schemas/stay_credit.py::ProjectedTripEarn.
+// A PROJECTION, not a ledger row — never mixed into balances or the credit
+// history list.
+export interface ProjectedTripEarn {
+  trip_id: number;
+  trip_title?: string | null;
+  eligible_spend_cents: number;
+  currency: string;
+  // Backend Decimal, serialized as a JSON number by jsonable_encoder
+  // (e.g. 0.005). Display-only; never used for arithmetic on the FE.
+  tier_rate: number;
+  projected_amount_cents: number;
+  blocking_reason: CreditProjectionBlocker;
+}
+
+// Mirrors tip-backend/v2/data_model/schemas/stay_credit.py::UserCreditProjectionResponse.
+export interface UserCreditProjectionResponse {
+  user_id: number;
+  has_paid_trips: boolean;
+  projections: ProjectedTripEarn[];
+}
+
 // Mirrors tip-backend/v2/data_model/schemas/referral.py::Referral.
 export interface Referral {
   id: number;

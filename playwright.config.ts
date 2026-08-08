@@ -25,6 +25,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/redeem-code.spec.ts',
   '**/trip-credits.spec.ts',
   '**/promo-code-credit-history.spec.ts',
+  '**/pending-earnings.spec.ts',
   '**/responsive-my-page.spec.ts',
   '**/trip-share.spec.ts',
   '**/destination-search.spec.ts',

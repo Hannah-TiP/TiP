@@ -14,7 +14,12 @@ import {
   tripDayNumber,
   type TripWithVersion,
 } from '@/lib/trip-utils';
-import { STAY_CREDIT_SOURCE_LABELS, creditsForTrip, type StayCredit } from '@/types/stay-credit';
+import {
+  STAY_CREDIT_SOURCE_LABELS,
+  creditsForTrip,
+  type ProjectedTripEarn,
+  type StayCredit,
+} from '@/types/stay-credit';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { formatDate as formatDateI18n, formatTime as formatTimeI18n } from '@/lib/format-date';
 import BookingDocuments from '@/components/BookingDocuments';
@@ -80,6 +85,7 @@ export default function TravelHistoryTripDetailPage() {
     null,
   );
   const [tripCredits, setTripCredits] = useState<StayCredit[]>([]);
+  const [pendingProjection, setPendingProjection] = useState<ProjectedTripEarn | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,6 +103,15 @@ export default function TravelHistoryTripDetailPage() {
           setTripCredits(creditsForTrip(allCredits, tripId));
         } catch {
           setTripCredits([]);
+        }
+
+        try {
+          // Projected (not-yet-earned) review-gated credit for this trip.
+          // Estimates only — a fetch failure just hides the nudge card.
+          const projection = await apiClient.getMyCreditProjection();
+          setPendingProjection(projection.projections.find((p) => p.trip_id === tripId) ?? null);
+        } catch {
+          setPendingProjection(null);
         }
 
         const entities = toReviewableEntities(getTripReviewableItems(loaded.currentVersion));
@@ -311,6 +326,32 @@ export default function TravelHistoryTripDetailPage() {
                   className="inline-block rounded-full bg-[#1E3D2F] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#2a5240]"
                 >
                   {t('trip_detail.review_experience')}
+                </Link>
+              </div>
+            )}
+
+            {tripCredits.length === 0 && pendingProjection && (
+              <div
+                className="rounded-xl border border-gray-200 bg-white p-5"
+                data-testid="pending-credit-nudge"
+              >
+                <h3 className="mb-2 font-semibold text-gray-900">
+                  {t('trip_detail.pending_credit_title')}
+                </h3>
+                <p className="mb-3 text-sm text-gray-500">
+                  {t('trip_detail.pending_credit_body').replace(
+                    '{amount}',
+                    `~${formatCredit(
+                      pendingProjection.projected_amount_cents,
+                      pendingProjection.currency,
+                    )}`,
+                  )}
+                </p>
+                <Link
+                  href={`/my-page/travel-history/${trip.id}/reviews`}
+                  className="inline-block text-xs font-medium text-[#C4956A] hover:underline"
+                >
+                  {t('trip_detail.pending_credit_cta')}
                 </Link>
               </div>
             )}
