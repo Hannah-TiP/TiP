@@ -338,21 +338,38 @@ export default function TravelHistoryTripDetailPage() {
                 <h3 className="mb-2 font-semibold text-gray-900">
                   {t('trip_detail.pending_credit_title')}
                 </h3>
-                <p className="mb-3 text-sm text-gray-500">
-                  {t('trip_detail.pending_credit_body').replace(
-                    '{amount}',
-                    `~${formatCredit(
-                      pendingProjection.projected_amount_cents,
-                      pendingProjection.currency,
-                    )}`,
-                  )}
-                </p>
-                <Link
-                  href={`/my-page/travel-history/${trip.id}/reviews`}
-                  className="inline-block text-xs font-medium text-[#C4956A] hover:underline"
-                >
-                  {t('trip_detail.pending_credit_cta')}
-                </Link>
+                {pendingProjection.blocking_reason === 'awaiting_review' ? (
+                  <>
+                    <p className="mb-3 text-sm text-gray-500">
+                      {t('trip_detail.pending_credit_body').replace(
+                        '{amount}',
+                        `~${formatCredit(
+                          pendingProjection.projected_amount_cents,
+                          pendingProjection.currency,
+                        )}`,
+                      )}
+                    </p>
+                    <Link
+                      href={`/my-page/travel-history/${trip.id}/reviews`}
+                      className="inline-block text-xs font-medium text-[#C4956A] hover:underline"
+                    >
+                      {t('trip_detail.pending_credit_cta')}
+                    </Link>
+                  </>
+                ) : (
+                  // trip_not_finished: reviewing BEFORE the trip ends is a
+                  // no-op for the grant (it only fires post-trip), so no
+                  // reviews CTA — just the after-trip copy.
+                  <p className="text-sm text-gray-500">
+                    {t('credits.pending_trip_not_finished').replace(
+                      '{amount}',
+                      `~${formatCredit(
+                        pendingProjection.projected_amount_cents,
+                        pendingProjection.currency,
+                      )}`,
+                    )}
+                  </p>
+                )}
               </div>
             )}
 

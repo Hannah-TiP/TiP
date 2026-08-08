@@ -122,6 +122,25 @@ describe('Pending-credit nudge on /my-page/travel-history/[id]', () => {
     expect(screen.queryByText(en['trip_detail.credits_earned'])).toBeNull();
   });
 
+  it('shows the after-trip copy WITHOUT a reviews link for a not-finished trip', async () => {
+    // Reviewing before the trip ends is a no-op for the grant (it only
+    // fires once the trip is date-finished), so the nudge must not steer
+    // the member to the reviews page early.
+    mockApi([], [{ ...PENDING, blocking_reason: 'trip_not_finished' }]);
+
+    render(<TravelHistoryTripDetailPage />);
+
+    const nudge = await screen.findByTestId('pending-credit-nudge');
+    expect(nudge.textContent).toContain('~USD 5.00');
+    // The distinctive after-trip suffix of the copy (text after {amount}).
+    expect(nudge.textContent).toContain(
+      en['credits.pending_trip_not_finished'].split('{amount}')[1],
+    );
+    // No reviews CTA in this state.
+    expect(screen.queryByRole('link', { name: 'Write a review →' })).toBeNull();
+    expect(nudge.querySelector('a')).toBeNull();
+  });
+
   it('shows the earned-credits card instead once the trip has earned', async () => {
     mockApi([EARNED_CREDIT], []);
 
