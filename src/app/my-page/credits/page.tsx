@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import RedeemCodeSection from '@/components/credits/RedeemCodeSection';
@@ -14,8 +15,18 @@ import {
   creditSourceLabel,
   stayCreditSourceText,
   tripIdFromCredit,
+  type ProjectedTripEarn,
   type StayCredit,
 } from '@/types/stay-credit';
+
+// Code-split (bundle-size gate): the section only loads when the member
+// actually has pending projections, and its data is client-fetched anyway.
+const PendingEarningsSection = dynamic(
+  () => import('@/components/credits/PendingEarningsSection'),
+  {
+    ssr: false,
+  },
+);
 
 const STATUS_PILL: Record<StayCredit['status'], string> = {
   issued: 'bg-emerald-100 text-emerald-700',
@@ -63,6 +74,7 @@ export default function MyCreditsPage() {
 
   const [loading, setLoading] = useState(true);
   const [credits, setCredits] = useState<StayCredit[]>([]);
+  const [projections, setProjections] = useState<ProjectedTripEarn[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const loadCredits = useCallback(() => {
@@ -78,14 +90,25 @@ export default function MyCreditsPage() {
       });
   }, []);
 
+  const loadProjection = useCallback(() => {
+    // Estimates only — a projection failure must never break the page, so
+    // degrade by hiding the section.
+    return apiClient
+      .getMyCreditProjection()
+      .then((res) => setProjections(res.projections))
+      .catch(() => setProjections([]));
+  }, []);
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/sign-in');
       return;
     }
     if (status !== 'authenticated') return;
+    // Fired in parallel — neither fetch blocks the other.
     loadCredits();
-  }, [status, router, loadCredits]);
+    loadProjection();
+  }, [status, router, loadCredits, loadProjection]);
 
   const balance = sumIssuedCents(credits);
 
@@ -125,6 +148,11 @@ export default function MyCreditsPage() {
                 : '주요 통화의 크레딧이 표시됩니다. 크레딧은 현금으로 교환할 수 없습니다.'}
             </div>
           </div>
+
+          {/* Pending earnings — projected review-gated credit (SMA-276).
+              Estimates only: never added to the balance or mixed into the
+              history. Hidden (chunk never loaded) when there are none. */}
+          {projections.length > 0 && <PendingEarningsSection projections={projections} />}
 
           {/* Redeem a code */}
           <RedeemCodeSection onRedeemed={loadCredits} />

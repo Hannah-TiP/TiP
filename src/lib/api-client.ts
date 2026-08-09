@@ -53,6 +53,7 @@ import type {
   MyReferralsResponse,
   RedeemPromoCodeResponse,
   StayCredit,
+  UserCreditProjectionResponse,
 } from '@/types/stay-credit';
 import { REDEEM_ERROR_CODE_MAP, RedeemPromoCodeError } from '@/types/stay-credit';
 import type {
@@ -185,6 +186,16 @@ class ApiClient {
   async getMyCredits(): Promise<StayCredit[]> {
     const response = await this.request<{ data: StayCredit[] }>('/me/credits');
     return response.data ?? [];
+  }
+
+  // The member's own pending-earn projection (SMA-276): review-gated
+  // credits not yet granted, one row per paid trip. Estimates only —
+  // callers must never add these to balances or the credit history.
+  async getMyCreditProjection(): Promise<UserCreditProjectionResponse> {
+    const response = await this.request<{ data: UserCreditProjectionResponse }>(
+      '/me/credits/projected',
+    );
+    return response.data;
   }
 
   async getMyFreeNights(): Promise<MemberFreeNightSummary> {

@@ -50,6 +50,19 @@ test.describe('Promo-code credit history on /my-page/credits', () => {
         body: JSON.stringify({ code: 200, message: 'Success', data: PROMO_CREDITS }),
       });
     });
+    // Stub the pending-earn projection (SMA-276) empty so the section stays
+    // hidden and this spec stays hermetic.
+    await page.route('**/api/me/credits/projected', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          message: 'Success',
+          data: { user_id: 1, has_paid_trips: false, projections: [] },
+        }),
+      });
+    });
 
     await gotoPage(page, '/my-page/credits');
 
