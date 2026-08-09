@@ -1,9 +1,19 @@
 'use client';
 
+import { lazy, Suspense } from 'react';
 import StarRating from '@/components/reviews/StarRating';
 import type { ReviewableEntity } from '@/lib/trip-utils';
-import type { Review } from '@/types/review';
+import type { Image } from '@/types/common';
+import { visibleReviewPhotos, type Review } from '@/types/review';
 import { useLanguage } from '@/contexts/LanguageContext';
+
+// Code-split (bundle-size gate): the upload machinery only loads on the
+// review write surface, never in the shared bundle. React.lazy (not
+// next/dynamic) — these only mount client-side after the session data
+// loads, and next/dynamic's loader machinery would be duplicated into
+// every consuming route chunk.
+const ReviewPhotoSection = lazy(() => import('@/components/reviews/ReviewPhotoSection'));
+const ReviewPhotoStrip = lazy(() => import('@/components/reviews/ReviewPhotoStrip'));
 
 type TranslationKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
@@ -13,16 +23,23 @@ export interface ReviewItemValue {
   rating: number;
   comment: string;
   skipped: boolean;
+  /** Finalized photos attached to this review (SMA-280). */
+  photos: Image[];
 }
 
 interface ReviewSessionItemProps {
   entity: ReviewableEntity;
+  /** The trip this review session is anchored to (photo upload scope). */
+  tripId: number;
   /** The current user's existing review for this entity, if any. */
   existingReview: Review | null;
   /** Controlled form value (owned by the session page). */
   value: ReviewItemValue;
   onRatingChange: (rating: number) => void;
   onCommentChange: (comment: string) => void;
+  /** Photo mutations are add/remove callbacks so the page can apply race-safe functional updates. */
+  onAddPhoto: (image: Image) => void;
+  onRemovePhoto: (originalKey: string) => void;
   onSkipToggle: () => void;
   /** Delete is a distinct destructive action, kept per-item. */
   onDelete: () => void;
@@ -48,7 +65,9 @@ function statusOf(existingReview: Review | null, value: ReviewItemValue): Review
   if (existingReview) {
     return existingReview.locked_at ? 'locked' : 'submitted';
   }
-  return value.rating > 0 || value.comment.trim() !== '' ? 'draft' : 'not-reviewed';
+  return value.rating > 0 || value.comment.trim() !== '' || value.photos.length > 0
+    ? 'draft'
+    : 'not-reviewed';
 }
 
 const STATUS_PILL: Record<ReviewItemStatus, { labelKey: TranslationKey; className: string }> = {
@@ -63,10 +82,13 @@ const STATUS_PILL: Record<ReviewItemStatus, { labelKey: TranslationKey; classNam
 
 export default function ReviewSessionItem({
   entity,
+  tripId,
   existingReview,
   value,
   onRatingChange,
   onCommentChange,
+  onAddPhoto,
+  onRemovePhoto,
   onSkipToggle,
   onDelete,
   isDeleting,
@@ -106,6 +128,11 @@ export default function ReviewSessionItem({
           {existingReview!.comment && (
             <p className="mt-3 text-sm leading-relaxed text-gray-600">{existingReview!.comment}</p>
           )}
+          {visibleReviewPhotos(existingReview!).length > 0 && (
+            <Suspense fallback={null}>
+              <ReviewPhotoStrip photos={visibleReviewPhotos(existingReview!).map((p) => p.image)} />
+            </Suspense>
+          )}
           <p className="mt-4 text-xs text-gray-400">{t('reviews.locked_notice')}</p>
         </div>
       ) : (
@@ -132,6 +159,17 @@ export default function ReviewSessionItem({
               className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#1E3D2F] focus:outline-none focus:ring-2 focus:ring-[#1E3D2F]/20 disabled:bg-gray-50"
             />
           </div>
+          <Suspense fallback={null}>
+            <ReviewPhotoSection
+              tripId={tripId}
+              entityType={entity.entityType}
+              entityId={entity.entityId}
+              photos={value.photos}
+              onAddPhoto={onAddPhoto}
+              onRemovePhoto={onRemovePhoto}
+              disabled={skipped}
+            />
+          </Suspense>
           <div className="flex items-center justify-end gap-4">
             <button
               type="button"

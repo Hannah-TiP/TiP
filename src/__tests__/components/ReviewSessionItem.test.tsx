@@ -17,6 +17,7 @@ function makeReview(overrides: Partial<Review> = {}): Review {
     locked_at: null,
     deleted_at: null,
     comment: 'Wonderful stay',
+    photos: [],
     schema_version: 1,
     created_at: null,
     updated_at: null,
@@ -24,16 +25,19 @@ function makeReview(overrides: Partial<Review> = {}): Review {
   };
 }
 
-const emptyValue: ReviewItemValue = { rating: 0, comment: '', skipped: false };
+const emptyValue: ReviewItemValue = { rating: 0, comment: '', skipped: false, photos: [] };
 
 function renderItem(props: Partial<React.ComponentProps<typeof ReviewSessionItem>> = {}) {
   return render(
     <ReviewSessionItem
       entity={entity}
+      tripId={3}
       existingReview={null}
       value={emptyValue}
       onRatingChange={vi.fn()}
       onCommentChange={vi.fn()}
+      onAddPhoto={vi.fn()}
+      onRemovePhoto={vi.fn()}
       onSkipToggle={vi.fn()}
       onDelete={vi.fn()}
       isDeleting={false}
@@ -77,10 +81,13 @@ describe('ReviewSessionItem', () => {
     rerender(
       <ReviewSessionItem
         entity={entity}
+        tripId={3}
         existingReview={null}
         value={{ ...emptyValue, skipped: true }}
         onRatingChange={vi.fn()}
         onCommentChange={vi.fn()}
+        onAddPhoto={vi.fn()}
+        onRemovePhoto={vi.fn()}
         onSkipToggle={onSkipToggle}
         onDelete={vi.fn()}
         isDeleting={false}
@@ -95,7 +102,7 @@ describe('ReviewSessionItem', () => {
     const onDelete = vi.fn();
     renderItem({
       existingReview: makeReview(),
-      value: { rating: 5, comment: 'Wonderful stay', skipped: false },
+      value: { rating: 5, comment: 'Wonderful stay', skipped: false, photos: [] },
       onDelete,
     });
 
@@ -114,7 +121,7 @@ describe('ReviewSessionItem', () => {
   it('renders a locked review read-only with no controls', () => {
     renderItem({
       existingReview: makeReview({ locked_at: '2026-02-01T00:00:00Z' }),
-      value: { rating: 5, comment: 'Wonderful stay', skipped: false },
+      value: { rating: 5, comment: 'Wonderful stay', skipped: false, photos: [] },
     });
 
     expect(screen.getByText('Locked')).toBeTruthy();

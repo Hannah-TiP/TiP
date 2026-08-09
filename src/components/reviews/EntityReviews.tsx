@@ -4,11 +4,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import {
   reviewAuthorDisplayName,
+  visibleReviewPhotos,
   type ReviewEntityType,
   type ReviewListResponse,
   type ReviewWithAuthor,
 } from '@/types/review';
 import StarRating from '@/components/reviews/StarRating';
+import { lazy, Suspense } from 'react';
+
+// Code-split (bundle-size gate): the strip chunk loads only when a review
+// actually has author-visible photos. React.lazy (not next/dynamic) — the
+// strip only mounts client-side after the reviews fetch, and next/dynamic's
+// loader machinery would be duplicated into every route chunk using this
+// component.
+const ReviewPhotoStrip = lazy(() => import('@/components/reviews/ReviewPhotoStrip'));
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { formatDate } from '@/lib/format-date';
 
@@ -30,6 +39,9 @@ function ReviewItem({ entry }: { entry: ReviewWithAuthor }) {
   const { t, lang } = useLanguage();
   const { review, author } = entry;
   const submittedAt = formatReviewDate(review.created_at, lang);
+  // Photos are author-only this release (SMA-280 Q2) — the backend returns
+  // [] unless the viewer authored this review.
+  const photos = visibleReviewPhotos(review).map((p) => p.image);
 
   return (
     <li className="border-b border-gray-border py-6 last:border-b-0">
@@ -49,6 +61,11 @@ function ReviewItem({ entry }: { entry: ReviewWithAuthor }) {
       </div>
       {review.comment && (
         <p className="mt-3 text-[14px] leading-relaxed text-gray-text">{review.comment}</p>
+      )}
+      {photos.length > 0 && (
+        <Suspense fallback={null}>
+          <ReviewPhotoStrip photos={photos} />
+        </Suspense>
       )}
     </li>
   );

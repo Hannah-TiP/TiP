@@ -49,6 +49,7 @@ function review(id: number, rating: number, comment: string | null): ReviewWithA
       locked_at: null,
       deleted_at: null,
       comment,
+      photos: [],
       schema_version: 1,
       created_at: '2026-01-01T00:00:00Z',
       updated_at: null,

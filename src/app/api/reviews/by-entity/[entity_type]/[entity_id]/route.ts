@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { languageHeader } from '@/lib/proxy-language';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
@@ -10,11 +11,18 @@ export async function GET(
   try {
     const { entity_type, entity_id } = await params;
 
+    // The endpoint is PUBLIC, but it honors the auth header: the author's own
+    // reviews come back with their photos populated (SMA-280) — so forward
+    // the bearer token when a session exists.
+    const session = await auth().catch(() => null);
+    const accessToken = session?.accessToken;
+
     const response = await fetch(
       `${API_BASE_URL}/api/v2/reviews/by-entity/${entity_type}/${entity_id}`,
       {
         headers: {
           'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           ...languageHeader(request),
         },
       },

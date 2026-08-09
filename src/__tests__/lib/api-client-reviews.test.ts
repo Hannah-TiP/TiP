@@ -47,6 +47,7 @@ describe('ApiClient review methods', () => {
         locked_at: null,
         deleted_at: null,
         comment: 'Lovely',
+        photos: [],
         schema_version: 1,
         created_at: null,
         updated_at: null,

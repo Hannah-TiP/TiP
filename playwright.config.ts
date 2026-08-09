@@ -21,6 +21,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/zero-total-quote.spec.ts',
   '**/search-prefill-concierge.spec.ts',
   '**/reviews.spec.ts',
+  '**/review-photos.spec.ts',
   '**/sma-55-hotel-benefits.spec.ts',
   '**/redeem-code.spec.ts',
   '**/trip-credits.spec.ts',

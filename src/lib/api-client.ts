@@ -1,4 +1,4 @@
-import type { PaginatedData, PaginatedResult } from '@/types/common';
+import type { Image, PaginatedData, PaginatedResult } from '@/types/common';
 import { toPaginatedResult } from '@/types/common';
 import type {
   User,
@@ -61,9 +61,12 @@ import type {
   ReviewAggregate,
   ReviewEntityType,
   ReviewListResponse,
+  ReviewPhotoUploadCredentials,
+  ReviewPhotoUploadCredentialsRequest,
   ReviewWithAuthor,
   UpdateReview,
 } from '@/types/review';
+import { ReviewPhotoFinalizeError } from '@/types/review';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -951,6 +954,52 @@ class ApiClient {
     await this.request(this.withLanguage(`/reviews/${reviewId}`, language), {
       method: 'DELETE',
     });
+  }
+
+  // Review photos (SMA-280)
+  async getReviewPhotoUploadCredentials(
+    payload: ReviewPhotoUploadCredentialsRequest,
+    language?: Lang,
+  ): Promise<ReviewPhotoUploadCredentials> {
+    const response = await this.request<{ data: ReviewPhotoUploadCredentials }>(
+      this.withLanguage('/reviews/photo-upload-credentials', language),
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    );
+    return response.data;
+  }
+
+  // Finalizes a temp S3 upload into a permanent review photo. On failure
+  // throws a ReviewPhotoFinalizeError carrying the backend business `code`
+  // (4005 = HEIC unsupported) so the UI can show the convert-to-JPEG message.
+  async finalizeReviewPhoto(s3Key: string, language?: Lang): Promise<Image> {
+    const response = await fetch(
+      `${this.baseUrl}${this.withLanguage('/reviews/photos/finalize', language)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ s3_key: s3Key }),
+      },
+    );
+
+    const payload = await response
+      .json()
+      .catch(() => ({}) as { code?: number; message?: string; data?: Image });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      }
+      throw new ReviewPhotoFinalizeError(
+        payload.message || 'Failed to finalize photo',
+        typeof payload.code === 'number' ? payload.code : null,
+      );
+    }
+
+    return payload.data as Image;
   }
 }
 
