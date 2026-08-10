@@ -312,3 +312,142 @@ describe('MessageList scroll behavior', () => {
     expect(screen.queryByTestId('scroll-to-bottom-button')).toBeNull();
   });
 });
+
+describe('MessageList load older messages (SMA-288)', () => {
+  function setScrollMetrics(
+    container: HTMLElement,
+    {
+      scrollHeight,
+      clientHeight,
+      scrollTop,
+    }: { scrollHeight: number; clientHeight: number; scrollTop: number },
+  ) {
+    Object.defineProperty(container, 'scrollHeight', { value: scrollHeight, configurable: true });
+    Object.defineProperty(container, 'clientHeight', { value: clientHeight, configurable: true });
+    Object.defineProperty(container, 'scrollTop', {
+      value: scrollTop,
+      configurable: true,
+      writable: true,
+    });
+    fireEvent.scroll(container);
+  }
+
+  function defaultProps(messages: AIChatMessage[]) {
+    return {
+      messages,
+      isLoading: false,
+      pendingMessage: null,
+      onWidgetSubmit: () => {},
+    };
+  }
+
+  const older1 = makeMessage({ id: 1, content: 'Old 1', sent_at: '2026-05-01T09:00:00Z' });
+  const older2 = makeMessage({ id: 2, content: 'Old 2', sent_at: '2026-05-01T09:01:00Z' });
+  const m10 = makeMessage({ id: 10, content: 'Tail 10', sent_at: '2026-05-01T10:00:00Z' });
+  const m11 = makeMessage({ id: 11, content: 'Tail 11', sent_at: '2026-05-01T10:01:00Z' });
+
+  it('shows the control only when hasOlderMessages and a handler are provided', () => {
+    const { rerender } = render(
+      <MessageList {...defaultProps([m10])} hasOlderMessages={true} onLoadOlder={() => {}} />,
+    );
+    expect(screen.getByTestId('load-older-button')).toBeDefined();
+    expect(screen.getByTestId('load-older-button').textContent).toBe('chat.load_older_messages');
+
+    rerender(
+      <MessageList {...defaultProps([m10])} hasOlderMessages={false} onLoadOlder={() => {}} />,
+    );
+    expect(screen.queryByTestId('load-older-button')).toBeNull();
+
+    rerender(<MessageList {...defaultProps([m10])} hasOlderMessages={true} />);
+    expect(screen.queryByTestId('load-older-button')).toBeNull();
+  });
+
+  it('disappears once the page owner flips hasOlderMessages off (short page)', () => {
+    const { rerender } = render(
+      <MessageList {...defaultProps([m10, m11])} hasOlderMessages={true} onLoadOlder={() => {}} />,
+    );
+    expect(screen.getByTestId('load-older-button')).toBeDefined();
+
+    rerender(
+      <MessageList
+        {...defaultProps([older1, m10, m11])}
+        hasOlderMessages={false}
+        onLoadOlder={() => {}}
+      />,
+    );
+    expect(screen.queryByTestId('load-older-button')).toBeNull();
+  });
+
+  it('invokes onLoadOlder on click and disables with a loading label while fetching', () => {
+    const onLoadOlder = vi.fn();
+    const { rerender } = render(
+      <MessageList {...defaultProps([m10])} hasOlderMessages={true} onLoadOlder={onLoadOlder} />,
+    );
+
+    fireEvent.click(screen.getByTestId('load-older-button'));
+    expect(onLoadOlder).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <MessageList
+        {...defaultProps([m10])}
+        hasOlderMessages={true}
+        isLoadingOlder={true}
+        onLoadOlder={onLoadOlder}
+      />,
+    );
+    const button = screen.getByTestId('load-older-button') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.textContent).toBe('chat.loading_older_messages');
+  });
+
+  it('preserves the viewport on prepend and never auto-scrolls to the bottom', () => {
+    const { rerender } = render(
+      <MessageList {...defaultProps([m10, m11])} hasOlderMessages={true} onLoadOlder={() => {}} />,
+    );
+    const container = screen.getByTestId('message-list-container');
+    // User has scrolled up to read history.
+    setScrollMetrics(container, { scrollHeight: 1000, clientHeight: 400, scrollTop: 100 });
+    scrollIntoViewMock.mockClear();
+
+    // Click records the pre-prepend scrollHeight + first message id.
+    fireEvent.click(screen.getByTestId('load-older-button'));
+
+    // The prepended page lands and the container grows by 600px.
+    Object.defineProperty(container, 'scrollHeight', { value: 1600, configurable: true });
+    rerender(
+      <MessageList
+        {...defaultProps([older1, older2, m10, m11])}
+        hasOlderMessages={true}
+        onLoadOlder={() => {}}
+      />,
+    );
+
+    // scrollTop shifted by exactly the height delta — viewport did not jump.
+    expect(container.scrollTop).toBe(700);
+    // Auto-scroll-to-bottom did NOT fire (last message id is unchanged)…
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
+    // …and the new-messages button did not appear.
+    expect(screen.queryByTestId('scroll-to-bottom-button')).toBeNull();
+  });
+
+  it('does not adjust scroll when a re-render happens without a prepend', () => {
+    const { rerender } = render(
+      <MessageList {...defaultProps([m10, m11])} hasOlderMessages={true} onLoadOlder={() => {}} />,
+    );
+    const container = screen.getByTestId('message-list-container');
+    setScrollMetrics(container, { scrollHeight: 1000, clientHeight: 400, scrollTop: 100 });
+
+    fireEvent.click(screen.getByTestId('load-older-button'));
+
+    // A poll tick re-renders with identical content before the page lands.
+    rerender(
+      <MessageList
+        {...defaultProps([{ ...m10 }, { ...m11 }])}
+        hasOlderMessages={true}
+        onLoadOlder={() => {}}
+      />,
+    );
+
+    expect(container.scrollTop).toBe(100);
+  });
+});

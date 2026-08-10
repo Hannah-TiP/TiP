@@ -20,7 +20,6 @@ import {
   parseSearchPrefill,
 } from '@/lib/search-prefill';
 import type {
-  AIChatMessage,
   AIChatSessionMetadata,
   AIChatSessionWithTrip,
   SendAIChatMessageData,
@@ -29,6 +28,16 @@ import type {
 } from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePreviewMode } from '@/hooks/usePreviewMode';
+import {
+  emptyMessageStore,
+  INITIAL_HISTORY_LIMIT,
+  mergeMessages,
+  OLDER_PAGE_LIMIT,
+  oldestMessageId,
+  pageHasMore,
+  sortedMessages,
+  type ChatMessageStore,
+} from '@/lib/chat-message-store';
 
 function sortSessions(
   bundles: AIChatSessionWithTrip[],
@@ -79,7 +88,13 @@ function ConciergeContent() {
     {},
   );
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
-  const [messages, setMessages] = useState<AIChatMessage[]>([]);
+  // Union-merge store (SMA-288): every fetch merges by message id so the 1s
+  // human-mode poll (newest-500 window) can never wipe older pages loaded via
+  // "load older messages", while edits/tombstones inside the window still
+  // refresh. Rendered sorted by (sent_at, id).
+  const [messageStore, setMessageStore] = useState<ChatMessageStore>(emptyMessageStore);
+  const [hasOlderMessages, setHasOlderMessages] = useState(false);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +111,8 @@ function ConciergeContent() {
     () => sortSessions(rawSessions, detailsByTripId),
     [rawSessions, detailsByTripId],
   );
+
+  const messages = useMemo(() => sortedMessages(messageStore), [messageStore]);
 
   const activeSession = sessions.find((item) => item.session.id === activeSessionId) ?? null;
   const tripDetail = activeSession?.tripDetail ?? null;
@@ -122,7 +139,11 @@ function ConciergeContent() {
     const id = window.setInterval(async () => {
       try {
         const history = await apiClient.getChatHistory(activeTripId);
-        setMessages(history);
+        // Union-merge: the poll returns only the newest tail window, so a
+        // wholesale replace would wipe older pages loaded via "load older
+        // messages". Merging by id keeps them while still refreshing
+        // edits/tombstones inside the window.
+        setMessageStore((prev) => mergeMessages(prev, history));
       } catch {
         // Silent — transient errors during polling shouldn't trigger UI noise.
       }
@@ -165,10 +186,34 @@ function ConciergeContent() {
   async function loadSessionHistory(tripId: number) {
     try {
       const history = await apiClient.getChatHistory(tripId);
-      setMessages(history);
+      setMessageStore(mergeMessages(emptyMessageStore(), history));
+      // A full window (len == limit) means older history may exist.
+      setHasOlderMessages(pageHasMore(history.length, INITIAL_HISTORY_LIMIT));
     } catch (err) {
       console.error('[Concierge] Failed to load history:', err);
-      setMessages([]);
+      setMessageStore(emptyMessageStore());
+      setHasOlderMessages(false);
+    }
+  }
+
+  async function loadOlderMessages() {
+    const tripId = activeSession?.session.trip_id ?? null;
+    const oldestId = oldestMessageId(messages);
+    if (tripId == null || oldestId == null || isLoadingOlder) return;
+
+    setIsLoadingOlder(true);
+    try {
+      const page = await apiClient.getChatHistory(tripId, {
+        before: oldestId,
+        limit: OLDER_PAGE_LIMIT,
+      });
+      setMessageStore((prev) => mergeMessages(prev, page));
+      // A short page means we've reached the beginning of the history.
+      setHasOlderMessages(pageHasMore(page.length, OLDER_PAGE_LIMIT));
+    } catch (err) {
+      console.error('[Concierge] Failed to load older messages:', err);
+    } finally {
+      setIsLoadingOlder(false);
     }
   }
 
@@ -180,7 +225,8 @@ function ConciergeContent() {
     if (!selected) return;
 
     setActiveSessionId(sessionId);
-    setMessages([]);
+    setMessageStore(emptyMessageStore());
+    setHasOlderMessages(false);
     localStorage.setItem('concierge_active_session_id', String(sessionId));
 
     await Promise.all([
@@ -366,13 +412,14 @@ function ConciergeContent() {
 
       setPendingMessage(null);
 
-      setMessages((prev) => {
-        const next = [...prev, data.user_message];
-        if (data.assistant_message) {
-          next.push(data.assistant_message);
-        }
-        return next;
-      });
+      setMessageStore((prev) =>
+        mergeMessages(
+          prev,
+          data.assistant_message
+            ? [data.user_message, data.assistant_message]
+            : [data.user_message],
+        ),
+      );
 
       const lastMsg = data.assistant_message ?? data.user_message;
       // Refetch the canonical session list so any out-of-band mode flips by
@@ -485,13 +532,14 @@ function ConciergeContent() {
         throw new Error('Missing audio message response data');
       }
 
-      setMessages((prev) => {
-        const next = [...prev, data.user_message];
-        if (data.assistant_message) {
-          next.push(data.assistant_message);
-        }
-        return next;
-      });
+      setMessageStore((prev) =>
+        mergeMessages(
+          prev,
+          data.assistant_message
+            ? [data.user_message, data.assistant_message]
+            : [data.user_message],
+        ),
+      );
 
       const updatedLastMessageAt =
         data.assistant_message?.sent_at ?? data.user_message.sent_at ?? new Date().toISOString();
@@ -668,6 +716,9 @@ function ConciergeContent() {
             isLoading={isLoading}
             pendingMessage={pendingMessage}
             onWidgetSubmit={handleWidgetSubmit}
+            hasOlderMessages={hasOlderMessages}
+            isLoadingOlder={isLoadingOlder}
+            onLoadOlder={loadOlderMessages}
           />
           {activeSession && (
             <RequestHumanCTA
@@ -680,7 +731,7 @@ function ConciergeContent() {
                     apiClient.getChatHistory(activeSession.session.trip_id),
                   ]);
                   setRawSessions(refreshedBundles);
-                  setMessages(history);
+                  setMessageStore((prev) => mergeMessages(prev, history));
                 } catch (err) {
                   console.error('[Concierge] Failed to refresh after human request:', err);
                 }

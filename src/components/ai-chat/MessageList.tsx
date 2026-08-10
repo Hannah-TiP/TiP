@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { AIChatMessage, PendingMessage, AIChatWidgetResponse } from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MessageBubble from './MessageBubble';
@@ -11,6 +11,10 @@ interface MessageListProps {
   isLoading: boolean;
   pendingMessage?: PendingMessage | null;
   onWidgetSubmit?: (response: AIChatWidgetResponse) => void;
+  /** True while older history may exist (SMA-288) — shows the load-older control. */
+  hasOlderMessages?: boolean;
+  isLoadingOlder?: boolean;
+  onLoadOlder?: () => void;
 }
 
 const NEAR_BOTTOM_THRESHOLD_PX = 100;
@@ -20,6 +24,9 @@ export default function MessageList({
   isLoading,
   pendingMessage,
   onWidgetSubmit,
+  hasOlderMessages = false,
+  isLoadingOlder = false,
+  onLoadOlder,
 }: MessageListProps) {
   const { t } = useLanguage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -28,15 +35,16 @@ export default function MessageList({
   // Tracked in a ref (not state) so scrolling doesn't re-render the list per
   // frame — only button visibility is state.
   const isNearBottomRef = useRef(true);
-  // Human-mode polling replaces the messages array with identical content
-  // every second; track length + last id to distinguish real new content
-  // from identity-only changes.
-  const lastSeenRef = useRef<{ length: number; lastId: number | null }>({
-    length: 0,
-    lastId: null,
-  });
+  // Auto-scroll keys on LAST-message-id change only (SMA-288): human-mode
+  // polling replaces the array with identical content every second, and
+  // "load older messages" grows the list at the TOP — neither should scroll.
+  const lastSeenIdRef = useRef<number | null>(null);
   const prevPendingRef = useRef(false);
   const prevLoadingRef = useRef(false);
+  // Scroll-preservation snapshot taken when the load-older control is
+  // clicked; consumed by a layout effect once the prepended page lands
+  // (detected by the first message id changing).
+  const pendingPrependRef = useRef<{ scrollHeight: number; firstId: number | null } | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior) => {
@@ -56,11 +64,35 @@ export default function MessageList({
     }
   }, []);
 
+  const handleLoadOlder = useCallback(() => {
+    const el = containerRef.current;
+    pendingPrependRef.current = {
+      scrollHeight: el?.scrollHeight ?? 0,
+      firstId: messages.length > 0 ? messages[0].id : null,
+    };
+    onLoadOlder?.();
+  }, [messages, onLoadOlder]);
+
+  // Preserve the viewport on prepend: once the first message id changes, the
+  // page landed above the fold — shift scrollTop by the height delta so the
+  // message the user was reading stays put.
+  useLayoutEffect(() => {
+    const pending = pendingPrependRef.current;
+    if (!pending) return;
+    const firstId = messages.length > 0 ? messages[0].id : null;
+    if (firstId === pending.firstId) return;
+    const el = containerRef.current;
+    if (el) {
+      el.scrollTop += el.scrollHeight - pending.scrollHeight;
+    }
+    pendingPrependRef.current = null;
+  }, [messages]);
+
   useEffect(() => {
     const lastId = messages.length > 0 ? messages[messages.length - 1].id : null;
-    const hasNewContent =
-      messages.length !== lastSeenRef.current.length || lastId !== lastSeenRef.current.lastId;
-    lastSeenRef.current = { length: messages.length, lastId };
+    // Length-only growth is a prepend (load-older) — never auto-scroll on it.
+    const hasNewContent = lastId !== lastSeenIdRef.current;
+    lastSeenIdRef.current = lastId;
 
     // Own-send signals: the pending bubble appearing (text/widget sends) or
     // isLoading flipping on (also covers the audio path, which appends the
@@ -115,6 +147,20 @@ export default function MessageList({
         data-testid="message-list-container"
         className="h-full overflow-y-auto px-4 md:px-[60px] py-[32px] space-y-6"
       >
+        {hasOlderMessages && onLoadOlder && (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={handleLoadOlder}
+              disabled={isLoadingOlder}
+              data-testid="load-older-button"
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 font-inter text-xs text-gray-600 hover:border-[#1E3D2F] hover:text-[#1E3D2F] transition-colors disabled:opacity-50"
+            >
+              {isLoadingOlder ? t('chat.loading_older_messages') : t('chat.load_older_messages')}
+            </button>
+          </div>
+        )}
+
         {messages.map((message, index) => {
           const isUser = message.role === 'user';
           const isLastAssistant = !isUser && index === lastAssistantIndex;
