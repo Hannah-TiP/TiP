@@ -43,3 +43,37 @@ describe('formatReviewSummary', () => {
     expect(formatReviewSummary({ average_rating: null, review_count: 0 })).toBeNull();
   });
 });
+
+describe('review photo helpers (SMA-280)', () => {
+  const img = (original: string) => ({ original });
+
+  it('visibleReviewPhotos filters admin-hidden photos and tolerates missing photos', async () => {
+    const { visibleReviewPhotos } = await import('@/types/review');
+    const review = {
+      photos: [
+        { image: img('reviews/media/1/a.jpg'), hidden: false },
+        { image: img('reviews/media/1/b.jpg'), hidden: true },
+      ],
+    } as never;
+    expect(visibleReviewPhotos(review).map((p) => p.image.original)).toEqual([
+      'reviews/media/1/a.jpg',
+    ]);
+    expect(visibleReviewPhotos({} as never)).toEqual([]);
+  });
+
+  it('reviewPhotoImagesEqual compares by original key, order-sensitively', async () => {
+    const { reviewPhotoImagesEqual } = await import('@/types/review');
+    expect(reviewPhotoImagesEqual([img('a')], [img('a')])).toBe(true);
+    expect(reviewPhotoImagesEqual([img('a'), img('b')], [img('b'), img('a')])).toBe(false);
+    expect(reviewPhotoImagesEqual([img('a')], [img('a'), img('b')])).toBe(false);
+    expect(reviewPhotoImagesEqual([], [])).toBe(true);
+  });
+
+  it('ReviewPhotoFinalizeError carries the backend business code', async () => {
+    const { ReviewPhotoFinalizeError, REVIEW_PHOTO_HEIC_UNSUPPORTED_CODE } =
+      await import('@/types/review');
+    expect(new ReviewPhotoFinalizeError('x', 4005).code).toBe(REVIEW_PHOTO_HEIC_UNSUPPORTED_CODE);
+    expect(new ReviewPhotoFinalizeError('x', null).code).toBeNull();
+    expect(new ReviewPhotoFinalizeError('x', 4005)).toBeInstanceOf(Error);
+  });
+});

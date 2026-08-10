@@ -77,6 +77,7 @@ function reviewFor(
       locked_at: null,
       deleted_at: null,
       comment: 'Loved it',
+      photos: [],
       schema_version: 1,
       created_at: null,
       updated_at: null,
@@ -149,6 +150,7 @@ describe('Review session page', () => {
         entity_id: 10,
         rating: 4,
         comment: null,
+        photos: [],
       },
       'en',
     );
@@ -225,7 +227,11 @@ describe('Review session page', () => {
     fireEvent.click(screen.getByText('Submit Reviews'));
 
     await waitFor(() => expect(updateReview).toHaveBeenCalledTimes(1));
-    expect(updateReview).toHaveBeenCalledWith(10, { rating: 3, comment: 'Loved it' }, 'en');
+    expect(updateReview).toHaveBeenCalledWith(
+      10,
+      { rating: 3, comment: 'Loved it', photos: [] },
+      'en',
+    );
     expect(createReview).not.toHaveBeenCalled();
   });
 

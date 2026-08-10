@@ -14,7 +14,8 @@ import {
   type TripWithVersion,
 } from '@/lib/trip-utils';
 import { clearDraft, getDraft, isSkipped, saveDraft, setSkipped } from '@/lib/review-drafts';
-import type { Review } from '@/types/review';
+import { reviewPhotoImagesEqual, type Review } from '@/types/review';
+import type { Image } from '@/types/common';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 
 interface SessionState {
@@ -55,10 +56,16 @@ function seedValue(
 ): ReviewItemValue {
   const skipped = isSkipped(tripId, entity.entityType, entity.entityId);
   if (existing) {
-    return { rating: existing.rating, comment: existing.comment ?? '', skipped };
+    // Seed ALL photos (hidden included) so an edit's PUT replace preserves them.
+    return {
+      rating: existing.rating,
+      comment: existing.comment ?? '',
+      skipped,
+      photos: (existing.photos ?? []).map((p) => p.image),
+    };
   }
   const draft = getDraft(tripId, entity.entityType, entity.entityId);
-  return { rating: draft?.rating ?? 0, comment: draft?.comment ?? '', skipped };
+  return { rating: draft?.rating ?? 0, comment: draft?.comment ?? '', skipped, photos: [] };
 }
 
 export default function ReviewsPage() {
@@ -131,6 +138,22 @@ export default function ReviewsPage() {
     [state, tripId],
   );
 
+  // Functional updates so parallel photo uploads finishing together can't
+  // clobber each other. Photos are not persisted in localStorage drafts.
+  const handleAddPhoto = useCallback((key: string, image: Image) => {
+    setValues((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], photos: [...prev[key].photos, image] },
+    }));
+  }, []);
+
+  const handleRemovePhoto = useCallback((key: string, originalKey: string) => {
+    setValues((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], photos: prev[key].photos.filter((p) => p.original !== originalKey) },
+    }));
+  }, []);
+
   const handleSkipToggle = useCallback(
     (entity: ReviewableEntity) => {
       const key = entityKey(entity);
@@ -177,9 +200,14 @@ export default function ReviewsPage() {
       if (existing?.locked_at) return false;
       if (value.rating < 1) return false;
       if (existing) {
-        // Existing review: only submit if edited.
+        // Existing review: only submit if edited (rating, comment, or photos).
         return (
-          value.rating !== existing.rating || value.comment.trim() !== (existing.comment ?? '')
+          value.rating !== existing.rating ||
+          value.comment.trim() !== (existing.comment ?? '') ||
+          !reviewPhotoImagesEqual(
+            value.photos,
+            (existing.photos ?? []).map((p) => p.image),
+          )
         );
       }
       return true;
@@ -204,6 +232,9 @@ export default function ReviewsPage() {
               {
                 rating: value.rating,
                 comment: value.comment.trim() || null,
+                // PUT replaces — the value was seeded from the existing photos,
+                // so unchanged lists round-trip verbatim.
+                photos: value.photos,
               },
               lang,
             );
@@ -215,6 +246,7 @@ export default function ReviewsPage() {
                 entity_id: entity.entityId,
                 rating: value.rating,
                 comment: value.comment.trim() || null,
+                photos: value.photos,
               },
               lang,
             );
@@ -316,15 +348,18 @@ export default function ReviewsPage() {
               {entities.map((entity) => {
                 const key = entityKey(entity);
                 const existing = reviewsByEntity[key] ?? null;
-                const value = values[key] ?? { rating: 0, comment: '', skipped: false };
+                const value = values[key] ?? { rating: 0, comment: '', skipped: false, photos: [] };
                 return (
                   <ReviewSessionItem
                     key={key}
                     entity={entity}
+                    tripId={tripId}
                     existingReview={existing}
                     value={value}
                     onRatingChange={(rating) => updateValue(key, { rating })}
                     onCommentChange={(comment) => updateValue(key, { comment })}
+                    onAddPhoto={(image) => handleAddPhoto(key, image)}
+                    onRemovePhoto={(originalKey) => handleRemovePhoto(key, originalKey)}
                     onSkipToggle={() => handleSkipToggle(entity)}
                     onDelete={() => existing && handleDelete(entity, existing)}
                     isDeleting={deletingKey === key}

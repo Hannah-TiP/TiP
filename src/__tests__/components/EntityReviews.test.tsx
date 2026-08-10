@@ -24,6 +24,7 @@ function makeReview(id: number, rating: number): ReviewWithAuthor {
       locked_at: null,
       deleted_at: null,
       comment: `Comment ${id}`,
+      photos: [],
       schema_version: 1,
       created_at: '2026-01-01T00:00:00Z',
       updated_at: null,
@@ -96,5 +97,31 @@ describe('EntityReviews', () => {
 
     await waitFor(() => expect(screen.getByText('Comment 7')).toBeTruthy());
     expect(screen.queryByText('Load more reviews')).toBeNull();
+  });
+
+  it("renders the author's own photos (non-hidden only) and no strip otherwise (SMA-280)", async () => {
+    const own = makeReview(1, 5);
+    own.review.photos = [
+      {
+        image: { original: 'reviews/media/1/a.jpg', w128: 'reviews/media/1/a_w128.jpg' },
+        hidden: false,
+      },
+      { image: { original: 'reviews/media/1/b.jpg' }, hidden: true },
+    ];
+    const other = makeReview(2, 4); // backend returns [] for non-authors
+    getReviewsByEntity.mockResolvedValue({
+      reviews: [own, other],
+      aggregate: { average_rating: 4.5, review_count: 2 },
+    });
+    vi.stubEnv('NEXT_PUBLIC_S3_ENDPOINT', 'https://bucket.s3.amazonaws.com');
+
+    render(<EntityReviews entityType="hotel" entityId={10} />);
+
+    await screen.findByText('Comment 1');
+    // The strip is next/dynamic-loaded — wait for the chunk to resolve.
+    const strips = await screen.findAllByTestId('review-photo-strip');
+    // Only the author's review gets a strip, with the hidden photo filtered.
+    expect(strips).toHaveLength(1);
+    expect(strips[0].querySelectorAll('img')).toHaveLength(1);
   });
 });
