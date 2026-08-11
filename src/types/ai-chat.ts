@@ -257,6 +257,17 @@ export interface AIChatMessagesResponse {
   data?: AIChatMessage[];
 }
 
+/**
+ * Query options for the messages read endpoint (SMA-288). `before` is a
+ * message-id cursor: the page contains the `limit` messages strictly older
+ * than that id, in chronological order. A short page (length < limit) means
+ * no more history — there is no `has_more` response field.
+ */
+export interface GetChatHistoryOptions {
+  before?: number;
+  limit?: number;
+}
+
 export interface SendAIChatMessageRequest {
   message_type?: AIChatMessageType;
   content?: string | null;

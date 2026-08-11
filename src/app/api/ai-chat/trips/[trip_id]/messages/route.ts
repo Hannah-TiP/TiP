@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
-export async function GET(_request: NextRequest, context: { params: Promise<unknown> }) {
+export async function GET(request: NextRequest, context: { params: Promise<unknown> }) {
   try {
     const session = await auth();
     const accessToken = session?.accessToken;
@@ -18,12 +18,24 @@ export async function GET(_request: NextRequest, context: { params: Promise<unkn
       return NextResponse.json({ success: false, message: 'Missing trip_id' }, { status: 400 });
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v2/ai-chat/trips/${trip_id}/messages`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
+    // Pagination cursor (SMA-288): `before=<message_id>` returns the `limit`
+    // messages strictly older than that id; omitted -> newest tail window.
+    const before = request.nextUrl.searchParams.get('before');
+    const limit = request.nextUrl.searchParams.get('limit');
+    const query = new URLSearchParams();
+    if (before) query.set('before', before);
+    if (limit) query.set('limit', limit);
+    const queryString = query.toString();
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/v2/ai-chat/trips/${trip_id}/messages${queryString ? `?${queryString}` : ''}`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       },
-    });
+    );
 
     const data = await response.json();
 

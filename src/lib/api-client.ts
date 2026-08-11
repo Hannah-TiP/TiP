@@ -36,6 +36,7 @@ import type { CheckoutSessionResponse, WidgetConfig } from '@/types/payment';
 import type {
   AIChatMessage,
   AIChatMessagesResponse,
+  GetChatHistoryOptions,
   AIChatSessionMetadata,
   AIChatSessionsResponse,
   AIChatSessionWithTrip,
@@ -769,9 +770,15 @@ class ApiClient {
     });
   }
 
-  async getChatHistory(tripId: number): Promise<AIChatMessage[]> {
+  async getChatHistory(tripId: number, options?: GetChatHistoryOptions): Promise<AIChatMessage[]> {
+    // SMA-288: `before=<message_id>` pages older history (messages strictly
+    // older than that id, chronological); omitted -> newest tail window.
+    const params = new URLSearchParams();
+    if (options?.before != null) params.set('before', String(options.before));
+    if (options?.limit != null) params.set('limit', String(options.limit));
+    const queryString = params.toString();
     const response = await this.request<AIChatMessagesResponse>(
-      `/ai-chat/trips/${tripId}/messages`,
+      `/ai-chat/trips/${tripId}/messages${queryString ? `?${queryString}` : ''}`,
     );
     return response.data ?? [];
   }

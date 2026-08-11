@@ -202,6 +202,29 @@ describe('getTrips', () => {
   });
 });
 
+describe('getChatHistory', () => {
+  it('fetches the plain tail read with no query string', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: [] }));
+    await apiClient.getChatHistory(7);
+
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/ai-chat/trips/7/messages');
+  });
+
+  it('appends before and limit cursor params when provided (SMA-288)', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: [] }));
+    await apiClient.getChatHistory(7, { before: 910, limit: 100 });
+
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/ai-chat/trips/7/messages?before=910&limit=100');
+  });
+
+  it('returns an empty array when data is missing', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({}));
+    const result = await apiClient.getChatHistory(7, { before: 910, limit: 100 });
+
+    expect(result).toEqual([]);
+  });
+});
+
 describe('sendMessage', () => {
   it('sends trip_id and widget_response when provided', async () => {
     mockFetch.mockResolvedValueOnce(
