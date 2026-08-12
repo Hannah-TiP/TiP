@@ -41,10 +41,10 @@ test.describe('Homepage — Our Partners section', () => {
     await expect(section).toBeVisible();
 
     // The list is rendered twice (real + aria-hidden clone) for the -50% loop.
-    // 32 curated brands -> 64 <img> elements in the track. The clones are
+    // 33 curated brands -> 66 <img> elements in the track. The clones are
     // aria-hidden, so query the raw <img> tags rather than the img role.
-    // 32 curated brands x 2 copies = 64.
-    await expect(section.locator('img')).toHaveCount(64);
+    // 33 curated brands x 2 copies = 66.
+    await expect(section.locator('img')).toHaveCount(66);
     await expect(section.locator('img[alt="The Peninsula"]')).toHaveCount(2);
   });
 });

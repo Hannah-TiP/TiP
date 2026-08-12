@@ -156,6 +156,13 @@ export const partners: Partner[] = [
     height: 609,
   },
   {
+    name: 'Jumeirah Passport to Luxury',
+    slug: 'jumeirah-passport-to-luxury',
+    logo: '/partners/jumeirah-passport-to-luxury.png',
+    width: 768,
+    height: 216,
+  },
+  {
     name: 'Switzerland Tourism',
     slug: 'switzerland-tourism',
     logo: '/partners/switzerland-tourism.png',
