@@ -8,7 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 export type Partner = {
   name: string;
   slug: string;
-  logo: string;
+  ext: 'jpg' | 'png' | 'svg';
   width: number;
   height: number;
 };
@@ -18,161 +18,168 @@ export type Partner = {
 // Brand names are universal (never translated). Assets are static files
 // under /public/partners/ — no runtime/API fetch.
 export const partners: Partner[] = [
-  { name: 'Aman', slug: 'aman', logo: '/partners/aman.jpg', width: 400, height: 400 },
-  { name: 'Janu', slug: 'janu', logo: '/partners/janu.jpg', width: 1080, height: 1080 },
+  { name: 'Aman', slug: 'aman', ext: 'jpg', width: 400, height: 400 },
+  { name: 'Janu', slug: 'janu', ext: 'jpg', width: 1080, height: 1080 },
   {
     name: 'Four Seasons',
     slug: 'four-seasons',
-    logo: '/partners/four-seasons.jpg',
+    ext: 'jpg',
     width: 1600,
     height: 1600,
   },
   {
     name: 'Mandarin Oriental',
     slug: 'mandarin-oriental',
-    logo: '/partners/mandarin-oriental.png',
+    ext: 'png',
     width: 820,
     height: 644,
   },
   {
     name: 'The Peninsula',
     slug: 'the-peninsula',
-    logo: '/partners/the-peninsula.png',
+    ext: 'png',
     width: 820,
     height: 167,
   },
-  { name: 'Rosewood', slug: 'rosewood', logo: '/partners/rosewood.png', width: 425, height: 425 },
-  { name: 'Raffles', slug: 'raffles', logo: '/partners/raffles.png', width: 820, height: 469 },
+  { name: 'Rosewood', slug: 'rosewood', ext: 'png', width: 425, height: 425 },
+  { name: 'Raffles', slug: 'raffles', ext: 'png', width: 820, height: 469 },
   {
     name: 'Shangri-La',
     slug: 'shangri-la',
-    logo: '/partners/shangri-la.png',
+    ext: 'png',
     width: 800,
     height: 84,
   },
-  { name: 'St. Regis', slug: 'st-regis', logo: '/partners/st-regis.jpg', width: 400, height: 400 },
+  { name: 'St. Regis', slug: 'st-regis', ext: 'jpg', width: 400, height: 400 },
   {
     name: 'The Ritz-Carlton',
     slug: 'ritz-carlton',
-    logo: '/partners/ritz-carlton.jpg',
+    ext: 'jpg',
     width: 400,
     height: 400,
   },
   {
     name: 'The Ritz-Carlton Yacht Collection',
     slug: 'ritz-carlton-yacht-collection',
-    logo: '/partners/ritz-carlton-yacht-collection.jpg',
+    ext: 'jpg',
     width: 400,
     height: 400,
   },
   {
     name: 'Bulgari Hotels & Resorts',
     slug: 'bulgari',
-    logo: '/partners/bulgari.jpg',
+    ext: 'jpg',
     width: 623,
     height: 233,
   },
   {
     name: 'Cheval Blanc',
     slug: 'cheval-blanc',
-    logo: '/partners/cheval-blanc.jpg',
+    ext: 'jpg',
     width: 515,
     height: 325,
   },
   {
     name: 'Dorchester Collection',
     slug: 'dorchester-collection',
-    logo: '/partners/dorchester-collection.png',
+    ext: 'png',
     width: 366,
     height: 210,
   },
   {
     name: 'Oetker Collection',
     slug: 'oetker-collection',
-    logo: '/partners/oetker-collection.png',
+    ext: 'png',
     width: 820,
     height: 252,
   },
   {
     name: 'Auberge Collection',
     slug: 'auberge-collection',
-    logo: '/partners/auberge-collection.png',
+    ext: 'png',
     width: 820,
     height: 104,
   },
   {
     name: 'The Set Collection',
     slug: 'the-set-collection',
-    logo: '/partners/the-set-collection.svg',
+    ext: 'svg',
     width: 283.5,
     height: 283.5,
   },
-  { name: 'Belmond', slug: 'belmond', logo: '/partners/belmond.png', width: 380, height: 160 },
+  { name: 'Belmond', slug: 'belmond', ext: 'png', width: 380, height: 160 },
   {
     name: 'Six Senses',
     slug: 'six-senses',
-    logo: '/partners/six-senses.png',
+    ext: 'png',
     width: 3140,
     height: 2480,
   },
-  { name: 'Soneva', slug: 'soneva', logo: '/partners/soneva.jpg', width: 400, height: 400 },
-  { name: 'Singita', slug: 'singita', logo: '/partners/singita.jpg', width: 400, height: 400 },
-  { name: 'Fairmont', slug: 'fairmont', logo: '/partners/fairmont.jpg', width: 400, height: 400 },
+  { name: 'Soneva', slug: 'soneva', ext: 'jpg', width: 400, height: 400 },
+  { name: 'Singita', slug: 'singita', ext: 'jpg', width: 400, height: 400 },
+  { name: 'Fairmont', slug: 'fairmont', ext: 'jpg', width: 400, height: 400 },
   {
     name: 'Upper House',
     slug: 'upper-house',
-    logo: '/partners/upper-house.png',
+    ext: 'png',
     width: 352,
     height: 60,
   },
   {
     name: 'Hoshino Resorts',
     slug: 'hoshino-resorts',
-    logo: '/partners/hoshino-resorts.jpg',
+    ext: 'jpg',
     width: 734,
     height: 138,
   },
-  { name: 'Virtuoso', slug: 'virtuoso', logo: '/partners/virtuoso.png', width: 820, height: 131 },
-  { name: 'IATA', slug: 'iata', logo: '/partners/iata.png', width: 820, height: 526 },
+  { name: 'Virtuoso', slug: 'virtuoso', ext: 'png', width: 820, height: 131 },
+  { name: 'IATA', slug: 'iata', ext: 'png', width: 820, height: 526 },
   {
     name: 'Marriott Stars & Luminous',
     slug: 'marriott-stars-luminous',
-    logo: '/partners/marriott-stars-luminous.jpg',
+    ext: 'jpg',
     width: 663,
     height: 136,
   },
   {
     name: 'IHG Destined',
     slug: 'ihg-destined',
-    logo: '/partners/ihg-destined.jpg',
+    ext: 'jpg',
     width: 444,
     height: 219,
   },
   {
     name: 'Accor HERA Travel Advisor Program',
     slug: 'accor-hera',
-    logo: '/partners/accor-hera.jpg',
+    ext: 'jpg',
     width: 1897,
     height: 609,
   },
   {
+    name: 'Jumeirah Passport to Luxury',
+    slug: 'jumeirah-passport-to-luxury',
+    ext: 'png',
+    width: 768,
+    height: 216,
+  },
+  {
     name: 'Switzerland Tourism',
     slug: 'switzerland-tourism',
-    logo: '/partners/switzerland-tourism.png',
+    ext: 'png',
     width: 8992,
     height: 1255,
   },
   {
     name: 'Lotte Duty Free',
     slug: 'lotte-duty-free',
-    logo: '/partners/lotte-duty-free.jpg',
+    ext: 'jpg',
     width: 2048,
     height: 2048,
   },
   {
     name: 'The Hyundai',
     slug: 'the-hyundai',
-    logo: '/partners/the-hyundai.jpg',
+    ext: 'jpg',
     width: 828,
     height: 301,
   },
@@ -213,7 +220,7 @@ export default function PartnersMarquee() {
             className="flex h-36 w-[315px] flex-shrink-0 items-center justify-center px-[54px] md:w-[405px]"
           >
             <Image
-              src={partner.logo}
+              src={`/partners/${partner.slug}.${partner.ext}`}
               alt={partner.name}
               width={logoDisplayWidth(partner)}
               height={LOGO_DISPLAY_HEIGHT}
