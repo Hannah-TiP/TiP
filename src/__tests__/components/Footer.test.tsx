@@ -4,7 +4,8 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import enTranslations from '@/translations/en.json';
 import krTranslations from '@/translations/kr.json';
-import Footer from '@/components/Footer';
+import Footer from '@/components/FooterContent';
+import LazyFooter from '@/components/Footer';
 
 vi.mock('next/image', () => ({
   default: ({
@@ -35,6 +36,16 @@ beforeEach(() => {
 });
 
 afterEach(() => cleanup());
+
+describe('Footer lazy wrapper (SMA-306)', () => {
+  it('resolves the lazy chunk and renders the footer content', async () => {
+    render(<LazyFooter />);
+    const link = await screen.findByRole('link', {
+      name: enTranslations['footer.instagram_aria'],
+    });
+    expect(link.getAttribute('href')).toBe('https://instagram.com/travelinyourpocket_official');
+  });
+});
 
 describe('Footer Instagram link', () => {
   it('renders an Instagram link with the correct href, target, and rel', () => {

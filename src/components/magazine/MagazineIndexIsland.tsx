@@ -1,10 +1,10 @@
 'use client';
 
 import { useCallback, useMemo, useEffect, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
+import CroppedImage from '@/components/hotel/CroppedImage';
 import { apiClient } from '@/lib/api-client';
 import { useLanguage, type TranslationKeys } from '@/contexts/LanguageContext';
 import { useInfiniteList } from '@/lib/use-infinite-list';
@@ -333,13 +333,13 @@ export default function MagazineIndexIsland({ initialArticles }: MagazineIndexIs
                 >
                   <div className="relative h-52 overflow-hidden bg-gray-100">
                     {article.hero_image && (
-                      <Image
+                      <CroppedImage
                         src={getImageUrl(article.hero_image)}
+                        crop={article.hero_image.crop}
                         alt={
                           getLocalizedText(article.hero_alt, lang) ||
                           getLocalizedText(article.title, lang)
                         }
-                        fill
                         sizes="(max-width: 768px) 100vw, 33vw"
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />

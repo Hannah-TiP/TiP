@@ -38,11 +38,12 @@ vi.mock('@/components/PartnersMarquee', () => ({ default: () => <div>PartnersMar
 afterEach(() => cleanup());
 
 describe('Home page footer', () => {
-  it('renders the shared <Footer /> with working links the inline copy lacked', () => {
+  it('renders the shared <Footer /> with working links the inline copy lacked', async () => {
     render(<HomePage />);
 
-    // Privacy Policy is a working link in the shared Footer (it was a dead `#` inline).
-    const privacy = screen.getByText('Privacy Policy');
+    // Privacy Policy is a working link in the shared Footer (it was a dead `#`
+    // inline). findBy — the Footer content is lazy-loaded (SMA-306).
+    const privacy = await screen.findByText('Privacy Policy');
     expect(privacy.closest('a')?.getAttribute('href')).toBe('/privacy-policy');
 
     // Terms of Service + Blog links exist only in the shared Footer.

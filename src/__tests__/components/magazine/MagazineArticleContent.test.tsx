@@ -181,6 +181,128 @@ describe('MagazineArticleContent — cta block button (SMA-266)', () => {
   });
 });
 
+describe('MagazineArticleContent — renderer parity (SMA-306)', () => {
+  const imageA = { original: 'https://cdn.example.com/a.jpg', alt: { en: 'Photo A', kr: null } };
+  const imageB = { original: 'https://cdn.example.com/b.jpg', alt: { en: 'Photo B', kr: null } };
+
+  it('renders every image in a gallery block images[] plus its heading and text', () => {
+    render(
+      <MagazineArticleContent
+        detail={buildDetail([
+          {
+            type: 'gallery',
+            heading: { en: 'The suites', kr: '스위트' },
+            text: { en: 'A look inside.', kr: '내부 모습.' },
+            images: [imageA, imageB],
+          },
+        ])}
+      />,
+    );
+    const gallery = screen.getByTestId('magazine-gallery');
+    expect(gallery.querySelectorAll('img')).toHaveLength(2);
+    expect(screen.getByRole('heading', { name: 'The suites' })).toBeTruthy();
+    expect(screen.getByText('A look inside.')).toBeTruthy();
+  });
+
+  it('renders gallery tiles at 16:9 to match the admin crop lock', () => {
+    render(
+      <MagazineArticleContent detail={buildDetail([{ type: 'gallery', images: [imageA] }])} />,
+    );
+    const tile = screen.getByTestId('magazine-gallery').querySelector('div.relative');
+    expect(tile?.className).toContain('aspect-video');
+    expect(tile?.className).not.toContain('aspect-[4/3]');
+  });
+
+  it('heals a gallery block whose images[] is empty by rendering block.image as a single-item gallery', () => {
+    render(
+      <MagazineArticleContent
+        detail={buildDetail([{ type: 'gallery', images: [], image: imageA }])}
+      />,
+    );
+    const gallery = screen.getByTestId('magazine-gallery');
+    expect(gallery.querySelectorAll('img')).toHaveLength(1);
+    expect(gallery.querySelector('img')?.getAttribute('src')).toBe(imageA.original);
+  });
+
+  it('renders nothing for a gallery block with neither images[] nor image', () => {
+    render(<MagazineArticleContent detail={buildDetail([{ type: 'gallery' }])} />);
+    expect(screen.queryByTestId('magazine-gallery')).toBeNull();
+  });
+
+  it('renders an image block heading as a visible heading while keeping the alt fallback', () => {
+    render(
+      <MagazineArticleContent
+        detail={buildDetail([
+          {
+            type: 'image',
+            heading: { en: 'The lobby', kr: '로비' },
+            image: { original: 'https://cdn.example.com/lobby.jpg' },
+          },
+        ])}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'The lobby' })).toBeTruthy();
+    // No image alt authored — the heading still backs the alt text.
+    expect(screen.getByAltText('The lobby')).toBeTruthy();
+  });
+
+  it('renders a callout as a tinted panel distinct from body copy', () => {
+    render(
+      <MagazineArticleContent
+        detail={buildDetail([
+          {
+            type: 'callout',
+            heading: { en: 'Good to know', kr: '알아두세요' },
+            text: { en: 'Suites book out early.', kr: '스위트는 일찍 마감됩니다.' },
+          },
+        ])}
+      />,
+    );
+    const callout = screen.getByTestId('magazine-callout');
+    expect(callout.className).toContain('bg-gold/10');
+    expect(screen.getByText('Suites book out early.')).toBeTruthy();
+  });
+
+  it('keeps the first data row of a comparison table authored WITHOUT a separator row', () => {
+    render(
+      <MagazineArticleContent
+        detail={buildDetail([
+          {
+            type: 'comparison_table',
+            heading: { en: 'Compare', kr: null },
+            text: {
+              en: '| Hotel | Price |\n| Aman Tokyo | $$$ |\n| Park Hyatt | $$ |',
+              kr: null,
+            },
+          },
+        ])}
+      />,
+    );
+    expect(screen.getByText('Aman Tokyo')).toBeTruthy();
+    expect(screen.getByText('Park Hyatt')).toBeTruthy();
+  });
+
+  it('still drops a markdown |---|:---:| separator row', () => {
+    render(
+      <MagazineArticleContent
+        detail={buildDetail([
+          {
+            type: 'comparison_table',
+            heading: { en: 'Compare', kr: null },
+            text: {
+              en: '| Hotel | Price |\n| --- | :---: |\n| Aman Tokyo | $$$ |',
+              kr: null,
+            },
+          },
+        ])}
+      />,
+    );
+    expect(screen.getByText('Aman Tokyo')).toBeTruthy();
+    expect(screen.queryByText('---')).toBeNull();
+    expect(screen.queryByText(':---:')).toBeNull();
+  });
+});
+
 describe('classifyCtaButtonUrl', () => {
   it('classifies per the allowlist', () => {
     expect(classifyCtaButtonUrl('/concierge')).toBe('internal');
