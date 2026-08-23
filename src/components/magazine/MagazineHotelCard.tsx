@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
+import CroppedImage from '@/components/hotel/CroppedImage';
 import type { Lang } from '@/contexts/LanguageContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getImageUrl, getLocalizedText } from '@/types/common';
@@ -43,12 +43,11 @@ export default function MagazineHotelCard({ relation, lang, rank }: MagazineHote
             {rank}
           </span>
         )}
-        <Image
+        <CroppedImage
           src={getImageUrl(hotel.hero_image)}
+          crop={hotel.hero_image?.crop}
           alt={name}
-          fill
           sizes="(max-width: 640px) 100vw, 160px"
-          className="object-cover"
         />
       </div>
       <div className="flex flex-1 flex-col">

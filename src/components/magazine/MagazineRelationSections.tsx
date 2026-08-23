@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
+import CroppedImage from '@/components/hotel/CroppedImage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import {
@@ -109,10 +109,10 @@ export default function MagazineRelationSections({
                   className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-lg"
                 >
                   <div className="relative h-40 overflow-hidden">
-                    <Image
+                    <CroppedImage
                       src={getImageUrl(story.hero_image)}
+                      crop={story.hero_image?.crop}
                       alt={storyTitle}
-                      fill
                       sizes="(max-width: 640px) 100vw, 33vw"
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />

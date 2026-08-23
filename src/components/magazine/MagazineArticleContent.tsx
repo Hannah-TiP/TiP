@@ -57,6 +57,25 @@ export function ctaBlockHasButton(block: BodyBlock, lang: 'en' | 'kr'): boolean 
   );
 }
 
+/** Shared block styles, hoisted so each render site references one string. */
+const HEADING_CLASS =
+  'mb-5 font-primary text-[26px] italic leading-snug text-green-dark md:text-[32px]';
+const QUOTE_TEXT_CLASS =
+  'whitespace-pre-line border-l-2 border-gold pl-5 font-primary text-[22px] italic leading-relaxed text-green-dark';
+const BODY_TEXT_CLASS = 'whitespace-pre-line text-[15px] leading-[1.85] text-gray-text';
+
+/** Standard block heading — renders nothing when the heading is empty. */
+function BlockHeading({
+  heading,
+  className = HEADING_CLASS,
+}: {
+  heading: string;
+  className?: string;
+}) {
+  if (!heading) return null;
+  return <h2 className={className}>{heading}</h2>;
+}
+
 /**
  * Minimal per-block-type body renderer. Only a small known subset is handled;
  * unknown block types render nothing (forward-compat — MAG-3/4 may add block
@@ -70,29 +89,36 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
   switch (block.type) {
     case 'rich_text':
     case 'section':
-    case 'quote':
-    case 'callout': {
+    case 'quote': {
       if (!heading && !text) return null;
 
       return (
         <section className="mb-10">
-          {heading && (
-            <h2 className="mb-5 font-primary text-[26px] italic leading-snug text-green-dark md:text-[32px]">
-              {heading}
-            </h2>
-          )}
+          <BlockHeading heading={heading} />
+          {text && <p className={isQuote ? QUOTE_TEXT_CLASS : BODY_TEXT_CLASS}>{text}</p>}
+        </section>
+      );
+    }
+    case 'callout': {
+      // SMA-306: callout is visually distinct from body copy — a tinted panel
+      // (approved default), instead of sharing the rich_text/section treatment.
+      if (!heading && !text) return null;
+
+      return (
+        <aside
+          className="mb-10 rounded-2xl border border-gold/40 bg-gold/10 p-6 md:p-8"
+          data-testid="magazine-callout"
+        >
+          <BlockHeading
+            heading={heading}
+            className="mb-3 font-primary text-[22px] italic leading-snug text-green-dark md:text-[26px]"
+          />
           {text && (
-            <p
-              className={
-                isQuote
-                  ? 'whitespace-pre-line border-l-2 border-gold pl-5 font-primary text-[22px] italic leading-relaxed text-green-dark'
-                  : 'whitespace-pre-line text-[15px] leading-[1.85] text-gray-text'
-              }
-            >
+            <p className="whitespace-pre-line text-[15px] leading-[1.85] text-green-dark/80">
               {text}
             </p>
           )}
-        </section>
+        </aside>
       );
     }
     case 'comparison_table': {
@@ -110,15 +136,15 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
         .filter((row) => row.length > 1);
 
       const headerRow = rows[0] ?? [];
-      const bodyRows = rows.slice(2);
+      // SMA-306: only skip the second row when it actually IS a markdown
+      // `|---|:---:|` separator — a table authored without one must not lose
+      // its first data row.
+      const hasSeparatorRow = rows.length > 1 && rows[1].every((cell) => /^[\s:-]+$/.test(cell));
+      const bodyRows = rows.slice(hasSeparatorRow ? 2 : 1);
 
       return (
         <section className="mb-10">
-          {heading && (
-            <h2 className="mb-5 font-primary text-[26px] italic leading-snug text-green-dark md:text-[32px]">
-              {heading}
-            </h2>
-          )}
+          <BlockHeading heading={heading} />
 
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
             <table className="min-w-[720px] w-full border-collapse text-left text-[14px]">
@@ -162,22 +188,11 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
         'mt-6 inline-block rounded-full bg-green-dark px-8 py-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90';
       return (
         <div className="mb-8">
-          {heading && (
-            <h2 className="mb-3 font-primary text-[26px] italic leading-snug text-green-dark md:text-[32px]">
-              {heading}
-            </h2>
-          )}
-          {text && (
-            <p
-              className={
-                isQuote
-                  ? 'border-l-2 border-gold pl-5 font-primary text-[22px] italic leading-relaxed text-green-dark'
-                  : 'whitespace-pre-line text-[15px] leading-[1.85] text-gray-text'
-              }
-            >
-              {text}
-            </p>
-          )}
+          <BlockHeading
+            heading={heading}
+            className="mb-3 font-primary text-[26px] italic leading-snug text-green-dark md:text-[32px]"
+          />
+          {text && <p className={BODY_TEXT_CLASS}>{text}</p>}
           {showButton &&
             (buttonKind === 'internal' ? (
               <Link href={buttonUrl} className={buttonClassName} data-testid="magazine-cta-button">
@@ -201,6 +216,9 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
       if (!block.image) return null;
       return (
         <figure className="mb-8">
+          {/* SMA-306: an authored Heading renders visibly above the figure
+              (previously it only fed the alt-text fallback below). */}
+          <BlockHeading heading={heading} />
           <div className="relative aspect-[16/9] overflow-hidden rounded-xl">
             <CroppedImage
               src={getImageUrl(block.image)}
@@ -214,21 +232,27 @@ function BodyBlockView({ block, lang }: { block: BodyBlock; lang: 'en' | 'kr' })
       );
     }
     case 'gallery': {
-      const images = block.images ?? [];
+      // SMA-306: render every image in `images[]`; when it is empty, heal the
+      // legacy admin shape by rendering `block.image` as a single-item gallery.
+      const images = block.images?.length ? block.images : block.image ? [block.image] : [];
       if (images.length === 0) return null;
       return (
-        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
-          {images.map((image, index) => (
-            <div key={index} className="relative aspect-[4/3] overflow-hidden rounded-xl">
-              <CroppedImage
-                src={getImageUrl(image)}
-                crop={image.crop}
-                alt={getLocalizedText(image.alt, lang) || heading || ''}
-                sizes="(max-width: 768px) 50vw, 33vw"
-              />
-            </div>
-          ))}
-        </div>
+        <section className="mb-10" data-testid="magazine-gallery">
+          <BlockHeading heading={heading} />
+          {text && <p className={`mb-5 ${BODY_TEXT_CLASS}`}>{text}</p>}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            {images.map((image, index) => (
+              <div key={index} className="relative aspect-video overflow-hidden rounded-xl">
+                <CroppedImage
+                  src={getImageUrl(image)}
+                  crop={image.crop}
+                  alt={getLocalizedText(image.alt, lang) || heading || ''}
+                  sizes="(max-width: 768px) 50vw, 33vw"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
       );
     }
     default:
