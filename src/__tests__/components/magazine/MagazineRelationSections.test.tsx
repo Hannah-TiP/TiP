@@ -2,7 +2,9 @@
 import type { AnchorHTMLAttributes, ImgHTMLAttributes } from 'react';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import MagazineHotelCard from '@/components/magazine/MagazineHotelCard';
 import MagazineRelationSections from '@/components/magazine/MagazineRelationSections';
+import type { CropRect } from '@/types/common';
 import type { ExpandedArticleRelation, MagazineRelationArticleRef } from '@/types/magazine';
 
 vi.mock('next/image', () => ({
@@ -183,6 +185,63 @@ describe('MagazineRelationSections — cluster up-link', () => {
     // collection → "collections"
     expect(uplink.getAttribute('href')).toBe('/magazine/collections/japan-cluster');
     expect(uplink.textContent).toContain('Japan Cluster');
+  });
+});
+
+describe('Magazine cards — authored crop honoured (SMA-306)', () => {
+  const crop: CropRect = { x: 0.1, y: 0.2, width: 0.5, height: 0.5 };
+
+  function hotelCardRelation(heroCrop?: CropRect): ExpandedArticleRelation {
+    return {
+      id: 1,
+      target_type: 'hotel',
+      target_id: 1,
+      kind: 'ranked',
+      position: 1,
+      schema_version: 1,
+      hotel: {
+        id: 1,
+        slug: 'aman-tokyo',
+        name: { en: 'Aman Tokyo', kr: null },
+        hero_image: { original: 'https://cdn.example.com/aman.jpg', crop: heroCrop ?? null },
+      },
+    };
+  }
+
+  it('MagazineHotelCard renders the cropped frame when hero_image.crop is set', () => {
+    render(<MagazineHotelCard relation={hotelCardRelation(crop)} lang="en" rank={1} />);
+    const card = screen.getByTestId('magazine-hotel-card');
+    const frame = within(card).getByTestId('cropped-image-frame');
+    // The image renders INSIDE the crop frame, not full-frame.
+    expect(within(frame).getByAltText('Aman Tokyo')).toBeTruthy();
+  });
+
+  it('MagazineHotelCard renders a plain full-frame image when there is no crop', () => {
+    render(<MagazineHotelCard relation={hotelCardRelation()} lang="en" rank={1} />);
+    const card = screen.getByTestId('magazine-hotel-card');
+    expect(within(card).queryByTestId('cropped-image-frame')).toBeNull();
+    expect(within(card).getByAltText('Aman Tokyo')).toBeTruthy();
+  });
+
+  it('related-story card renders the cropped frame when hero_image.crop is set', () => {
+    render(
+      <MagazineRelationSections
+        relations={[]}
+        related={[
+          { ...relatedStory, hero_image: { original: relatedStory.hero_image!.original, crop } },
+        ]}
+      />,
+    );
+    const card = screen.getByTestId('magazine-related-card');
+    const frame = within(card).getByTestId('cropped-image-frame');
+    expect(within(frame).getByAltText('Kyoto Guide')).toBeTruthy();
+  });
+
+  it('related-story card renders a plain full-frame image when there is no crop', () => {
+    render(<MagazineRelationSections relations={[]} related={[relatedStory]} />);
+    const card = screen.getByTestId('magazine-related-card');
+    expect(within(card).queryByTestId('cropped-image-frame')).toBeNull();
+    expect(within(card).getByAltText('Kyoto Guide')).toBeTruthy();
   });
 });
 
