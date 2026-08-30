@@ -529,6 +529,7 @@
   "membership.free_night_status_expired": "만료됨",
   "membership.free_night_concierge_note": "무료 숙박은 콩시에르주를 통해 적용됩니다. 언제든지 문의해 주세요.",
   "membership.free_night_none_carte": "무료 숙박 혜택은 Cercle 서클부터 시작됩니다.",
+  "membership.member_earn_rate": "{tier} 멤버로서 여행 결제 금액의 {rate}가 크레딧으로 적립됩니다.",
   "travel_history.title": "지난 여정",
   "travel_history.empty": "아직 완료된 여행이 없습니다.",
   "travel_history.plan_first": "첫 여행 계획하기",

@@ -21,6 +21,7 @@ import {
   type StayCredit,
 } from '@/types/stay-credit';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { useBenefits } from '@/hooks/useBenefits';
 import { formatDate as formatDateI18n, formatTime as formatTimeI18n } from '@/lib/format-date';
 import BookingDocuments from '@/components/BookingDocuments';
 
@@ -80,6 +81,9 @@ function formatCredit(amountCents: number, currency: string): string {
 export default function TravelHistoryTripDetailPage() {
   const { t, lang } = useLanguage();
   const { id } = useParams<{ id: string }>();
+  // Registry copy for credit source labels (SMA-322); null degrades to the
+  // static fallback labels inside creditSourceLabel.
+  const benefits = useBenefits();
   const [tripWithVersion, setTripWithVersion] = useState<TripWithVersion | null>(null);
   const [reviewStatus, setReviewStatus] = useState<{ reviewed: number; total: number } | null>(
     null,
@@ -382,7 +386,7 @@ export default function TravelHistoryTripDetailPage() {
                   {tripCredits.map((credit) => (
                     <div key={credit.id} className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">
-                        {creditSourceLabel(credit, lang === 'en')}
+                        {creditSourceLabel(credit, lang === 'en', benefits)}
                       </span>
                       <span className="font-medium text-[#1E3D2F]">
                         {formatCredit(credit.amount_cents, credit.currency)}
