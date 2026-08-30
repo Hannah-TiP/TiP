@@ -15,7 +15,7 @@ import {
   type TripWithVersion,
 } from '@/lib/trip-utils';
 import {
-  STAY_CREDIT_SOURCE_LABELS,
+  creditSourceLabel,
   creditsForTrip,
   type ProjectedTripEarn,
   type StayCredit,
@@ -382,7 +382,7 @@ export default function TravelHistoryTripDetailPage() {
                   {tripCredits.map((credit) => (
                     <div key={credit.id} className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">
-                        {STAY_CREDIT_SOURCE_LABELS[credit.source][lang]}
+                        {creditSourceLabel(credit, lang === 'en')}
                       </span>
                       <span className="font-medium text-[#1E3D2F]">
                         {formatCredit(credit.amount_cents, credit.currency)}

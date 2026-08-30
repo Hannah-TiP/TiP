@@ -12,7 +12,8 @@ export type StayCreditSource =
   | 'gift'
   | 'promo_code_redemption'
   | 'kb_welcome'
-  | 'kb_premium_booking';
+  | 'kb_premium_booking'
+  | 'signup';
 
 export const STAY_CREDIT_SOURCE_LABELS: Record<StayCreditSource, { en: string; kr: string }> = {
   welcome: { en: 'Welcome', kr: '환영' },
@@ -26,6 +27,9 @@ export const STAY_CREDIT_SOURCE_LABELS: Record<StayCreditSource, { en: string; k
   promo_code_redemption: { en: 'Promo Code', kr: '프로모션 코드' },
   kb_welcome: { en: 'KB Welcome', kr: 'KB 웰컴' },
   kb_premium_booking: { en: 'KB Premium Booking', kr: 'KB 프리미엄 예약' },
+  // Flat first-signup welcome credit (SMA-267); distinct from `welcome`,
+  // which is the Confidence-tier $500 credit.
+  signup: { en: 'Signup welcome', kr: '가입 환영' },
 };
 
 export type StayCreditStatus = 'issued' | 'redeemed' | 'expired' | 'revoked';

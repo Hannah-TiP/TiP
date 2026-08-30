@@ -110,6 +110,11 @@ describe('stayCreditSourceText', () => {
     expect(stayCreditSourceText('birthday', false)).toBe('생일');
   });
 
+  it('labels the signup welcome credit (regression: travel-history detail crash)', () => {
+    expect(stayCreditSourceText('signup', true)).toBe('Signup welcome');
+    expect(stayCreditSourceText('signup', false)).toBe('가입 환영');
+  });
+
   it('falls back to the raw source (no throw) for an unknown/new backend source', () => {
     // Guards against the FE label map drifting behind the backend enum again.
     const unknown = 'future_source' as unknown as StayCredit['source'];
@@ -124,5 +129,34 @@ describe('STAY_CREDIT_SOURCE_LABELS', () => {
     expect(STAY_CREDIT_SOURCE_LABELS.first_trip_cashback.en).toBe('First-trip bonus — 3%');
     expect(STAY_CREDIT_SOURCE_LABELS.payment_points.kr).toBe('결제 적립 — 2%');
     expect(STAY_CREDIT_SOURCE_LABELS.first_trip_cashback.kr).toBe('첫 여행 보너스 — 3%');
+  });
+
+  it('covers every member of the backend StayCreditSource enum (drift guard)', () => {
+    // Mirrored from tip-backend/v2/data_model/enums.py::StayCreditSource.
+    // If the backend adds an enum member, add it here AND to the union +
+    // label map in src/types/stay-credit.ts (this is exactly the drift that
+    // crashed the travel-history detail page on `signup` credits — SMA-320).
+    const backendEnumMembers = [
+      'welcome',
+      'birthday',
+      'referral',
+      'manual',
+      'payment_points',
+      'first_trip_cashback',
+      'review_reward',
+      'gift',
+      'promo_code_redemption',
+      'kb_welcome',
+      'kb_premium_booking',
+      'signup',
+    ];
+    expect(Object.keys(STAY_CREDIT_SOURCE_LABELS).sort()).toEqual([...backendEnumMembers].sort());
+  });
+
+  it('has non-empty EN and KR copy for every source', () => {
+    for (const [source, entry] of Object.entries(STAY_CREDIT_SOURCE_LABELS)) {
+      expect(entry.en, `missing EN label for ${source}`).toBeTruthy();
+      expect(entry.kr, `missing KR label for ${source}`).toBeTruthy();
+    }
   });
 });
