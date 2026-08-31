@@ -48,6 +48,7 @@ import type {
 } from '@/types/ai-chat';
 import type { DestinationSuggestion } from '@/types/destination';
 import type { MemberFreeNightSummary } from '@/types/free-night';
+import type { BenefitsResponse } from '@/types/v2/benefits';
 import type {
   ClaimReferralResponse,
   EligibleCredit,
@@ -209,6 +210,17 @@ class ApiClient {
 
   async getMyReferrals(): Promise<MyReferralsResponse> {
     const response = await this.request<{ data: MyReferralsResponse }>('/me/referrals');
+    return response.data;
+  }
+
+  // The public benefit registry (SMA-322): every active benefit with
+  // per-tier values + bilingual copy. The proxy forwards the bearer token
+  // when a session exists, so signed-in callers also get the `resolved`
+  // block for their own tier. Prefer the cached fetchBenefits() /
+  // useBenefits() wrappers in src/lib/benefits.ts — the payload is static
+  // per deploy.
+  async getBenefits(): Promise<BenefitsResponse> {
+    const response = await this.request<{ data: BenefitsResponse }>('/benefits');
     return response.data;
   }
 
