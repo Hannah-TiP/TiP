@@ -51,6 +51,37 @@ test.describe('Trip-linked credits on /my-page/credits', () => {
         body: JSON.stringify({ code: 200, message: 'Success', data: TRIP_LINKED_CREDITS }),
       });
     });
+    // Stub the benefit registry proxy (SMA-322) so the source labels are
+    // deterministic: `payment_points` renders the registry's `tiered_earn`
+    // copy, while `first_trip_cashback` (inactive — never in the payload)
+    // degrades to its static fallback label. The hardcoded "— 2%"/"— 3%"
+    // suffixes were removed in SMA-322 PR 3 (rates are tier-dependent).
+    await page.route('**/api/benefits', async (route) => {
+      if (route.request().method() !== 'GET') return route.fallback();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          message: 'Success',
+          data: {
+            benefits: [
+              {
+                key: 'tiered_earn',
+                kind: 'earn_rate',
+                unit: 'rate',
+                values_by_tier: { carte: '0.001' },
+                copy: {
+                  en: 'Earn stay credit on every completed, reviewed trip.',
+                  kr: '완료·리뷰된 여행마다 스테이 크레딧이 적립됩니다.',
+                },
+              },
+            ],
+            resolved: null,
+          },
+        }),
+      });
+    });
     // Stub the pending-earn projection (SMA-276) empty so the Pending
     // earnings section (which has its own "View trip →" links) can never
     // collide with the View-trip count asserted below.
@@ -68,8 +99,12 @@ test.describe('Trip-linked credits on /my-page/credits', () => {
 
     await gotoPage(page, '/my-page/credits');
 
-    await expect(page.getByText('Trip cashback — 2%')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText('First-trip bonus — 3%')).toBeVisible();
+    // Registry copy for payment_points (from the stubbed payload); static
+    // fallback label for the inactive first_trip_cashback source.
+    await expect(page.getByText('Earn stay credit on every completed, reviewed trip.')).toBeVisible(
+      { timeout: 15_000 },
+    );
+    await expect(page.getByText('First-trip bonus')).toBeVisible();
 
     // Both trip-linked credits link to their respective travel-history pages —
     // the first-trip bonus to trip 55 and the trip cashback to trip 66.

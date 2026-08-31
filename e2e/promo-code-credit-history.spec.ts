@@ -50,6 +50,23 @@ test.describe('Promo-code credit history on /my-page/credits', () => {
         body: JSON.stringify({ code: 200, message: 'Success', data: PROMO_CREDITS }),
       });
     });
+    // Stub the benefit registry proxy (SMA-322) with an empty payload so the
+    // source label deterministically takes the static-fallback path
+    // ("Promo Code") regardless of the live registry's copy. The
+    // registry-copy path is covered by trip-credits.spec.ts and
+    // membership-benefits.spec.ts.
+    await page.route('**/api/benefits', async (route) => {
+      if (route.request().method() !== 'GET') return route.fallback();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          message: 'Success',
+          data: { benefits: [], resolved: null },
+        }),
+      });
+    });
     // Stub the pending-earn projection (SMA-276) empty so the section stays
     // hidden and this spec stays hermetic.
     await page.route('**/api/me/credits/projected', async (route) => {
