@@ -8,6 +8,7 @@ import Link from 'next/link';
 import Footer from '@/components/Footer';
 import RedeemCodeSection from '@/components/credits/RedeemCodeSection';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import { useBenefits } from '@/hooks/useBenefits';
 import { formatDate as formatDateI18n } from '@/lib/format-date';
 import { apiClient } from '@/lib/api-client';
 import {
@@ -71,6 +72,9 @@ export default function MyCreditsPage() {
   const router = useRouter();
   const { lang } = useLanguage();
   const en = lang === 'en';
+  // Registry copy for source labels (SMA-322); null degrades to the static
+  // fallback labels inside the helpers.
+  const benefits = useBenefits();
 
   const [loading, setLoading] = useState(true);
   const [credits, setCredits] = useState<StayCredit[]>([]);
@@ -190,9 +194,9 @@ export default function MyCreditsPage() {
                       <div className="sm:col-span-3 text-[14px]">
                         <div
                           className="font-medium text-gray-900"
-                          aria-label={creditSourceLabel(credit, en)}
+                          aria-label={creditSourceLabel(credit, en, benefits)}
                         >
-                          {stayCreditSourceText(credit.source, en)}
+                          {stayCreditSourceText(credit.source, en, benefits)}
                           {credit.promo_code ? (
                             <span className="text-gray-500"> · {credit.promo_code}</span>
                           ) : null}

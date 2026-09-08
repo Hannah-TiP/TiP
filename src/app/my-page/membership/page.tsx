@@ -4,9 +4,28 @@ import { useSession } from 'next-auth/react';
 import Footer from '@/components/Footer';
 import FreeNightSummary from '@/components/FreeNightSummary';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBenefits } from '@/hooks/useBenefits';
+import {
+  fillVars,
+  formatRatePercent,
+  membershipBenefitFigures,
+  resolvedBenefitValue,
+} from '@/lib/benefits';
+import {
+  CENACLE_ANNUAL_FEE,
+  CERCLE_ANNUAL_SPEND,
+  CONFIDENCE_ANNUAL_FEE,
+  CONFIDENCE_ANNUAL_SPEND,
+} from '@/lib/benefits-fallback';
 
 type Bilingual = { en: string; kr: string };
 type CircleKey = 'carte' | 'cercle' | 'confidence' | 'cenacle';
+
+// Money/threshold figures render from the benefit registry payload
+// (SMA-322) via `{placeholder}` substitution — the copy below carries NO
+// hardcoded currency/percentage figures (guard-tested). Figures the
+// registry does not serve (annual spend thresholds, annual fees) come from
+// the sanctioned constants in src/lib/benefits-fallback.ts.
 
 type CircleSection = {
   heading: Bilingual;
@@ -42,7 +61,10 @@ const CIRCLES: Circle[] = [
             kr: '전 세계 2,200개 이상 파트너 호텔 특별 요금',
           },
           { en: 'Daily breakfast for two', kr: '매일 조식 2인 포함' },
-          { en: 'Stay Credit — $100 hotel credit per stay', kr: '스테이당 $100 호텔 크레딧' },
+          {
+            en: 'Stay Credit — {carteCredit} hotel credit per stay',
+            kr: '스테이당 {carteCredit} 호텔 크레딧',
+          },
           { en: 'Room upgrade when available', kr: '객실 업그레이드 (가능 시)' },
           {
             en: 'Early check-in & late check-out when available',
@@ -66,16 +88,16 @@ const CIRCLES: Circle[] = [
     },
     price: { en: 'Free', kr: '무료' },
     qualifying: {
-      en: '$30,000 in annual TiP bookings, or application with member referral.',
-      kr: '연간 $30,000 이상의 TiP 예약, 또는 기존 멤버 추천으로 신청',
+      en: '{cercleAnnualSpend} in annual TiP bookings, or application with member referral.',
+      kr: '연간 {cercleAnnualSpend} 이상의 TiP 예약, 또는 기존 멤버 추천으로 신청',
     },
     sections: [
       {
         heading: { en: 'Cercle benefits', kr: 'Cercle 혜택' },
         items: [
           {
-            en: 'Elevated Stay Credit — up to $150 per booking, for dining, spa, or experiences',
-            kr: '엘리베이티드 스테이 크레딧 — 스테이당 최대 $150, 다이닝 · 스파 · 경험에 사용',
+            en: 'Elevated Stay Credit — up to {cercleCredit} per booking, for dining, spa, or experiences',
+            kr: '엘리베이티드 스테이 크레딧 — 스테이당 최대 {cercleCredit}, 다이닝 · 스파 · 경험에 사용',
           },
           {
             en: 'Hotel Whisperer — the best room to request, told to you 24 hours before arrival',
@@ -90,8 +112,8 @@ const CIRCLES: Circle[] = [
             kr: '버스데이 스테이 — 생일 달 전용 크레딧과 프라이빗 인룸 세레머니',
           },
           {
-            en: 'Loyalty Night — one complimentary night after 17 nights with TiP partners',
-            kr: '로열티 나이트 — TiP 파트너 호텔 누적 17박 시 1박 무료',
+            en: 'Loyalty Night — one complimentary night after {cercleLoyaltyNights} nights with TiP partners',
+            kr: '로열티 나이트 — TiP 파트너 호텔 누적 {cercleLoyaltyNights}박 시 1박 무료',
           },
           {
             en: 'Preference Profile — your style remembered across every booking',
@@ -110,18 +132,18 @@ const CIRCLES: Circle[] = [
     key: 'confidence',
     name: 'Confidence',
     tagline: { en: 'The hotel already knows you.', kr: '호텔이 이미 당신을 아는 곳' },
-    price: { en: '₩9,500,000 / year (approx. $6,500)', kr: '연 ₩9,500,000' },
+    price: CONFIDENCE_ANNUAL_FEE,
     qualifying: {
-      en: '$70,000 in annual bookings, or 12+ months as a Cercle member with advisor referral. $500 welcome credit applied to your first qualifying stay.',
-      kr: '연간 $70,000 이상의 TiP 예약, 또는 Cercle 멤버십 12개월 이상 + 어드바이저 추천. 가입 후 첫 스테이에 $500 웰컴 크레딧 자동 적용',
+      en: '{confidenceAnnualSpend} in annual bookings, or 12+ months as a Cercle member with advisor referral. {confidenceWelcome} welcome credit applied to your first qualifying stay.',
+      kr: '연간 {confidenceAnnualSpend} 이상의 TiP 예약, 또는 Cercle 멤버십 12개월 이상 + 어드바이저 추천. 가입 후 첫 스테이에 {confidenceWelcome} 웰컴 크레딧 자동 적용',
     },
     sections: [
       {
         heading: { en: 'Confidence benefits', kr: 'Confidence 혜택' },
         items: [
           {
-            en: 'Enhanced Stay Credit — up to $200 per booking',
-            kr: '인핸스드 스테이 크레딧 — 스테이당 최대 $200',
+            en: 'Enhanced Stay Credit — up to {confidenceCredit} per booking',
+            kr: '인핸스드 스테이 크레딧 — 스테이당 최대 {confidenceCredit}',
           },
           {
             en: 'The Morning After — guaranteed 4pm checkout at every TiP partner hotel',
@@ -140,8 +162,8 @@ const CIRCLES: Circle[] = [
             kr: '리턴 리추얼 — 사랑했던 호텔로 돌아가면 와인, 조식, 객실 배치까지 기억',
           },
           {
-            en: 'Signature Night — one complimentary night after 10 nights, annually',
-            kr: '시그니처 나이트 — 연간 10박 이상 시 1박 무료',
+            en: 'Signature Night — one complimentary night after {confidenceSignatureNights} nights, annually',
+            kr: '시그니처 나이트 — 연간 {confidenceSignatureNights}박 이상 시 1박 무료',
           },
           {
             en: 'Priority Access — premium suites, peak dates, tasting menus, spa specialists',
@@ -168,7 +190,7 @@ const CIRCLES: Circle[] = [
     key: 'cenacle',
     name: 'Cénacle',
     tagline: { en: 'The inner circle.', kr: '초대로만 열리는 가장 안쪽의 원' },
-    price: { en: '₩20,000,000 / year (approx. $15,000)', kr: '연 ₩20,000,000' },
+    price: CENACLE_ANNUAL_FEE,
     qualifying: {
       en: 'By invitation only. Limited to 20 new members per year.',
       kr: '초대로만. 연간 최대 20명에게만 초대',
@@ -178,8 +200,8 @@ const CIRCLES: Circle[] = [
         heading: { en: 'Access that cannot be bought', kr: '돈으로 살 수 없는 접근' },
         items: [
           {
-            en: 'Private Stay Credit — up to $400 per booking, shaped to your preferences before arrival',
-            kr: '프라이빗 스테이 크레딧 — 스테이당 최대 $400, 도착 전 취향 설계',
+            en: 'Private Stay Credit — up to {cenacleCredit} per booking, shaped to your preferences before arrival',
+            kr: '프라이빗 스테이 크레딧 — 스테이당 최대 {cenacleCredit}, 도착 전 취향 설계',
           },
           {
             en: 'The Seventh Night — on bookings of seven or more nights at any TiP partner hotel, the seventh night is on us.',
@@ -293,6 +315,36 @@ export default function Membership() {
   const { data: session } = useSession();
   const en = lang === 'en';
   const currentTier = tierFromMembership(session?.user?.membership);
+  const benefits = useBenefits();
+
+  // Money figures from the registry payload, with per-figure static
+  // fallback when the endpoint is unavailable (never blank/crash).
+  const figures = membershipBenefitFigures(benefits);
+  const copyVars: Record<string, string> = {
+    carteCredit: figures.benefitCredit.carte,
+    cercleCredit: figures.benefitCredit.cercle,
+    confidenceCredit: figures.benefitCredit.confidence,
+    cenacleCredit: figures.benefitCredit.cenacle,
+    confidenceWelcome: figures.confidenceWelcome,
+    cercleLoyaltyNights: figures.cercleLoyaltyNights,
+    confidenceSignatureNights: figures.confidenceSignatureNights,
+    cercleAnnualSpend: CERCLE_ANNUAL_SPEND,
+    confidenceAnnualSpend: CONFIDENCE_ANNUAL_SPEND,
+  };
+
+  // The member's OWN earn rate (SMA-322): from the payload's `resolved`
+  // block — present only for signed-in callers, hidden otherwise.
+  const resolvedRate = resolvedBenefitValue(benefits, 'tiered_earn');
+  const earnRatePercent = resolvedRate ? formatRatePercent(resolvedRate) : null;
+  const resolvedTierName = benefits?.resolved
+    ? CIRCLES.find((c) => c.key === benefits.resolved?.tier)?.name
+    : undefined;
+  const earnRateLine =
+    earnRatePercent && resolvedTierName
+      ? t('membership.member_earn_rate')
+          .replace('{rate}', earnRatePercent)
+          .replace('{tier}', resolvedTierName)
+      : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -325,6 +377,14 @@ export default function Membership() {
               <p className="mt-2 text-[14px] text-white/80">
                 {CIRCLES.find((c) => c.key === currentTier)?.tagline[en ? 'en' : 'kr']}
               </p>
+              {earnRateLine && (
+                <p
+                  className="mt-3 text-[13px] font-medium text-gold"
+                  data-testid="member-earn-rate"
+                >
+                  {earnRateLine}
+                </p>
+              )}
             </div>
             <div className="md:max-w-md md:text-right">
               <p className="text-[12px] leading-relaxed text-white/70">
@@ -395,7 +455,7 @@ export default function Membership() {
                         isPrivate ? 'text-white/60' : 'text-gray-text'
                       }`}
                     >
-                      {circle.qualifying[en ? 'en' : 'kr']}
+                      {fillVars(circle.qualifying[en ? 'en' : 'kr'], copyVars)}
                     </p>
                   </div>
                 </div>
@@ -423,7 +483,7 @@ export default function Membership() {
                                 isPrivate ? 'text-white/85' : 'text-gray-text'
                               }`}
                             >
-                              {item[en ? 'en' : 'kr']}
+                              {fillVars(item[en ? 'en' : 'kr'], copyVars)}
                             </span>
                           </li>
                         ))}
@@ -460,7 +520,7 @@ export default function Membership() {
                       ◆ {circle.name}
                     </td>
                     <td className="px-5 py-3 text-gray-text">
-                      {circle.qualifying[en ? 'en' : 'kr']}
+                      {fillVars(circle.qualifying[en ? 'en' : 'kr'], copyVars)}
                     </td>
                     <td className="px-5 py-3 text-right font-semibold text-green-dark">
                       {circle.price[en ? 'en' : 'kr']}

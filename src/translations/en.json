@@ -529,6 +529,7 @@
   "membership.free_night_status_expired": "Expired",
   "membership.free_night_concierge_note": "Free nights are fulfilled by your concierge. Reach out any time to apply one.",
   "membership.free_night_none_carte": "Free nights begin at the Cercle circle.",
+  "membership.member_earn_rate": "You earn {rate} on travel spend as a {tier} member.",
   "travel_history.title": "Past Journeys",
   "travel_history.empty": "No completed trips yet.",
   "travel_history.plan_first": "Plan Your First Trip",

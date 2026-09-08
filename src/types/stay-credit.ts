@@ -1,6 +1,8 @@
 // Mirrors tip-backend/v2/data_model/schemas/stay_credit.py
 // Mirrors v2/data_model/enums.py::StayCreditSource / StayCreditStatus.
 
+import type { BenefitsResponse } from '@/types/v2/benefits';
+
 export type StayCreditSource =
   | 'welcome'
   | 'birthday'
@@ -15,21 +17,45 @@ export type StayCreditSource =
   | 'kb_premium_booking'
   | 'signup';
 
+// SAFE FALLBACK labels only (SMA-322): when the benefit registry payload is
+// available, `stayCreditSourceText` prefers its bilingual copy. These carry
+// NO money/rate figures — the earn rate is tiered per membership (SMA-199),
+// so any hardcoded percentage here was wrong for most members (SMA-321).
 export const STAY_CREDIT_SOURCE_LABELS: Record<StayCreditSource, { en: string; kr: string }> = {
   welcome: { en: 'Welcome', kr: '환영' },
   birthday: { en: 'Birthday', kr: '생일' },
   referral: { en: 'Referral', kr: '추천' },
   manual: { en: 'Concierge', kr: '컨시어지' },
-  payment_points: { en: 'Trip cashback — 2%', kr: '결제 적립 — 2%' },
-  first_trip_cashback: { en: 'First-trip bonus — 3%', kr: '첫 여행 보너스 — 3%' },
+  payment_points: { en: 'Trip cashback', kr: '결제 적립' },
+  first_trip_cashback: { en: 'First-trip bonus', kr: '첫 여행 보너스' },
   review_reward: { en: 'Review Reward', kr: '리뷰 보상' },
   gift: { en: 'Gift', kr: '선물' },
   promo_code_redemption: { en: 'Promo Code', kr: '프로모션 코드' },
   kb_welcome: { en: 'KB Welcome', kr: 'KB 웰컴' },
   kb_premium_booking: { en: 'KB Premium Booking', kr: 'KB 프리미엄 예약' },
   // Flat first-signup welcome credit (SMA-267); distinct from `welcome`,
-  // which is the Confidence-tier $500 credit.
+  // which is the Confidence-tier credit.
   signup: { en: 'Signup welcome', kr: '가입 환영' },
+};
+
+// Maps a ledger source to its benefit-registry entry key (mirrors
+// tip-backend/v2/services/benefits/registry.py::entry_for_source — the
+// wire payload does not carry `credit_source`, so the FE keeps this map).
+// Inactive entries (first_trip_cashback, review_reward) never appear in the
+// payload, so those sources always resolve via the fallback labels.
+export const STAY_CREDIT_SOURCE_BENEFIT_KEYS: Record<StayCreditSource, string> = {
+  welcome: 'confidence_welcome',
+  birthday: 'birthday_credit',
+  referral: 'referral_joiner_credit',
+  manual: 'manual_admin_grant',
+  payment_points: 'tiered_earn',
+  first_trip_cashback: 'first_trip_cashback',
+  review_reward: 'review_reward',
+  gift: 'gift_credit',
+  promo_code_redemption: 'promo_code_redemption',
+  kb_welcome: 'kb_welcome',
+  kb_premium_booking: 'kb_premium_booking',
+  signup: 'signup_welcome',
 };
 
 export type StayCreditStatus = 'issued' | 'redeemed' | 'expired' | 'revoked';
@@ -82,21 +108,36 @@ export function creditsForTrip(credits: StayCredit[], tripId: number): StayCredi
   return credits.filter((c) => tripIdFromCredit(c) === tripId);
 }
 
-// Build the source display label for a credit row: the localized source label,
-// suffixed with the redeemed promo code when present (e.g.
-// "프로모션 코드 · WELCOME26"). Older promo credits without a structured
-// promo_code fall back to the label alone — no hardcoded copy reaches the user.
-// Safe localized label for a credit source. Falls back to the raw source
-// string when the map lacks the key, so a new/unknown backend source can never
-// crash the credit page (the map has drifted out of sync with the backend enum
-// before — e.g. the kb_* sources).
-export function stayCreditSourceText(source: StayCreditSource | string, en: boolean): string {
+// Safe localized label for a credit source. Prefers the benefit registry
+// payload's copy when provided (SMA-322 — the registry is the single source
+// of truth for benefit wording/figures); degrades to the static fallback
+// label when the payload is absent or has no matching entry, and to the raw
+// source string for a new/unknown backend source — never crashes (the map
+// has drifted out of sync with the backend enum before — e.g. kb_*).
+export function stayCreditSourceText(
+  source: StayCreditSource | string,
+  en: boolean,
+  benefits?: BenefitsResponse | null,
+): string {
+  const benefitKey = STAY_CREDIT_SOURCE_BENEFIT_KEYS[source as StayCreditSource];
+  if (benefits && benefitKey) {
+    const item = benefits.benefits.find((b) => b.key === benefitKey);
+    if (item) return en ? item.copy.en : item.copy.kr;
+  }
   const entry = STAY_CREDIT_SOURCE_LABELS[source as StayCreditSource];
   return entry ? entry[en ? 'en' : 'kr'] : source;
 }
 
-export function creditSourceLabel(credit: StayCredit, en: boolean): string {
-  const label = stayCreditSourceText(credit.source, en);
+// Build the source display label for a credit row: the localized source label,
+// suffixed with the redeemed promo code when present (e.g.
+// "프로모션 코드 · WELCOME26"). Older promo credits without a structured
+// promo_code fall back to the label alone — no hardcoded copy reaches the user.
+export function creditSourceLabel(
+  credit: StayCredit,
+  en: boolean,
+  benefits?: BenefitsResponse | null,
+): string {
+  const label = stayCreditSourceText(credit.source, en, benefits);
   return credit.promo_code ? `${label} · ${credit.promo_code}` : label;
 }
 
