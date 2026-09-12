@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
-  STAY_CREDIT_SOURCE_BENEFIT_KEYS,
-  STAY_CREDIT_SOURCE_LABELS,
+  POINT_SOURCE_BENEFIT_KEYS,
+  POINT_SOURCE_LABELS,
   creditSourceLabel,
   creditsForTrip,
-  stayCreditSourceText,
+  pointSourceText,
   tripIdFromCredit,
-  type StayCredit,
+  type PointTransaction,
 } from '@/types/stay-credit';
 import type { BenefitsResponse } from '@/types/v2/benefits';
 
@@ -37,7 +37,7 @@ const BENEFITS_PAYLOAD: BenefitsResponse = {
   resolved: null,
 };
 
-function makeCredit(overrides: Partial<StayCredit>): StayCredit {
+function makeCredit(overrides: Partial<PointTransaction>): PointTransaction {
   return {
     id: 1,
     user_id: 1,
@@ -75,7 +75,7 @@ describe('creditsForTrip', () => {
   it('returns only credits linked to the given trip', () => {
     // Each trip yields a single post-trip credit, so trip 10 has just the 3%
     // first-trip bonus here; the 2% cashback belongs to a later trip (11).
-    const credits: StayCredit[] = [
+    const credits: PointTransaction[] = [
       makeCredit({ id: 1, source_ref: 'trip:11:payment_2pct', amount_cents: 2000 }),
       makeCredit({
         id: 2,
@@ -133,55 +133,60 @@ describe('creditSourceLabel', () => {
   });
 });
 
-describe('stayCreditSourceText', () => {
+describe('pointSourceText', () => {
   it('returns the localized label for a known source', () => {
-    expect(stayCreditSourceText('birthday', true)).toBe('Birthday');
-    expect(stayCreditSourceText('birthday', false)).toBe('생일');
+    expect(pointSourceText('birthday', true)).toBe('Birthday');
+    expect(pointSourceText('birthday', false)).toBe('생일');
   });
 
   it('labels the signup welcome credit (regression: travel-history detail crash)', () => {
-    expect(stayCreditSourceText('signup', true)).toBe('Signup welcome');
-    expect(stayCreditSourceText('signup', false)).toBe('가입 환영');
+    expect(pointSourceText('signup', true)).toBe('Signup welcome');
+    expect(pointSourceText('signup', false)).toBe('가입 환영');
+  });
+
+  it('labels the new partner source (SMA-325)', () => {
+    expect(pointSourceText('partner', true)).toBe('Partner');
+    expect(pointSourceText('partner', false)).toBe('파트너');
   });
 
   it('falls back to the raw source (no throw) for an unknown/new backend source', () => {
     // Guards against the FE label map drifting behind the backend enum again.
-    const unknown = 'future_source' as unknown as StayCredit['source'];
-    expect(() => stayCreditSourceText(unknown, true)).not.toThrow();
-    expect(stayCreditSourceText(unknown, true)).toBe('future_source');
+    const unknown = 'future_source' as unknown as PointTransaction['source'];
+    expect(() => pointSourceText(unknown, true)).not.toThrow();
+    expect(pointSourceText(unknown, true)).toBe('future_source');
   });
 
   it('prefers the benefit registry copy when the payload is provided (SMA-322)', () => {
-    expect(stayCreditSourceText('payment_points', true, BENEFITS_PAYLOAD)).toBe(
+    expect(pointSourceText('payment_points', true, BENEFITS_PAYLOAD)).toBe(
       'Earn stay credit on every completed, reviewed trip.',
     );
-    expect(stayCreditSourceText('payment_points', false, BENEFITS_PAYLOAD)).toBe(
+    expect(pointSourceText('payment_points', false, BENEFITS_PAYLOAD)).toBe(
       '여행 후기를 남기면 등급별로 크레딧이 적립됩니다.',
     );
-    expect(stayCreditSourceText('signup', true, BENEFITS_PAYLOAD)).toBe(
+    expect(pointSourceText('signup', true, BENEFITS_PAYLOAD)).toBe(
       'A welcome credit when you join Travel in Your Pocket.',
     );
   });
 
   it('degrades to the static fallback label when the payload lacks the entry', () => {
     // birthday_credit is not in the fixture payload — the static label wins.
-    expect(stayCreditSourceText('birthday', true, BENEFITS_PAYLOAD)).toBe('Birthday');
+    expect(pointSourceText('birthday', true, BENEFITS_PAYLOAD)).toBe('Birthday');
     // null payload (endpoint unavailable) behaves like the no-payload call.
-    expect(stayCreditSourceText('payment_points', true, null)).toBe('Trip cashback');
+    expect(pointSourceText('payment_points', true, null)).toBe('Trip cashback');
   });
 
   it('never crashes on an unknown source even with a payload present', () => {
-    const unknown = 'future_source' as unknown as StayCredit['source'];
-    expect(stayCreditSourceText(unknown, true, BENEFITS_PAYLOAD)).toBe('future_source');
+    const unknown = 'future_source' as unknown as PointTransaction['source'];
+    expect(pointSourceText(unknown, true, BENEFITS_PAYLOAD)).toBe('future_source');
   });
 });
 
-describe('STAY_CREDIT_SOURCE_BENEFIT_KEYS', () => {
+describe('POINT_SOURCE_BENEFIT_KEYS', () => {
   it('maps every credit source to a registry entry key', () => {
-    expect(Object.keys(STAY_CREDIT_SOURCE_BENEFIT_KEYS).sort()).toEqual(
-      Object.keys(STAY_CREDIT_SOURCE_LABELS).sort(),
+    expect(Object.keys(POINT_SOURCE_BENEFIT_KEYS).sort()).toEqual(
+      Object.keys(POINT_SOURCE_LABELS).sort(),
     );
-    for (const [source, key] of Object.entries(STAY_CREDIT_SOURCE_BENEFIT_KEYS)) {
+    for (const [source, key] of Object.entries(POINT_SOURCE_BENEFIT_KEYS)) {
       expect(key, `missing benefit key for ${source}`).toBeTruthy();
     }
   });
@@ -204,23 +209,23 @@ describe('STAY_CREDIT_SOURCE_BENEFIT_KEYS', () => {
   });
 });
 
-describe('STAY_CREDIT_SOURCE_LABELS', () => {
+describe('POINT_SOURCE_LABELS', () => {
   it('carries no hardcoded money/rate figures (SMA-321/SMA-322)', () => {
     // The earn rate is tiered per membership, so any literal percentage in
     // a fallback label is wrong for most members. Figures come from the
     // benefits payload only.
-    for (const [source, entry] of Object.entries(STAY_CREDIT_SOURCE_LABELS)) {
+    for (const [source, entry] of Object.entries(POINT_SOURCE_LABELS)) {
       expect(entry.en, `EN label for ${source} contains a figure`).not.toMatch(/[%$₩]\s?\d|\d\s?%/);
       expect(entry.kr, `KR label for ${source} contains a figure`).not.toMatch(/[%$₩]\s?\d|\d\s?%/);
     }
-    expect(STAY_CREDIT_SOURCE_LABELS.payment_points.en).toBe('Trip cashback');
-    expect(STAY_CREDIT_SOURCE_LABELS.first_trip_cashback.en).toBe('First-trip bonus');
-    expect(STAY_CREDIT_SOURCE_LABELS.payment_points.kr).toBe('결제 적립');
-    expect(STAY_CREDIT_SOURCE_LABELS.first_trip_cashback.kr).toBe('첫 여행 보너스');
+    expect(POINT_SOURCE_LABELS.payment_points.en).toBe('Trip cashback');
+    expect(POINT_SOURCE_LABELS.first_trip_cashback.en).toBe('First-trip bonus');
+    expect(POINT_SOURCE_LABELS.payment_points.kr).toBe('결제 적립');
+    expect(POINT_SOURCE_LABELS.first_trip_cashback.kr).toBe('첫 여행 보너스');
   });
 
-  it('covers every member of the backend StayCreditSource enum (drift guard)', () => {
-    // Mirrored from tip-backend/v2/data_model/enums.py::StayCreditSource.
+  it('covers every member of the backend PointSource enum (drift guard)', () => {
+    // Mirrored from tip-backend/v2/data_model/enums.py::PointSource (SMA-325).
     // If the backend adds an enum member, add it here AND to the union +
     // label map in src/types/stay-credit.ts (this is exactly the drift that
     // crashed the travel-history detail page on `signup` credits — SMA-320).
@@ -237,12 +242,13 @@ describe('STAY_CREDIT_SOURCE_LABELS', () => {
       'kb_welcome',
       'kb_premium_booking',
       'signup',
+      'partner',
     ];
-    expect(Object.keys(STAY_CREDIT_SOURCE_LABELS).sort()).toEqual([...backendEnumMembers].sort());
+    expect(Object.keys(POINT_SOURCE_LABELS).sort()).toEqual([...backendEnumMembers].sort());
   });
 
   it('has non-empty EN and KR copy for every source', () => {
-    for (const [source, entry] of Object.entries(STAY_CREDIT_SOURCE_LABELS)) {
+    for (const [source, entry] of Object.entries(POINT_SOURCE_LABELS)) {
       expect(entry.en, `missing EN label for ${source}`).toBeTruthy();
       expect(entry.kr, `missing KR label for ${source}`).toBeTruthy();
     }

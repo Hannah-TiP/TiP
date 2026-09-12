@@ -54,8 +54,8 @@ import type {
   EligibleCredit,
   MyReferralsResponse,
   RedeemPromoCodeResponse,
-  StayCredit,
   UserCreditProjectionResponse,
+  WalletPointTransaction,
 } from '@/types/stay-credit';
 import { REDEEM_ERROR_CODE_MAP, RedeemPromoCodeError } from '@/types/stay-credit';
 import type {
@@ -188,8 +188,8 @@ class ApiClient {
     return this.request<User>('/auth/me');
   }
 
-  async getMyCredits(): Promise<StayCredit[]> {
-    const response = await this.request<{ data: StayCredit[] }>('/me/credits');
+  async getMyCredits(): Promise<WalletPointTransaction[]> {
+    const response = await this.request<{ data: WalletPointTransaction[] }>('/me/credits');
     return response.data ?? [];
   }
 

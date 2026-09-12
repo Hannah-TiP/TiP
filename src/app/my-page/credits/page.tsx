@@ -14,10 +14,10 @@ import { apiClient } from '@/lib/api-client';
 import {
   STAY_CREDIT_STATUS_LABELS,
   creditSourceLabel,
-  stayCreditSourceText,
+  pointSourceText,
   tripIdFromCredit,
   type ProjectedTripEarn,
-  type StayCredit,
+  type WalletPointTransaction,
 } from '@/types/stay-credit';
 
 // Code-split (bundle-size gate): the section only loads when the member
@@ -29,7 +29,7 @@ const PendingEarningsSection = dynamic(
   },
 );
 
-const STATUS_PILL: Record<StayCredit['status'], string> = {
+const STATUS_PILL: Record<WalletPointTransaction['effective_status'], string> = {
   issued: 'bg-emerald-100 text-emerald-700',
   redeemed: 'bg-blue-100 text-blue-700',
   expired: 'bg-gray-100 text-gray-500',
@@ -52,18 +52,28 @@ function formatDate(iso: string | null | undefined, lang: Lang): string {
   });
 }
 
-function sumIssuedCents(credits: StayCredit[]): { cents: number; currency: string | null } {
-  // Available balance is "everything currently in ISSUED state." If the user
-  // ever holds credits in mixed currencies we surface the dominant currency
-  // and ignore others — handling FX is out of scope for this page.
-  const issued = credits.filter((c) => c.status === 'issued');
+function sumIssuedCents(credits: WalletPointTransaction[]): {
+  cents: number;
+  currency: string | null;
+} {
+  // Available balance is "everything currently spendable" — derived from
+  // the ledger's effective_status (SMA-325: the stored `status` is frozen
+  // legacy provenance and would show consumed lots as available). If the
+  // user ever holds credits in mixed currencies we surface the dominant
+  // currency and ignore others — handling FX is out of scope for this page.
+  const issued = credits.filter((c) => c.effective_status === 'issued');
   if (issued.length === 0) return { cents: 0, currency: null };
   const counts = new Map<string, number>();
-  issued.forEach((c) => counts.set(c.currency, (counts.get(c.currency) ?? 0) + 1));
+  // amount_cents/currency are nullable provenance on the wire (SMA-325)
+  // but always populated on grant lots; default defensively.
+  issued.forEach((c) => {
+    const currency = c.currency ?? 'USD';
+    counts.set(currency, (counts.get(currency) ?? 0) + 1);
+  });
   const dominant = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0][0];
   const cents = issued
-    .filter((c) => c.currency === dominant)
-    .reduce((acc, c) => acc + c.amount_cents, 0);
+    .filter((c) => (c.currency ?? 'USD') === dominant)
+    .reduce((acc, c) => acc + (c.amount_cents ?? 0), 0);
   return { cents, currency: dominant };
 }
 
@@ -77,7 +87,7 @@ export default function MyCreditsPage() {
   const benefits = useBenefits();
 
   const [loading, setLoading] = useState(true);
-  const [credits, setCredits] = useState<StayCredit[]>([]);
+  const [credits, setCredits] = useState<WalletPointTransaction[]>([]);
   const [projections, setProjections] = useState<ProjectedTripEarn[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -189,14 +199,14 @@ export default function MyCreditsPage() {
                       className="py-5 flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-4 sm:items-center"
                     >
                       <div className="sm:col-span-3 font-primary text-[22px] italic text-[#1E3D2F]">
-                        {formatAmount(credit.amount_cents, credit.currency)}
+                        {formatAmount(credit.amount_cents ?? 0, credit.currency ?? 'USD')}
                       </div>
                       <div className="sm:col-span-3 text-[14px]">
                         <div
                           className="font-medium text-gray-900"
                           aria-label={creditSourceLabel(credit, en, benefits)}
                         >
-                          {stayCreditSourceText(credit.source, en, benefits)}
+                          {pointSourceText(credit.source, en, benefits)}
                           {credit.promo_code ? (
                             <span className="text-gray-500"> · {credit.promo_code}</span>
                           ) : null}
@@ -216,10 +226,10 @@ export default function MyCreditsPage() {
                       <div className="sm:col-span-2">
                         <span
                           className={`inline-block rounded-full px-3 py-1 text-[11px] font-semibold ${
-                            STATUS_PILL[credit.status]
+                            STATUS_PILL[credit.effective_status]
                           }`}
                         >
-                          {STAY_CREDIT_STATUS_LABELS[credit.status][en ? 'en' : 'kr']}
+                          {STAY_CREDIT_STATUS_LABELS[credit.effective_status][en ? 'en' : 'kr']}
                         </span>
                       </div>
                       <div className="sm:col-span-2 text-[12px] text-gray-500">
