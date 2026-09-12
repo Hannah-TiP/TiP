@@ -8,12 +8,22 @@ import { gotoPage } from './support/navigation';
 // Each trip yields a single post-trip credit: the user's first trip (55) earns
 // the 3% first-trip bonus, and a later trip (66) earns the 2% trip cashback. No
 // single trip carries both.
+//
+// Rows use the SMA-325 WalletPointTransaction wire shape (see
+// src/types/stay-credit.ts): grant lots with `kind`/`delta_points` plus the
+// wallet-derived `remaining_points`/`effective_status` — the page renders
+// `effective_status`, never the frozen legacy `status`. 100 P = USD 1, so
+// delta_points equals amount_cents for these USD lots.
 const TRIP_LINKED_CREDITS = [
   {
     id: 101,
     user_id: 1,
     source: 'payment_points',
     status: 'issued',
+    kind: 'grant',
+    delta_points: 2000,
+    remaining_points: 2000,
+    effective_status: 'issued',
     amount_cents: 2000,
     currency: 'USD',
     source_ref: 'trip:66:payment_2pct',
@@ -24,6 +34,10 @@ const TRIP_LINKED_CREDITS = [
     user_id: 1,
     source: 'first_trip_cashback',
     status: 'issued',
+    kind: 'grant',
+    delta_points: 3000,
+    remaining_points: 3000,
+    effective_status: 'issued',
     amount_cents: 3000,
     currency: 'USD',
     source_ref: 'trip:55:first_trip_3pct',
@@ -34,6 +48,10 @@ const TRIP_LINKED_CREDITS = [
     user_id: 1,
     source: 'welcome',
     status: 'issued',
+    kind: 'grant',
+    delta_points: 5000,
+    remaining_points: 5000,
+    effective_status: 'issued',
     amount_cents: 5000,
     currency: 'USD',
     source_ref: null,

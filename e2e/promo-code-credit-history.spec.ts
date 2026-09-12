@@ -10,12 +10,21 @@ import { gotoPage } from './support/navigation';
 // admin's user-facing description in the notes column. Older promo credits with
 // no structured promo_code must still render (label only, no crash).
 
+// Rows use the SMA-325 WalletPointTransaction wire shape (see
+// src/types/stay-credit.ts): grant lots with `kind`/`delta_points` plus the
+// wallet-derived `remaining_points`/`effective_status` — the page renders
+// `effective_status`, never the frozen legacy `status`. 100 P = USD 1, so
+// delta_points equals amount_cents for these USD lots.
 const PROMO_CREDITS = [
   {
     id: 201,
     user_id: 1,
     source: 'promo_code_redemption',
     status: 'issued',
+    kind: 'grant',
+    delta_points: 10000,
+    remaining_points: 10000,
+    effective_status: 'issued',
     amount_cents: 10000,
     currency: 'USD',
     source_ref: null,
@@ -28,6 +37,11 @@ const PROMO_CREDITS = [
     user_id: 1,
     source: 'promo_code_redemption',
     status: 'issued',
+    // Legacy pre-ledger row (SMA-325 backfill pending): null kind/delta.
+    kind: null,
+    delta_points: null,
+    remaining_points: 5000,
+    effective_status: 'issued',
     amount_cents: 5000,
     currency: 'USD',
     source_ref: null,
