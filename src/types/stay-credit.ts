@@ -1,9 +1,11 @@
-// Mirrors tip-backend/v2/data_model/schemas/stay_credit.py
-// Mirrors v2/data_model/enums.py::StayCreditSource / StayCreditStatus.
+// Mirrors tip-backend/v2/data_model/schemas/point_transaction.py (SMA-325 —
+// the stay-credit table is now the append-only point ledger).
+// Mirrors v2/data_model/enums.py::PointSource / PointTransactionKind /
+// StayCreditStatus.
 
 import type { BenefitsResponse } from '@/types/v2/benefits';
 
-export type StayCreditSource =
+export type PointSource =
   | 'welcome'
   | 'birthday'
   | 'referral'
@@ -15,13 +17,18 @@ export type StayCreditSource =
   | 'promo_code_redemption'
   | 'kb_welcome'
   | 'kb_premium_booking'
-  | 'signup';
+  | 'signup'
+  | 'partner';
+
+// Mirrors v2/data_model/enums.py::PointTransactionKind — what a ledger row
+// does to the balance. Legacy rows predate the ledger and carry null.
+export type PointTransactionKind = 'grant' | 'use' | 'cancel' | 'clawback' | 'expire';
 
 // SAFE FALLBACK labels only (SMA-322): when the benefit registry payload is
-// available, `stayCreditSourceText` prefers its bilingual copy. These carry
+// available, `pointSourceText` prefers its bilingual copy. These carry
 // NO money/rate figures — the earn rate is tiered per membership (SMA-199),
 // so any hardcoded percentage here was wrong for most members (SMA-321).
-export const STAY_CREDIT_SOURCE_LABELS: Record<StayCreditSource, { en: string; kr: string }> = {
+export const POINT_SOURCE_LABELS: Record<PointSource, { en: string; kr: string }> = {
   welcome: { en: 'Welcome', kr: '환영' },
   birthday: { en: 'Birthday', kr: '생일' },
   referral: { en: 'Referral', kr: '추천' },
@@ -36,14 +43,18 @@ export const STAY_CREDIT_SOURCE_LABELS: Record<StayCreditSource, { en: string; k
   // Flat first-signup welcome credit (SMA-267); distinct from `welcome`,
   // which is the Confidence-tier credit.
   signup: { en: 'Signup welcome', kr: '가입 환영' },
+  // Partner-granted points (SMA-325 / Points SoT v1.1) — reserved; no grant
+  // path exists yet.
+  partner: { en: 'Partner', kr: '파트너' },
 };
 
 // Maps a ledger source to its benefit-registry entry key (mirrors
 // tip-backend/v2/services/benefits/registry.py::entry_for_source — the
 // wire payload does not carry `credit_source`, so the FE keeps this map).
-// Inactive entries (first_trip_cashback, review_reward) never appear in the
-// payload, so those sources always resolve via the fallback labels.
-export const STAY_CREDIT_SOURCE_BENEFIT_KEYS: Record<StayCreditSource, string> = {
+// Inactive entries (first_trip_cashback, review_reward, partner_grant) never
+// appear in the payload, so those sources always resolve via the fallback
+// labels.
+export const POINT_SOURCE_BENEFIT_KEYS: Record<PointSource, string> = {
   welcome: 'confidence_welcome',
   birthday: 'birthday_credit',
   referral: 'referral_joiner_credit',
@@ -56,8 +67,13 @@ export const STAY_CREDIT_SOURCE_BENEFIT_KEYS: Record<StayCreditSource, string> =
   kb_welcome: 'kb_welcome',
   kb_premium_booking: 'kb_premium_booking',
   signup: 'signup_welcome',
+  partner: 'partner_grant',
 };
 
+// LEGACY lifecycle status retained as provenance on the append-only ledger
+// (SMA-325): new rows are always written `issued` and never mutated —
+// consumption/revocation land as companion rows. Render the wallet's
+// derived `effective_status`, not the stored `status`.
 export type StayCreditStatus = 'issued' | 'redeemed' | 'expired' | 'revoked';
 
 export const STAY_CREDIT_STATUS_LABELS: Record<StayCreditStatus, { en: string; kr: string }> = {
@@ -67,13 +83,26 @@ export const STAY_CREDIT_STATUS_LABELS: Record<StayCreditStatus, { en: string; k
   revoked: { en: 'Revoked', kr: '취소됨' },
 };
 
-export interface StayCredit {
+// Mirrors v2/data_model/schemas/point_transaction.py::PointTransaction —
+// one append-only ledger row. `delta_points` is the signed balance
+// contribution (100 P = USD 1); a `use`/`clawback` row names the grant lot
+// it draws down via `consumes_transaction_id`. Legacy rows (pre-backfill)
+// carry null `delta_points`/`kind`. `amount_cents`/`currency` are
+// historical provenance of the original monetary denomination (nullable
+// going forward).
+export interface PointTransaction {
   id: number;
   user_id: number;
-  source: StayCreditSource;
+  source: PointSource;
   status: StayCreditStatus;
-  amount_cents: number;
-  currency: string;
+  delta_points?: number | null;
+  kind?: PointTransactionKind | null;
+  consumes_transaction_id?: number | null;
+  // Backend Decimal, serialized as a JSON number by jsonable_encoder.
+  // Display-only; never used for arithmetic on the FE.
+  fx_rate_frozen?: number | null;
+  amount_cents?: number | null;
+  currency?: string | null;
   expires_at?: string | null;
   trip_id?: number | null;
   redeemed_at?: string | null;
@@ -89,11 +118,21 @@ export interface StayCredit {
   updated_at?: string | null;
 }
 
+// Mirrors tip-backend/v2/services/point_transaction.py::WalletPointTransaction
+// — what GET /me/credits returns: each grant lot plus its ledger-derived
+// unconsumed remainder and the status the frozen legacy `status` used to
+// express (ISSUED while spendable, REDEEMED/REVOKED once companion rows
+// netted the lot out). Render `effective_status`, never raw `status`.
+export interface WalletPointTransaction extends PointTransaction {
+  remaining_points: number;
+  effective_status: StayCreditStatus;
+}
+
 // Trip-linked credits (post-trip cashback) carry their trip id either on the
 // `trip_id` field or encoded in `source_ref` as `trip:{id}:...` (the grant
-// service sets source_ref but the CreateStayCredit DTO has no trip_id, so
-// today only source_ref is populated). Resolve either form to a numeric id.
-export function tripIdFromCredit(credit: StayCredit): number | null {
+// service sets source_ref but grant lots carry the trip linkage only in
+// source_ref). Resolve either form to a numeric id.
+export function tripIdFromCredit(credit: PointTransaction): number | null {
   if (credit.trip_id != null) return credit.trip_id;
   const ref = credit.source_ref;
   if (!ref) return null;
@@ -104,27 +143,27 @@ export function tripIdFromCredit(credit: StayCredit): number | null {
 }
 
 // Filter a credit ledger to the credits earned from a given trip.
-export function creditsForTrip(credits: StayCredit[], tripId: number): StayCredit[] {
+export function creditsForTrip<T extends PointTransaction>(credits: T[], tripId: number): T[] {
   return credits.filter((c) => tripIdFromCredit(c) === tripId);
 }
 
-// Safe localized label for a credit source. Prefers the benefit registry
+// Safe localized label for a ledger source. Prefers the benefit registry
 // payload's copy when provided (SMA-322 — the registry is the single source
 // of truth for benefit wording/figures); degrades to the static fallback
 // label when the payload is absent or has no matching entry, and to the raw
 // source string for a new/unknown backend source — never crashes (the map
 // has drifted out of sync with the backend enum before — e.g. kb_*).
-export function stayCreditSourceText(
-  source: StayCreditSource | string,
+export function pointSourceText(
+  source: PointSource | string,
   en: boolean,
   benefits?: BenefitsResponse | null,
 ): string {
-  const benefitKey = STAY_CREDIT_SOURCE_BENEFIT_KEYS[source as StayCreditSource];
+  const benefitKey = POINT_SOURCE_BENEFIT_KEYS[source as PointSource];
   if (benefits && benefitKey) {
     const item = benefits.benefits.find((b) => b.key === benefitKey);
     if (item) return en ? item.copy.en : item.copy.kr;
   }
-  const entry = STAY_CREDIT_SOURCE_LABELS[source as StayCreditSource];
+  const entry = POINT_SOURCE_LABELS[source as PointSource];
   return entry ? entry[en ? 'en' : 'kr'] : source;
 }
 
@@ -133,11 +172,11 @@ export function stayCreditSourceText(
 // "프로모션 코드 · WELCOME26"). Older promo credits without a structured
 // promo_code fall back to the label alone — no hardcoded copy reaches the user.
 export function creditSourceLabel(
-  credit: StayCredit,
+  credit: PointTransaction,
   en: boolean,
   benefits?: BenefitsResponse | null,
 ): string {
-  const label = stayCreditSourceText(credit.source, en, benefits);
+  const label = pointSourceText(credit.source, en, benefits);
   return credit.promo_code ? `${label} · ${credit.promo_code}` : label;
 }
 
@@ -146,7 +185,7 @@ export function creditSourceLabel(
 // Mirrors tip-backend/v2/data_model/enums.py::CreditProjectionBlocker.
 export type CreditProjectionBlocker = 'trip_not_finished' | 'awaiting_review';
 
-// Mirrors tip-backend/v2/data_model/schemas/stay_credit.py::ProjectedTripEarn.
+// Mirrors tip-backend/v2/data_model/schemas/point_transaction.py::ProjectedTripEarn.
 // A PROJECTION, not a ledger row — never mixed into balances or the credit
 // history list.
 export interface ProjectedTripEarn {
@@ -161,7 +200,7 @@ export interface ProjectedTripEarn {
   blocking_reason: CreditProjectionBlocker;
 }
 
-// Mirrors tip-backend/v2/data_model/schemas/stay_credit.py::UserCreditProjectionResponse.
+// Mirrors tip-backend/v2/data_model/schemas/point_transaction.py::UserCreditProjectionResponse.
 export interface UserCreditProjectionResponse {
   user_id: number;
   has_paid_trips: boolean;
@@ -199,9 +238,9 @@ export interface ClaimReferralResponse {
 }
 
 // Mirrors tip-backend/v2/services/quote_credit.py::EligibleCredit.
-// A stay credit plus its FX-converted amount in the target quote's
+// A grant lot plus its FX-converted remaining value in the target quote's
 // currency, ready to render in the "Apply credit" picker.
-export interface EligibleCredit extends StayCredit {
+export interface EligibleCredit extends PointTransaction {
   converted_amount: string;
   converted_currency: string;
 }

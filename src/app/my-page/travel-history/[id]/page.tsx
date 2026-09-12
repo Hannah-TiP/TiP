@@ -18,7 +18,7 @@ import {
   creditSourceLabel,
   creditsForTrip,
   type ProjectedTripEarn,
-  type StayCredit,
+  type WalletPointTransaction,
 } from '@/types/stay-credit';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { useBenefits } from '@/hooks/useBenefits';
@@ -88,7 +88,7 @@ export default function TravelHistoryTripDetailPage() {
   const [reviewStatus, setReviewStatus] = useState<{ reviewed: number; total: number } | null>(
     null,
   );
-  const [tripCredits, setTripCredits] = useState<StayCredit[]>([]);
+  const [tripCredits, setTripCredits] = useState<WalletPointTransaction[]>([]);
   const [pendingProjection, setPendingProjection] = useState<ProjectedTripEarn | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -188,7 +188,7 @@ export default function TravelHistoryTripDetailPage() {
     .filter((item) => item.item_type === 'activity').length;
 
   const creditsCurrency = tripCredits[0]?.currency ?? null;
-  const creditsTotalCents = tripCredits.reduce((acc, c) => acc + c.amount_cents, 0);
+  const creditsTotalCents = tripCredits.reduce((acc, c) => acc + (c.amount_cents ?? 0), 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -389,7 +389,7 @@ export default function TravelHistoryTripDetailPage() {
                         {creditSourceLabel(credit, lang === 'en', benefits)}
                       </span>
                       <span className="font-medium text-[#1E3D2F]">
-                        {formatCredit(credit.amount_cents, credit.currency)}
+                        {formatCredit(credit.amount_cents ?? 0, credit.currency ?? 'USD')}
                       </span>
                     </div>
                   ))}

@@ -5,7 +5,7 @@ import TravelHistoryTripDetailPage from '@/app/my-page/travel-history/[id]/page'
 import { apiClient } from '@/lib/api-client';
 import { getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
 import en from '@/translations/en.json';
-import type { ProjectedTripEarn, StayCredit } from '@/types/stay-credit';
+import type { ProjectedTripEarn, WalletPointTransaction } from '@/types/stay-credit';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -76,14 +76,18 @@ const BUNDLE = {
   },
 } as unknown as TripWithVersion;
 
-const EARNED_CREDIT: StayCredit = {
+const EARNED_CREDIT: WalletPointTransaction = {
   id: 9,
   user_id: 7,
   source: 'payment_points',
   status: 'issued',
+  delta_points: 500,
+  kind: 'grant',
   amount_cents: 500,
   currency: 'USD',
   source_ref: 'trip:42:tiered_earn',
+  remaining_points: 500,
+  effective_status: 'issued',
 };
 
 const PENDING: ProjectedTripEarn = {
@@ -96,7 +100,7 @@ const PENDING: ProjectedTripEarn = {
   blocking_reason: 'awaiting_review',
 };
 
-function mockApi(credits: StayCredit[], projections: ProjectedTripEarn[]) {
+function mockApi(credits: WalletPointTransaction[], projections: ProjectedTripEarn[]) {
   vi.mocked(getTripWithVersion).mockResolvedValue(BUNDLE);
   vi.mocked(apiClient.getMyCredits).mockResolvedValue(credits);
   vi.mocked(apiClient.getMyCreditProjection).mockResolvedValue({

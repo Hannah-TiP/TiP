@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import MyCreditsPage from '@/app/my-page/credits/page';
 import { apiClient } from '@/lib/api-client';
 import en from '@/translations/en.json';
-import type { ProjectedTripEarn, StayCredit } from '@/types/stay-credit';
+import type { ProjectedTripEarn, WalletPointTransaction } from '@/types/stay-credit';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -54,14 +54,18 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-const ISSUED_CREDIT: StayCredit = {
+const ISSUED_CREDIT: WalletPointTransaction = {
   id: 1,
   user_id: 7,
   source: 'welcome',
   status: 'issued',
+  delta_points: 10000,
+  kind: 'grant',
   amount_cents: 10000,
   currency: 'USD',
   created_at: '2026-05-01T00:00:00Z',
+  remaining_points: 10000,
+  effective_status: 'issued',
 };
 
 function projection(overrides: Partial<ProjectedTripEarn>): ProjectedTripEarn {
@@ -77,7 +81,7 @@ function projection(overrides: Partial<ProjectedTripEarn>): ProjectedTripEarn {
   };
 }
 
-function mockApi(credits: StayCredit[], projections: ProjectedTripEarn[]) {
+function mockApi(credits: WalletPointTransaction[], projections: ProjectedTripEarn[]) {
   vi.mocked(apiClient.getMyCredits).mockResolvedValue(credits);
   vi.mocked(apiClient.getMyCreditProjection).mockResolvedValue({
     user_id: 7,
