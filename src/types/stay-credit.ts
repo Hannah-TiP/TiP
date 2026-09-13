@@ -202,6 +202,20 @@ export function creditSourceLabel(
   return credit.promo_code ? `${label} · ${credit.promo_code}` : label;
 }
 
+// Safe localized qualifier for a ledger row's `kind`. Sibling of
+// `pointSourceText`: never throws on a kind the label map doesn't know
+// (backend develop-merges deploy to the shared preview/prod DB before the
+// FE catches up — a single drifted row must not take down the wallet page).
+// Unknown kind → the raw slug; null/undefined (legacy pre-ledger rows) → null.
+export function pointKindText(
+  kind: PointTransactionKind | string | null | undefined,
+  en: boolean,
+): string | null {
+  return (
+    POINT_TRANSACTION_KIND_LABELS[kind as PointTransactionKind]?.[en ? 'en' : 'kr'] ?? kind ?? null
+  );
+}
+
 // ── Projected (not-yet-earned) post-trip credits — SMA-274/SMA-276 ─────────
 
 // Mirrors tip-backend/v2/data_model/enums.py::CreditProjectionBlocker.

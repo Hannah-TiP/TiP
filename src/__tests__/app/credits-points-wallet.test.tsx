@@ -314,6 +314,36 @@ describe('TiP Points wallet on /my-page/credits (SoT v1.1 §6 golden vector)', (
     expect(expiry).not.toContain('N/A');
   });
 
+  it('still renders the balance and the row when the backend sends an unknown ledger kind', async () => {
+    // A backend enum member the FE label map does not know yet (shared
+    // preview/prod DB deploys backend-first) must degrade to the raw slug
+    // qualifier — never a TypeError that blanks the whole wallet.
+    mockApi({
+      user_id: 7,
+      balance_points: 24500,
+      transactions: [
+        row({
+          id: 31,
+          source: 'manual',
+          kind: 'future_kind' as PointTransaction['kind'],
+          delta_points: -500,
+          created_at: '2026-09-06T00:00:00Z',
+        }),
+        row({ id: 30, source: 'manual', delta_points: 25000 }),
+      ],
+    });
+
+    render(<MyCreditsPage />);
+
+    expect((await screen.findByTestId('points-balance')).textContent).toBe('24,500 P');
+    const rows = await screen.findAllByTestId('points-row');
+    expect(rows).toHaveLength(2);
+    expect(within(rows[0]).getByTestId('points-delta').textContent).toBe('−500 P');
+    expect(within(rows[0]).getByTestId('points-kind').textContent).toBe('future_kind');
+    expect(within(rows[1]).getByTestId('points-delta').textContent).toBe('+25,000 P');
+    expect(within(rows[1]).queryByTestId('points-kind')).toBeNull();
+  });
+
   it('still renders the balance and hides the USD line when the registry has no point_unit', async () => {
     state.benefits = null;
     mockApi(GOLDEN_LEDGER);

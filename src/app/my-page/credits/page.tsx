@@ -14,9 +14,9 @@ import { formatDate as formatDateI18n } from '@/lib/format-date';
 import { apiClient } from '@/lib/api-client';
 import { formatPoints, formatSignedPoints, pointsToUsdApprox } from '@/lib/points-wallet';
 import {
-  POINT_TRANSACTION_KIND_LABELS,
   creditSourceLabel,
   isPointsConsumption,
+  pointKindText,
   pointSourceText,
   tripIdFromCredit,
   type PointTransaction,
@@ -181,9 +181,7 @@ export default function MyCreditsPage() {
                     const linkedTripId = tripIdFromCredit(row);
                     const consumption = isPointsConsumption(row.kind);
                     const kindLabel =
-                      row.kind && row.kind !== 'grant'
-                        ? POINT_TRANSACTION_KIND_LABELS[row.kind][en ? 'en' : 'kr']
-                        : null;
+                      row.kind && row.kind !== 'grant' ? pointKindText(row.kind, en) : null;
                     const delta = row.delta_points ?? null;
                     return (
                       <div

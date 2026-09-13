@@ -7,6 +7,7 @@ import {
   creditsForTrip,
   isPointsConsumption,
   isPointsGrantLot,
+  pointKindText,
   pointSourceText,
   tripIdFromCredit,
   type PointTransaction,
@@ -286,6 +287,28 @@ describe('POINT_TRANSACTION_KIND_LABELS', () => {
     }
     expect(POINT_TRANSACTION_KIND_LABELS.use.kr).toBe('예약에 사용');
     expect(POINT_TRANSACTION_KIND_LABELS.expire.en).toBe('Expired');
+  });
+});
+
+describe('pointKindText', () => {
+  it('returns the localized label for every known kind', () => {
+    expect(pointKindText('use', true)).toBe('Used on booking');
+    expect(pointKindText('use', false)).toBe('예약에 사용');
+    expect(pointKindText('expire', true)).toBe('Expired');
+    expect(pointKindText('grant', false)).toBe('적립');
+  });
+
+  it('returns null for a legacy null/undefined kind', () => {
+    expect(pointKindText(null, true)).toBeNull();
+    expect(pointKindText(undefined, false)).toBeNull();
+  });
+
+  it('falls back to the raw slug (no throw) for an unknown/new backend kind', () => {
+    // The backend enum can gain a member and deploy before the FE map is
+    // updated (shared preview/prod DB) — the wallet must degrade, not crash.
+    expect(() => pointKindText('future_kind', true)).not.toThrow();
+    expect(pointKindText('future_kind', true)).toBe('future_kind');
+    expect(pointKindText('future_kind', false)).toBe('future_kind');
   });
 });
 
