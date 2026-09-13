@@ -74,6 +74,7 @@ function reviewFor(
       entity_type: entityType,
       entity_id: entityId,
       rating: 5,
+      moderation_status: 'visible',
       locked_at: null,
       deleted_at: null,
       comment: 'Loved it',
@@ -154,7 +155,7 @@ describe('Review session page', () => {
       },
       'en',
     );
-    expect(await screen.findByText(/2 reviews submitted/)).toBeTruthy();
+    expect(await screen.findByText(/2 reviews submitted — pending approval/)).toBeTruthy();
   });
 
   it('excludes a skipped item from the batch submit and persists the skip', async () => {

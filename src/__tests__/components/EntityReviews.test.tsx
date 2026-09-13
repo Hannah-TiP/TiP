@@ -21,6 +21,7 @@ function makeReview(id: number, rating: number): ReviewWithAuthor {
       entity_type: 'hotel',
       entity_id: 10,
       rating,
+      moderation_status: 'visible',
       locked_at: null,
       deleted_at: null,
       comment: `Comment ${id}`,
@@ -63,6 +64,46 @@ describe('EntityReviews', () => {
     render(<EntityReviews entityType="hotel" entityId={10} />);
 
     expect(await screen.findByText('No reviews yet')).toBeTruthy();
+  });
+
+  it("marks the author's own pending review with the approval pill (SMA-328)", async () => {
+    const pending = makeReview(1, 5);
+    pending.review.moderation_status = 'pending';
+    const data: ReviewListResponse = {
+      reviews: [pending, makeReview(2, 4)],
+      aggregate: { average_rating: 4, review_count: 1 },
+    };
+    getReviewsByEntity.mockResolvedValue(data);
+
+    render(<EntityReviews entityType="hotel" entityId={10} />);
+
+    const pills = await screen.findAllByTestId('review-pending-pill');
+    expect(pills).toHaveLength(1);
+    expect(pills[0].textContent).toBe('Pending approval');
+    expect(pills[0].getAttribute('title')).toBe(
+      "Your review is being reviewed. Points are added once it's approved.",
+    );
+    // The pill sits inside the pending row, not the visible one.
+    expect(pills[0].closest('li')?.textContent).toContain('Comment 1');
+    expect(
+      screen
+        .getByText('Comment 2')
+        .closest('li')
+        ?.querySelector('[data-testid="review-pending-pill"]'),
+    ).toBeNull();
+  });
+
+  it('renders a visible review with no pending pill', async () => {
+    getReviewsByEntity.mockResolvedValue({
+      reviews: [makeReview(1, 5)],
+      aggregate: { average_rating: 5, review_count: 1 },
+    });
+
+    render(<EntityReviews entityType="hotel" entityId={10} />);
+
+    expect(await screen.findByText('Comment 1')).toBeTruthy();
+    expect(screen.queryByTestId('review-pending-pill')).toBeNull();
+    expect(screen.queryByText('Pending approval')).toBeNull();
   });
 
   it('renders aggregate, verified labels, and the review list', async () => {

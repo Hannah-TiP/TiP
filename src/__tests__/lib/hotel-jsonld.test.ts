@@ -46,6 +46,7 @@ function review(id: number, rating: number, comment: string | null): ReviewWithA
       entity_type: 'hotel',
       entity_id: 100,
       rating,
+      moderation_status: 'visible',
       locked_at: null,
       deleted_at: null,
       comment,

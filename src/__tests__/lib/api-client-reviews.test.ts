@@ -44,6 +44,7 @@ describe('ApiClient review methods', () => {
         entity_type: 'restaurant',
         entity_id: 12,
         rating: 5,
+        moderation_status: 'visible',
         locked_at: null,
         deleted_at: null,
         comment: 'Lovely',

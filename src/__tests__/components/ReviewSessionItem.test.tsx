@@ -14,6 +14,7 @@ function makeReview(overrides: Partial<Review> = {}): Review {
     entity_type: 'hotel',
     entity_id: 10,
     rating: 5,
+    moderation_status: 'visible',
     locked_at: null,
     deleted_at: null,
     comment: 'Wonderful stay',
@@ -107,6 +108,9 @@ describe('ReviewSessionItem', () => {
     });
 
     expect(screen.getByText('Submitted')).toBeTruthy();
+    // An approved (visible) review carries no approval-pending notice.
+    expect(screen.queryByText('Pending approval')).toBeNull();
+    expect(screen.queryByTestId('review-pending-notice')).toBeNull();
     // Pre-seeded form (editable inline) — no separate "Edit" step needed.
     expect(
       (screen.getByPlaceholderText(/Share your experience/) as HTMLTextAreaElement).value,
@@ -118,6 +122,38 @@ describe('ReviewSessionItem', () => {
     expect(screen.queryByText('Save Changes')).toBeNull();
   });
 
+  it('renders a pending review with the approval pill, the points notice and the edit/delete controls (SMA-328)', () => {
+    const onDelete = vi.fn();
+    renderItem({
+      existingReview: makeReview({ moderation_status: 'pending' }),
+      value: { rating: 5, comment: 'Wonderful stay', skipped: false, photos: [] },
+      onDelete,
+    });
+
+    const pill = screen.getByText('Pending approval');
+    expect(pill.className).toContain('bg-amber-100');
+    expect(screen.queryByText('Submitted')).toBeNull();
+    expect(screen.getByTestId('review-pending-notice').textContent).toBe(
+      "Your review is being reviewed. Points are added once it's approved.",
+    );
+    // Edit + delete keep working against a pending review exactly as for a visible one.
+    expect(
+      (screen.getByPlaceholderText(/Share your experience/) as HTMLTextAreaElement).value,
+    ).toBe('Wonderful stay');
+    expect(screen.getByRole('radiogroup')).toBeTruthy();
+    fireEvent.click(screen.getByText('Delete'));
+    expect(onDelete).toHaveBeenCalled();
+  });
+
+  it('hides the pending notice while the item is skipped', () => {
+    renderItem({
+      existingReview: makeReview({ moderation_status: 'pending' }),
+      value: { rating: 5, comment: 'Wonderful stay', skipped: true, photos: [] },
+    });
+    expect(screen.getByText('Skipped')).toBeTruthy();
+    expect(screen.queryByTestId('review-pending-notice')).toBeNull();
+  });
+
   it('renders a locked review read-only with no controls', () => {
     renderItem({
       existingReview: makeReview({ locked_at: '2026-02-01T00:00:00Z' }),
@@ -125,6 +161,7 @@ describe('ReviewSessionItem', () => {
     });
 
     expect(screen.getByText('Locked')).toBeTruthy();
+    expect(screen.queryByTestId('review-pending-notice')).toBeNull();
     expect(screen.queryByText('Delete')).toBeNull();
     expect(screen.queryByText('Skip')).toBeNull();
     expect(screen.queryByRole('radiogroup')).toBeNull();

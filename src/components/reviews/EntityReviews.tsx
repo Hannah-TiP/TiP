@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import {
+  isPendingReview,
   reviewAuthorDisplayName,
   visibleReviewPhotos,
   type ReviewEntityType,
@@ -53,6 +54,15 @@ function ReviewItem({ entry }: { entry: ReviewWithAuthor }) {
           <span className="inline-flex items-center gap-1 rounded-full bg-green-dark/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-dark">
             {t('reviews.verified_stay')}
           </span>
+          {isPendingReview(review) && (
+            <span
+              data-testid="review-pending-pill"
+              title={t('reviews.pending_points_notice')}
+              className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800"
+            >
+              {t('reviews.status_pending')}
+            </span>
+          )}
         </div>
         {submittedAt && <span className="text-[12px] text-gray-text">{submittedAt}</span>}
       </div>
