@@ -34,3 +34,31 @@ export function parsePoints(raw: string): number | null {
 export function formatPoints(points: number): string {
   return `${points.toLocaleString('en-US')} P`;
 }
+
+/**
+ * Display a signed ledger delta with an explicit sign and the point unit:
+ * 10000 → "+10,000 P", -1200 → "−1,200 P" (a real minus sign, U+2212 —
+ * never the ASCII hyphen). Zero renders unsigned ("0 P"). Null (a legacy
+ * pre-ledger row with no recorded delta) renders an em dash — never NaN.
+ */
+export function formatSignedPoints(delta: number | null | undefined): string {
+  if (delta == null || !Number.isFinite(delta)) return '—';
+  if (delta > 0) return `+${formatPoints(delta)}`;
+  if (delta < 0) return `−${formatPoints(Math.abs(delta))}`;
+  return formatPoints(0);
+}
+
+/**
+ * Whole-USD approximation of a point balance (SMA-332 — display only,
+ * computed once, never stored): floor(balance / pointsPerUsd). `pointsPerUsd`
+ * is the registry's `point_unit` value (points per 1 USD); returns null when
+ * it is absent or not a positive finite number so callers can hide the line.
+ */
+export function pointsToUsdApprox(
+  balancePoints: number,
+  pointsPerUsd: number | null | undefined,
+): number | null {
+  if (pointsPerUsd == null || !Number.isFinite(pointsPerUsd) || pointsPerUsd <= 0) return null;
+  if (!Number.isFinite(balancePoints)) return null;
+  return Math.floor(balancePoints / pointsPerUsd);
+}

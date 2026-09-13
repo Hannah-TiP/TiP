@@ -5,7 +5,7 @@ import TravelHistoryTripDetailPage from '@/app/my-page/travel-history/[id]/page'
 import { apiClient } from '@/lib/api-client';
 import { getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
 import en from '@/translations/en.json';
-import type { ProjectedTripEarn, WalletPointTransaction } from '@/types/stay-credit';
+import type { PointTransaction, ProjectedTripEarn } from '@/types/stay-credit';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -49,7 +49,7 @@ vi.mock('@/lib/trip-utils', () => ({
 
 vi.mock('@/lib/api-client', () => ({
   apiClient: {
-    getMyCredits: vi.fn(),
+    getMyPoints: vi.fn(),
     getMyCreditProjection: vi.fn(),
     getProfile: vi.fn(),
     getReviewsByEntity: vi.fn(),
@@ -76,7 +76,7 @@ const BUNDLE = {
   },
 } as unknown as TripWithVersion;
 
-const EARNED_CREDIT: WalletPointTransaction = {
+const EARNED_CREDIT: PointTransaction = {
   id: 9,
   user_id: 7,
   source: 'payment_points',
@@ -86,8 +86,19 @@ const EARNED_CREDIT: WalletPointTransaction = {
   amount_cents: 500,
   currency: 'USD',
   source_ref: 'trip:42:tiered_earn',
-  remaining_points: 500,
-  effective_status: 'issued',
+};
+
+// A wallet-level spend that happens to reference the same trip — NOT
+// earned from it, so the per-trip section must ignore it.
+const SPEND_ROW: PointTransaction = {
+  id: 10,
+  user_id: 7,
+  source: 'payment_points',
+  status: 'issued',
+  delta_points: -200,
+  kind: 'use',
+  consumes_transaction_id: 9,
+  source_ref: 'trip:42:tiered_earn',
 };
 
 const PENDING: ProjectedTripEarn = {
@@ -100,9 +111,13 @@ const PENDING: ProjectedTripEarn = {
   blocking_reason: 'awaiting_review',
 };
 
-function mockApi(credits: WalletPointTransaction[], projections: ProjectedTripEarn[]) {
+function mockApi(credits: PointTransaction[], projections: ProjectedTripEarn[]) {
   vi.mocked(getTripWithVersion).mockResolvedValue(BUNDLE);
-  vi.mocked(apiClient.getMyCredits).mockResolvedValue(credits);
+  vi.mocked(apiClient.getMyPoints).mockResolvedValue({
+    user_id: 7,
+    balance_points: credits.reduce((acc, c) => acc + (c.delta_points ?? 0), 0),
+    transactions: credits,
+  });
   vi.mocked(apiClient.getMyCreditProjection).mockResolvedValue({
     user_id: 7,
     has_paid_trips: true,
@@ -152,6 +167,31 @@ describe('Pending-credit nudge on /my-page/travel-history/[id]', () => {
 
     expect(await screen.findByText(en['trip_detail.credits_earned'])).toBeTruthy();
     expect(screen.queryByTestId('pending-credit-nudge')).toBeNull();
+  });
+
+  it('renders the earned points in P (no currency) and ignores spend rows for the trip', async () => {
+    mockApi([SPEND_ROW, EARNED_CREDIT], []);
+
+    render(<TravelHistoryTripDetailPage />);
+
+    const heading = await screen.findByText(en['trip_detail.credits_earned']);
+    const card = heading.parentElement as HTMLElement;
+    expect(card.textContent).toContain('+500 P');
+    // Total = the grant lots only; the −200 P use row is a wallet-level
+    // event, not something this trip earned.
+    expect(card.textContent).toContain('500 P');
+    expect(card.textContent).not.toContain('300 P');
+    expect(card.textContent).not.toContain('\u2212200 P');
+    expect(card.textContent).not.toContain('USD');
+  });
+
+  it('shows the nudge when the trip only has a spend row (nothing earned yet)', async () => {
+    mockApi([SPEND_ROW], [PENDING]);
+
+    render(<TravelHistoryTripDetailPage />);
+
+    expect(await screen.findByTestId('pending-credit-nudge')).toBeTruthy();
+    expect(screen.queryByText(en['trip_detail.credits_earned'])).toBeNull();
   });
 
   it('hides the nudge when the pending projection belongs to a different trip', async () => {

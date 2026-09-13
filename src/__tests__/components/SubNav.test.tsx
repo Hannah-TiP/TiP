@@ -27,7 +27,7 @@ describe('SubNav', () => {
     renderSubNav('Credits');
     expect(screen.getByText('Upcoming Travels')).toBeDefined();
     expect(screen.getByText('Shared With Me')).toBeDefined();
-    const credits = screen.getByText('Credits');
+    const credits = screen.getByText('TiP Points');
     expect(credits.className).toContain('font-bold');
     // a non-active tab is not bold
     expect(screen.getByText('Membership').className).not.toContain('font-bold');

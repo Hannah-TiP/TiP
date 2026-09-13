@@ -2,11 +2,16 @@ import { describe, it, expect } from 'vitest';
 import {
   POINT_SOURCE_BENEFIT_KEYS,
   POINT_SOURCE_LABELS,
+  POINT_TRANSACTION_KIND_LABELS,
   creditSourceLabel,
   creditsForTrip,
+  isPointsConsumption,
+  isPointsGrantLot,
+  pointKindText,
   pointSourceText,
   tripIdFromCredit,
   type PointTransaction,
+  type PointTransactionKind,
 } from '@/types/stay-credit';
 import type { BenefitsResponse } from '@/types/v2/benefits';
 
@@ -252,5 +257,91 @@ describe('POINT_SOURCE_LABELS', () => {
       expect(entry.en, `missing EN label for ${source}`).toBeTruthy();
       expect(entry.kr, `missing KR label for ${source}`).toBeTruthy();
     }
+  });
+});
+
+describe('POINT_TRANSACTION_KIND_LABELS', () => {
+  it('covers every member of the backend PointTransactionKind enum (drift guard)', () => {
+    // Mirrored from tip-backend/v2/data_model/enums.py::PointTransactionKind
+    // (SMA-325/SMA-330). If the backend adds a kind, add it here AND to the
+    // union + label map in src/types/stay-credit.ts — the wallet history
+    // indexes the map by the wire `kind`.
+    const backendEnumMembers: PointTransactionKind[] = [
+      'grant',
+      'use',
+      'cancel',
+      'clawback',
+      'expire',
+    ];
+    expect(Object.keys(POINT_TRANSACTION_KIND_LABELS).sort()).toEqual(
+      [...backendEnumMembers].sort(),
+    );
+  });
+
+  it('has figure-free, non-empty EN and KR copy for every kind', () => {
+    for (const [kind, entry] of Object.entries(POINT_TRANSACTION_KIND_LABELS)) {
+      expect(entry.en, `missing EN label for ${kind}`).toBeTruthy();
+      expect(entry.kr, `missing KR label for ${kind}`).toBeTruthy();
+      expect(entry.en, `EN label for ${kind} contains a figure`).not.toMatch(/[%$₩]\s?\d|\d\s?%/);
+      expect(entry.kr, `KR label for ${kind} contains a figure`).not.toMatch(/[%$₩]\s?\d|\d\s?%/);
+    }
+    expect(POINT_TRANSACTION_KIND_LABELS.use.kr).toBe('예약에 사용');
+    expect(POINT_TRANSACTION_KIND_LABELS.expire.en).toBe('Expired');
+  });
+});
+
+describe('pointKindText', () => {
+  it('returns the localized label for every known kind', () => {
+    expect(pointKindText('use', true)).toBe('Used on booking');
+    expect(pointKindText('use', false)).toBe('예약에 사용');
+    expect(pointKindText('expire', true)).toBe('Expired');
+    expect(pointKindText('grant', false)).toBe('적립');
+  });
+
+  it('returns null for a legacy null/undefined kind', () => {
+    expect(pointKindText(null, true)).toBeNull();
+    expect(pointKindText(undefined, false)).toBeNull();
+  });
+
+  it('falls back to the raw slug (no throw) for an unknown/new backend kind', () => {
+    // The backend enum can gain a member and deploy before the FE map is
+    // updated (shared preview/prod DB) — the wallet must degrade, not crash.
+    expect(() => pointKindText('future_kind', true)).not.toThrow();
+    expect(pointKindText('future_kind', true)).toBe('future_kind');
+    expect(pointKindText('future_kind', false)).toBe('future_kind');
+  });
+});
+
+describe('ledger row classification (SMA-332)', () => {
+  it('treats use/clawback/expire as consumption (no expiry of their own)', () => {
+    expect(isPointsConsumption('use')).toBe(true);
+    expect(isPointsConsumption('clawback')).toBe(true);
+    expect(isPointsConsumption('expire')).toBe(true);
+    expect(isPointsConsumption('grant')).toBe(false);
+    // A cancel row is points RETURNED at their original expiry — a lot.
+    expect(isPointsConsumption('cancel')).toBe(false);
+    // Legacy pre-ledger rows are grant lots.
+    expect(isPointsConsumption(null)).toBe(false);
+    expect(isPointsConsumption(undefined)).toBe(false);
+  });
+
+  it('counts grant + legacy null-kind rows as grant lots, never cancel/consumption', () => {
+    expect(isPointsGrantLot('grant')).toBe(true);
+    expect(isPointsGrantLot(null)).toBe(true);
+    expect(isPointsGrantLot(undefined)).toBe(true);
+    expect(isPointsGrantLot('cancel')).toBe(false);
+    expect(isPointsGrantLot('use')).toBe(false);
+    expect(isPointsGrantLot('clawback')).toBe(false);
+    expect(isPointsGrantLot('expire')).toBe(false);
+  });
+
+  it('composes with creditsForTrip to isolate what a trip EARNED', () => {
+    const rows: PointTransaction[] = [
+      makeCredit({ id: 1, source_ref: 'trip:42:tiered_earn', kind: 'grant', delta_points: 500 }),
+      makeCredit({ id: 2, source_ref: 'trip:42:tiered_earn', kind: 'use', delta_points: -200 }),
+      makeCredit({ id: 3, source_ref: 'trip:99:tiered_earn', kind: 'grant', delta_points: 900 }),
+    ];
+    const earned = creditsForTrip(rows, 42).filter((r) => isPointsGrantLot(r.kind));
+    expect(earned.map((r) => r.id)).toEqual([1]);
   });
 });

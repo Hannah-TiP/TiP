@@ -6,18 +6,21 @@ import { gotoPage } from './support/navigation';
 // deterministic and doesn't depend on seeded promo codes.
 
 async function stubCreditsList(page: import('@playwright/test').Page) {
-  await page.route('**/api/me/credits', async (route) => {
+  await page.route('**/api/me/points', async (route) => {
     if (route.request().method() !== 'GET') return route.fallback();
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ code: 200, message: 'Success', data: [] }),
+      body: JSON.stringify({
+        code: 200,
+        message: 'Success',
+        data: { user_id: 1, balance_points: 0, transactions: [] },
+      }),
     });
   });
   // The page also fetches its pending-earn projection (SMA-276) — stub it
   // empty so the Pending earnings section stays hidden and the spec stays
-  // hermetic. NOTE: the `**/api/me/credits` glob above does NOT match this
-  // longer path, so it needs its own route.
+  // hermetic.
   await page.route('**/api/me/credits/projected', async (route) => {
     await route.fulfill({
       status: 200,

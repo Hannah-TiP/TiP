@@ -17,12 +17,14 @@ import {
 import {
   creditSourceLabel,
   creditsForTrip,
+  isPointsGrantLot,
+  type PointTransaction,
   type ProjectedTripEarn,
-  type WalletPointTransaction,
 } from '@/types/stay-credit';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { useBenefits } from '@/hooks/useBenefits';
 import { formatDate as formatDateI18n, formatTime as formatTimeI18n } from '@/lib/format-date';
+import { formatPoints, formatSignedPoints } from '@/lib/points-wallet';
 import BookingDocuments from '@/components/BookingDocuments';
 
 const ITEM_LABELS: Record<TripPlanItem['item_type'], string> = {
@@ -88,7 +90,7 @@ export default function TravelHistoryTripDetailPage() {
   const [reviewStatus, setReviewStatus] = useState<{ reviewed: number; total: number } | null>(
     null,
   );
-  const [tripCredits, setTripCredits] = useState<WalletPointTransaction[]>([]);
+  const [tripCredits, setTripCredits] = useState<PointTransaction[]>([]);
   const [pendingProjection, setPendingProjection] = useState<ProjectedTripEarn | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,8 +105,12 @@ export default function TravelHistoryTripDetailPage() {
         setTripWithVersion(loaded);
 
         try {
-          const allCredits = await apiClient.getMyCredits();
-          setTripCredits(creditsForTrip(allCredits, tripId));
+          // Points EARNED from this trip: the wallet ledger's grant lots
+          // linked to it (SMA-332). Spends/clawbacks are wallet-level rows.
+          const ledger = await apiClient.getMyPoints();
+          setTripCredits(
+            creditsForTrip(ledger.transactions, tripId).filter((row) => isPointsGrantLot(row.kind)),
+          );
         } catch {
           setTripCredits([]);
         }
@@ -187,8 +193,7 @@ export default function TravelHistoryTripDetailPage() {
     .flatMap((day) => day.items)
     .filter((item) => item.item_type === 'activity').length;
 
-  const creditsCurrency = tripCredits[0]?.currency ?? null;
-  const creditsTotalCents = tripCredits.reduce((acc, c) => acc + (c.amount_cents ?? 0), 0);
+  const creditsTotalPoints = tripCredits.reduce((acc, c) => acc + (c.delta_points ?? 0), 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -377,7 +382,7 @@ export default function TravelHistoryTripDetailPage() {
               </div>
             )}
 
-            {tripCredits.length > 0 && creditsCurrency && (
+            {tripCredits.length > 0 && (
               <div className="rounded-xl border border-gray-200 bg-white p-5">
                 <h3 className="mb-3 font-semibold text-gray-900">
                   {t('trip_detail.credits_earned')}
@@ -388,16 +393,16 @@ export default function TravelHistoryTripDetailPage() {
                       <span className="text-gray-600">
                         {creditSourceLabel(credit, lang === 'en', benefits)}
                       </span>
-                      <span className="font-medium text-[#1E3D2F]">
-                        {formatCredit(credit.amount_cents ?? 0, credit.currency ?? 'USD')}
+                      <span className="whitespace-nowrap font-medium text-[#1E3D2F]">
+                        {formatSignedPoints(credit.delta_points)}
                       </span>
                     </div>
                   ))}
                 </div>
                 <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3 text-sm">
                   <span className="font-semibold text-gray-900">{t('trip_detail.total')}</span>
-                  <span className="font-primary text-lg italic text-[#1E3D2F]">
-                    {formatCredit(creditsTotalCents, creditsCurrency)}
+                  <span className="whitespace-nowrap font-primary text-lg italic text-[#1E3D2F]">
+                    {formatPoints(creditsTotalPoints)}
                   </span>
                 </div>
                 <Link

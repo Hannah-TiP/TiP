@@ -2,12 +2,18 @@
 // the wire shapes of GET /api/v2/benefits. Names are IDENTICAL to the
 // backend Pydantic models.
 
-// Mirrors v2/data_model/enums.py::BenefitKind.
-export type BenefitKind = 'earn_rate' | 'per_booking_discount' | 'one_off_grant';
+// Mirrors v2/data_model/enums.py::BenefitKind. `unit_definition` (SMA-332)
+// is the structural `point_unit` entry — points per 1 USD — not a benefit a
+// member receives.
+export type BenefitKind =
+  | 'earn_rate'
+  | 'per_booking_discount'
+  | 'one_off_grant'
+  | 'unit_definition';
 
 // Mirrors v2/data_model/enums.py::BenefitUnit — how to read a benefit's
 // per-tier Decimal values.
-export type BenefitUnit = 'usd_cents' | 'rate' | 'nights';
+export type BenefitUnit = 'usd_cents' | 'rate' | 'nights' | 'points';
 
 // Mirrors v2/data_model/enums.py::MembershipTier (the circle keys).
 export type MembershipTier = 'carte' | 'cercle' | 'confidence' | 'cenacle';

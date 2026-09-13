@@ -10,58 +10,57 @@ import { gotoPage } from './support/navigation';
 // admin's user-facing description in the notes column. Older promo credits with
 // no structured promo_code must still render (label only, no crash).
 
-// Rows use the SMA-325 WalletPointTransaction wire shape (see
-// src/types/stay-credit.ts): grant lots with `kind`/`delta_points` plus the
-// wallet-derived `remaining_points`/`effective_status` — the page renders
-// `effective_status`, never the frozen legacy `status`. 100 P = USD 1, so
-// delta_points equals amount_cents for these USD lots.
-const PROMO_CREDITS = [
-  {
-    id: 201,
-    user_id: 1,
-    source: 'promo_code_redemption',
-    status: 'issued',
-    kind: 'grant',
-    delta_points: 10000,
-    remaining_points: 10000,
-    effective_status: 'issued',
-    amount_cents: 10000,
-    currency: 'USD',
-    source_ref: null,
-    promo_code: 'WELCOME26',
-    notes: 'Welcome aboard — enjoy your credit!',
-    created_at: '2026-05-10T00:00:00Z',
-  },
-  {
-    id: 202,
-    user_id: 1,
-    source: 'promo_code_redemption',
-    status: 'issued',
-    // Legacy pre-ledger row (SMA-325 backfill pending): null kind/delta.
-    kind: null,
-    delta_points: null,
-    remaining_points: 5000,
-    effective_status: 'issued',
-    amount_cents: 5000,
-    currency: 'USD',
-    source_ref: null,
-    // Old entry created before this change — no promo_code / notes.
-    promo_code: null,
-    notes: null,
-    created_at: '2026-01-01T00:00:00Z',
-  },
-];
+// Rows use the SMA-332 PointsLedgerResponse wire shape (see
+// src/types/stay-credit.ts): the backend-derived `balance_points` plus every
+// ledger row with `kind`/`delta_points`, newest first.
+const PROMO_LEDGER = {
+  user_id: 1,
+  balance_points: 15000,
+  transactions: [
+    {
+      id: 201,
+      user_id: 1,
+      source: 'promo_code_redemption',
+      status: 'issued',
+      kind: 'grant',
+      delta_points: 10000,
+      amount_cents: 10000,
+      currency: 'USD',
+      source_ref: null,
+      promo_code: 'WELCOME26',
+      notes: 'Welcome aboard — enjoy your credit!',
+      expires_at: '2028-05-10T00:00:00Z',
+      created_at: '2026-05-10T00:00:00Z',
+    },
+    {
+      id: 202,
+      user_id: 1,
+      source: 'promo_code_redemption',
+      status: 'issued',
+      kind: 'grant',
+      delta_points: 5000,
+      amount_cents: 5000,
+      currency: 'USD',
+      source_ref: null,
+      // Old entry created before this change — no promo_code / notes.
+      promo_code: null,
+      notes: null,
+      expires_at: '2028-01-01T00:00:00Z',
+      created_at: '2026-01-01T00:00:00Z',
+    },
+  ],
+};
 
 test.describe('Promo-code credit history on /my-page/credits', () => {
   test('redeemed promo credit shows the code + description; old entry is label-only', async ({
     page,
   }) => {
-    await page.route('**/api/me/credits', async (route) => {
+    await page.route('**/api/me/points', async (route) => {
       if (route.request().method() !== 'GET') return route.fallback();
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ code: 200, message: 'Success', data: PROMO_CREDITS }),
+        body: JSON.stringify({ code: 200, message: 'Success', data: PROMO_LEDGER }),
       });
     });
     // Stub the benefit registry proxy (SMA-322) with an empty payload so the

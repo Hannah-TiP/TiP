@@ -24,6 +24,35 @@ export type PointSource =
 // does to the balance. Legacy rows predate the ledger and carry null.
 export type PointTransactionKind = 'grant' | 'use' | 'cancel' | 'clawback' | 'expire';
 
+// Figure-free qualifier shown next to the source label on the wallet
+// history for every non-grant row (SMA-332). `grant` never renders a
+// qualifier — the source label alone is the reason. Pinned to the backend
+// enum by a drift-guard test.
+export const POINT_TRANSACTION_KIND_LABELS: Record<
+  PointTransactionKind,
+  { en: string; kr: string }
+> = {
+  grant: { en: 'Earned', kr: '적립' },
+  use: { en: 'Used on booking', kr: '예약에 사용' },
+  cancel: { en: 'Returned — booking cancelled', kr: '예약 취소로 반환' },
+  clawback: { en: 'Clawback', kr: '회수' },
+  expire: { en: 'Expired', kr: '만료' },
+};
+
+// A row that IS a lot (carries its own `expires_at`): grant lots, legacy
+// null-kind grants, and `cancel` rows (points returned at their ORIGINAL
+// expiry — SMA-329). Consumption rows (`use`/`clawback`/`expire`) draw a lot
+// down and have no expiry of their own.
+export function isPointsConsumption(kind: PointTransactionKind | null | undefined): boolean {
+  return kind === 'use' || kind === 'clawback' || kind === 'expire';
+}
+
+// Grant lots only — `grant` or legacy null-kind rows. Excludes `cancel`
+// (a positive return of a `use`, not new earning).
+export function isPointsGrantLot(kind: PointTransactionKind | null | undefined): boolean {
+  return kind == null || kind === 'grant';
+}
+
 // SAFE FALLBACK labels only (SMA-322): when the benefit registry payload is
 // available, `pointSourceText` prefers its bilingual copy. These carry
 // NO money/rate figures — the earn rate is tiered per membership (SMA-199),
@@ -72,16 +101,9 @@ export const POINT_SOURCE_BENEFIT_KEYS: Record<PointSource, string> = {
 
 // LEGACY lifecycle status retained as provenance on the append-only ledger
 // (SMA-325): new rows are always written `issued` and never mutated —
-// consumption/revocation land as companion rows. Render the wallet's
-// derived `effective_status`, not the stored `status`.
+// consumption/revocation land as companion rows. Never render it — the
+// wallet balance is the backend-derived SUM(delta_points) (SMA-332).
 export type StayCreditStatus = 'issued' | 'redeemed' | 'expired' | 'revoked';
-
-export const STAY_CREDIT_STATUS_LABELS: Record<StayCreditStatus, { en: string; kr: string }> = {
-  issued: { en: 'Available', kr: '사용 가능' },
-  redeemed: { en: 'Used', kr: '사용됨' },
-  expired: { en: 'Expired', kr: '만료' },
-  revoked: { en: 'Revoked', kr: '취소됨' },
-};
 
 // Mirrors v2/data_model/schemas/point_transaction.py::PointTransaction —
 // one append-only ledger row. `delta_points` is the signed balance
@@ -118,14 +140,14 @@ export interface PointTransaction {
   updated_at?: string | null;
 }
 
-// Mirrors tip-backend/v2/services/point_transaction.py::WalletPointTransaction
-// — what GET /me/credits returns: each grant lot plus its ledger-derived
-// unconsumed remainder and the status the frozen legacy `status` used to
-// express (ISSUED while spendable, REDEEMED/REVOKED once companion rows
-// netted the lot out). Render `effective_status`, never raw `status`.
-export interface WalletPointTransaction extends PointTransaction {
-  remaining_points: number;
-  effective_status: StayCreditStatus;
+// Mirrors tip-backend/v2/data_model/schemas/point_transaction.py::PointsLedgerResponse
+// — what GET /me/points returns (SMA-332): ONE wallet balance derived
+// server-side as SUM(delta_points) (the FE never sums rows itself) plus
+// EVERY ledger row — grants AND use/cancel/clawback/expire — newest first.
+export interface PointsLedgerResponse {
+  user_id: number;
+  balance_points: number;
+  transactions: PointTransaction[];
 }
 
 // Trip-linked credits (post-trip cashback) carry their trip id either on the
@@ -178,6 +200,20 @@ export function creditSourceLabel(
 ): string {
   const label = pointSourceText(credit.source, en, benefits);
   return credit.promo_code ? `${label} · ${credit.promo_code}` : label;
+}
+
+// Safe localized qualifier for a ledger row's `kind`. Sibling of
+// `pointSourceText`: never throws on a kind the label map doesn't know
+// (backend develop-merges deploy to the shared preview/prod DB before the
+// FE catches up — a single drifted row must not take down the wallet page).
+// Unknown kind → the raw slug; null/undefined (legacy pre-ledger rows) → null.
+export function pointKindText(
+  kind: PointTransactionKind | string | null | undefined,
+  en: boolean,
+): string | null {
+  return (
+    POINT_TRANSACTION_KIND_LABELS[kind as PointTransactionKind]?.[en ? 'en' : 'kr'] ?? kind ?? null
+  );
 }
 
 // ── Projected (not-yet-earned) post-trip credits — SMA-274/SMA-276 ─────────

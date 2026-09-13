@@ -31,7 +31,7 @@ const I18N: Record<string, string> = {
   'subnav.shared_with_me': 'Shared With Me',
   'subnav.travel_history': 'Travel History',
   'subnav.membership': 'Membership',
-  'subnav.credits': 'Credits',
+  'subnav.credits': 'TiP Points',
   'subnav.referrals': 'Referrals',
   'subnav.wishlist': 'Wishlist',
   'subnav.my_profile': 'My Profile',
@@ -189,10 +189,10 @@ describe('Header — variant + SubNav driven by pathname', () => {
     // Header logo is NOT inverted in app variant
     const logo = screen.getByAltText('TiP') as HTMLImageElement;
     expect(logo.style.filter).toBe('');
-    // SubNav present with all tabs; Credits is the active one
-    expect(screen.getByText('Credits')).toBeDefined();
+    // SubNav present with all tabs; TiP Points (the Credits tab) is active
+    expect(screen.getByText('TiP Points')).toBeDefined();
     expect(screen.getByText('Upcoming Travels')).toBeDefined();
-    const credits = screen.getByText('Credits');
+    const credits = screen.getByText('TiP Points');
     expect(credits.className).toContain('font-bold');
   });
 

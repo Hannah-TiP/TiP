@@ -9,15 +9,18 @@ import Footer from '@/components/Footer';
 import RedeemCodeSection from '@/components/credits/RedeemCodeSection';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { useBenefits } from '@/hooks/useBenefits';
+import { resolvePointUnit } from '@/lib/benefits';
 import { formatDate as formatDateI18n } from '@/lib/format-date';
 import { apiClient } from '@/lib/api-client';
+import { formatPoints, formatSignedPoints, pointsToUsdApprox } from '@/lib/points-wallet';
 import {
-  STAY_CREDIT_STATUS_LABELS,
   creditSourceLabel,
+  isPointsConsumption,
+  pointKindText,
   pointSourceText,
   tripIdFromCredit,
+  type PointTransaction,
   type ProjectedTripEarn,
-  type WalletPointTransaction,
 } from '@/types/stay-credit';
 
 // Code-split (bundle-size gate): the section only loads when the member
@@ -28,18 +31,6 @@ const PendingEarningsSection = dynamic(
     ssr: false,
   },
 );
-
-const STATUS_PILL: Record<WalletPointTransaction['effective_status'], string> = {
-  issued: 'bg-emerald-100 text-emerald-700',
-  redeemed: 'bg-blue-100 text-blue-700',
-  expired: 'bg-gray-100 text-gray-500',
-  revoked: 'bg-rose-100 text-rose-700',
-};
-
-function formatAmount(amountCents: number, currency: string): string {
-  const dollars = (amountCents / 100).toFixed(2);
-  return `${currency} ${dollars}`;
-}
 
 function formatDate(iso: string | null | undefined, lang: Lang): string {
   if (!iso) return '—';
@@ -52,54 +43,39 @@ function formatDate(iso: string | null | undefined, lang: Lang): string {
   });
 }
 
-function sumIssuedCents(credits: WalletPointTransaction[]): {
-  cents: number;
-  currency: string | null;
-} {
-  // Available balance is "everything currently spendable" — derived from
-  // the ledger's effective_status (SMA-325: the stored `status` is frozen
-  // legacy provenance and would show consumed lots as available). If the
-  // user ever holds credits in mixed currencies we surface the dominant
-  // currency and ignore others — handling FX is out of scope for this page.
-  const issued = credits.filter((c) => c.effective_status === 'issued');
-  if (issued.length === 0) return { cents: 0, currency: null };
-  const counts = new Map<string, number>();
-  // amount_cents/currency are nullable provenance on the wire (SMA-325)
-  // but always populated on grant lots; default defensively.
-  issued.forEach((c) => {
-    const currency = c.currency ?? 'USD';
-    counts.set(currency, (counts.get(currency) ?? 0) + 1);
-  });
-  const dominant = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0][0];
-  const cents = issued
-    .filter((c) => (c.currency ?? 'USD') === dominant)
-    .reduce((acc, c) => acc + (c.amount_cents ?? 0), 0);
-  return { cents, currency: dominant };
-}
+const COLUMN_LABEL_CLASS = 'text-[10px] uppercase tracking-wider text-gray-400';
 
 export default function MyCreditsPage() {
   const { status } = useSession();
   const router = useRouter();
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const en = lang === 'en';
-  // Registry copy for source labels (SMA-322); null degrades to the static
-  // fallback labels inside the helpers.
+  // Registry copy for source labels + the `point_unit` (points per USD)
+  // behind the USD approximation (SMA-322 / SMA-332); null degrades to the
+  // static fallback labels and hides the USD line.
   const benefits = useBenefits();
 
   const [loading, setLoading] = useState(true);
-  const [credits, setCredits] = useState<WalletPointTransaction[]>([]);
+  const [balancePoints, setBalancePoints] = useState(0);
+  const [transactions, setTransactions] = useState<PointTransaction[]>([]);
   const [projections, setProjections] = useState<ProjectedTripEarn[]>([]);
+  // null = no error; '' = failed with no server message (localized fallback
+  // is resolved at render time so this callback never depends on `t`).
   const [error, setError] = useState<string | null>(null);
 
-  const loadCredits = useCallback(() => {
+  const loadPoints = useCallback(() => {
     return apiClient
-      .getMyCredits()
-      .then((rows) => {
-        setCredits(rows);
+      .getMyPoints()
+      .then((ledger) => {
+        // The balance is the backend-derived SUM(delta_points) — never
+        // re-summed from the rows on the FE.
+        setBalancePoints(ledger.balance_points);
+        setTransactions(ledger.transactions);
+        setError(null);
         setLoading(false);
       })
       .catch((err: Error) => {
-        setError(err.message || 'Could not load credits.');
+        setError(err.message ?? '');
         setLoading(false);
       });
   }, []);
@@ -120,11 +96,13 @@ export default function MyCreditsPage() {
     }
     if (status !== 'authenticated') return;
     // Fired in parallel — neither fetch blocks the other.
-    loadCredits();
+    loadPoints();
     loadProjection();
-  }, [status, router, loadCredits, loadProjection]);
+  }, [status, router, loadPoints, loadProjection]);
 
-  const balance = sumIssuedCents(credits);
+  // Display-only, derived once per render from the registry unit. Null when
+  // the registry is unavailable — the line is hidden rather than guessed.
+  const usdApprox = pointsToUsdApprox(balancePoints, resolvePointUnit(benefits));
 
   return (
     <>
@@ -132,35 +110,36 @@ export default function MyCreditsPage() {
         <section className="max-w-5xl mx-auto px-4 md:px-6 py-16">
           <div className="text-center mb-10">
             <span className="text-[11px] font-semibold tracking-[4px] text-[#C4956A]">
-              {en ? 'TIP MEMBERSHIP' : 'TIP 멤버십'}
+              {t('credits.eyebrow')}
             </span>
             <h1 className="mt-3 font-primary text-[42px] italic leading-tight text-[#1E3D2F] md:text-[52px]">
-              {en ? 'Your Stay Credits' : '스테이 크레딧'}
+              {t('credits.title')}
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-gray-600">
-              {en
-                ? 'Welcome gifts, birthday credits, referral rewards, and concierge gestures appear here. Credits apply automatically to qualifying TiP partner stays.'
-                : '환영 크레딧, 생일 크레딧, 추천 보상, 컨시어지의 선물이 여기에 표시됩니다. 크레딧은 TiP 파트너 호텔 스테이에 자동으로 적용됩니다.'}
+              {t('credits.intro')}
             </p>
           </div>
 
-          {/* Available balance card */}
-          <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100 mb-10">
+          {/* Wallet balance card */}
+          <div
+            className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100 mb-10"
+            data-testid="points-balance-card"
+          >
             <div className="text-[11px] uppercase tracking-[3px] text-[#C4956A]">
-              {en ? 'Available balance' : '사용 가능한 잔액'}
+              {t('credits.balance_label')}
             </div>
-            <div className="mt-3 font-primary text-[40px] italic text-[#1E3D2F]">
-              {balance.cents > 0 && balance.currency
-                ? formatAmount(balance.cents, balance.currency)
-                : en
-                  ? 'No credits yet'
-                  : '아직 적립된 크레딧이 없습니다'}
+            <div
+              className="mt-3 font-primary text-[40px] italic text-[#1E3D2F]"
+              data-testid="points-balance"
+            >
+              {formatPoints(balancePoints)}
             </div>
-            <div className="mt-2 text-[13px] text-gray-500">
-              {en
-                ? 'Includes credits in your dominant currency. Credits are not redeemable for cash.'
-                : '주요 통화의 크레딧이 표시됩니다. 크레딧은 현금으로 교환할 수 없습니다.'}
-            </div>
+            {usdApprox !== null && (
+              <div className="mt-1 text-[15px] text-gray-600" data-testid="points-usd-approx">
+                {t('credits.usd_approx').replace('{amount}', usdApprox.toLocaleString('en-US'))}
+              </div>
+            )}
+            <div className="mt-2 text-[13px] text-gray-500">{t('credits.balance_note')}</div>
           </div>
 
           {/* Pending earnings — projected review-gated credit (SMA-276).
@@ -169,101 +148,117 @@ export default function MyCreditsPage() {
           {projections.length > 0 && <PendingEarningsSection projections={projections} />}
 
           {/* Redeem a code */}
-          <RedeemCodeSection onRedeemed={loadCredits} />
+          <RedeemCodeSection onRedeemed={loadPoints} />
 
           {/* History */}
           <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
             <h2 className="font-primary text-[26px] italic text-[#1E3D2F]">
-              {en ? 'Credit history' : '크레딧 내역'}
+              {t('credits.history_title')}
             </h2>
 
             {loading ? (
-              <div className="mt-6 text-center text-gray-500 text-sm">
-                {en ? 'Loading…' : '불러오는 중…'}
+              <div className="mt-6 text-center text-gray-500 text-sm">{t('credits.loading')}</div>
+            ) : error !== null ? (
+              <div className="mt-6 text-center text-rose-600 text-sm">
+                {error || t('credits.error_load')}
               </div>
-            ) : error ? (
-              <div className="mt-6 text-center text-rose-600 text-sm">{error}</div>
-            ) : credits.length === 0 ? (
-              <div className="mt-6 text-center text-gray-500 text-sm">
-                {en
-                  ? 'No credits yet. Refer a friend or your next stay may earn one.'
-                  : '아직 적립된 크레딧이 없습니다. 친구를 추천하거나 다음 스테이에서 적립해보세요.'}
+            ) : transactions.length === 0 ? (
+              <div className="mt-6 text-center text-gray-500 text-sm" data-testid="points-empty">
+                {t('credits.empty')}
               </div>
             ) : (
-              <div className="mt-6 divide-y divide-gray-100">
-                {credits.map((credit) => {
-                  const linkedTripId = tripIdFromCredit(credit);
-                  return (
-                    <div
-                      key={credit.id}
-                      className="py-5 flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-4 sm:items-center"
-                    >
-                      <div className="sm:col-span-3 font-primary text-[22px] italic text-[#1E3D2F]">
-                        {formatAmount(credit.amount_cents ?? 0, credit.currency ?? 'USD')}
-                      </div>
-                      <div className="sm:col-span-3 text-[14px]">
-                        <div
-                          className="font-medium text-gray-900"
-                          aria-label={creditSourceLabel(credit, en, benefits)}
-                        >
-                          {pointSourceText(credit.source, en, benefits)}
-                          {credit.promo_code ? (
-                            <span className="text-gray-500"> · {credit.promo_code}</span>
-                          ) : null}
-                        </div>
-                        <div className="text-[12px] text-gray-500">
-                          {formatDate(credit.created_at, lang)}
-                        </div>
-                        {linkedTripId !== null && (
-                          <Link
-                            href={`/my-page/travel-history/${linkedTripId}`}
-                            className="mt-1 inline-block text-[12px] font-medium text-[#C4956A] hover:underline"
-                          >
-                            {en ? 'View trip →' : '여행 보기 →'}
-                          </Link>
-                        )}
-                      </div>
-                      <div className="sm:col-span-2">
-                        <span
-                          className={`inline-block rounded-full px-3 py-1 text-[11px] font-semibold ${
-                            STATUS_PILL[credit.effective_status]
-                          }`}
-                        >
-                          {STAY_CREDIT_STATUS_LABELS[credit.effective_status][en ? 'en' : 'kr']}
-                        </span>
-                      </div>
-                      <div className="sm:col-span-2 text-[12px] text-gray-500">
-                        {credit.expires_at ? (
-                          <>
-                            <span className="block uppercase tracking-wider text-[10px] text-gray-400">
-                              {en ? 'Expires' : '만료'}
-                            </span>
-                            {formatDate(credit.expires_at, lang)}
-                          </>
-                        ) : (
-                          <span className="italic text-gray-400">
-                            {en ? 'No expiry' : '만료 없음'}
-                          </span>
-                        )}
-                      </div>
+              <div className="mt-6" data-testid="points-history">
+                <div
+                  className={`hidden sm:grid sm:grid-cols-12 sm:gap-4 border-b border-gray-100 pb-3 ${COLUMN_LABEL_CLASS}`}
+                >
+                  <div className="sm:col-span-6">{t('credits.col_reason')}</div>
+                  <div className="sm:col-span-2 sm:text-right">{t('credits.col_points')}</div>
+                  <div className="sm:col-span-2">{t('credits.col_earned')}</div>
+                  <div className="sm:col-span-2">{t('credits.col_expires')}</div>
+                </div>
+                <div className="divide-y divide-gray-100">
+                  {transactions.map((row) => {
+                    const linkedTripId = tripIdFromCredit(row);
+                    const consumption = isPointsConsumption(row.kind);
+                    const kindLabel =
+                      row.kind && row.kind !== 'grant' ? pointKindText(row.kind, en) : null;
+                    const delta = row.delta_points ?? null;
+                    return (
                       <div
-                        className="sm:col-span-2 text-[12px] text-gray-500 sm:truncate"
-                        title={credit.notes ?? undefined}
+                        key={row.id}
+                        className="py-5 flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-4 sm:items-center"
+                        data-testid="points-row"
                       >
-                        {credit.notes || '—'}
+                        <div className="sm:col-span-6 text-[14px]">
+                          <div
+                            className="font-medium text-gray-900"
+                            aria-label={creditSourceLabel(row, en, benefits)}
+                          >
+                            {pointSourceText(row.source, en, benefits)}
+                            {row.promo_code ? (
+                              <span className="text-gray-500"> · {row.promo_code}</span>
+                            ) : null}
+                          </div>
+                          {kindLabel && (
+                            <div className="text-[12px] text-gray-500" data-testid="points-kind">
+                              {kindLabel}
+                            </div>
+                          )}
+                          {row.notes && (
+                            <div
+                              className="text-[12px] text-gray-500 sm:truncate"
+                              title={row.notes}
+                            >
+                              {row.notes}
+                            </div>
+                          )}
+                          {linkedTripId !== null && (
+                            <Link
+                              href={`/my-page/travel-history/${linkedTripId}`}
+                              className="mt-1 inline-block text-[12px] font-medium text-[#C4956A] hover:underline"
+                            >
+                              {t('credits.view_trip')}
+                            </Link>
+                          )}
+                        </div>
+                        <div
+                          className={`sm:col-span-2 sm:text-right font-primary text-[22px] italic ${
+                            delta !== null && delta < 0 ? 'text-gray-500' : 'text-[#1E3D2F]'
+                          }`}
+                          data-testid="points-delta"
+                        >
+                          {formatSignedPoints(delta)}
+                        </div>
+                        <div className="sm:col-span-2 text-[12px] text-gray-500">
+                          <span className={`block sm:hidden ${COLUMN_LABEL_CLASS}`}>
+                            {t('credits.col_earned')}
+                          </span>
+                          {formatDate(row.created_at, lang)}
+                        </div>
+                        <div
+                          className="sm:col-span-2 text-[12px] text-gray-500"
+                          data-testid="points-expiry"
+                        >
+                          <span className={`block sm:hidden ${COLUMN_LABEL_CLASS}`}>
+                            {t('credits.col_expires')}
+                          </span>
+                          {consumption ? (
+                            <span className="italic text-gray-400">{t('credits.expiry_na')}</span>
+                          ) : row.expires_at ? (
+                            formatDate(row.expires_at, lang)
+                          ) : (
+                            <span className="italic text-gray-400">{t('credits.expiry_none')}</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
 
-          <p className="mt-10 text-center text-[12px] text-gray-500">
-            {en
-              ? 'Credits apply to qualifying stays at TiP partner hotels and are not redeemable for cash.'
-              : '크레딧은 TiP 파트너 호텔 스테이에 적용되며 현금으로 교환할 수 없습니다.'}
-          </p>
+          <p className="mt-10 text-center text-[12px] text-gray-500">{t('credits.footnote')}</p>
         </section>
       </main>
       <Footer />

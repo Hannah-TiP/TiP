@@ -27,12 +27,16 @@ const PROJECTIONS = [
 ];
 
 async function stubCredits(page: import('@playwright/test').Page, projections: unknown[]) {
-  await page.route('**/api/me/credits', async (route) => {
+  await page.route('**/api/me/points', async (route) => {
     if (route.request().method() !== 'GET') return route.fallback();
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ code: 200, message: 'Success', data: [] }),
+      body: JSON.stringify({
+        code: 200,
+        message: 'Success',
+        data: { user_id: 1, balance_points: 0, transactions: [] },
+      }),
     });
   });
   await page.route('**/api/me/credits/projected', async (route) => {
@@ -77,9 +81,10 @@ test.describe('Pending earnings on /my-page/credits', () => {
       '/my-page/travel-history/66',
     );
 
-    // Estimates never leak into the balance card: with no issued credits the
-    // balance still reads the empty state.
-    await expect(page.getByText('No credits yet').first()).toBeVisible();
+    // Estimates never leak into the balance card: with an empty ledger the
+    // wallet still reads 0 P.
+    await expect(page.getByTestId('points-balance')).toHaveText('0 P');
+    await expect(page.getByTestId('points-empty')).toBeVisible();
   });
 
   test('section is absent when the member has no pending projections', async ({ page }) => {
@@ -89,7 +94,7 @@ test.describe('Pending earnings on /my-page/credits', () => {
 
     // Wait for the page to settle (history card shows its empty state), then
     // assert the pending section never rendered.
-    await expect(page.getByText('Credit history')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Point history')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('pending-earnings')).toHaveCount(0);
   });
 });

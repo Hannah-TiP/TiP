@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { formatPoints, parsePoints, pointsInputError } from '@/lib/points-wallet';
+import {
+  formatPoints,
+  formatSignedPoints,
+  parsePoints,
+  pointsInputError,
+  pointsToUsdApprox,
+} from '@/lib/points-wallet';
 
 describe('pointsInputError', () => {
   it('accepts whole numbers in [1, max]', () => {
@@ -40,5 +46,37 @@ describe('formatPoints', () => {
   it('renders the point unit with thousands separators', () => {
     expect(formatPoints(2500)).toBe('2,500 P');
     expect(formatPoints(0)).toBe('0 P');
+  });
+});
+
+describe('formatSignedPoints', () => {
+  it('prefixes positive deltas with + and negative deltas with a real minus sign (U+2212)', () => {
+    expect(formatSignedPoints(10000)).toBe('+10,000 P');
+    expect(formatSignedPoints(-1200)).toBe('\u22121,200 P');
+    expect(formatSignedPoints(-1200)).not.toContain('-');
+  });
+
+  it('renders zero unsigned and a null/invalid delta as an em dash (never NaN)', () => {
+    expect(formatSignedPoints(0)).toBe('0 P');
+    expect(formatSignedPoints(null)).toBe('—');
+    expect(formatSignedPoints(undefined)).toBe('—');
+    expect(formatSignedPoints(Number.NaN)).toBe('—');
+  });
+});
+
+describe('pointsToUsdApprox', () => {
+  it('floors the balance divided by the registry point unit (§6: 24,500 P ≈ USD 245)', () => {
+    expect(pointsToUsdApprox(24500, 100)).toBe(245);
+    expect(pointsToUsdApprox(24599, 100)).toBe(245);
+    expect(pointsToUsdApprox(0, 100)).toBe(0);
+  });
+
+  it('returns null when the unit is absent or not a positive finite number', () => {
+    expect(pointsToUsdApprox(24500, null)).toBeNull();
+    expect(pointsToUsdApprox(24500, undefined)).toBeNull();
+    expect(pointsToUsdApprox(24500, 0)).toBeNull();
+    expect(pointsToUsdApprox(24500, -100)).toBeNull();
+    expect(pointsToUsdApprox(24500, Number.NaN)).toBeNull();
+    expect(pointsToUsdApprox(Number.NaN, 100)).toBeNull();
   });
 });

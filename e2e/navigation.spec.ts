@@ -101,7 +101,7 @@ test.describe('Centralized header — variants & active state', () => {
       await gotoPage(page, '/my-page/credits');
       await expect(page).toHaveURL(/\/my-page\/credits/);
       const subnav = page.locator('nav', { hasText: 'Upcoming Travels' }).last();
-      await expect(subnav.getByRole('link', { name: 'Credits', exact: true })).toBeVisible();
+      await expect(subnav.getByRole('link', { name: 'TiP Points', exact: true })).toBeVisible();
       await expect(
         subnav.getByRole('link', { name: 'Upcoming Travels', exact: true }),
       ).toBeVisible();
