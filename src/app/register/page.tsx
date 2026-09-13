@@ -6,10 +6,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
+import DeliveryFailedDialog from '@/components/DeliveryFailedDialog';
 import SocialSignInButtons from '@/components/SocialSignInButtons';
 import PasswordInput from '@/components/PasswordInput';
 import WebviewLoginNotice from '@/components/auth/WebviewLoginNotice';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useVerificationDeliveryStatus } from '@/hooks/useVerificationDeliveryStatus';
 import { buildAuthRedirectUrl } from '@/lib/redirect-validation';
 import { startGoogleRedirect } from '@/lib/google-oauth';
 import { startSocialRedirect } from '@/lib/social-oauth';
@@ -47,6 +49,10 @@ function RegisterForm() {
   // handleSendCode for why.
   const [accountExists, setAccountExists] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // While the user waits on the code step, poll whether the verification
+  // email bounced (Brevo webhook flag) and surface a dialog if it did.
+  const delivery = useVerificationDeliveryStatus(email, step === 'verify');
+  const [deliveryDialogDismissed, setDeliveryDialogDismissed] = useState(false);
 
   // Full-page top-level redirect to Google (SMA-133). The /auth/google/callback
   // page completes the exchange + session and routes new users through the
@@ -114,6 +120,7 @@ function RegisterForm() {
         const data = await res.json();
         throw new Error(data.message || t('register.error_send_code_failed'));
       }
+      setDeliveryDialogDismissed(false);
       setStep('verify');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('register.error_send_code_failed'));
@@ -361,6 +368,16 @@ function RegisterForm() {
           {t('register.sign_in')}
         </Link>
       </div>
+
+      <DeliveryFailedDialog
+        isOpen={step === 'verify' && delivery.failed && !deliveryDialogDismissed}
+        email={email}
+        onUseDifferentEmail={() => {
+          setVerificationCode('');
+          setStep('email');
+        }}
+        onClose={() => setDeliveryDialogDismissed(true)}
+      />
     </div>
   );
 }
