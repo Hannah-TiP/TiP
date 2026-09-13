@@ -237,14 +237,6 @@ export interface ClaimReferralResponse {
   referred_by: Referral | null;
 }
 
-// Mirrors tip-backend/v2/services/quote_credit.py::EligibleCredit.
-// A grant lot plus its FX-converted remaining value in the target quote's
-// currency, ready to render in the "Apply credit" picker.
-export interface EligibleCredit extends PointTransaction {
-  converted_amount: string;
-  converted_currency: string;
-}
-
 // Mirrors tip-backend/v2/data_model/schemas/promo_code.py::RedeemPromoCodeResponse.
 export interface RedeemPromoCodeResponse {
   // credit_amount is a NUMERIC serialized as a string in the JSON envelope.

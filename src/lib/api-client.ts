@@ -25,7 +25,7 @@ import type {
   TripVersion,
   TripWithActiveQuote,
 } from '@/types/trip';
-import type { QuoteWithVersion } from '@/types/quote';
+import type { QuoteWalletSummary, QuoteWithVersion } from '@/types/quote';
 import type {
   ShareTripRequest,
   ShareTripResponse,
@@ -51,7 +51,6 @@ import type { MemberFreeNightSummary } from '@/types/free-night';
 import type { BenefitsResponse } from '@/types/v2/benefits';
 import type {
   ClaimReferralResponse,
-  EligibleCredit,
   MyReferralsResponse,
   RedeemPromoCodeResponse,
   UserCreditProjectionResponse,
@@ -701,25 +700,37 @@ class ApiClient {
     return response.data[0] ?? null;
   }
 
-  // Stay credits on quotes
-  async listEligibleCreditsForQuote(quoteId: number): Promise<EligibleCredit[]> {
-    const response = await this.request<{ data: EligibleCredit[] }>(
-      `/quotes/${quoteId}/eligible-credits`,
-    );
-    return response.data ?? [];
-  }
-
-  async applyQuoteCredit(quoteId: number, creditId: number): Promise<QuoteWithVersion> {
-    const response = await this.request<{ data: QuoteWithVersion }>(
-      `/quotes/${quoteId}/credits/${creditId}`,
-      { method: 'POST' },
+  // Points on quotes (SMA-329 — partial wallet spend under the per-booking cap)
+  async getQuoteWalletSummary(quoteId: number, language?: Lang): Promise<QuoteWalletSummary> {
+    const response = await this.request<{ data: QuoteWalletSummary }>(
+      this.withLanguage(`/quotes/${quoteId}/eligible-credits`, language),
     );
     return response.data;
   }
 
-  async removeQuoteCredit(quoteId: number, creditId: number): Promise<QuoteWithVersion> {
+  /**
+   * Apply wallet points to the quote. `points` omitted means "apply the
+   * max applicable" (Q2(b) — the customer may also choose a smaller amount).
+   * Returns the new quote version with the points discount line baked in.
+   */
+  async applyQuotePoints(
+    quoteId: number,
+    points?: number,
+    language?: Lang,
+  ): Promise<QuoteWithVersion> {
     const response = await this.request<{ data: QuoteWithVersion }>(
-      `/quotes/${quoteId}/credits/${creditId}`,
+      this.withLanguage(`/quotes/${quoteId}/credits`, language),
+      {
+        method: 'POST',
+        body: JSON.stringify(points === undefined ? {} : { points }),
+      },
+    );
+    return response.data;
+  }
+
+  async removeQuotePoints(quoteId: number, language?: Lang): Promise<QuoteWithVersion> {
+    const response = await this.request<{ data: QuoteWithVersion }>(
+      this.withLanguage(`/quotes/${quoteId}/credits`, language),
       { method: 'DELETE' },
     );
     return response.data;
