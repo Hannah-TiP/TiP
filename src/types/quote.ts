@@ -54,10 +54,11 @@ export interface QuoteVersion {
   created_by_admin_id?: number | null;
   line_items: QuoteLineItem[];
   total_snapshot: QuoteTotalSnapshot;
-  // Stay credits applied to this version. Single-item max today (API
-  // enforced), but the shape is a list so multi-credit stacking can land
-  // later without a client change.
+  // LEGACY read-only per-lot binding (pre-SMA-329 quotes still in flight).
+  // New versions bind points via `applied_points` instead.
   applied_stay_credit_ids?: number[];
+  // Wallet points bound to this version (SMA-329 partial wallet spend).
+  applied_points?: number;
   schema_version: number;
   created_at?: string | null;
   updated_at?: string | null;
@@ -66,6 +67,33 @@ export interface QuoteVersion {
 export interface QuoteWithVersion {
   quote: Quote;
   current_version?: QuoteVersion | null;
+}
+
+// Mirrors tip-backend/v2/services/quote_credit.py::QuoteWalletSummary
+// (SMA-329) — the response of GET /quotes/{id}/eligible-credits after the
+// per-credit picker was replaced by partial wallet spend. Points are
+// integers; Decimals serialize as strings on the v2 wire. Amounts are in
+// the quote's currency.
+export interface QuoteWalletSummary {
+  balance_points: number;
+  // Wallet points not reserved by OTHER in-flight quotes.
+  available_points: number;
+  // Per-booking redemption cap in points (5% of the eligible base by
+  // default — the rate comes from the backend config store).
+  cap_points: number;
+  cap_rate: string;
+  // min(available_points, cap_points) — the most this quote can take.
+  max_applicable_points: number;
+  applied_points: number;
+  currency: string;
+  applied_amount: string;
+  max_applicable_amount: string;
+}
+
+// Mirrors tip-backend/v2/api/quote.py::ApplyPointsRequest — body of
+// POST /quotes/{id}/credits. `points` omitted/null means "apply the max".
+export interface ApplyPointsRequest {
+  points?: number | null;
 }
 
 // Markers mirrored from the backend (v2/services/quote_credit.py). New

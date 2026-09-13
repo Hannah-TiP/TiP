@@ -10,14 +10,12 @@ import { gotoPage } from './support/navigation';
  * the page flips to the PAID state in place.
  *
  * The test agent seeds a SENT quote for the E2E user whose snapshot total is
- * 0 (fully covered by an applied credit) and provides its id via:
+ * 0 (fully covered by discount lines) and provides its id via:
  *   - E2E_QUOTE_ZERO_TOTAL_ID
  *
- * Optionally, when the seeded credit's face value EXCEEDS the amount owed
- * (e.g. a $500 credit on a $100 booking), the applied-credit display test is
- * enabled via:
+ * Optionally, when the seeded snapshot carries an applied points/stay-credit
+ * discount line, the applied-line display test is enabled via:
  *   - E2E_ZERO_TOTAL_APPLIED_AMOUNT  (amount actually applied, e.g. "100.00")
- *   - E2E_ZERO_TOTAL_FACE_AMOUNT     (credit face value, e.g. "500.00")
  *
  * Each test is gated on its seed vars so the suite skips cleanly when they
  * are absent — bare PR CI has no backend and none of .env.local.
@@ -25,7 +23,6 @@ import { gotoPage } from './support/navigation';
 
 const ZERO_TOTAL_QUOTE_ID = process.env.E2E_QUOTE_ZERO_TOTAL_ID;
 const APPLIED_AMOUNT = process.env.E2E_ZERO_TOTAL_APPLIED_AMOUNT;
-const FACE_AMOUNT = process.env.E2E_ZERO_TOTAL_FACE_AMOUNT;
 
 test.describe('Zero-total quote', () => {
   test('Pay now marks the quote PAID in place without opening Flywire', async ({ page }) => {
@@ -113,7 +110,7 @@ test.describe('Zero-total quote', () => {
     await expect(page.getByTestId('pay-now-button')).toHaveCount(0);
   });
 
-  test('applied-credit panel shows the APPLIED amount, with the face value when they diverge', async ({
+  test('points panel shows the APPLIED amount from the snapshot discount line', async ({
     page,
   }) => {
     test.skip(
@@ -121,20 +118,15 @@ test.describe('Zero-total quote', () => {
       'E2E_QUOTE_ZERO_TOTAL_ID / E2E_ZERO_TOTAL_APPLIED_AMOUNT not set; skipping',
     );
 
-    // No stubs — this asserts against the real seeded snapshot + eligibility.
+    // No stubs — this asserts against the real seeded snapshot.
     await gotoPage(page, `/quotes/${ZERO_TOTAL_QUOTE_ID}`);
 
     const applied = page.getByTestId('applied-credit');
     await expect(applied).toBeVisible({ timeout: 15_000 });
 
-    // The panel shows the amount actually applied (from the snapshot's
-    // stay-credit discount line), not the credit's face value.
+    // The panel shows the amount actually deducted (from the snapshot's
+    // points/stay-credit discount line) — SMA-329 replaced the per-credit
+    // face-value display with the wallet spend amount.
     await expect(applied).toContainText(APPLIED_AMOUNT as string);
-
-    if (FACE_AMOUNT && FACE_AMOUNT !== APPLIED_AMOUNT) {
-      // Diverging fixture ($500 credit on a $100 booking): both figures
-      // render — "{face} credit — {applied} applied".
-      await expect(applied).toContainText(FACE_AMOUNT);
-    }
   });
 });

@@ -5,11 +5,11 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import PointsWalletPanel from '@/components/quote/PointsWalletPanel';
 import { apiClient } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/format-currency';
 import { tripDayNumber } from '@/lib/trip-utils';
 import {
-  appliedStayCreditAmount,
   isZeroTotal,
   type QuoteLineItem,
   type QuoteStatus,
@@ -17,7 +17,6 @@ import {
   type QuoteVersion,
 } from '@/types/quote';
 import type { Trip, TripVersion } from '@/types/trip';
-import type { EligibleCredit } from '@/types/stay-credit';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { formatDate as formatDateI18n } from '@/lib/format-date';
 
@@ -352,173 +351,6 @@ function LineItemsCard({
   );
 }
 
-function StayCreditPanel({
-  quoteId,
-  currentVersion,
-  status,
-  onApplied,
-  onError,
-}: {
-  quoteId: number;
-  currentVersion: QuoteVersion;
-  status: QuoteStatus;
-  onApplied: (bundle: QuoteWithVersion) => void;
-  onError: (msg: string) => void;
-}) {
-  const { t } = useLanguage();
-  const [eligible, setEligible] = useState<EligibleCredit[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busyCreditId, setBusyCreditId] = useState<number | null>(null);
-
-  // Once a quote is PAID / REJECTED / EXPIRED there's no point letting the
-  // user tinker — the credit is either consumed or the offer is gone.
-  // We still mount the panel so a paid quote can show "Applied: $X" but
-  // hide the toggle buttons via this flag.
-  const isLocked = status !== 'SENT' && status !== 'DRAFT';
-
-  // Single-credit cap today — show only the currently-applied one when
-  // present, otherwise show the full eligible list.
-  const appliedIds = currentVersion.applied_stay_credit_ids ?? [];
-  const appliedId = appliedIds[0] ?? null;
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    try {
-      const rows = await apiClient.listEligibleCreditsForQuote(quoteId);
-      setEligible(rows);
-    } catch (err) {
-      onError(err instanceof Error ? err.message : t('quote.error_load_credits'));
-    } finally {
-      setLoading(false);
-    }
-  }, [quoteId, onError, t]);
-
-  useEffect(() => {
-    if (isLocked && !appliedId) return;
-    refresh();
-  }, [refresh, isLocked, appliedId]);
-
-  const handleApply = async (creditId: number) => {
-    setBusyCreditId(creditId);
-    try {
-      const bundle = await apiClient.applyQuoteCredit(quoteId, creditId);
-      onApplied(bundle);
-      await refresh();
-    } catch (err) {
-      onError(err instanceof Error ? err.message : t('quote.error_apply_credit'));
-    } finally {
-      setBusyCreditId(null);
-    }
-  };
-
-  const handleRemove = async (creditId: number) => {
-    setBusyCreditId(creditId);
-    try {
-      const bundle = await apiClient.removeQuoteCredit(quoteId, creditId);
-      onApplied(bundle);
-      await refresh();
-    } catch (err) {
-      onError(err instanceof Error ? err.message : t('quote.error_remove_credit'));
-    } finally {
-      setBusyCreditId(null);
-    }
-  };
-
-  // Find the applied credit row from the eligible list — eligibility
-  // includes the currently-applied credit so we can render it as the
-  // "Remove" target.
-  const appliedRow = appliedId ? (eligible.find((c) => c.id === appliedId) ?? null) : null;
-
-  // The amount ACTUALLY applied comes from the snapshot's stay-credit
-  // discount line (clamped to the amount owed — SMA-237); the credit's
-  // face value (its remaining balance in quote currency) comes from the
-  // eligibility row. When they diverge we show both.
-  const snapCurrency = currentVersion.total_snapshot.currency;
-  const appliedAmount = appliedId ? appliedStayCreditAmount(currentVersion.total_snapshot) : null;
-  const faceAmount = appliedRow?.converted_amount ?? null;
-  const showBoth =
-    appliedAmount !== null && faceAmount !== null && Number(faceAmount) !== Number(appliedAmount);
-
-  if (isLocked && !appliedId) {
-    return null;
-  }
-
-  return (
-    <div data-testid="stay-credit-panel" className="bg-white rounded-xl border border-gray-200 p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-1">{t('quote.stay_credits')}</h2>
-      <p className="text-xs text-gray-500 mb-4">{t('quote.stay_credits_hint')}</p>
-
-      {loading ? (
-        <div className="text-sm text-gray-500">{t('quote.loading_credits')}</div>
-      ) : appliedId ? (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3">
-            <div>
-              <p className="text-sm font-semibold text-emerald-800" data-testid="applied-credit">
-                {showBoth && appliedAmount !== null && faceAmount !== null
-                  ? t('quote.applied_partial')
-                      .replace('{face}', formatCurrency(faceAmount, snapCurrency))
-                      .replace('{applied}', formatCurrency(appliedAmount, snapCurrency))
-                  : `${t('quote.applied')}${
-                      appliedAmount !== null
-                        ? `: ${formatCurrency(appliedAmount, snapCurrency)}`
-                        : ''
-                    }`}
-              </p>
-              {appliedRow ? (
-                <p className="text-[11px] uppercase tracking-[2px] text-emerald-700/80">
-                  {appliedRow.source}
-                </p>
-              ) : null}
-            </div>
-            {!isLocked && (
-              <button
-                type="button"
-                onClick={() => handleRemove(appliedId)}
-                disabled={busyCreditId === appliedId}
-                className="text-xs font-semibold text-emerald-800 hover:text-emerald-900 underline disabled:opacity-50"
-              >
-                {busyCreditId === appliedId ? t('quote.removing') : t('quote.remove')}
-              </button>
-            )}
-          </div>
-        </div>
-      ) : eligible.length === 0 ? (
-        <div className="text-sm text-gray-500">{t('quote.no_credits')}</div>
-      ) : (
-        <div className="space-y-2">
-          {eligible.map((credit) => {
-            const isBusy = busyCreditId === credit.id;
-            return (
-              <div
-                key={credit.id}
-                className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3 hover:border-gray-200"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {formatCurrency(credit.converted_amount, credit.converted_currency)}
-                  </p>
-                  <p className="text-[11px] uppercase tracking-[2px] text-gray-500">
-                    {credit.source}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleApply(credit.id)}
-                  disabled={isBusy}
-                  className="text-xs font-semibold text-[#1E3D2F] hover:text-[#163024] underline disabled:opacity-50"
-                >
-                  {isBusy ? t('quote.applying') : t('quote.apply')}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function TotalsCard({ version }: { version: QuoteVersion }) {
   const { t } = useLanguage();
   const snap = version.total_snapshot;
@@ -552,7 +384,7 @@ function TotalsCard({ version }: { version: QuoteVersion }) {
         )}
         <div className="border-t border-gray-200 pt-3 mt-3 flex justify-between text-base font-bold text-gray-900">
           <span>{t('quote.total')}</span>
-          <span>{formatCurrency(snap.total, snap.currency)}</span>
+          <span data-testid="quote-total">{formatCurrency(snap.total, snap.currency)}</span>
         </div>
       </div>
     </div>
@@ -796,7 +628,7 @@ function QuoteDetailContent() {
               <LineItemsCard version={currentVersion} tripVersion={tripVersion} />
             </div>
             <div className="space-y-6">
-              <StayCreditPanel
+              <PointsWalletPanel
                 quoteId={quote.id}
                 currentVersion={currentVersion}
                 status={quote.status}
