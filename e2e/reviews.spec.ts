@@ -44,7 +44,9 @@ test.describe('Post-trip review session', () => {
 
     // At least one item card with a status pill + a rating control.
     await expect(page.getByRole('radiogroup').first()).toBeVisible({ timeout: 15_000 });
-    const statusPills = page.getByText(/Not Reviewed|Submitted|Locked|Draft|Skipped/);
+    const statusPills = page.getByText(
+      /Not Reviewed|Pending approval|Submitted|Locked|Draft|Skipped/,
+    );
     await expect(statusPills.first()).toBeVisible();
     // A single trip-level submit button (not a per-item one). Use exact names:
     // a non-exact "Submit Review" match would also match the plural trip-level
@@ -72,7 +74,24 @@ test.describe('Post-trip review session', () => {
     await submit.click();
 
     // Either a success summary or a per-item error surfaces — never silent.
-    await expect(page.getByText(/submitted|Couldn’t submit/)).toBeVisible({ timeout: 15_000 });
+    const outcome = page.getByText(/submitted|Couldn’t submit/);
+    await expect(outcome).toBeVisible({ timeout: 15_000 });
+
+    // SMA-328: a fresh review lands in the approval queue, not live. The
+    // success banner says so, and the re-seeded card shows the pending pill
+    // plus the points-after-approval notice.
+    const succeeded = await page.getByText(/submitted — pending approval/).isVisible();
+    if (succeeded) {
+      // Count-based (not `.first()`): every item just submitted is pending.
+      await expect(page.getByText('Pending approval', { exact: true })).not.toHaveCount(0, {
+        timeout: 15_000,
+      });
+      await expect(
+        page
+          .getByTestId('review-pending-notice')
+          .filter({ hasText: /Points are added once it's approved/ }),
+      ).not.toHaveCount(0);
+    }
   });
 
   test('skipping an item excludes it and shows an Unskip affordance', async ({ page }) => {

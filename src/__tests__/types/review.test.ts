@@ -77,3 +77,14 @@ describe('review photo helpers (SMA-280)', () => {
     expect(new ReviewPhotoFinalizeError('x', 4005)).toBeInstanceOf(Error);
   });
 });
+
+describe('isPendingReview (SMA-328)', () => {
+  it('is true only for a review still in the approval queue', async () => {
+    const { isPendingReview } = await import('@/types/review');
+    const statuses = ['pending', 'visible', 'hidden', 'removed'] as const;
+    const results = statuses.map((moderation_status) =>
+      isPendingReview({ moderation_status } as never),
+    );
+    expect(results).toEqual([true, false, false, false]);
+  });
+});

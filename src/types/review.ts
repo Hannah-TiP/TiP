@@ -3,6 +3,14 @@ import type { Image } from '@/types/common';
 export type ReviewEntityType = 'hotel' | 'restaurant' | 'activity';
 
 /**
+ * Mirrors backend `ReviewModerationStatus` (SMA-57; `pending` added in
+ * SMA-328). New submissions enter `pending` and become public only once an
+ * admin approves them (→ `visible`). `hidden` / `removed` are admin
+ * rejections and are never returned to the author by the public reads.
+ */
+export type ReviewModerationStatus = 'pending' | 'visible' | 'hidden' | 'removed';
+
+/**
  * Mirrors backend `ReviewPhoto` (SMA-280) — a traveller photo attached to a
  * review. `hidden` is per-photo admin moderation state (Q3).
  */
@@ -19,6 +27,7 @@ export interface Review {
   entity_type: ReviewEntityType;
   entity_id: number;
   rating: number;
+  moderation_status: ReviewModerationStatus;
   locked_at: string | null;
   deleted_at: string | null;
   comment: string | null;
@@ -89,6 +98,14 @@ export class ReviewPhotoFinalizeError extends Error {
     this.name = 'ReviewPhotoFinalizeError';
     this.code = code;
   }
+}
+
+/**
+ * Whether the review is still in the admin approval queue (SMA-328). The
+ * review reward points are granted only once it is approved.
+ */
+export function isPendingReview(review: Review): boolean {
+  return review.moderation_status === 'pending';
 }
 
 /** The author-visible (non-hidden) photos of a review. */

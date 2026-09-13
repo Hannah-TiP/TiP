@@ -136,6 +136,7 @@ test.describe('Review photo attachments (SMA-280)', () => {
             entity_type: 'hotel',
             entity_id: 10,
             rating: 5,
+            moderation_status: 'pending',
             locked_at: null,
             deleted_at: null,
             comment: null,

@@ -4,7 +4,7 @@ import { lazy, Suspense } from 'react';
 import StarRating from '@/components/reviews/StarRating';
 import type { ReviewableEntity } from '@/lib/trip-utils';
 import type { Image } from '@/types/common';
-import { visibleReviewPhotos, type Review } from '@/types/review';
+import { isPendingReview, visibleReviewPhotos, type Review } from '@/types/review';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 // Code-split (bundle-size gate): the upload machinery only loads on the
@@ -17,7 +17,7 @@ const ReviewPhotoStrip = lazy(() => import('@/components/reviews/ReviewPhotoStri
 
 type TranslationKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
-export type ReviewItemStatus = 'not-reviewed' | 'draft' | 'submitted' | 'locked';
+export type ReviewItemStatus = 'not-reviewed' | 'draft' | 'pending' | 'submitted' | 'locked';
 
 export interface ReviewItemValue {
   rating: number;
@@ -63,7 +63,8 @@ const TYPE_BADGE_COLOR: Record<ReviewableEntity['entityType'], string> = {
 
 function statusOf(existingReview: Review | null, value: ReviewItemValue): ReviewItemStatus {
   if (existingReview) {
-    return existingReview.locked_at ? 'locked' : 'submitted';
+    if (existingReview.locked_at) return 'locked';
+    return isPendingReview(existingReview) ? 'pending' : 'submitted';
   }
   return value.rating > 0 || value.comment.trim() !== '' || value.photos.length > 0
     ? 'draft'
@@ -76,6 +77,7 @@ const STATUS_PILL: Record<ReviewItemStatus, { labelKey: TranslationKey; classNam
     className: 'bg-gray-100 text-gray-600',
   },
   draft: { labelKey: 'reviews.status_draft', className: 'bg-blue-100 text-blue-700' },
+  pending: { labelKey: 'reviews.status_pending', className: 'bg-amber-100 text-amber-800' },
   submitted: { labelKey: 'reviews.status_submitted', className: 'bg-green-100 text-green-700' },
   locked: { labelKey: 'reviews.status_locked', className: 'bg-gray-200 text-gray-500' },
 };
@@ -121,6 +123,15 @@ export default function ReviewSessionItem({
           {pill.label}
         </span>
       </div>
+
+      {status === 'pending' && !skipped && (
+        <p
+          data-testid="review-pending-notice"
+          className="mb-4 rounded-lg bg-amber-50 px-4 py-2.5 text-sm text-amber-800"
+        >
+          {t('reviews.pending_points_notice')}
+        </p>
+      )}
 
       {isLocked ? (
         <div>

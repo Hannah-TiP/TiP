@@ -21,6 +21,7 @@ function makeReview(id: number, rating: number): ReviewWithAuthor {
       entity_type: 'hotel',
       entity_id: 10,
       rating,
+      moderation_status: 'visible',
       locked_at: null,
       deleted_at: null,
       comment: `Comment ${id}`,
