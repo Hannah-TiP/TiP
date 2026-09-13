@@ -393,7 +393,7 @@ export default function TravelHistoryTripDetailPage() {
                       <span className="text-gray-600">
                         {creditSourceLabel(credit, lang === 'en', benefits)}
                       </span>
-                      <span className="font-medium text-[#1E3D2F]">
+                      <span className="whitespace-nowrap font-medium text-[#1E3D2F]">
                         {formatSignedPoints(credit.delta_points)}
                       </span>
                     </div>
@@ -401,7 +401,7 @@ export default function TravelHistoryTripDetailPage() {
                 </div>
                 <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3 text-sm">
                   <span className="font-semibold text-gray-900">{t('trip_detail.total')}</span>
-                  <span className="font-primary text-lg italic text-[#1E3D2F]">
+                  <span className="whitespace-nowrap font-primary text-lg italic text-[#1E3D2F]">
                     {formatPoints(creditsTotalPoints)}
                   </span>
                 </div>
