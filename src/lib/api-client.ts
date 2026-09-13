@@ -52,9 +52,9 @@ import type { BenefitsResponse } from '@/types/v2/benefits';
 import type {
   ClaimReferralResponse,
   MyReferralsResponse,
+  PointsLedgerResponse,
   RedeemPromoCodeResponse,
   UserCreditProjectionResponse,
-  WalletPointTransaction,
 } from '@/types/stay-credit';
 import { REDEEM_ERROR_CODE_MAP, RedeemPromoCodeError } from '@/types/stay-credit';
 import type {
@@ -187,9 +187,12 @@ class ApiClient {
     return this.request<User>('/auth/me');
   }
 
-  async getMyCredits(): Promise<WalletPointTransaction[]> {
-    const response = await this.request<{ data: WalletPointTransaction[] }>('/me/credits');
-    return response.data ?? [];
+  // The member's TiP Points wallet (SMA-332): the backend-derived balance
+  // plus every ledger row (grants AND spends), newest first. Replaces the
+  // per-lot GET /me/credits list, which is now mobile-only.
+  async getMyPoints(): Promise<PointsLedgerResponse> {
+    const response = await this.request<{ data: PointsLedgerResponse }>('/me/points');
+    return response.data;
   }
 
   // The member's own pending-earn projection (SMA-276): review-gated

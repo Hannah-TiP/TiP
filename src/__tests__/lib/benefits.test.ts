@@ -10,6 +10,7 @@ import {
   formatUsdCents,
   formatWholeNumber,
   membershipBenefitFigures,
+  resolvePointUnit,
   resolvedBenefitValue,
 } from '@/lib/benefits';
 import {
@@ -220,5 +221,42 @@ describe('fetchBenefits', () => {
     getBenefitsMock.mockResolvedValueOnce(makePayload());
     expect(await fetchBenefits()).not.toBeNull();
     expect(getBenefitsMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('resolvePointUnit (SMA-332)', () => {
+  const unitEntry = {
+    key: 'point_unit',
+    kind: 'unit_definition' as const,
+    unit: 'points' as const,
+    values_by_tier: { carte: '100', cercle: '100', confidence: '100', cenacle: '100' },
+    copy: { en: 'x', kr: 'x' },
+  };
+
+  it('prefers the resolved own-tier value, then the declared tier value', () => {
+    const withResolved: BenefitsResponse = {
+      benefits: [unitEntry],
+      resolved: { tier: 'cercle', benefits: [{ key: 'point_unit', unit: 'points', value: '100' }] },
+    };
+    expect(resolvePointUnit(withResolved)).toBe(100);
+    expect(resolvePointUnit({ benefits: [unitEntry], resolved: null })).toBe(100);
+  });
+
+  it('returns null when the payload / entry is absent or the value is not a positive number', () => {
+    expect(resolvePointUnit(null)).toBeNull();
+    expect(resolvePointUnit(undefined)).toBeNull();
+    expect(resolvePointUnit({ benefits: [], resolved: null })).toBeNull();
+    expect(
+      resolvePointUnit({
+        benefits: [{ ...unitEntry, values_by_tier: { carte: '0' } }],
+        resolved: null,
+      }),
+    ).toBeNull();
+    expect(
+      resolvePointUnit({
+        benefits: [{ ...unitEntry, values_by_tier: { carte: 'abc' } }],
+        resolved: null,
+      }),
+    ).toBeNull();
   });
 });

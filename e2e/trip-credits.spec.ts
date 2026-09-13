@@ -5,68 +5,68 @@ import { gotoPage } from './support/navigation';
 // chromium-authed project. We mock the backend proxy route so the test is
 // deterministic and doesn't depend on seeded credits.
 
-// Each trip yields a single post-trip credit: the user's first trip (55) earns
-// the 3% first-trip bonus, and a later trip (66) earns the 2% trip cashback. No
+// Each trip yields a single post-trip grant: the user's first trip (55) earned
+// the legacy first-trip bonus, and a later trip (66) earned trip points. No
 // single trip carries both.
 //
-// Rows use the SMA-325 WalletPointTransaction wire shape (see
-// src/types/stay-credit.ts): grant lots with `kind`/`delta_points` plus the
-// wallet-derived `remaining_points`/`effective_status` — the page renders
-// `effective_status`, never the frozen legacy `status`. 100 P = USD 1, so
-// delta_points equals amount_cents for these USD lots.
-const TRIP_LINKED_CREDITS = [
-  {
-    id: 101,
-    user_id: 1,
-    source: 'payment_points',
-    status: 'issued',
-    kind: 'grant',
-    delta_points: 2000,
-    remaining_points: 2000,
-    effective_status: 'issued',
-    amount_cents: 2000,
-    currency: 'USD',
-    source_ref: 'trip:66:payment_2pct',
-    created_at: '2026-05-01T00:00:00Z',
-  },
-  {
-    id: 102,
-    user_id: 1,
-    source: 'first_trip_cashback',
-    status: 'issued',
-    kind: 'grant',
-    delta_points: 3000,
-    remaining_points: 3000,
-    effective_status: 'issued',
-    amount_cents: 3000,
-    currency: 'USD',
-    source_ref: 'trip:55:first_trip_3pct',
-    created_at: '2026-05-01T00:00:00Z',
-  },
-  {
-    id: 103,
-    user_id: 1,
-    source: 'welcome',
-    status: 'issued',
-    kind: 'grant',
-    delta_points: 5000,
-    remaining_points: 5000,
-    effective_status: 'issued',
-    amount_cents: 5000,
-    currency: 'USD',
-    source_ref: null,
-    created_at: '2026-04-01T00:00:00Z',
-  },
-];
+// Rows use the SMA-332 PointsLedgerResponse wire shape (see
+// src/types/stay-credit.ts): the backend-derived `balance_points` plus every
+// ledger row with `kind`/`delta_points`, newest first. The page renders the
+// balance and rows verbatim — it never re-sums the ledger.
+const TRIP_LINKED_LEDGER = {
+  user_id: 1,
+  balance_points: 10000,
+  transactions: [
+    {
+      id: 101,
+      user_id: 1,
+      source: 'payment_points',
+      status: 'issued',
+      kind: 'grant',
+      delta_points: 2000,
+      amount_cents: 2000,
+      currency: 'USD',
+      source_ref: 'trip:66:tiered_earn',
+      expires_at: '2028-05-01T00:00:00Z',
+      created_at: '2026-05-01T00:00:00Z',
+    },
+    {
+      id: 102,
+      user_id: 1,
+      source: 'first_trip_cashback',
+      status: 'issued',
+      kind: 'grant',
+      delta_points: 3000,
+      amount_cents: 3000,
+      currency: 'USD',
+      source_ref: 'trip:55:first_trip_3pct',
+      expires_at: null,
+      created_at: '2026-05-01T00:00:00Z',
+    },
+    {
+      id: 103,
+      user_id: 1,
+      source: 'welcome',
+      status: 'issued',
+      kind: 'grant',
+      delta_points: 5000,
+      amount_cents: 5000,
+      currency: 'USD',
+      source_ref: null,
+      expires_at: '2028-04-01T00:00:00Z',
+      created_at: '2026-04-01T00:00:00Z',
+    },
+  ],
+};
 
 test.describe('Trip-linked credits on /my-page/credits', () => {
   test('post-trip credits show source labels and a View trip link', async ({ page }) => {
-    await page.route('**/api/me/credits', async (route) => {
+    await page.route('**/api/me/points', async (route) => {
       if (route.request().method() !== 'GET') return route.fallback();
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ code: 200, message: 'Success', data: TRIP_LINKED_CREDITS }),
+        body: JSON.stringify({ code: 200, message: 'Success', data: TRIP_LINKED_LEDGER }),
       });
     });
     // Stub the benefit registry proxy (SMA-322) so the source labels are
@@ -84,6 +84,13 @@ test.describe('Trip-linked credits on /my-page/credits', () => {
           message: 'Success',
           data: {
             benefits: [
+              {
+                key: 'point_unit',
+                kind: 'unit_definition',
+                unit: 'points',
+                values_by_tier: { carte: '100', cercle: '100', confidence: '100', cenacle: '100' },
+                copy: { en: 'TiP Points: 100 P = USD 1.', kr: 'TiP 포인트: 100 P = USD 1.' },
+              },
               {
                 key: 'tiered_earn',
                 kind: 'earn_rate',
@@ -117,6 +124,11 @@ test.describe('Trip-linked credits on /my-page/credits', () => {
 
     await gotoPage(page, '/my-page/credits');
 
+    // ONE wallet balance in P (backend-derived) with the USD approximation
+    // from the registry's point_unit (10,000 P / 100 = USD 100).
+    await expect(page.getByTestId('points-balance')).toHaveText('10,000 P', { timeout: 15_000 });
+    await expect(page.getByTestId('points-usd-approx')).toHaveText('≈ USD 100');
+
     // Registry copy for payment_points (from the stubbed payload); static
     // fallback label for the inactive first_trip_cashback source.
     await expect(page.getByText('Earn stay credit on every completed, reviewed trip.')).toBeVisible(
@@ -135,9 +147,12 @@ test.describe('Trip-linked credits on /my-page/credits', () => {
       new Set(['/my-page/travel-history/55', '/my-page/travel-history/66']),
     );
 
+    // Every grant renders with an explicit + sign; the no-expiry lot reads
+    // "No expiry" (never blank).
+    await expect(page.getByTestId('points-delta')).toHaveText(['+2,000 P', '+3,000 P', '+5,000 P']);
+    await expect(page.getByTestId('points-expiry').nth(1)).toContainText('No expiry');
+
     // The welcome credit has no trip linkage, so it shows no View trip link.
-    // Match the credit-row label exactly so it doesn't collide with the page's
-    // "Welcome gifts, birthday credits…" intro copy.
     await expect(page.getByText('Welcome', { exact: true })).toBeVisible();
   });
 });

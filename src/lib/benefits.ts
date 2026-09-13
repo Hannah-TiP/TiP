@@ -68,6 +68,21 @@ export function resolvedBenefitValue(
   return resolved.benefits.find((item) => item.key === key)?.value ?? null;
 }
 
+// Points per 1 USD from the registry's structural `point_unit` entry
+// (SMA-332). The signed-in caller's resolved value wins; anonymous or
+// resolved-less payloads read the tier-agnostic declared value (identical
+// across tiers). Null when the payload / entry is absent or the value is not
+// a positive finite number — consumers hide the USD line rather than guess.
+export function resolvePointUnit(benefits: BenefitsResponse | null | undefined): number | null {
+  const raw =
+    resolvedBenefitValue(benefits, 'point_unit') ??
+    findBenefit(benefits, 'point_unit')?.values_by_tier?.carte ??
+    null;
+  if (raw === null || !raw.trim()) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 // ── Display formatting ─────────────────────────────────────────────────────
 
 // "0.001" → "0.1%". Display-only: parse, scale to percent, and round away
