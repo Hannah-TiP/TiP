@@ -21,7 +21,6 @@ import {
   FALLBACK_BENEFIT_CREDIT,
   FALLBACK_CERCLE_LOYALTY_NIGHTS,
   FALLBACK_CONFIDENCE_SIGNATURE_NIGHTS,
-  FALLBACK_CONFIDENCE_WELCOME,
 } from '@/lib/benefits-fallback';
 import { apiClient } from '@/lib/api-client';
 
@@ -187,7 +186,6 @@ describe('membershipBenefitFigures', () => {
       confidence: '$200',
       cenacle: '$400',
     });
-    expect(figures.confidenceWelcome).toBe('$500');
     expect(figures.cercleLoyaltyNights).toBe('17');
     expect(figures.confidenceSignatureNights).toBe('10');
   });
@@ -195,18 +193,18 @@ describe('membershipBenefitFigures', () => {
   it('degrades to the static fallbacks when the payload is unavailable', () => {
     const figures = membershipBenefitFigures(null);
     expect(figures.benefitCredit).toEqual(FALLBACK_BENEFIT_CREDIT);
-    expect(figures.confidenceWelcome).toBe(FALLBACK_CONFIDENCE_WELCOME);
     expect(figures.cercleLoyaltyNights).toBe(FALLBACK_CERCLE_LOYALTY_NIGHTS);
     expect(figures.confidenceSignatureNights).toBe(FALLBACK_CONFIDENCE_SIGNATURE_NIGHTS);
   });
 
   it('falls back per-figure when the payload lacks an entry', () => {
     const payload = makePayload();
-    payload.benefits = payload.benefits.filter((b) => b.key !== 'confidence_welcome');
+    payload.benefits = payload.benefits.filter((b) => b.key !== 'cercle_loyalty_night');
     const figures = membershipBenefitFigures(payload);
-    expect(figures.confidenceWelcome).toBe(FALLBACK_CONFIDENCE_WELCOME);
+    expect(figures.cercleLoyaltyNights).toBe(FALLBACK_CERCLE_LOYALTY_NIGHTS);
     // the rest still come from the payload
     expect(figures.benefitCredit.cercle).toBe('$150');
+    expect(figures.confidenceSignatureNights).toBe('10');
   });
 });
 

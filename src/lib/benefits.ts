@@ -19,7 +19,6 @@ import {
   FALLBACK_BENEFIT_CREDIT,
   FALLBACK_CERCLE_LOYALTY_NIGHTS,
   FALLBACK_CONFIDENCE_SIGNATURE_NIGHTS,
-  FALLBACK_CONFIDENCE_WELCOME,
 } from '@/lib/benefits-fallback';
 
 let cached: Promise<BenefitsResponse | null> | null = null;
@@ -203,8 +202,6 @@ export function fillVars(template: string, vars: Record<string, string>): string
 export interface MembershipBenefitFigures {
   // Per-booking Benefit Credit display amount by circle ("$100" …).
   benefitCredit: Record<MembershipTier, string>;
-  // Confidence one-time welcome credit ("$500").
-  confidenceWelcome: string;
   // Free-night thresholds in nights ("17" / "10").
   cercleLoyaltyNights: string;
   confidenceSignatureNights: string;
@@ -232,6 +229,9 @@ function nightsFigure(
 
 // Resolve every money/threshold figure the membership tier cards render,
 // preferring the payload and degrading per-figure to the static fallbacks.
+// Ledger point grants (e.g. the Confidence welcome points) are NOT here —
+// they render in P via `benefitTierPoints` and drop the figure when the
+// registry is unavailable rather than falling back to a currency literal.
 export function membershipBenefitFigures(
   benefits: BenefitsResponse | null,
 ): MembershipBenefitFigures {
@@ -247,12 +247,6 @@ export function membershipBenefitFigures(
       ),
       cenacle: usdFigure(benefits, 'benefit_credit', 'cenacle', FALLBACK_BENEFIT_CREDIT.cenacle),
     },
-    confidenceWelcome: usdFigure(
-      benefits,
-      'confidence_welcome',
-      'confidence',
-      FALLBACK_CONFIDENCE_WELCOME,
-    ),
     cercleLoyaltyNights: nightsFigure(
       benefits,
       'cercle_loyalty_night',

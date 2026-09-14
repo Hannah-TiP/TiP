@@ -18,6 +18,8 @@ const SRC_ROOT = path.resolve(__dirname, '../..');
 
 const GUARDED_FILES = [
   'types/stay-credit.ts',
+  // Covers the inline tier-card copy too — incl. the Confidence welcome
+  // and birthday ledger-grant lines, which must stay {placeholder}/figure-free.
   'app/my-page/membership/page.tsx',
   'app/my-page/credits/page.tsx',
   'app/my-page/travel-history/[id]/page.tsx',
@@ -68,6 +70,9 @@ describe('no hardcoded benefit figures (SMA-322)', () => {
     expect(BENEFIT_FIGURE.test('Stay Credit — {carteCredit} per stay')).toBe(false);
     expect(BENEFIT_FIGURE.test('{points} added to your TiP Points.')).toBe(false);
     expect(BENEFIT_FIGURE.test('≈ USD {amount}')).toBe(false);
+    expect(
+      BENEFIT_FIGURE.test('{confidenceWelcome} in welcome TiP Points added when you join.'),
+    ).toBe(false);
   });
 
   it('finds every guarded source file', () => {

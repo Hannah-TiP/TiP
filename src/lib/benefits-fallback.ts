@@ -27,9 +27,6 @@ export const FALLBACK_BENEFIT_CREDIT: Record<MembershipTier, string> = {
   cenacle: '$400',
 };
 
-// Confidence one-time welcome credit (registry key `confidence_welcome`).
-export const FALLBACK_CONFIDENCE_WELCOME = '$500';
-
 // Free-night thresholds, in nights (registry keys `cercle_loyalty_night` /
 // `confidence_signature_night`).
 export const FALLBACK_CERCLE_LOYALTY_NIGHTS = '17';
