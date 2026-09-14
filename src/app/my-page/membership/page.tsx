@@ -6,11 +6,13 @@ import FreeNightSummary from '@/components/FreeNightSummary';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useBenefits } from '@/hooks/useBenefits';
 import {
+  benefitTierPoints,
   fillVars,
   formatRatePercent,
   membershipBenefitFigures,
   resolvedBenefitValue,
 } from '@/lib/benefits';
+import { formatPoints } from '@/lib/points-wallet';
 import {
   CENACLE_ANNUAL_FEE,
   CERCLE_ANNUAL_SPEND,
@@ -38,6 +40,10 @@ type Circle = {
   tagline: Bilingual;
   price: Bilingual;
   qualifying: Bilingual;
+  // Rendered instead of `qualifying` when a ledger-grant figure it quotes
+  // (e.g. the Confidence welcome TiP Points) cannot be resolved from the
+  // registry — the figure is dropped, never invented (SMA-358).
+  qualifyingNoFigure?: Bilingual;
   sections: CircleSection[];
   emphasis: 'soft' | 'recommended' | 'private';
 };
@@ -108,8 +114,8 @@ const CIRCLES: Circle[] = [
             kr: '어라이벌 리추얼 — 베개 · 미니바 · 향 · 플라워 맞춤',
           },
           {
-            en: 'Birthday Stay — dedicated credit and a private in-room welcome in your birthday month',
-            kr: '버스데이 스테이 — 생일 달 전용 크레딧과 프라이빗 인룸 세레머니',
+            en: 'Birthday Stay — birthday TiP Points and a private in-room welcome in your birthday month',
+            kr: '버스데이 스테이 — 생일 달 생일 TiP 포인트와 프라이빗 인룸 세레머니',
           },
           {
             en: 'Loyalty Night — one complimentary night after {cercleLoyaltyNights} nights with TiP partners',
@@ -134,8 +140,12 @@ const CIRCLES: Circle[] = [
     tagline: { en: 'The hotel already knows you.', kr: '호텔이 이미 당신을 아는 곳' },
     price: CONFIDENCE_ANNUAL_FEE,
     qualifying: {
-      en: '{confidenceAnnualSpend} in annual bookings, or 12+ months as a Cercle member with advisor referral. {confidenceWelcome} welcome credit applied to your first qualifying stay.',
-      kr: '연간 {confidenceAnnualSpend} 이상의 TiP 예약, 또는 Cercle 멤버십 12개월 이상 + 어드바이저 추천. 가입 후 첫 스테이에 {confidenceWelcome} 웰컴 크레딧 자동 적용',
+      en: '{confidenceAnnualSpend} in annual bookings, or 12+ months as a Cercle member with advisor referral. {confidenceWelcome} in welcome TiP Points added when you join.',
+      kr: '연간 {confidenceAnnualSpend} 이상의 TiP 예약, 또는 Cercle 멤버십 12개월 이상 + 어드바이저 추천. 가입 시 웰컴 TiP 포인트 {confidenceWelcome} 적립',
+    },
+    qualifyingNoFigure: {
+      en: '{confidenceAnnualSpend} in annual bookings, or 12+ months as a Cercle member with advisor referral. Welcome TiP Points added when you join.',
+      kr: '연간 {confidenceAnnualSpend} 이상의 TiP 예약, 또는 Cercle 멤버십 12개월 이상 + 어드바이저 추천. 가입 시 웰컴 TiP 포인트 적립',
     },
     sections: [
       {
@@ -320,17 +330,30 @@ export default function Membership() {
   // Money figures from the registry payload, with per-figure static
   // fallback when the endpoint is unavailable (never blank/crash).
   const figures = membershipBenefitFigures(benefits);
+  // The Confidence welcome grant is a LEDGER points grant (SMA-358): its
+  // figure renders in P via the registry `point_unit`, and is dropped
+  // (figure-free copy) when the registry is unavailable — never a static
+  // currency fallback.
+  const confidenceWelcomePoints = benefitTierPoints(benefits, 'confidence_welcome', 'confidence');
   const copyVars: Record<string, string> = {
     carteCredit: figures.benefitCredit.carte,
     cercleCredit: figures.benefitCredit.cercle,
     confidenceCredit: figures.benefitCredit.confidence,
     cenacleCredit: figures.benefitCredit.cenacle,
-    confidenceWelcome: figures.confidenceWelcome,
+    confidenceWelcome:
+      confidenceWelcomePoints === null ? '' : formatPoints(confidenceWelcomePoints),
     cercleLoyaltyNights: figures.cercleLoyaltyNights,
     confidenceSignatureNights: figures.confidenceSignatureNights,
     cercleAnnualSpend: CERCLE_ANNUAL_SPEND,
     confidenceAnnualSpend: CONFIDENCE_ANNUAL_SPEND,
   };
+  const qualifyingCopy = (circle: Circle): string =>
+    fillVars(
+      (circle.qualifyingNoFigure && confidenceWelcomePoints === null
+        ? circle.qualifyingNoFigure
+        : circle.qualifying)[en ? 'en' : 'kr'],
+      copyVars,
+    );
 
   // The member's OWN earn rate (SMA-322): from the payload's `resolved`
   // block — present only for signed-in callers, hidden otherwise.
@@ -455,7 +478,7 @@ export default function Membership() {
                         isPrivate ? 'text-white/60' : 'text-gray-text'
                       }`}
                     >
-                      {fillVars(circle.qualifying[en ? 'en' : 'kr'], copyVars)}
+                      {qualifyingCopy(circle)}
                     </p>
                   </div>
                 </div>
@@ -519,9 +542,7 @@ export default function Membership() {
                     <td className="px-5 py-3 font-primary text-[18px] italic text-green-dark">
                       ◆ {circle.name}
                     </td>
-                    <td className="px-5 py-3 text-gray-text">
-                      {fillVars(circle.qualifying[en ? 'en' : 'kr'], copyVars)}
-                    </td>
+                    <td className="px-5 py-3 text-gray-text">{qualifyingCopy(circle)}</td>
                     <td className="px-5 py-3 text-right font-semibold text-green-dark">
                       {circle.price[en ? 'en' : 'kr']}
                     </td>

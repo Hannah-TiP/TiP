@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api-client';
 import { getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
 import en from '@/translations/en.json';
 import type { PointTransaction, ProjectedTripEarn } from '@/types/stay-credit';
+import type { BenefitsResponse } from '@/types/v2/benefits';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -56,9 +57,28 @@ vi.mock('@/lib/api-client', () => ({
   },
 }));
 
+// Registry payload carrying the `point_unit` entry (100 P = 1 USD).
+const POINT_UNIT_PAYLOAD: BenefitsResponse = {
+  benefits: [
+    {
+      key: 'point_unit',
+      kind: 'unit_definition',
+      unit: 'points',
+      values_by_tier: { carte: '100', cercle: '100', confidence: '100', cenacle: '100' },
+      copy: { en: 'x', kr: 'x' },
+    },
+  ],
+  resolved: null,
+};
+let benefitsValue: BenefitsResponse | null = POINT_UNIT_PAYLOAD;
+vi.mock('@/hooks/useBenefits', () => ({
+  useBenefits: () => benefitsValue,
+}));
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  benefitsValue = POINT_UNIT_PAYLOAD;
 });
 
 const BUNDLE = {
@@ -107,8 +127,9 @@ const PENDING: ProjectedTripEarn = {
   eligible_spend_cents: 100000,
   currency: 'USD',
   tier_rate: 0.005,
-  projected_amount_cents: 500,
-  blocking_reason: 'awaiting_review',
+  projected_amount_cents: 1250,
+  projected_points: 1250,
+  blocking_reason: 'awaiting_completion',
 };
 
 function mockApi(credits: PointTransaction[], projections: ProjectedTripEarn[]) {
@@ -126,34 +147,72 @@ function mockApi(credits: PointTransaction[], projections: ProjectedTripEarn[]) 
 }
 
 describe('Pending-credit nudge on /my-page/travel-history/[id]', () => {
-  it('shows the nudge with the ~amount and a reviews link when nothing was earned yet', async () => {
+  it('shows the nudge in P with the USD approximation and completion copy when nothing was earned yet', async () => {
     mockApi([], [PENDING]);
 
     render(<TravelHistoryTripDetailPage />);
 
     const nudge = await screen.findByTestId('pending-credit-nudge');
-    expect(nudge.textContent).toContain('Credit you can still earn');
-    expect(nudge.textContent).toContain('~USD 5.00');
+    expect(nudge.textContent).toContain('TiP Points you can still earn');
+    expect(nudge.textContent).not.toContain('Credit you can still earn');
+    expect(screen.getByTestId('pending-points').textContent).toBe('+1,250 P');
+    expect(screen.getByTestId('pending-usd-approx').textContent).toBe('≈ USD 12');
+    expect(nudge.textContent).not.toContain('USD 12.50');
+    // Completion-based body — no "review to earn", still tier-disclaimed.
+    expect(nudge.textContent).toContain(
+      'An estimated 1,250 P is on its way — added automatically now that your trip has ended',
+    );
+    expect(nudge.textContent).not.toContain('Review this trip to earn');
     expect(nudge.textContent).toContain('current membership tier');
+    // Reviews are a SEPARATE reward, no amount stated.
+    expect(nudge.textContent).toContain(en['credits.pending_review_separate']);
     const cta = screen.getByRole('link', { name: 'Write a review →' });
     expect(cta.getAttribute('href')).toBe('/my-page/travel-history/42/reviews');
     // The earned-credits card is absent — the nudge is its empty-state sibling.
     expect(screen.queryByText(en['trip_detail.credits_earned'])).toBeNull();
   });
 
+  it('maps the legacy awaiting_review wire value to the completion copy', async () => {
+    mockApi([], [{ ...PENDING, blocking_reason: 'awaiting_review' }]);
+
+    render(<TravelHistoryTripDetailPage />);
+
+    const nudge = await screen.findByTestId('pending-credit-nudge');
+    expect(nudge.textContent).toContain('1,250 P is on its way');
+    expect(nudge.textContent).not.toContain('Review this trip');
+  });
+
+  it('falls back to cents → points for a USD projection from an older backend', async () => {
+    mockApi([], [{ ...PENDING, projected_points: undefined }]);
+
+    render(<TravelHistoryTripDetailPage />);
+
+    await screen.findByTestId('pending-credit-nudge');
+    expect(screen.getByTestId('pending-points').textContent).toBe('+1,250 P');
+  });
+
+  it('renders figure-free for a non-USD legacy projection (no invented FX)', async () => {
+    mockApi([], [{ ...PENDING, projected_points: undefined, currency: 'EUR' }]);
+
+    render(<TravelHistoryTripDetailPage />);
+
+    const nudge = await screen.findByTestId('pending-credit-nudge');
+    expect(screen.queryByTestId('pending-points')).toBeNull();
+    expect(nudge.textContent).toContain(en['trip_detail.pending_points_body_no_figure']);
+    expect(nudge.textContent).not.toContain('EUR');
+  });
+
   it('shows the after-trip copy WITHOUT a reviews link for a not-finished trip', async () => {
-    // Reviewing before the trip ends is a no-op for the grant (it only
-    // fires once the trip is date-finished), so the nudge must not steer
-    // the member to the reviews page early.
+    // Accrual only fires once the trip is date-finished, so the nudge must
+    // not steer the member to the reviews page early.
     mockApi([], [{ ...PENDING, blocking_reason: 'trip_not_finished' }]);
 
     render(<TravelHistoryTripDetailPage />);
 
     const nudge = await screen.findByTestId('pending-credit-nudge');
-    expect(nudge.textContent).toContain('~USD 5.00');
-    // The distinctive after-trip suffix of the copy (text after {amount}).
+    expect(screen.getByTestId('pending-points').textContent).toBe('+1,250 P');
     expect(nudge.textContent).toContain(
-      en['credits.pending_trip_not_finished'].split('{amount}')[1],
+      "You'll earn an estimated 1,250 P automatically after this trip ends",
     );
     // No reviews CTA in this state.
     expect(screen.queryByRole('link', { name: 'Write a review →' })).toBeNull();

@@ -5,7 +5,11 @@ import {
   parsePoints,
   pointsInputError,
   pointsToUsdApprox,
+  projectedPoints,
+  redeemedPoints,
+  usdCentsToPoints,
 } from '@/lib/points-wallet';
+import type { ProjectedTripEarn, RedeemPromoCodeResponse } from '@/types/stay-credit';
 
 describe('pointsInputError', () => {
   it('accepts whole numbers in [1, max]', () => {
@@ -78,5 +82,83 @@ describe('pointsToUsdApprox', () => {
     expect(pointsToUsdApprox(24500, -100)).toBeNull();
     expect(pointsToUsdApprox(24500, Number.NaN)).toBeNull();
     expect(pointsToUsdApprox(Number.NaN, 100)).toBeNull();
+  });
+});
+
+describe('usdCentsToPoints', () => {
+  it('converts cents to whole points via the registry point unit, flooring', () => {
+    expect(usdCentsToPoints(1250, 100)).toBe(1250);
+    expect(usdCentsToPoints(500, 100)).toBe(500);
+    expect(usdCentsToPoints(1, 100)).toBe(1);
+    // Binary-float trap: 29 / 100 * 100 === 28.999… — must still be 29 P.
+    expect(usdCentsToPoints(29, 100)).toBe(29);
+    expect(usdCentsToPoints(57, 100)).toBe(57);
+    // A non-100 unit still floors to whole points.
+    expect(usdCentsToPoints(1250, 10)).toBe(125);
+    expect(usdCentsToPoints(1255, 10)).toBe(125);
+  });
+
+  it('returns null without a valid unit — never a guessed ratio', () => {
+    expect(usdCentsToPoints(1250, null)).toBeNull();
+    expect(usdCentsToPoints(1250, undefined)).toBeNull();
+    expect(usdCentsToPoints(1250, 0)).toBeNull();
+    expect(usdCentsToPoints(Number.NaN, 100)).toBeNull();
+  });
+});
+
+function projection(overrides: Partial<ProjectedTripEarn>): ProjectedTripEarn {
+  return {
+    trip_id: 1,
+    eligible_spend_cents: 250000,
+    currency: 'USD',
+    tier_rate: 0.005,
+    projected_amount_cents: 1250,
+    blocking_reason: 'awaiting_completion',
+    ...overrides,
+  };
+}
+
+describe('projectedPoints', () => {
+  it('prefers the backend projected_points regardless of currency or unit', () => {
+    expect(projectedPoints(projection({ projected_points: 1250 }), 100)).toBe(1250);
+    expect(projectedPoints(projection({ projected_points: 1250, currency: 'EUR' }), null)).toBe(
+      1250,
+    );
+  });
+
+  it('falls back to the USD cents → points conversion when projected_points is absent', () => {
+    expect(projectedPoints(projection({}), 100)).toBe(1250);
+  });
+
+  it('never invents an FX rate for a non-USD legacy projection', () => {
+    expect(projectedPoints(projection({ currency: 'EUR' }), 100)).toBeNull();
+  });
+
+  it('is figure-less for a USD legacy projection without a point unit', () => {
+    expect(projectedPoints(projection({}), null)).toBeNull();
+  });
+});
+
+function redemption(overrides: Partial<RedeemPromoCodeResponse>): RedeemPromoCodeResponse {
+  return { credited_amount: '20.00', currency: 'USD', credit_id: 9, ...overrides };
+}
+
+describe('redeemedPoints', () => {
+  it('prefers the backend credited_points', () => {
+    expect(redeemedPoints(redemption({ credited_points: 2000 }), null)).toBe(2000);
+    expect(redeemedPoints(redemption({ credited_points: 2000, currency: 'EUR' }), 100)).toBe(2000);
+  });
+
+  it('falls back to the USD amount via the point unit (cent-exact)', () => {
+    expect(redeemedPoints(redemption({}), 100)).toBe(2000);
+    expect(redeemedPoints(redemption({ credited_amount: '12.5' }), 100)).toBe(1250);
+    // Rounded to cents first so binary-float amounts never floor a point away.
+    expect(redeemedPoints(redemption({ credited_amount: '0.29' }), 100)).toBe(29);
+  });
+
+  it('returns null for a non-USD legacy response or a missing unit', () => {
+    expect(redeemedPoints(redemption({ currency: 'EUR' }), 100)).toBeNull();
+    expect(redeemedPoints(redemption({}), null)).toBeNull();
+    expect(redeemedPoints(redemption({ credited_amount: 'abc' }), 100)).toBeNull();
   });
 });

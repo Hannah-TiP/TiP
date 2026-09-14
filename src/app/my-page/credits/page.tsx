@@ -102,7 +102,8 @@ export default function MyCreditsPage() {
 
   // Display-only, derived once per render from the registry unit. Null when
   // the registry is unavailable — the line is hidden rather than guessed.
-  const usdApprox = pointsToUsdApprox(balancePoints, resolvePointUnit(benefits));
+  const pointUnit = resolvePointUnit(benefits);
+  const usdApprox = pointsToUsdApprox(balancePoints, pointUnit);
 
   return (
     <>
@@ -142,13 +143,15 @@ export default function MyCreditsPage() {
             <div className="mt-2 text-[13px] text-gray-500">{t('credits.balance_note')}</div>
           </div>
 
-          {/* Pending earnings — projected review-gated credit (SMA-276).
+          {/* Pending earnings — projected post-trip points (SMA-276/358).
               Estimates only: never added to the balance or mixed into the
               history. Hidden (chunk never loaded) when there are none. */}
-          {projections.length > 0 && <PendingEarningsSection projections={projections} />}
+          {projections.length > 0 && (
+            <PendingEarningsSection projections={projections} pointUnit={pointUnit} />
+          )}
 
           {/* Redeem a code */}
-          <RedeemCodeSection onRedeemed={loadPoints} />
+          <RedeemCodeSection onRedeemed={loadPoints} pointUnit={pointUnit} />
 
           {/* History */}
           <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">

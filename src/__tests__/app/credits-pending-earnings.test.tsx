@@ -5,6 +5,7 @@ import MyCreditsPage from '@/app/my-page/credits/page';
 import { apiClient } from '@/lib/api-client';
 import en from '@/translations/en.json';
 import type { PointTransaction, ProjectedTripEarn } from '@/types/stay-credit';
+import type { BenefitsResponse } from '@/types/v2/benefits';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -49,9 +50,30 @@ vi.mock('@/lib/api-client', () => ({
   },
 }));
 
+// Registry payload carrying the `point_unit` entry (100 P = 1 USD) behind
+// the USD approximation and the legacy cents→points fallback. `null`
+// simulates the endpoint being down.
+const POINT_UNIT_PAYLOAD: BenefitsResponse = {
+  benefits: [
+    {
+      key: 'point_unit',
+      kind: 'unit_definition',
+      unit: 'points',
+      values_by_tier: { carte: '100', cercle: '100', confidence: '100', cenacle: '100' },
+      copy: { en: 'x', kr: 'x' },
+    },
+  ],
+  resolved: null,
+};
+let benefitsValue: BenefitsResponse | null = POINT_UNIT_PAYLOAD;
+vi.mock('@/hooks/useBenefits', () => ({
+  useBenefits: () => benefitsValue,
+}));
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  benefitsValue = POINT_UNIT_PAYLOAD;
 });
 
 const ISSUED_CREDIT: PointTransaction = {
@@ -82,7 +104,8 @@ function projection(overrides: Partial<ProjectedTripEarn>): ProjectedTripEarn {
     currency: 'USD',
     tier_rate: 0.005,
     projected_amount_cents: 500,
-    blocking_reason: 'awaiting_review',
+    projected_points: 500,
+    blocking_reason: 'awaiting_completion',
     ...overrides,
   };
 }
@@ -97,25 +120,52 @@ function mockApi(credits: PointTransaction[], projections: ProjectedTripEarn[]) 
 }
 
 describe('Pending earnings on /my-page/credits', () => {
-  it('lists an awaiting-review trip with the ~amount, review copy, and reviews link', async () => {
-    mockApi([ISSUED_CREDIT], [projection({})]);
+  it('lists a date-finished trip in P with the USD approximation and completion copy', async () => {
+    mockApi(
+      [ISSUED_CREDIT],
+      [projection({ projected_points: 1250, projected_amount_cents: 1250 })],
+    );
 
     render(<MyCreditsPage />);
 
     const section = await screen.findByTestId('pending-earnings');
     expect(section.textContent).toContain('Pending earnings');
     expect(section.textContent).toContain('Kyoto Escape');
-    // ~ prefix + "Estimated" wording mark the figure as an estimate.
-    expect(section.textContent).toContain('~USD 5.00');
+    // The figure is P (wallet style) with the wallet's USD approximation —
+    // no currency-denominated "~USD 12.50" anywhere.
+    expect(screen.getByTestId('pending-points').textContent).toBe('+1,250 P');
+    expect(screen.getByTestId('pending-usd-approx').textContent).toBe('≈ USD 12');
+    expect(section.textContent).not.toContain('USD 12.50');
     expect(section.textContent).toContain('Estimated');
-    expect(section.textContent).toContain('Review this trip to earn ~USD 5.00');
+    // Completion-based nudge — nothing says a review is needed to earn.
+    expect(section.textContent).toContain(
+      '1,250 P is on its way — added automatically now that your trip has ended',
+    );
+    expect(section.textContent).not.toContain('Review this trip to earn');
     // Tier disclaimer.
     expect(section.textContent).toContain('current membership tier');
-    const cta = screen.getByRole('link', { name: 'Write a review →' });
-    expect(cta.getAttribute('href')).toBe('/my-page/travel-history/42/reviews');
+    // Reviews are a SEPARATE reward, stated without an amount.
+    expect(section.textContent).toContain(en['credits.pending_review_separate']);
+    const reviewCta = screen.getByRole('link', { name: 'Write a review →' });
+    expect(reviewCta.getAttribute('href')).toBe('/my-page/travel-history/42/reviews');
+    const tripCta = screen.getByRole('link', { name: 'View trip →' });
+    expect(tripCta.getAttribute('href')).toBe('/my-page/travel-history/42');
   });
 
-  it('links a not-finished trip to the trip page with the after-trip copy', async () => {
+  it('maps the legacy awaiting_review wire value to the same completion copy', async () => {
+    mockApi([], [projection({ blocking_reason: 'awaiting_review' })]);
+
+    render(<MyCreditsPage />);
+
+    const section = await screen.findByTestId('pending-earnings');
+    expect(section.textContent).toContain(
+      '500 P is on its way — added automatically now that your trip has ended',
+    );
+    expect(section.textContent).not.toContain('Review this trip');
+    expect(section.textContent).toContain(en['credits.pending_review_separate']);
+  });
+
+  it('shows the after-trip copy (no reviews link) for a not-finished trip', async () => {
     mockApi(
       [],
       [projection({ trip_id: 66, blocking_reason: 'trip_not_finished', trip_title: null })],
@@ -126,9 +176,48 @@ describe('Pending earnings on /my-page/credits', () => {
     const section = await screen.findByTestId('pending-earnings');
     // Null title falls back to the localized "Trip {id}" label.
     expect(section.textContent).toContain('Trip 66');
-    expect(section.textContent).toContain("You'll earn ~USD 5.00 after this trip");
+    expect(section.textContent).toContain(
+      "You'll earn an estimated 500 P automatically after this trip ends",
+    );
+    expect(screen.queryByRole('link', { name: 'Write a review →' })).toBeNull();
     const cta = screen.getByRole('link', { name: 'View trip →' });
     expect(cta.getAttribute('href')).toBe('/my-page/travel-history/66');
+  });
+
+  it('falls back to cents → points for a USD projection from an older backend', async () => {
+    mockApi([], [projection({ projected_points: undefined, projected_amount_cents: 1250 })]);
+
+    render(<MyCreditsPage />);
+
+    await screen.findByTestId('pending-earnings');
+    expect(screen.getByTestId('pending-points').textContent).toBe('+1,250 P');
+    expect(screen.getByTestId('pending-usd-approx').textContent).toBe('≈ USD 12');
+  });
+
+  it('never invents an FX rate: a non-USD legacy projection renders figure-free', async () => {
+    mockApi(
+      [],
+      [projection({ projected_points: undefined, projected_amount_cents: 1250, currency: 'EUR' })],
+    );
+
+    render(<MyCreditsPage />);
+
+    const section = await screen.findByTestId('pending-earnings');
+    expect(screen.queryByTestId('pending-points')).toBeNull();
+    expect(screen.queryByTestId('pending-usd-approx')).toBeNull();
+    expect(section.textContent).toContain(en['credits.pending_awaiting_completion_no_figure']);
+    expect(section.textContent).not.toContain('EUR');
+  });
+
+  it('hides only the USD approximation when the registry is unavailable', async () => {
+    benefitsValue = null;
+    mockApi([], [projection({})]);
+
+    render(<MyCreditsPage />);
+
+    await screen.findByTestId('pending-earnings');
+    expect(screen.getByTestId('pending-points').textContent).toBe('+500 P');
+    expect(screen.queryByTestId('pending-usd-approx')).toBeNull();
   });
 
   it('never adds projected amounts to the available balance', async () => {
@@ -138,8 +227,8 @@ describe('Pending earnings on /my-page/credits', () => {
 
     await screen.findByTestId('pending-earnings');
     // The balance is the backend-derived 10,000 P and the history row shows
-    // the +10,000 P grant — the projected ~USD 5.00 (500 P) is never summed
-    // in (no 10,500 P anywhere).
+    // the +10,000 P grant — the projected 500 P is never summed in (no
+    // 10,500 P anywhere).
     expect(screen.getByTestId('points-balance').textContent).toBe('10,000 P');
     expect(screen.getByTestId('points-delta').textContent).toBe('+10,000 P');
     expect(screen.queryByText('10,500 P')).toBeNull();

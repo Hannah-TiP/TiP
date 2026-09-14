@@ -9,7 +9,10 @@ import CityAutocomplete from '@/components/CityAutocomplete';
 import type { User } from '@/types/auth';
 import type { MyReferralsResponse } from '@/types/stay-credit';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBenefits } from '@/hooks/useBenefits';
+import { maxBenefitPoints } from '@/lib/benefits';
 import { formatDate } from '@/lib/format-date';
+import { formatPoints } from '@/lib/points-wallet';
 import { isSafeRedirectPath } from '@/lib/redirect-validation';
 
 const TRAVEL_STYLES = [
@@ -72,6 +75,19 @@ function OnboardingFlow() {
   // Step 1: Referral
   const [referralCode, setReferralCode] = useState(initialRefCode);
   const [referredBy, setReferredBy] = useState<MyReferralsResponse['referred_by']>(null);
+  // The joiner reward keys off the INVITER's tier (not known here), so the
+  // invite step quotes the registry's largest `referral_joiner_credit` value
+  // as "up to {points}" (SMA-358); endpoint down ⇒ figure-free copy.
+  const benefits = useBenefits();
+  const maxJoinerPoints = maxBenefitPoints(benefits, 'referral_joiner_credit');
+  const invitedBody = (() => {
+    if (maxJoinerPoints === null) {
+      return referredBy ? t('onboarding.invited_body_yes') : t('onboarding.invited_body_no');
+    }
+    return t(
+      referredBy ? 'onboarding.invited_body_yes_points' : 'onboarding.invited_body_no_points',
+    ).replace('{points}', formatPoints(maxJoinerPoints));
+  })();
 
   // Step 2: Name
   const [firstName, setFirstName] = useState('');
@@ -303,9 +319,7 @@ function OnboardingFlow() {
                     ? t('onboarding.invited_title_yes')
                     : t('onboarding.invited_title_no')}
                 </h1>
-                <p className="mt-2 text-gray-text">
-                  {referredBy ? t('onboarding.invited_body_yes') : t('onboarding.invited_body_no')}
-                </p>
+                <p className="mt-2 text-gray-text">{invitedBody}</p>
               </div>
 
               <div className="mt-4 rounded-xl bg-white p-6 shadow-lg md:p-8">

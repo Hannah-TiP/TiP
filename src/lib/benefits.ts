@@ -8,12 +8,17 @@
 // retry.
 
 import { apiClient } from '@/lib/api-client';
-import type { BenefitItem, BenefitsResponse, MembershipTier } from '@/types/v2/benefits';
+import { usdCentsToPoints } from '@/lib/points-wallet';
+import type {
+  BenefitItem,
+  BenefitsResponse,
+  BenefitUnit,
+  MembershipTier,
+} from '@/types/v2/benefits';
 import {
   FALLBACK_BENEFIT_CREDIT,
   FALLBACK_CERCLE_LOYALTY_NIGHTS,
   FALLBACK_CONFIDENCE_SIGNATURE_NIGHTS,
-  FALLBACK_CONFIDENCE_WELCOME,
 } from '@/lib/benefits-fallback';
 
 let cached: Promise<BenefitsResponse | null> | null = null;
@@ -83,6 +88,73 @@ export function resolvePointUnit(benefits: BenefitsResponse | null | undefined):
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+// ── Point figures for ledger grants (SMA-358) ──────────────────────────────
+
+// Display names of the membership circles — proper nouns, identical in EN
+// and KR copy.
+export const MEMBERSHIP_TIER_NAMES: Record<MembershipTier, string> = {
+  carte: 'Carte',
+  cercle: 'Cercle',
+  confidence: 'Confidence',
+  cenacle: 'Cénacle',
+};
+
+// A benefit's wire value as whole points: `points` entries are read
+// directly, `usd_cents` entries convert via the registry `point_unit`.
+// Any other unit (rates, nights) is not a point grant → null.
+function pointsFromBenefitValue(
+  unit: BenefitUnit | null,
+  raw: string,
+  pointsPerUsd: number | null,
+): number | null {
+  const parsed = Number(raw);
+  if (!raw.trim() || !Number.isFinite(parsed)) return null;
+  if (unit === 'points') return Math.floor(parsed);
+  if (unit === 'usd_cents') return usdCentsToPoints(parsed, pointsPerUsd);
+  return null;
+}
+
+// Whole points a ledger-grant benefit declares for a tier (e.g. the
+// referral joiner reward at Carte), or null when the payload / entry /
+// tier value / point unit is absent.
+export function benefitTierPoints(
+  benefits: BenefitsResponse | null | undefined,
+  key: string,
+  tier: MembershipTier,
+): number | null {
+  const entry = findBenefit(benefits, key);
+  const raw = entry?.values_by_tier?.[tier];
+  if (!entry || raw == null) return null;
+  return pointsFromBenefitValue(entry.unit, raw, resolvePointUnit(benefits));
+}
+
+// The signed-in caller's OWN resolved point value for a ledger-grant
+// benefit (from the `resolved` block), or null for anonymous callers.
+export function resolvedBenefitPoints(
+  benefits: BenefitsResponse | null | undefined,
+  key: string,
+): number | null {
+  const resolved = benefits?.resolved?.benefits.find((item) => item.key === key);
+  if (!resolved?.value) return null;
+  return pointsFromBenefitValue(resolved.unit, resolved.value, resolvePointUnit(benefits));
+}
+
+// The largest point value a ledger-grant benefit declares across tiers —
+// for "up to {points}" copy where the granting tier is not yet known (the
+// invite-time referral reward keys off the REFERRER's tier).
+export function maxBenefitPoints(
+  benefits: BenefitsResponse | null | undefined,
+  key: string,
+): number | null {
+  const entry = findBenefit(benefits, key);
+  if (!entry?.values_by_tier) return null;
+  const pointUnit = resolvePointUnit(benefits);
+  const values = Object.values(entry.values_by_tier)
+    .map((raw) => pointsFromBenefitValue(entry.unit, raw, pointUnit))
+    .filter((value): value is number => value !== null);
+  return values.length > 0 ? Math.max(...values) : null;
+}
+
 // ── Display formatting ─────────────────────────────────────────────────────
 
 // "0.001" → "0.1%". Display-only: parse, scale to percent, and round away
@@ -130,8 +202,6 @@ export function fillVars(template: string, vars: Record<string, string>): string
 export interface MembershipBenefitFigures {
   // Per-booking Benefit Credit display amount by circle ("$100" …).
   benefitCredit: Record<MembershipTier, string>;
-  // Confidence one-time welcome credit ("$500").
-  confidenceWelcome: string;
   // Free-night thresholds in nights ("17" / "10").
   cercleLoyaltyNights: string;
   confidenceSignatureNights: string;
@@ -159,6 +229,9 @@ function nightsFigure(
 
 // Resolve every money/threshold figure the membership tier cards render,
 // preferring the payload and degrading per-figure to the static fallbacks.
+// Ledger point grants (e.g. the Confidence welcome points) are NOT here —
+// they render in P via `benefitTierPoints` and drop the figure when the
+// registry is unavailable rather than falling back to a currency literal.
 export function membershipBenefitFigures(
   benefits: BenefitsResponse | null,
 ): MembershipBenefitFigures {
@@ -174,12 +247,6 @@ export function membershipBenefitFigures(
       ),
       cenacle: usdFigure(benefits, 'benefit_credit', 'cenacle', FALLBACK_BENEFIT_CREDIT.cenacle),
     },
-    confidenceWelcome: usdFigure(
-      benefits,
-      'confidence_welcome',
-      'confidence',
-      FALLBACK_CONFIDENCE_WELCOME,
-    ),
     cercleLoyaltyNights: nightsFigure(
       benefits,
       'cercle_loyalty_night',

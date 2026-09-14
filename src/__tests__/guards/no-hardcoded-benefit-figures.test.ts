@@ -18,15 +18,39 @@ const SRC_ROOT = path.resolve(__dirname, '../..');
 
 const GUARDED_FILES = [
   'types/stay-credit.ts',
+  // Covers the inline tier-card copy too — incl. the Confidence welcome
+  // and birthday ledger-grant lines, which must stay {placeholder}/figure-free.
   'app/my-page/membership/page.tsx',
   'app/my-page/credits/page.tsx',
   'app/my-page/travel-history/[id]/page.tsx',
+  // SMA-358: referral / welcome / pending-earn / promo-code surfaces.
+  'app/my-page/referrals/page.tsx',
+  'app/register/page.tsx',
+  'app/onboarding/page.tsx',
+  'components/WelcomeOfferPopup.tsx',
+  'components/credits/PendingEarningsSection.tsx',
+  'components/credits/RedeemCodeSection.tsx',
+];
+
+// Translation keys (by prefix) whose EN + KR values must carry NO benefit
+// figure — the point/credit amounts are substituted from the registry via
+// {points}-style placeholders (SMA-358).
+const GUARDED_TRANSLATION_KEY_PREFIXES = [
+  'register.invited_by',
+  'onboarding.invited_body',
+  'referrals.',
+  'welcome_offer.',
+  'credits.pending_',
+  'credits.redeem_success',
+  'trip_detail.pending_points_',
+  'membership.member_earn_rate',
 ];
 
 // A digit immediately (or one space) before a percent sign — "2%", "0.1 %"
 // (the exact SMA-321 regression shape) — OR a currency/percent sign
-// immediately (or one space) before a digit — "$100", "₩9,500,000", "% 3".
-const BENEFIT_FIGURE = /\d\s?%|[%$₩]\s?\d/;
+// immediately (or one space) before a digit — "$100", "₩9,500,000", "% 3" —
+// OR (SMA-358) a "USD 100" / "5,000 P" literal, the credit→points era shapes.
+const BENEFIT_FIGURE = /\d\s?%|[%$₩]\s?\d|\bUSD\s?\d|\d\s?P\b/;
 
 describe('no hardcoded benefit figures (SMA-322)', () => {
   it('the regex catches the SMA-321 regression shapes (self-check)', () => {
@@ -37,9 +61,18 @@ describe('no hardcoded benefit figures (SMA-322)', () => {
     expect(BENEFIT_FIGURE.test('결제 적립 — 2%')).toBe(true);
     expect(BENEFIT_FIGURE.test('$100 hotel credit')).toBe(true);
     expect(BENEFIT_FIGURE.test('연 ₩9,500,000')).toBe(true);
+    // SMA-358 shapes: currency-denominated and point literals.
+    expect(BENEFIT_FIGURE.test('Claim Your USD 100 Credit →')).toBe(true);
+    expect(BENEFIT_FIGURE.test('receives 5,000 P when they join')).toBe(true);
+    expect(BENEFIT_FIGURE.test('30,000 P의 TiP 포인트')).toBe(true);
     // Figure-free copy must not match.
     expect(BENEFIT_FIGURE.test('Trip cashback')).toBe(false);
     expect(BENEFIT_FIGURE.test('Stay Credit — {carteCredit} per stay')).toBe(false);
+    expect(BENEFIT_FIGURE.test('{points} added to your TiP Points.')).toBe(false);
+    expect(BENEFIT_FIGURE.test('≈ USD {amount}')).toBe(false);
+    expect(
+      BENEFIT_FIGURE.test('{confidenceWelcome} in welcome TiP Points added when you join.'),
+    ).toBe(false);
   });
 
   it('finds every guarded source file', () => {
@@ -59,6 +92,30 @@ describe('no hardcoded benefit figures (SMA-322)', () => {
       offendingLines.map(({ number, line }) => `${number}: ${line.trim()}`),
       'Benefit figures must come from the benefits payload (src/lib/benefits.ts) ' +
         'or the sanctioned fallbacks in src/lib/benefits-fallback.ts — never literals here.',
+    ).toEqual([]);
+  });
+
+  it.each(['en', 'kr'])('translations/%s.json guarded keys contain no benefit figures', (lang) => {
+    const catalog = JSON.parse(
+      fs.readFileSync(path.join(SRC_ROOT, 'translations', `${lang}.json`), 'utf8'),
+    ) as Record<string, string>;
+    const guardedKeys = Object.keys(catalog).filter((key) =>
+      GUARDED_TRANSLATION_KEY_PREFIXES.some((prefix) => key.startsWith(prefix)),
+    );
+    // Sanity: every prefix must still match at least one key, so a rename
+    // can never silently empty the guard.
+    for (const prefix of GUARDED_TRANSLATION_KEY_PREFIXES) {
+      expect(
+        guardedKeys.some((key) => key.startsWith(prefix)),
+        `no ${lang} keys under guarded prefix: ${prefix}`,
+      ).toBe(true);
+    }
+    const offending = guardedKeys
+      .filter((key) => BENEFIT_FIGURE.test(catalog[key]))
+      .map((key) => `${key}: ${catalog[key]}`);
+    expect(
+      offending,
+      'Benefit/point figures in copy must be {placeholder}-substituted from the registry, never literals.',
     ).toEqual([]);
   });
 });

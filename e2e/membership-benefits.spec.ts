@@ -51,7 +51,7 @@ test.describe('Benefit figures on /my-page/membership', () => {
       timeout: 15_000,
     });
     await expect(page.getByTestId('member-earn-rate')).toHaveText(
-      'You earn 0.1% on travel spend as a Carte member.',
+      'As a Carte member, you earn 0.1% of your travel spend back in TiP Points.',
     );
   });
 

@@ -97,8 +97,8 @@ const membershipCircles: MembershipCircle[] = [
         kr: '어라이벌 리추얼 — 베개 · 향 · 플라워 맞춤',
       },
       {
-        en: 'Birthday Stay — credit + private welcome',
-        kr: '버스데이 스테이 — 전용 크레딧과 환영',
+        en: 'Birthday Stay — birthday TiP Points + private welcome',
+        kr: '버스데이 스테이 — 생일 TiP 포인트와 환영',
       },
       {
         en: 'Concierge Swap — request anything in Korean, day or night',

@@ -17,14 +17,21 @@ import {
 import {
   creditSourceLabel,
   creditsForTrip,
+  isAwaitingCompletion,
   isPointsGrantLot,
   type PointTransaction,
   type ProjectedTripEarn,
 } from '@/types/stay-credit';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { useBenefits } from '@/hooks/useBenefits';
+import { resolvePointUnit } from '@/lib/benefits';
 import { formatDate as formatDateI18n, formatTime as formatTimeI18n } from '@/lib/format-date';
-import { formatPoints, formatSignedPoints } from '@/lib/points-wallet';
+import {
+  formatPoints,
+  formatSignedPoints,
+  pointsToUsdApprox,
+  projectedPoints,
+} from '@/lib/points-wallet';
 import BookingDocuments from '@/components/BookingDocuments';
 
 const ITEM_LABELS: Record<TripPlanItem['item_type'], string> = {
@@ -76,16 +83,14 @@ function formatTime(dateStr: string | null | undefined, lang: Lang): string | un
   });
 }
 
-function formatCredit(amountCents: number, currency: string): string {
-  return `${currency} ${(amountCents / 100).toFixed(2)}`;
-}
-
 export default function TravelHistoryTripDetailPage() {
   const { t, lang } = useLanguage();
   const { id } = useParams<{ id: string }>();
-  // Registry copy for credit source labels (SMA-322); null degrades to the
-  // static fallback labels inside creditSourceLabel.
+  // Registry copy for credit source labels (SMA-322) + the `point_unit`
+  // behind the pending-points USD approximation (SMA-358); null degrades to
+  // the static fallback labels and hides the USD line.
   const benefits = useBenefits();
+  const pointUnit = resolvePointUnit(benefits);
   const [tripWithVersion, setTripWithVersion] = useState<TripWithVersion | null>(null);
   const [reviewStatus, setReviewStatus] = useState<{ reviewed: number; total: number } | null>(
     null,
@@ -116,7 +121,7 @@ export default function TravelHistoryTripDetailPage() {
         }
 
         try {
-          // Projected (not-yet-earned) review-gated credit for this trip.
+          // Projected (not-yet-accrued) post-trip points for this trip.
           // Estimates only — a fetch failure just hides the nudge card.
           const projection = await apiClient.getMyCreditProjection();
           setPendingProjection(projection.projections.find((p) => p.trip_id === tripId) ?? null);
@@ -194,6 +199,11 @@ export default function TravelHistoryTripDetailPage() {
     .filter((item) => item.item_type === 'activity').length;
 
   const creditsTotalPoints = tripCredits.reduce((acc, c) => acc + (c.delta_points ?? 0), 0);
+  // Pending-points nudge figure (null ⇒ figure-less copy; non-USD legacy
+  // projections without `projected_points` never get an invented rate).
+  const pendingPoints = pendingProjection ? projectedPoints(pendingProjection, pointUnit) : null;
+  const pendingUsdApprox =
+    pendingPoints === null ? null : pointsToUsdApprox(pendingPoints, pointUnit);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -345,38 +355,58 @@ export default function TravelHistoryTripDetailPage() {
                 data-testid="pending-credit-nudge"
               >
                 <h3 className="mb-2 font-semibold text-gray-900">
-                  {t('trip_detail.pending_credit_title')}
+                  {t('trip_detail.pending_points_title')}
                 </h3>
-                {pendingProjection.blocking_reason === 'awaiting_review' ? (
+                {pendingPoints !== null && (
+                  <div className="mb-2 flex items-baseline gap-2">
+                    <span
+                      className="font-primary text-xl italic text-[#C4956A]"
+                      data-testid="pending-points"
+                    >
+                      {formatSignedPoints(pendingPoints)}
+                    </span>
+                    {pendingUsdApprox !== null && (
+                      <span className="text-xs text-gray-500" data-testid="pending-usd-approx">
+                        {t('credits.usd_approx').replace(
+                          '{amount}',
+                          pendingUsdApprox.toLocaleString('en-US'),
+                        )}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {isAwaitingCompletion(pendingProjection.blocking_reason) ? (
                   <>
                     <p className="mb-3 text-sm text-gray-500">
-                      {t('trip_detail.pending_credit_body').replace(
-                        '{amount}',
-                        `~${formatCredit(
-                          pendingProjection.projected_amount_cents,
-                          pendingProjection.currency,
-                        )}`,
-                      )}
+                      {pendingPoints === null
+                        ? t('trip_detail.pending_points_body_no_figure')
+                        : t('trip_detail.pending_points_body').replace(
+                            '{points}',
+                            formatPoints(pendingPoints),
+                          )}
                     </p>
-                    <Link
-                      href={`/my-page/travel-history/${trip.id}/reviews`}
-                      className="inline-block text-xs font-medium text-[#C4956A] hover:underline"
-                    >
-                      {t('trip_detail.pending_credit_cta')}
-                    </Link>
+                    {/* Reviews are a SEPARATE reward (SMA-328) — the points
+                        above accrue on completion regardless. */}
+                    <p className="text-xs text-gray-500">
+                      {t('credits.pending_review_separate')}{' '}
+                      <Link
+                        href={`/my-page/travel-history/${trip.id}/reviews`}
+                        className="font-medium text-[#C4956A] hover:underline"
+                      >
+                        {t('credits.pending_cta_review')}
+                      </Link>
+                    </p>
                   </>
                 ) : (
-                  // trip_not_finished: reviewing BEFORE the trip ends is a
-                  // no-op for the grant (it only fires post-trip), so no
-                  // reviews CTA — just the after-trip copy.
+                  // trip_not_finished: accrual only fires once the trip is
+                  // date-finished, so no reviews link — just the after-trip copy.
                   <p className="text-sm text-gray-500">
-                    {t('credits.pending_trip_not_finished').replace(
-                      '{amount}',
-                      `~${formatCredit(
-                        pendingProjection.projected_amount_cents,
-                        pendingProjection.currency,
-                      )}`,
-                    )}
+                    {pendingPoints === null
+                      ? t('credits.pending_trip_not_finished_no_figure')
+                      : t('credits.pending_trip_not_finished').replace(
+                          '{points}',
+                          formatPoints(pendingPoints),
+                        )}
                   </p>
                 )}
               </div>

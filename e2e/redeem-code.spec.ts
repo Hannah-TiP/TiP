@@ -35,8 +35,11 @@ async function stubCreditsList(page: import('@playwright/test').Page) {
 }
 
 test.describe('Redeem promo code on /my-page/credits', () => {
-  test('happy path: non-USD code credits the wallet', async ({ page }) => {
+  test('happy path: non-USD code credits the wallet in P', async ({ page }) => {
     await stubCreditsList(page);
+    // Since SMA-358 the backend reports the whole points it wrote to the
+    // ledger (`credited_points`, FX applied server-side) — the toast quotes
+    // that figure in P, never the source currency amount.
     await page.route('**/api/me/credits/redeem-code', async (route) => {
       await route.fulfill({
         status: 200,
@@ -44,7 +47,12 @@ test.describe('Redeem promo code on /my-page/credits', () => {
         body: JSON.stringify({
           code: 200,
           message: 'Success',
-          data: { credited_amount: '150.00', currency: 'EUR', credit_id: 9 },
+          data: {
+            credited_amount: '150.00',
+            currency: 'EUR',
+            credit_id: 9,
+            credited_points: 16250,
+          },
         }),
       });
     });
@@ -59,8 +67,38 @@ test.describe('Redeem promo code on /my-page/credits', () => {
 
     const success = page.getByTestId('redeem-code-success');
     await expect(success).toBeVisible({ timeout: 10_000 });
-    await expect(success).toContainText('150');
-    await expect(success).toContainText('€');
+    await expect(success).toHaveText('16,250 P added to your TiP Points.');
+    await expect(success).not.toContainText('€');
+  });
+
+  test('legacy backend without credited_points on a non-USD code shows figure-free copy', async ({
+    page,
+  }) => {
+    await stubCreditsList(page);
+    // No `credited_points` and a non-USD amount: the FE must not invent an
+    // FX rate — it confirms the redemption without quoting a figure.
+    await page.route('**/api/me/credits/redeem-code', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 200,
+          message: 'Success',
+          data: { credited_amount: '150.00', currency: 'EUR', credit_id: 9 },
+        }),
+      });
+    });
+
+    await gotoPage(page, '/my-page/credits');
+    await expect(page.getByTestId('redeem-code-section')).toBeVisible({ timeout: 15_000 });
+
+    await page.getByTestId('redeem-code-input').fill('LOTTE-VIP');
+    await page.getByTestId('redeem-code-submit').click();
+
+    const success = page.getByTestId('redeem-code-success');
+    await expect(success).toBeVisible({ timeout: 10_000 });
+    await expect(success).toHaveText('Your code was redeemed — TiP Points have been added.');
+    await expect(success).not.toContainText('150');
   });
 
   const errorCases: { status: number; bodyCode: number; expect: RegExp }[] = [
