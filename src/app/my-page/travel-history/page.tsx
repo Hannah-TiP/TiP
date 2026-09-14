@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import { apiClient } from '@/lib/api-client';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { formatDate } from '@/lib/format-date';
+import { getStatusLabel, isTravelHistoryStatus } from '@/lib/trip-display';
 import {
   getTripReviewableItems,
   getTripsWithVersions,
@@ -48,7 +49,7 @@ export default function TravelHistory() {
     const load = async () => {
       try {
         const loaded = await getTripsWithVersions({ language: lang });
-        const completed = loaded.filter(({ trip }) => trip.status === 'travel-completed');
+        const completed = loaded.filter(({ trip }) => isTravelHistoryStatus(trip.status));
         setTrips(completed);
 
         // Best-effort per-trip review status badges. A single profile lookup,
@@ -59,6 +60,8 @@ export default function TravelHistory() {
           const user = await apiClient.getProfile(lang);
           const statuses = await Promise.all(
             completed.map(async ({ trip, currentVersion }) => {
+              // A no-show trip cannot be reviewed — no badge, no lookups.
+              if (trip.status === 'no-show') return null;
               const entities = toReviewableEntities(getTripReviewableItems(currentVersion));
               if (entities.length === 0) return null;
               const lists = await Promise.all(
@@ -146,6 +149,7 @@ export default function TravelHistory() {
               const adults = item.currentVersion?.adults ?? 0;
               const kids = item.currentVersion?.kids ?? 0;
               const status = reviewStatus[item.trip.id];
+              const isNoShow = item.trip.status === 'no-show';
 
               return (
                 <div
@@ -164,8 +168,15 @@ export default function TravelHistory() {
                     <div>
                       <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-                        <span className="text-xs font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full">
-                          {t('travel_history.completed')}
+                        <span
+                          className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                            isNoShow ? 'text-gray-600 bg-gray-200' : 'text-green-700 bg-green-100'
+                          }`}
+                          data-testid="travel-history-status-badge"
+                        >
+                          {isNoShow
+                            ? getStatusLabel(item.trip.status, t)
+                            : t('travel_history.completed')}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3 text-sm text-gray-500">

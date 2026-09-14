@@ -125,7 +125,8 @@ export default function TravelHistoryTripDetailPage() {
         }
 
         const entities = toReviewableEntities(getTripReviewableItems(loaded.currentVersion));
-        if (entities.length > 0) {
+        // A no-show trip cannot be reviewed — skip the review-status lookups.
+        if (entities.length > 0 && loaded.trip.status !== 'no-show') {
           try {
             const user = await apiClient.getProfile(lang);
             const lists = await Promise.all(
@@ -181,6 +182,7 @@ export default function TravelHistoryTripDetailPage() {
 
   const { trip, currentVersion } = tripWithVersion;
   const isCompleted = trip.status === 'travel-completed';
+  const isNoShow = trip.status === 'no-show';
   const title = currentVersion?.title?.trim() || t('trip_detail.new_trip');
   const startDate = currentVersion?.start_date || undefined;
   const endDate = currentVersion?.end_date || undefined;
@@ -211,7 +213,7 @@ export default function TravelHistoryTripDetailPage() {
           </div>
           <div className="flex-1 p-6 md:p-10 text-white flex flex-col justify-center">
             <p className="text-sm uppercase tracking-widest text-white/60 mb-2">
-              {t('trip_detail.completed_trip')}
+              {isNoShow ? t('trip_detail.no_show_trip') : t('trip_detail.completed_trip')}
             </p>
             <h1 className="text-2xl md:text-4xl font-bold mb-4">{title}</h1>
             <div className="flex flex-wrap gap-8 text-sm">
@@ -318,6 +320,15 @@ export default function TravelHistoryTripDetailPage() {
           </div>
 
           <div className="space-y-5">
+            {isNoShow && (
+              <div
+                className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm text-gray-600"
+                data-testid="no-show-notice"
+              >
+                {t('trip_detail.no_show_notice')}
+              </div>
+            )}
+
             {isCompleted && reviewStatus && reviewStatus.total > 0 && (
               <div className="rounded-xl border border-gray-200 bg-white p-5">
                 <h3 className="mb-2 font-semibold text-gray-900">
@@ -339,7 +350,7 @@ export default function TravelHistoryTripDetailPage() {
               </div>
             )}
 
-            {tripCredits.length === 0 && pendingProjection && (
+            {!isNoShow && tripCredits.length === 0 && pendingProjection && (
               <div
                 className="rounded-xl border border-gray-200 bg-white p-5"
                 data-testid="pending-credit-nudge"

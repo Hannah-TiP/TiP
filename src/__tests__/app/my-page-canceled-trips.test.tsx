@@ -86,6 +86,19 @@ describe('MyPage canceled trips', () => {
     expect(screen.queryByText('Completed Trip')).toBeNull();
   });
 
+  it('routes no-show trips to Travel History alongside completed ones (SMA-362)', async () => {
+    vi.mocked(getTripsWithVersions).mockResolvedValue([
+      bundle(1, 'in-progress', 'Active Trip'),
+      bundle(4, 'no-show', 'No-show Trip'),
+    ]);
+
+    render(<MyPageUpcomingTravels />);
+
+    expect((await screen.findAllByText('Active Trip')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('No-show Trip')).toBeNull();
+    expect(screen.queryByText('No-show')).toBeNull();
+  });
+
   it('called the API without exclude_canceled so canceled trips are returned', async () => {
     vi.mocked(getTripsWithVersions).mockResolvedValue([bundle(1, 'in-progress', 'Active Trip')]);
 

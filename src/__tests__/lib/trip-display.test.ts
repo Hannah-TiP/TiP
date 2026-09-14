@@ -4,6 +4,7 @@ import {
   formatTime,
   getItemLabel,
   getStatusLabel,
+  isTravelHistoryStatus,
   ITEM_LABEL_KEYS,
   JOURNEY_STEP_ORDER,
   resolveJourneyStep,
@@ -31,6 +32,7 @@ const ALL_TRIP_STATUSES = Object.keys({
   'traveling-now': true,
   'travel-completed': true,
   canceled: true,
+  'no-show': true,
 } satisfies Record<TripStatus, true>) as TripStatus[];
 
 describe('formatDateLabel', () => {
@@ -106,6 +108,7 @@ describe('getStatusLabel', () => {
     expect(getStatusLabel('traveling-now', tEn)).toBe('Traveling');
     expect(getStatusLabel('travel-completed', tEn)).toBe('Completed');
     expect(getStatusLabel('canceled', tEn)).toBe('Canceled');
+    expect(getStatusLabel('no-show', tEn)).toBe('No-show');
   });
 
   it('resolves the Korean label for each status in KR', () => {
@@ -119,6 +122,7 @@ describe('getStatusLabel', () => {
     expect(getStatusLabel('traveling-now', tKr)).toBe('여행 중');
     expect(getStatusLabel('travel-completed', tKr)).toBe('완료');
     expect(getStatusLabel('canceled', tKr)).toBe('취소됨');
+    expect(getStatusLabel('no-show', tKr)).toBe('노쇼');
   });
 
   it('Title-Cases an unknown/unmapped status as a safe fallback', () => {
@@ -173,9 +177,10 @@ describe('resolveJourneyStep', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     for (const status of ALL_TRIP_STATUSES) {
       const { currentIndex } = resolveJourneyStep(status);
-      if (status === 'canceled') {
-        // Defined state for canceled: NO active step (all circles empty) —
-        // deliberate preservation of current behavior (SMA-238 scope decision).
+      if (status === 'canceled' || status === 'no-show') {
+        // Defined state for the terminal canceled / no-show statuses: NO
+        // active step (all circles empty) — deliberate preservation of
+        // current behavior (SMA-238 scope decision; SMA-362 for no-show).
         expect(currentIndex).toBeNull();
       } else {
         expect(currentIndex).not.toBeNull();
@@ -207,6 +212,22 @@ describe('resolveJourneyStep', () => {
     expect(resolveJourneyStep('waiting_for_booking_docs').currentIndex).toBe(0);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toContain('waiting_for_booking_docs');
+  });
+});
+
+describe('isTravelHistoryStatus', () => {
+  it('routes the terminal post-travel statuses to Travel History', () => {
+    expect(isTravelHistoryStatus('travel-completed')).toBe(true);
+    expect(isTravelHistoryStatus('no-show')).toBe(true);
+  });
+
+  it('keeps active and canceled trips on the upcoming dashboard', () => {
+    for (const status of ALL_TRIP_STATUSES.filter(
+      (s) => s !== 'travel-completed' && s !== 'no-show',
+    )) {
+      expect(isTravelHistoryStatus(status)).toBe(false);
+    }
+    expect(isTravelHistoryStatus('some-unknown-status')).toBe(false);
   });
 });
 
