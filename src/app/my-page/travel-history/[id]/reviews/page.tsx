@@ -16,9 +16,10 @@ import {
   type TripWithVersion,
 } from '@/lib/trip-utils';
 import { clearDraft, getDraft, isSkipped, saveDraft, setSkipped } from '@/lib/review-drafts';
-import { reviewPhotoImagesEqual, type Review } from '@/types/review';
+import { isApprovedReview, reviewPhotoImagesEqual, type Review } from '@/types/review';
 import type { Image } from '@/types/common';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
+import DeleteReviewConfirm from '@/components/reviews/DeleteReviewConfirm';
 
 interface SessionState {
   trip: TripWithVersion;
@@ -86,6 +87,13 @@ export default function ReviewsPage() {
   const [deletingKey, setDeletingKey] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
+  // An approved review awaiting the member's delete confirmation (SMA-363):
+  // deleting it claws back its review reward, so the item is not deleted
+  // until the confirm dialog is accepted.
+  const [pendingDelete, setPendingDelete] = useState<{
+    entity: ReviewableEntity;
+    review: Review;
+  } | null>(null);
 
   const load = useCallback(async () => {
     if (!tripId) return;
@@ -171,7 +179,7 @@ export default function ReviewsPage() {
     [tripId],
   );
 
-  const handleDelete = useCallback(
+  const performDelete = useCallback(
     async (entity: ReviewableEntity, review: Review) => {
       const key = entityKey(entity);
       setDeletingKey(key);
@@ -194,6 +202,26 @@ export default function ReviewsPage() {
     },
     [load, lang, t],
   );
+
+  const handleDelete = useCallback(
+    (entity: ReviewableEntity, review: Review) => {
+      // Only an APPROVED review has earned its reward — a pending one deletes
+      // straight away, exactly as before.
+      if (isApprovedReview(review)) {
+        setPendingDelete({ entity, review });
+        return;
+      }
+      void performDelete(entity, review);
+    },
+    [performDelete],
+  );
+
+  const confirmPendingDelete = useCallback(() => {
+    if (!pendingDelete) return;
+    const { entity, review } = pendingDelete;
+    setPendingDelete(null);
+    void performDelete(entity, review);
+  }, [pendingDelete, performDelete]);
 
   const eligibleEntities = useMemo(() => {
     if (!state) return [];
@@ -434,6 +462,14 @@ export default function ReviewsPage() {
           </>
         )}
       </div>
+
+      {pendingDelete && (
+        <DeleteReviewConfirm
+          tripId={tripId}
+          onConfirm={confirmPendingDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
 
       <Footer />
     </div>

@@ -33,6 +33,7 @@ const AUTH_REQUIRED_SPECS = [
   '**/destination-search.spec.ts',
   '**/change-password.spec.ts',
   '**/delete-account.spec.ts',
+  '**/review-delete-clawback.spec.ts',
   '**/free-night-membership.spec.ts',
   '**/membership-benefits.spec.ts',
   '**/submit-request-kr.spec.ts',
