@@ -64,7 +64,7 @@ export const POINT_SOURCE_LABELS: Record<PointSource, { en: string; kr: string }
   manual: { en: 'Concierge', kr: '컨시어지' },
   payment_points: { en: 'Trip cashback', kr: '결제 적립' },
   first_trip_cashback: { en: 'First-trip bonus', kr: '첫 여행 보너스' },
-  review_reward: { en: 'Review Reward', kr: '리뷰 보상' },
+  review_reward: { en: 'Review Reward', kr: '후기 보상' },
   gift: { en: 'Gift', kr: '선물' },
   promo_code_redemption: { en: 'Promo Code', kr: '프로모션 코드' },
   kb_welcome: { en: 'KB Welcome', kr: 'KB 웰컴' },
@@ -80,9 +80,11 @@ export const POINT_SOURCE_LABELS: Record<PointSource, { en: string; kr: string }
 // Maps a ledger source to its benefit-registry entry key (mirrors
 // tip-backend/v2/services/benefits/registry.py::entry_for_source — the
 // wire payload does not carry `credit_source`, so the FE keeps this map).
-// Inactive entries (first_trip_cashback, review_reward, partner_grant) never
-// appear in the payload, so those sources always resolve via the fallback
-// labels.
+// Inactive entries (first_trip_cashback, partner_grant) never appear in the
+// payload, so those sources always resolve via the fallback labels.
+// `review_reward` maps to the text-review policy entry (SMA-359); a row
+// marked `notes === 'photo'` resolves via `review_reward_photo` instead —
+// see `pointRowSourceText`.
 export const POINT_SOURCE_BENEFIT_KEYS: Record<PointSource, string> = {
   welcome: 'confidence_welcome',
   birthday: 'birthday_credit',
@@ -90,7 +92,7 @@ export const POINT_SOURCE_BENEFIT_KEYS: Record<PointSource, string> = {
   manual: 'manual_admin_grant',
   payment_points: 'tiered_earn',
   first_trip_cashback: 'first_trip_cashback',
-  review_reward: 'review_reward',
+  review_reward: 'review_reward_text',
   gift: 'gift_credit',
   promo_code_redemption: 'promo_code_redemption',
   kb_welcome: 'kb_welcome',
@@ -189,6 +191,46 @@ export function pointSourceText(
   return entry ? entry[en ? 'en' : 'kr'] : source;
 }
 
+// A `review_reward` grant's `notes` carries which reward it was (SMA-359):
+// `photo` for an approved review with a photo, `text` (or absent) for a
+// text-only review. The marker is FE-rendered as the row label, never as a
+// free-text note.
+export type ReviewRewardVariant = 'photo' | 'text';
+
+const REVIEW_REWARD_PHOTO_BENEFIT_KEY = 'review_reward_photo';
+const REVIEW_REWARD_PHOTO_LABEL = { en: 'Photo Review', kr: '사진 후기 보상' };
+
+export function reviewRewardVariant(row: PointTransaction): ReviewRewardVariant | null {
+  if (row.source !== 'review_reward') return null;
+  return row.notes === 'photo' ? 'photo' : 'text';
+}
+
+// Row-aware sibling of `pointSourceText`: a photo review reward resolves
+// via the registry's `review_reward_photo` copy (static "Photo Review"
+// fallback); every other row uses the source-level resolution.
+export function pointRowSourceText(
+  row: PointTransaction,
+  en: boolean,
+  benefits?: BenefitsResponse | null,
+): string {
+  if (reviewRewardVariant(row) === 'photo') {
+    const item = benefits?.benefits.find((b) => b.key === REVIEW_REWARD_PHOTO_BENEFIT_KEY);
+    if (item) return en ? item.copy.en : item.copy.kr;
+    return REVIEW_REWARD_PHOTO_LABEL[en ? 'en' : 'kr'];
+  }
+  return pointSourceText(row.source, en, benefits);
+}
+
+// The free-text note to show under a row, or null when `notes` is the
+// review-reward variant marker (already rendered as the label).
+export function pointRowNotes(row: PointTransaction): string | null {
+  if (!row.notes) return null;
+  if (row.source === 'review_reward' && (row.notes === 'photo' || row.notes === 'text')) {
+    return null;
+  }
+  return row.notes;
+}
+
 // Build the source display label for a credit row: the localized source label,
 // suffixed with the redeemed promo code when present (e.g.
 // "프로모션 코드 · WELCOME26"). Older promo credits without a structured
@@ -198,7 +240,7 @@ export function creditSourceLabel(
   en: boolean,
   benefits?: BenefitsResponse | null,
 ): string {
-  const label = pointSourceText(credit.source, en, benefits);
+  const label = pointRowSourceText(credit, en, benefits);
   return credit.promo_code ? `${label} · ${credit.promo_code}` : label;
 }
 

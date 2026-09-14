@@ -12,8 +12,9 @@ export type BenefitKind =
   | 'unit_definition';
 
 // Mirrors v2/data_model/enums.py::BenefitUnit — how to read a benefit's
-// per-tier Decimal values.
-export type BenefitUnit = 'usd_cents' | 'rate' | 'nights' | 'points';
+// per-tier Decimal values. `months` (SMA-359) carries the point validity
+// window of the `point_validity_months` policy entry.
+export type BenefitUnit = 'usd_cents' | 'rate' | 'nights' | 'points' | 'months';
 
 // Mirrors v2/data_model/enums.py::MembershipTier (the circle keys).
 export type MembershipTier = 'carte' | 'cercle' | 'confidence' | 'cenacle';

@@ -261,3 +261,77 @@ export function membershipBenefitFigures(
     ),
   };
 }
+
+// ── Points policy figures (SMA-359) ────────────────────────────────────────
+
+// Registry keys of the policy entries served alongside the tier benefits
+// (the admin-configurable SMA-326 values made visible to members).
+// Tier-agnostic: every tier carries the same value in `values_by_tier`, and
+// signed-in callers also get them in `resolved.benefits`. Every consumer
+// tolerates their absence (older backend) and renders figure-free copy.
+export const POINTS_POLICY_BENEFIT_KEYS = {
+  // Per-booking redemption cap, unit `rate` (e.g. "0.05").
+  redemptionCap: 'redemption_cap',
+  // Review reward for an approved text-only review, unit `points`.
+  reviewRewardText: 'review_reward_text',
+  // Review reward for an approved review with a photo, unit `points`.
+  reviewRewardPhoto: 'review_reward_photo',
+  // Point validity window from grant, unit `months`.
+  pointValidityMonths: 'point_validity_months',
+} as const;
+
+// Tier-agnostic policy value: the signed-in caller's resolved value wins,
+// then the declared value (identical for every tier — read whichever tier
+// the payload carries). Null when the payload / entry is absent, so every
+// consumer renders its figure-free copy on an older backend.
+export function flatBenefitValue(
+  benefits: BenefitsResponse | null | undefined,
+  key: string,
+): string | null {
+  const resolved = resolvedBenefitValue(benefits, key);
+  if (resolved !== null) return resolved;
+  const values = findBenefit(benefits, key)?.values_by_tier;
+  if (!values) return null;
+  return Object.values(values).find((value) => value != null) ?? null;
+}
+
+// Whole point figure for a "{n} P"-style template: "1000" → "1,000" (the
+// template carries the unit, so the figure is grouped but unit-less; en-US
+// grouping reads right in both languages). Null when unparsable / negative.
+export function formatPointsFigure(value: string): string | null {
+  if (!value.trim()) return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return Math.floor(parsed).toLocaleString('en-US');
+}
+
+export interface ReviewRewardFigures {
+  // Grouped point figures without the unit ("500" / "1,000").
+  text: string;
+  photo: string;
+}
+
+// The review reward amounts from the registry's `review_reward_text` /
+// `review_reward_photo` policy entries. Both are required for the amount
+// copy; null when either is missing so the page shows the figure-free line.
+export function reviewRewardFigures(
+  benefits: BenefitsResponse | null | undefined,
+): ReviewRewardFigures | null {
+  const text = flatBenefitValue(benefits, POINTS_POLICY_BENEFIT_KEYS.reviewRewardText);
+  const photo = flatBenefitValue(benefits, POINTS_POLICY_BENEFIT_KEYS.reviewRewardPhoto);
+  if (text === null || photo === null) return null;
+  const textFigure = formatPointsFigure(text);
+  const photoFigure = formatPointsFigure(photo);
+  if (textFigure === null || photoFigure === null) return null;
+  return { text: textFigure, photo: photoFigure };
+}
+
+// Point validity in months from the registry's `point_validity_months`
+// entry ("24"), or null when absent / not a positive whole number.
+export function pointValidityMonths(benefits: BenefitsResponse | null | undefined): string | null {
+  const raw = flatBenefitValue(benefits, POINTS_POLICY_BENEFIT_KEYS.pointValidityMonths);
+  if (raw === null) return null;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed <= 0) return null;
+  return String(parsed);
+}

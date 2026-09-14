@@ -17,6 +17,9 @@ import path from 'node:path';
 const SRC_ROOT = path.resolve(__dirname, '../..');
 
 const GUARDED_FILES = [
+  // SMA-359: the live points policy surfaces (cap %, review reward).
+  'app/my-page/travel-history/[id]/reviews/page.tsx',
+  'components/quote/PointsWalletPanel.tsx',
   'types/stay-credit.ts',
   // Covers the inline tier-card copy too — incl. the Confidence welcome
   // and birthday ledger-grant lines, which must stay {placeholder}/figure-free.
