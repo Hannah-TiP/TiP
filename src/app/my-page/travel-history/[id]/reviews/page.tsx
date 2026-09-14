@@ -90,6 +90,14 @@ export default function ReviewsPage() {
         getTripWithVersion(tripId, lang),
         apiClient.getProfile(lang),
       ]);
+      if (trip.trip.status !== 'travel-completed') {
+        // Reviews only open on a completed trip: skip the per-entity review
+        // lookups and let the status guard below render a notice, not the form.
+        setState({ trip, entities: [], userId: user.id, reviewsByEntity: {} });
+        setValues({});
+        setItemErrors({});
+        return;
+      }
       const entities = toReviewableEntities(getTripReviewableItems(trip.currentVersion));
       const reviews = await Promise.all(entities.map((e) => findUserReview(e, user.id, lang)));
       const reviewsByEntity: Record<string, Review | null> = {};
@@ -308,6 +316,31 @@ export default function ReviewsPage() {
             {t('trip_detail.back_to_travel_history')}
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (state.trip.trip.status !== 'travel-completed') {
+    // Deep link to a trip whose reviews aren't open (no-show, or not yet
+    // completed): the backend would reject a submission, so never show the form.
+    const isNoShow = state.trip.trip.status === 'no-show';
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto mt-8 mb-16 max-w-4xl px-4 md:px-6">
+          <Link
+            href={`/my-page/travel-history/${state.trip.trip.id}`}
+            className="mb-6 inline-block text-sm text-gray-500 hover:text-gray-900"
+          >
+            {t('review_session.back_to_trip')}
+          </Link>
+          <div
+            data-testid="review-not-open-notice"
+            className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-600"
+          >
+            <p>{t(isNoShow ? 'trip_detail.no_show_notice' : 'review_session.not_open_notice')}</p>
+          </div>
+        </div>
+        <Footer />
       </div>
     );
   }

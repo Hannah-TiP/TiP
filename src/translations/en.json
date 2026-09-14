@@ -620,6 +620,7 @@
   "review_session.title": "Review Your Experience",
   "review_session.reviewed_count": "{done} of {total} reviewed",
   "review_session.no_items": "There are no TiP-listed hotels, restaurants, or activities to review on this trip.",
+  "review_session.not_open_notice": "Reviews open once your trip is completed.",
   "review_session.submitted_one": "{n} review submitted — pending approval. Points are added once it’s approved.",
   "review_session.submitted_other": "{n} reviews submitted — pending approval. Points are added once they’re approved.",
   "review_session.submit_failed": "Couldn’t submit: {items}. See the items above.",

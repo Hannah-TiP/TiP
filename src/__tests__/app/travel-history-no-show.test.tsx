@@ -2,6 +2,7 @@ import type { AnchorHTMLAttributes } from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import TravelHistoryTripDetailPage from '@/app/my-page/travel-history/[id]/page';
+import ReviewsPage from '@/app/my-page/travel-history/[id]/reviews/page';
 import { apiClient } from '@/lib/api-client';
 import { getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
 import en from '@/translations/en.json';
@@ -35,6 +36,10 @@ vi.mock('@/components/BookingDocuments', () => ({
 
 vi.mock('@/hooks/useBenefits', () => ({
   useBenefits: () => null,
+}));
+
+vi.mock('@/components/reviews/ReviewSessionItem', () => ({
+  default: () => <div data-testid="review-session-item">ReviewSessionItem</div>,
 }));
 
 let activeLang: 'en' | 'kr' = 'en';
@@ -163,5 +168,56 @@ describe('No-show trip on /my-page/travel-history/[id] (SMA-362)', () => {
     });
     expect(screen.queryByTestId('no-show-notice')).toBeNull();
     expect(screen.getByText(en['trip_detail.completed_trip'])).toBeTruthy();
+  });
+});
+
+describe('Review session route /my-page/travel-history/[id]/reviews status guard (SMA-362)', () => {
+  it('renders the no-show notice instead of the form and fires no review lookups', async () => {
+    mockApi('no-show');
+
+    render(<ReviewsPage />);
+
+    const notice = await screen.findByTestId('review-not-open-notice');
+    expect(notice.textContent).toBe(en['trip_detail.no_show_notice']);
+    expect(screen.queryByTestId('review-session-item')).toBeNull();
+    expect(screen.queryByRole('button', { name: en['review_session.submit_reviews'] })).toBeNull();
+    expect(screen.queryByText(en['review_session.title'])).toBeNull();
+    const back = screen.getByRole('link', { name: en['review_session.back_to_trip'] });
+    expect(back.getAttribute('href')).toBe('/my-page/travel-history/42');
+    expect(vi.mocked(apiClient.getReviewsByEntity)).not.toHaveBeenCalled();
+  });
+
+  it('renders the generic not-open notice for a trip that is not completed yet', async () => {
+    mockApi('paid');
+
+    render(<ReviewsPage />);
+
+    const notice = await screen.findByTestId('review-not-open-notice');
+    expect(notice.textContent).toBe(en['review_session.not_open_notice']);
+    expect(screen.queryByTestId('review-session-item')).toBeNull();
+    expect(screen.queryByRole('button', { name: en['review_session.submit_reviews'] })).toBeNull();
+    expect(vi.mocked(apiClient.getReviewsByEntity)).not.toHaveBeenCalled();
+  });
+
+  it('renders the Korean not-open notice in KR', async () => {
+    activeLang = 'kr';
+    mockApi('paid');
+
+    render(<ReviewsPage />);
+
+    const notice = await screen.findByTestId('review-not-open-notice');
+    expect(notice.textContent).toBe(kr['review_session.not_open_notice']);
+    expect(screen.getByRole('link', { name: kr['review_session.back_to_trip'] })).toBeTruthy();
+  });
+
+  it('still renders the review form for a completed trip (control)', async () => {
+    mockApi('travel-completed');
+
+    render(<ReviewsPage />);
+
+    expect(await screen.findByTestId('review-session-item')).toBeTruthy();
+    expect(screen.queryByTestId('review-not-open-notice')).toBeNull();
+    expect(screen.getByRole('button', { name: en['review_session.submit_reviews'] })).toBeTruthy();
+    expect(vi.mocked(apiClient.getReviewsByEntity)).toHaveBeenCalledWith('hotel', 7, 'en');
   });
 });
