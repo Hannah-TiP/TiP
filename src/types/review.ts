@@ -108,6 +108,14 @@ export function isPendingReview(review: Review): boolean {
   return review.moderation_status === 'pending';
 }
 
+/**
+ * Whether the review has been approved and published (SMA-363). Deleting an
+ * approved review claws back the review reward points it earned.
+ */
+export function isApprovedReview(review: Review): boolean {
+  return review.moderation_status === 'visible';
+}
+
 /** The author-visible (non-hidden) photos of a review. */
 export function visibleReviewPhotos(review: Review): ReviewPhoto[] {
   return (review.photos ?? []).filter((photo) => !photo.hidden);

@@ -12,6 +12,7 @@ import { useBenefits } from '@/hooks/useBenefits';
 import { resolvePointUnit } from '@/lib/benefits';
 import { formatDate as formatDateI18n } from '@/lib/format-date';
 import { apiClient } from '@/lib/api-client';
+import { noteMarkerKindQualifier, withoutHiddenNoteMarker } from '@/lib/points-row';
 import { formatPoints, formatSignedPoints, pointsToUsdApprox } from '@/lib/points-wallet';
 import {
   creditSourceLabel,
@@ -177,11 +178,15 @@ export default function MyCreditsPage() {
                   <div className="sm:col-span-2">{t('credits.col_expires')}</div>
                 </div>
                 <div className="divide-y divide-gray-100">
-                  {transactions.map((row) => {
+                  {transactions.map((ledgerRow) => {
+                    // A note MARKER (e.g. `review_deleted`) drives the kind
+                    // qualifier and never renders as a note (SMA-363).
+                    const row = withoutHiddenNoteMarker(ledgerRow);
                     const linkedTripId = tripIdFromCredit(row);
                     const consumption = isPointsConsumption(row.kind);
                     const kindLabel =
-                      row.kind && row.kind !== 'grant' ? pointKindText(row.kind, en) : null;
+                      noteMarkerKindQualifier(ledgerRow, en) ??
+                      (row.kind && row.kind !== 'grant' ? pointKindText(row.kind, en) : null);
                     const delta = row.delta_points ?? null;
                     return (
                       <div
