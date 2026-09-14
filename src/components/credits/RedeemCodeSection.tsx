@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { localeForLang } from '@/lib/format-date';
 import { apiClient } from '@/lib/api-client';
+import { formatPoints, redeemedPoints } from '@/lib/points-wallet';
 import { RedeemPromoCodeError, type RedeemPromoCodeErrorCode } from '@/types/stay-credit';
 
 const ERROR_KEY = {
@@ -15,25 +15,17 @@ const ERROR_KEY = {
   generic: 'credits.redeem_error_generic',
 } as const satisfies Record<RedeemPromoCodeErrorCode, string>;
 
-function formatAmount(amount: string, currency: string, locale: string): string {
-  const value = Number(amount);
-  if (!Number.isFinite(value)) return `${currency} ${amount}`;
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
 interface RedeemCodeSectionProps {
   // Notifies the parent that a redemption succeeded so it can refresh the
   // wallet balance + history.
   onRedeemed: () => void;
+  // Registry `point_unit` (points per 1 USD) for the legacy USD-amount
+  // fallback when the backend omits `credited_points`; null ⇒ generic copy.
+  pointUnit: number | null;
 }
 
-export default function RedeemCodeSection({ onRedeemed }: RedeemCodeSectionProps) {
-  const { lang, t } = useLanguage();
-  const locale = localeForLang(lang);
+export default function RedeemCodeSection({ onRedeemed, pointUnit }: RedeemCodeSectionProps) {
+  const { t } = useLanguage();
 
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -51,8 +43,12 @@ export default function RedeemCodeSection({ onRedeemed }: RedeemCodeSectionProps
 
     try {
       const result = await apiClient.redeemPromoCode(trimmed);
-      const amount = formatAmount(result.credited_amount, result.currency, locale);
-      setSuccess(t('credits.redeem_success').replace('{amount}', amount));
+      const points = redeemedPoints(result, pointUnit);
+      setSuccess(
+        points === null
+          ? t('credits.redeem_success_no_figure')
+          : t('credits.redeem_success').replace('{points}', formatPoints(points)),
+      );
       setCode('');
       onRedeemed();
     } catch (err) {

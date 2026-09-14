@@ -10,6 +10,9 @@ import SocialSignInButtons from '@/components/SocialSignInButtons';
 import PasswordInput from '@/components/PasswordInput';
 import WebviewLoginNotice from '@/components/auth/WebviewLoginNotice';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBenefits } from '@/hooks/useBenefits';
+import { maxBenefitPoints } from '@/lib/benefits';
+import { formatPoints } from '@/lib/points-wallet';
 import { buildAuthRedirectUrl } from '@/lib/redirect-validation';
 import { startGoogleRedirect } from '@/lib/google-oauth';
 import { startSocialRedirect } from '@/lib/social-oauth';
@@ -31,6 +34,15 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const rawRef = searchParams?.get('ref') ?? '';
   const referralCode = REFERRAL_CODE_PATTERN.test(rawRef) ? rawRef.toUpperCase() : '';
+  // The joiner reward depends on the INVITER's tier (unknown here), so the
+  // banner quotes the registry's largest `referral_joiner_credit` value as
+  // "up to {points}" (SMA-358); endpoint down ⇒ figure-free copy.
+  const benefits = useBenefits();
+  const maxJoinerPoints = maxBenefitPoints(benefits, 'referral_joiner_credit');
+  const invitedSuffix =
+    maxJoinerPoints === null
+      ? t('register.invited_by_suffix')
+      : t('register.invited_by_suffix_points').replace('{points}', formatPoints(maxJoinerPoints));
   // The post-auth destination (e.g. a "Plan My Trip" /concierge?prefill=… URL)
   // threaded in from sign-in. Forwarded to /onboarding so the context survives
   // the sign-up chain; buildAuthRedirectUrl drops it if it isn't a safe path.
@@ -198,7 +210,7 @@ function RegisterForm() {
         <div className="border-b border-gold/30 bg-gold/10 px-6 py-3 text-center text-sm text-green-dark md:px-8">
           {t('register.invited_by_prefix')}
           <span className="font-mono font-semibold">{referralCode}</span>
-          {t('register.invited_by_suffix')}
+          {invitedSuffix}
         </div>
       )}
       {step === 'email' && accountExists ? (

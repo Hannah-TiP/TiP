@@ -107,7 +107,7 @@ export type StayCreditStatus = 'issued' | 'redeemed' | 'expired' | 'revoked';
 
 // Mirrors v2/data_model/schemas/point_transaction.py::PointTransaction —
 // one append-only ledger row. `delta_points` is the signed balance
-// contribution (100 P = USD 1); a `use`/`clawback` row names the grant lot
+// contribution (points per USD per the registry point_unit); a `use`/`clawback` row names the grant lot
 // it draws down via `consumes_transaction_id`. Legacy rows (pre-backfill)
 // carry null `delta_points`/`kind`. `amount_cents`/`currency` are
 // historical provenance of the original monetary denomination (nullable
@@ -219,7 +219,20 @@ export function pointKindText(
 // ── Projected (not-yet-earned) post-trip credits — SMA-274/SMA-276 ─────────
 
 // Mirrors tip-backend/v2/data_model/enums.py::CreditProjectionBlocker.
-export type CreditProjectionBlocker = 'trip_not_finished' | 'awaiting_review';
+// `awaiting_completion` = the trip is date-finished and the points accrue
+// on the next hourly completion pass (SMA-327). `awaiting_review` is the
+// LEGACY wire value for that same state (pre-SMA-358 backends) — kept so an
+// older backend still renders the completion copy, never the review copy.
+export type CreditProjectionBlocker =
+  | 'trip_not_finished'
+  | 'awaiting_completion'
+  | 'awaiting_review';
+
+// True when the trip has date-finished and accrual is pending the
+// completion pass (accepts the legacy `awaiting_review` spelling).
+export function isAwaitingCompletion(reason: CreditProjectionBlocker | string): boolean {
+  return reason === 'awaiting_completion' || reason === 'awaiting_review';
+}
 
 // Mirrors tip-backend/v2/data_model/schemas/point_transaction.py::ProjectedTripEarn.
 // A PROJECTION, not a ledger row — never mixed into balances or the credit
@@ -233,6 +246,10 @@ export interface ProjectedTripEarn {
   // (e.g. 0.005). Display-only; never used for arithmetic on the FE.
   tier_rate: number;
   projected_amount_cents: number;
+  // Whole points (floored server-side) — the customer-facing figure
+  // (SMA-358). Optional only for backends predating it; the FE falls back
+  // to `projected_amount_cents` for USD projections (see `projectedPoints`).
+  projected_points?: number;
   blocking_reason: CreditProjectionBlocker;
 }
 
@@ -279,6 +296,10 @@ export interface RedeemPromoCodeResponse {
   credited_amount: string;
   currency: string;
   credit_id: number;
+  // Whole points credited to the wallet (SMA-358). Optional only for
+  // backends predating it; the FE falls back to the USD `credited_amount`
+  // converted via `point_unit` (see `redeemedPoints`).
+  credited_points?: number;
 }
 
 // Distinct body_code values returned by POST /me/credits/redeem-code on

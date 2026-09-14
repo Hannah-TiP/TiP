@@ -8,7 +8,13 @@
 // retry.
 
 import { apiClient } from '@/lib/api-client';
-import type { BenefitItem, BenefitsResponse, MembershipTier } from '@/types/v2/benefits';
+import { usdCentsToPoints } from '@/lib/points-wallet';
+import type {
+  BenefitItem,
+  BenefitsResponse,
+  BenefitUnit,
+  MembershipTier,
+} from '@/types/v2/benefits';
 import {
   FALLBACK_BENEFIT_CREDIT,
   FALLBACK_CERCLE_LOYALTY_NIGHTS,
@@ -81,6 +87,73 @@ export function resolvePointUnit(benefits: BenefitsResponse | null | undefined):
   if (raw === null || !raw.trim()) return null;
   const parsed = Number(raw);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+// ── Point figures for ledger grants (SMA-358) ──────────────────────────────
+
+// Display names of the membership circles — proper nouns, identical in EN
+// and KR copy.
+export const MEMBERSHIP_TIER_NAMES: Record<MembershipTier, string> = {
+  carte: 'Carte',
+  cercle: 'Cercle',
+  confidence: 'Confidence',
+  cenacle: 'Cénacle',
+};
+
+// A benefit's wire value as whole points: `points` entries are read
+// directly, `usd_cents` entries convert via the registry `point_unit`.
+// Any other unit (rates, nights) is not a point grant → null.
+function pointsFromBenefitValue(
+  unit: BenefitUnit | null,
+  raw: string,
+  pointsPerUsd: number | null,
+): number | null {
+  const parsed = Number(raw);
+  if (!raw.trim() || !Number.isFinite(parsed)) return null;
+  if (unit === 'points') return Math.floor(parsed);
+  if (unit === 'usd_cents') return usdCentsToPoints(parsed, pointsPerUsd);
+  return null;
+}
+
+// Whole points a ledger-grant benefit declares for a tier (e.g. the
+// referral joiner reward at Carte), or null when the payload / entry /
+// tier value / point unit is absent.
+export function benefitTierPoints(
+  benefits: BenefitsResponse | null | undefined,
+  key: string,
+  tier: MembershipTier,
+): number | null {
+  const entry = findBenefit(benefits, key);
+  const raw = entry?.values_by_tier?.[tier];
+  if (!entry || raw == null) return null;
+  return pointsFromBenefitValue(entry.unit, raw, resolvePointUnit(benefits));
+}
+
+// The signed-in caller's OWN resolved point value for a ledger-grant
+// benefit (from the `resolved` block), or null for anonymous callers.
+export function resolvedBenefitPoints(
+  benefits: BenefitsResponse | null | undefined,
+  key: string,
+): number | null {
+  const resolved = benefits?.resolved?.benefits.find((item) => item.key === key);
+  if (!resolved?.value) return null;
+  return pointsFromBenefitValue(resolved.unit, resolved.value, resolvePointUnit(benefits));
+}
+
+// The largest point value a ledger-grant benefit declares across tiers —
+// for "up to {points}" copy where the granting tier is not yet known (the
+// invite-time referral reward keys off the REFERRER's tier).
+export function maxBenefitPoints(
+  benefits: BenefitsResponse | null | undefined,
+  key: string,
+): number | null {
+  const entry = findBenefit(benefits, key);
+  if (!entry?.values_by_tier) return null;
+  const pointUnit = resolvePointUnit(benefits);
+  const values = Object.values(entry.values_by_tier)
+    .map((raw) => pointsFromBenefitValue(entry.unit, raw, pointUnit))
+    .filter((value): value is number => value !== null);
+  return values.length > 0 ? Math.max(...values) : null;
 }
 
 // ── Display formatting ─────────────────────────────────────────────────────

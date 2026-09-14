@@ -4,40 +4,33 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBenefits } from '@/hooks/useBenefits';
+import { maxBenefitPoints } from '@/lib/benefits';
+import { formatPoints } from '@/lib/points-wallet';
 
 const DISMISS_DAYS = 7;
 const OPEN_DELAY_MS = 400;
 const CLOSE_ANIMATION_MS = 300;
 
-const copy = {
-  kr: {
-    eyebrow: '첫 예약 고객 특별 혜택',
-    headline: '첫 호텔 예약,',
-    discount: 'USD 100 할인',
-    body: 'Travel in Your Pocket을 통해 처음 예약하시면 첫 호텔 예약 시 USD 100 할인 혜택을 드립니다.',
-    cta: '혜택 받고 예약하기 →',
-    finePrint: '최초 예약 1회에 한해 적용됩니다.',
-    close: '팝업 닫기',
-    imageAlt: 'Travel in Your Pocket 첫 예약 혜택',
-  },
-  en: {
-    eyebrow: 'A Special Welcome Offer',
-    headline: 'USD 100 off your',
-    discount: 'first stay.',
-    body: 'Book with Travel in Your Pocket for the first time and enjoy USD 100 off your first hotel reservation.',
-    cta: 'Claim Your USD 100 Credit →',
-    finePrint: 'Valid for your first booking only.',
-    close: 'Close popup',
-    imageAlt: 'Travel in Your Pocket first-booking offer',
-  },
-} as const;
-
 export default function WelcomeOfferPopup() {
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const content = copy[lang];
+  // The welcome grant figure comes from the registry's `signup_welcome`
+  // entry (SMA-267 flat grant, SMA-358 in P) — a flat value, so max ==
+  // every tier. Null (endpoint down) drops the figure, never invents one.
+  const benefits = useBenefits();
+  const welcomePoints = maxBenefitPoints(benefits, 'signup_welcome');
+  const pointsLabel = welcomePoints === null ? null : formatPoints(welcomePoints);
+  const body =
+    pointsLabel === null
+      ? t('welcome_offer.body')
+      : t('welcome_offer.body_points').replace('{points}', pointsLabel);
+  const cta =
+    pointsLabel === null
+      ? t('welcome_offer.cta')
+      : t('welcome_offer.cta_points').replace('{points}', pointsLabel);
 
   useEffect(() => {
     const storageKey = `tiyp_popup_dismiss_until_v2_${lang}`;
@@ -116,7 +109,7 @@ export default function WelcomeOfferPopup() {
         <button
           type="button"
           onClick={dismiss}
-          aria-label={content.close}
+          aria-label={t('welcome_offer.close')}
           className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-black/25 text-lg leading-none text-white/90 transition-colors hover:bg-black/45"
         >
           ×
@@ -129,7 +122,7 @@ export default function WelcomeOfferPopup() {
                 ? '/welcome-offer/hotel-window-view.webp'
                 : '/welcome-offer/mountain-dining-view.webp'
             }
-            alt={content.imageAlt}
+            alt={t('welcome_offer.image_alt')}
             fill
             sizes="(max-width: 767px) 100vw, 420px"
             className="object-cover"
@@ -139,18 +132,18 @@ export default function WelcomeOfferPopup() {
 
         <div className="flex min-w-0 flex-col justify-center gap-4 px-6 pb-8 pt-5 md:gap-5 md:px-12 md:py-14">
           <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#d0a749]">
-            {content.eyebrow}
+            {t('welcome_offer.eyebrow')}
           </p>
           <h2
             id="welcome-offer-title"
             className="font-primary text-[32px] font-medium italic leading-[1.2] text-[#f5f5f4] md:text-[40px]"
           >
-            {content.headline}
+            {t('welcome_offer.headline_line1')}
             <br />
-            {content.discount}
+            {t('welcome_offer.headline_line2')}
           </h2>
           <p className="max-w-[400px] text-[15px] leading-[1.65] text-white/70 md:text-[16px]">
-            {content.body}
+            {body}
           </p>
           <div className="mt-1">
             <Link
@@ -158,10 +151,10 @@ export default function WelcomeOfferPopup() {
               onClick={dismiss}
               className="inline-flex items-center rounded-[2px] bg-[#285d4d] px-7 py-4 text-[15px] font-semibold tracking-[0.02em] text-[#faf8ef] transition-colors hover:bg-[#34715e]"
             >
-              {content.cta}
+              {cta}
             </Link>
           </div>
-          <p className="text-[12px] text-white/40">{content.finePrint}</p>
+          <p className="text-[12px] text-white/40">{t('welcome_offer.fine_print')}</p>
         </div>
       </section>
     </div>

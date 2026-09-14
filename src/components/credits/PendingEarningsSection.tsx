@@ -2,20 +2,27 @@
 
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { ProjectedTripEarn } from '@/types/stay-credit';
+import {
+  formatPoints,
+  formatSignedPoints,
+  pointsToUsdApprox,
+  projectedPoints,
+} from '@/lib/points-wallet';
+import { isAwaitingCompletion, type ProjectedTripEarn } from '@/types/stay-credit';
 
-function formatAmount(amountCents: number, currency: string): string {
-  const dollars = (amountCents / 100).toFixed(2);
-  return `${currency} ${dollars}`;
-}
-
-// Pending earnings — projected review-gated credit (SMA-276). Estimates
-// only: never added to the balance or mixed into the history. Loaded via
+// Pending earnings — projected post-trip TiP Points (SMA-276; P-denominated
+// since SMA-358). Estimates only: never added to the balance or mixed into
+// the history. Points accrue automatically on the completion pass once the
+// trip is date-finished (SMA-327) — reviews are a SEPARATE reward. Loaded via
 // next/dynamic from the credits page (code-split; client-fetched data).
 export default function PendingEarningsSection({
   projections,
+  pointUnit,
 }: {
   projections: ProjectedTripEarn[];
+  // Registry `point_unit` (points per 1 USD) — null hides the USD line and
+  // the legacy cents→points fallback.
+  pointUnit: number | null;
 }) {
   const { t } = useLanguage();
 
@@ -32,40 +39,65 @@ export default function PendingEarningsSection({
       <p className="mt-2 text-[13px] text-gray-500">{t('credits.pending_subtitle')}</p>
       <div className="mt-6 divide-y divide-gray-100">
         {projections.map((projection) => {
-          const amount = `~${formatAmount(projection.projected_amount_cents, projection.currency)}`;
-          const awaitingReview = projection.blocking_reason === 'awaiting_review';
+          const points = projectedPoints(projection, pointUnit);
+          const usdApprox = points === null ? null : pointsToUsdApprox(points, pointUnit);
+          const awaitingCompletion = isAwaitingCompletion(projection.blocking_reason);
+          const copy =
+            points === null
+              ? t(
+                  awaitingCompletion
+                    ? 'credits.pending_awaiting_completion_no_figure'
+                    : 'credits.pending_trip_not_finished_no_figure',
+                )
+              : t(
+                  awaitingCompletion
+                    ? 'credits.pending_awaiting_completion'
+                    : 'credits.pending_trip_not_finished',
+                ).replace('{points}', formatPoints(points));
           return (
             <div
               key={projection.trip_id}
               className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between"
+              data-testid="pending-earning-row"
             >
               <div>
                 <div className="text-[14px] font-medium text-gray-900">
                   {projection.trip_title?.trim() ||
                     t('credits.pending_untitled_trip').replace('{id}', String(projection.trip_id))}
                 </div>
-                <div className="mt-0.5 text-[13px] text-gray-500">
-                  {t(
-                    awaitingReview
-                      ? 'credits.pending_awaiting_review'
-                      : 'credits.pending_trip_not_finished',
-                  ).replace('{amount}', amount)}
-                </div>
+                <div className="mt-0.5 text-[13px] text-gray-500">{copy}</div>
+                {awaitingCompletion && (
+                  <div className="mt-1 text-[12px] text-gray-500">
+                    {t('credits.pending_review_separate')}{' '}
+                    <Link
+                      href={`/my-page/travel-history/${projection.trip_id}/reviews`}
+                      className="font-medium text-[#C4956A] hover:underline"
+                    >
+                      {t('credits.pending_cta_review')}
+                    </Link>
+                  </div>
+                )}
                 <Link
-                  href={
-                    awaitingReview
-                      ? `/my-page/travel-history/${projection.trip_id}/reviews`
-                      : `/my-page/travel-history/${projection.trip_id}`
-                  }
+                  href={`/my-page/travel-history/${projection.trip_id}`}
                   className="mt-1 inline-block text-[12px] font-medium text-[#C4956A] hover:underline"
                 >
-                  {t(
-                    awaitingReview ? 'credits.pending_cta_review' : 'credits.pending_cta_view_trip',
-                  )}
+                  {t('credits.pending_cta_view_trip')}
                 </Link>
               </div>
               <div className="sm:text-right">
-                <div className="font-primary text-[22px] italic text-[#C4956A]">{amount}</div>
+                {points !== null && (
+                  <div
+                    className="font-primary text-[22px] italic text-[#C4956A]"
+                    data-testid="pending-points"
+                  >
+                    {formatSignedPoints(points)}
+                  </div>
+                )}
+                {usdApprox !== null && (
+                  <div className="text-[12px] text-gray-500" data-testid="pending-usd-approx">
+                    {t('credits.usd_approx').replace('{amount}', usdApprox.toLocaleString('en-US'))}
+                  </div>
+                )}
                 <span className="inline-block rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold text-[#C4956A]">
                   {t('credits.pending_estimated')}
                 </span>

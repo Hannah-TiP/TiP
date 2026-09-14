@@ -7,6 +7,8 @@
  * request is rejected anyway.
  */
 
+import type { ProjectedTripEarn, RedeemPromoCodeResponse } from '@/types/stay-credit';
+
 export type PointsInputError = 'invalid' | 'exceeds';
 
 /**
@@ -61,4 +63,59 @@ export function pointsToUsdApprox(
   if (pointsPerUsd == null || !Number.isFinite(pointsPerUsd) || pointsPerUsd <= 0) return null;
   if (!Number.isFinite(balancePoints)) return null;
   return Math.floor(balancePoints / pointsPerUsd);
+}
+
+/**
+ * USD cents → whole points via the registry `point_unit` (points per 1 USD),
+ * floored. Null when the unit is absent/invalid or the cents are not finite —
+ * callers hide the figure rather than guess a ratio.
+ */
+export function usdCentsToPoints(
+  cents: number,
+  pointsPerUsd: number | null | undefined,
+): number | null {
+  if (pointsPerUsd == null || !Number.isFinite(pointsPerUsd) || pointsPerUsd <= 0) return null;
+  if (!Number.isFinite(cents)) return null;
+  // Multiply before dividing: `(29 / 100) * 100` drifts to 28.999… and the
+  // floor would eat a point; `(29 * 100) / 100` is exact for integer inputs.
+  return Math.floor((cents * pointsPerUsd) / 100);
+}
+
+/**
+ * The P figure for a pending-earn projection (SMA-358). The backend's
+ * `projected_points` (integer, floored server-side) wins; an older backend
+ * that omits it falls back to converting `projected_amount_cents` ONLY when
+ * the projection is USD-denominated — never an invented FX rate for other
+ * currencies (null ⇒ figure-less copy).
+ */
+export function projectedPoints(
+  projection: ProjectedTripEarn,
+  pointsPerUsd: number | null | undefined,
+): number | null {
+  if (
+    typeof projection.projected_points === 'number' &&
+    Number.isFinite(projection.projected_points)
+  ) {
+    return Math.floor(projection.projected_points);
+  }
+  if (projection.currency !== 'USD') return null;
+  return usdCentsToPoints(projection.projected_amount_cents, pointsPerUsd);
+}
+
+/**
+ * The P figure credited by a promo-code redemption (SMA-358). `credited_points`
+ * wins; an older backend that omits it falls back to the USD `credited_amount`
+ * converted via `point_unit` — other currencies yield null (generic success copy).
+ */
+export function redeemedPoints(
+  result: RedeemPromoCodeResponse,
+  pointsPerUsd: number | null | undefined,
+): number | null {
+  if (typeof result.credited_points === 'number' && Number.isFinite(result.credited_points)) {
+    return Math.floor(result.credited_points);
+  }
+  if (result.currency !== 'USD') return null;
+  const amount = Number(result.credited_amount);
+  if (!Number.isFinite(amount)) return null;
+  return usdCentsToPoints(Math.round(amount * 100), pointsPerUsd);
 }

@@ -87,7 +87,7 @@ describe('membership page benefit figures (SMA-322)', () => {
     render(<MembershipPage />);
 
     expect(screen.getByTestId('member-earn-rate').textContent).toBe(
-      'You earn 0.1% on travel spend as a Carte member.',
+      'As a Carte member, you earn 0.1% of your travel spend back in TiP Points.',
     );
   });
 

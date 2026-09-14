@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { BenefitsResponse } from '@/types/v2/benefits';
 import {
+  MEMBERSHIP_TIER_NAMES,
+  benefitTierPoints,
   benefitTierValue,
   clearBenefitsCache,
   fetchBenefits,
@@ -9,8 +11,10 @@ import {
   formatRatePercent,
   formatUsdCents,
   formatWholeNumber,
+  maxBenefitPoints,
   membershipBenefitFigures,
   resolvePointUnit,
+  resolvedBenefitPoints,
   resolvedBenefitValue,
 } from '@/lib/benefits';
 import {
@@ -258,5 +262,115 @@ describe('resolvePointUnit (SMA-332)', () => {
         resolved: null,
       }),
     ).toBeNull();
+  });
+});
+
+describe('ledger-grant point figures (SMA-358)', () => {
+  const pointUnit: BenefitsResponse['benefits'][number] = {
+    key: 'point_unit',
+    kind: 'unit_definition',
+    unit: 'points',
+    values_by_tier: { carte: '100', cercle: '100', confidence: '100', cenacle: '100' },
+    copy: { en: 'x', kr: 'x' },
+  };
+  const referral: BenefitsResponse['benefits'][number] = {
+    key: 'referral_joiner_credit',
+    kind: 'one_off_grant',
+    unit: 'usd_cents',
+    values_by_tier: { carte: '5000', cercle: '5000', confidence: '30000', cenacle: '30000' },
+    copy: { en: 'x', kr: 'x' },
+  };
+  const payload: BenefitsResponse = { benefits: [pointUnit, referral], resolved: null };
+
+  it('benefitTierPoints converts a usd_cents tier value through the point unit', () => {
+    expect(benefitTierPoints(payload, 'referral_joiner_credit', 'carte')).toBe(5000);
+    expect(benefitTierPoints(payload, 'referral_joiner_credit', 'confidence')).toBe(30000);
+  });
+
+  it('benefitTierPoints reads a points-unit value directly', () => {
+    const pts: BenefitsResponse = {
+      benefits: [{ ...referral, unit: 'points', values_by_tier: { carte: '750.9' } }],
+      resolved: null,
+    };
+    expect(benefitTierPoints(pts, 'referral_joiner_credit', 'carte')).toBe(750);
+  });
+
+  it('benefitTierPoints is null without the point unit, entry, tier, or for non-grant units', () => {
+    expect(
+      benefitTierPoints(
+        { benefits: [referral], resolved: null },
+        'referral_joiner_credit',
+        'carte',
+      ),
+    ).toBeNull();
+    expect(benefitTierPoints(payload, 'missing', 'carte')).toBeNull();
+    expect(
+      benefitTierPoints(
+        {
+          benefits: [pointUnit, { ...referral, values_by_tier: { carte: '5000' } }],
+          resolved: null,
+        },
+        'referral_joiner_credit',
+        'cercle',
+      ),
+    ).toBeNull();
+    expect(
+      benefitTierPoints(
+        {
+          benefits: [pointUnit, { ...referral, unit: 'rate', values_by_tier: { carte: '0.01' } }],
+          resolved: null,
+        },
+        'referral_joiner_credit',
+        'carte',
+      ),
+    ).toBeNull();
+    expect(benefitTierPoints(null, 'referral_joiner_credit', 'carte')).toBeNull();
+  });
+
+  it('resolvedBenefitPoints reads the own-tier value from the resolved block', () => {
+    const withResolved: BenefitsResponse = {
+      ...payload,
+      resolved: {
+        tier: 'confidence',
+        benefits: [
+          { key: 'point_unit', unit: 'points', value: '100' },
+          { key: 'referral_joiner_credit', unit: 'usd_cents', value: '30000' },
+        ],
+      },
+    };
+    expect(resolvedBenefitPoints(withResolved, 'referral_joiner_credit')).toBe(30000);
+    // Anonymous callers / missing resolved entry / null value → null.
+    expect(resolvedBenefitPoints(payload, 'referral_joiner_credit')).toBeNull();
+    expect(
+      resolvedBenefitPoints(
+        {
+          ...payload,
+          resolved: {
+            tier: 'carte',
+            benefits: [{ key: 'referral_joiner_credit', unit: 'usd_cents', value: null }],
+          },
+        },
+        'referral_joiner_credit',
+      ),
+    ).toBeNull();
+  });
+
+  it('maxBenefitPoints picks the largest tier value ("up to" copy)', () => {
+    expect(maxBenefitPoints(payload, 'referral_joiner_credit')).toBe(30000);
+    expect(maxBenefitPoints(payload, 'point_unit')).toBe(100);
+    expect(maxBenefitPoints(payload, 'missing')).toBeNull();
+    expect(
+      maxBenefitPoints({ benefits: [referral], resolved: null }, 'referral_joiner_credit'),
+    ).toBeNull();
+    expect(maxBenefitPoints(null, 'referral_joiner_credit')).toBeNull();
+  });
+
+  it('MEMBERSHIP_TIER_NAMES covers every circle', () => {
+    expect(MEMBERSHIP_TIER_NAMES).toEqual({
+      carte: 'Carte',
+      cercle: 'Cercle',
+      confidence: 'Confidence',
+      cenacle: 'Cénacle',
+    });
   });
 });
