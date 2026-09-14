@@ -393,8 +393,13 @@ export default function TravelHistoryTripDetailPage() {
               </div>
             )}
 
-            {tripCredits.length > 0 && (
-              <div className="rounded-xl border border-gray-200 bg-white p-5">
+            {/* A no-show trip's grants are clawed back (SMA-362); the ledger
+                still holds the positive lots, so never present them as earned. */}
+            {!isNoShow && tripCredits.length > 0 && (
+              <div
+                className="rounded-xl border border-gray-200 bg-white p-5"
+                data-testid="trip-credits-earned"
+              >
                 <h3 className="mb-3 font-semibold text-gray-900">
                   {t('trip_detail.credits_earned')}
                 </h3>

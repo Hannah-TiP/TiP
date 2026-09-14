@@ -7,7 +7,7 @@ import { apiClient } from '@/lib/api-client';
 import { getTripWithVersion, type TripWithVersion } from '@/lib/trip-utils';
 import en from '@/translations/en.json';
 import kr from '@/translations/kr.json';
-import type { ProjectedTripEarn } from '@/types/stay-credit';
+import type { PointTransaction, ProjectedTripEarn } from '@/types/stay-credit';
 import type { TripStatus } from '@/types/trip';
 
 vi.mock('next/link', () => ({
@@ -107,12 +107,39 @@ const PENDING: ProjectedTripEarn = {
   blocking_reason: 'trip_not_finished',
 };
 
-function mockApi(status: TripStatus) {
+// A tiered-earn grant lot linked to this trip plus its no-show clawback — the
+// ledger keeps the positive lot, so the page must not present it as earned
+// on a no-show trip.
+const EARN_LOT: PointTransaction = {
+  id: 900,
+  user_id: 7,
+  source: 'payment_points',
+  status: 'issued',
+  delta_points: 2500,
+  kind: 'grant',
+  trip_id: 42,
+  source_ref: 'trip:42:tiered_earn',
+  created_at: '2026-07-06T00:00:00Z',
+};
+const EARN_CLAWBACK: PointTransaction = {
+  id: 901,
+  user_id: 7,
+  source: 'payment_points',
+  status: 'issued',
+  delta_points: -2500,
+  kind: 'clawback',
+  consumes_transaction_id: 900,
+  trip_id: 42,
+  source_ref: 'trip:42:tiered_earn:cancel',
+  created_at: '2026-07-07T00:00:00Z',
+};
+
+function mockApi(status: TripStatus, transactions: PointTransaction[] = []) {
   vi.mocked(getTripWithVersion).mockResolvedValue(bundle(status));
   vi.mocked(apiClient.getMyPoints).mockResolvedValue({
     user_id: 7,
     balance_points: 0,
-    transactions: [],
+    transactions,
   });
   vi.mocked(apiClient.getMyCreditProjection).mockResolvedValue({
     user_id: 7,
@@ -128,7 +155,7 @@ function mockApi(status: TripStatus) {
 
 describe('No-show trip on /my-page/travel-history/[id] (SMA-362)', () => {
   it('shows the No-show label + notice and hides the pending-earn block and review CTA', async () => {
-    mockApi('no-show');
+    mockApi('no-show', [EARN_LOT, EARN_CLAWBACK]);
 
     render(<TravelHistoryTripDetailPage />);
 
@@ -144,6 +171,9 @@ describe('No-show trip on /my-page/travel-history/[id] (SMA-362)', () => {
     expect(screen.queryByRole('link', { name: en['trip_detail.review_experience'] })).toBeNull();
     // And the review-status lookups were never fired.
     expect(vi.mocked(apiClient.getReviewsByEntity)).not.toHaveBeenCalled();
+    // The clawed-back earn lot is NOT presented as "Points earned from this trip".
+    expect(screen.queryByTestId('trip-credits-earned')).toBeNull();
+    expect(screen.queryByText(en['trip_detail.credits_earned'])).toBeNull();
   });
 
   it('renders the Korean no-show copy in KR', async () => {
@@ -168,6 +198,16 @@ describe('No-show trip on /my-page/travel-history/[id] (SMA-362)', () => {
     });
     expect(screen.queryByTestId('no-show-notice')).toBeNull();
     expect(screen.getByText(en['trip_detail.completed_trip'])).toBeTruthy();
+  });
+
+  it('still shows the earned-points card for a completed trip with a linked grant lot (control)', async () => {
+    mockApi('travel-completed', [EARN_LOT]);
+
+    render(<TravelHistoryTripDetailPage />);
+
+    expect(await screen.findByTestId('trip-credits-earned')).toBeTruthy();
+    expect(screen.getByText(en['trip_detail.credits_earned'])).toBeTruthy();
+    expect(screen.queryByTestId('no-show-notice')).toBeNull();
   });
 });
 
