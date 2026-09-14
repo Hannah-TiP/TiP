@@ -6,7 +6,7 @@ import Footer from '@/components/Footer';
 import { getTripsWithVersions, type TripWithVersion } from '@/lib/trip-utils';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { formatDate as formatDateI18n } from '@/lib/format-date';
-import { getStatusLabel } from '@/lib/trip-display';
+import { getStatusLabel, isTravelHistoryStatus } from '@/lib/trip-display';
 
 const STATUS_PRIORITY = [
   'draft',
@@ -210,7 +210,7 @@ export default function MyPageUpcomingTravels() {
     const load = async () => {
       try {
         const loaded = await getTripsWithVersions({ language: lang });
-        const shown = loaded.filter(({ trip }) => trip.status !== 'travel-completed');
+        const shown = loaded.filter(({ trip }) => !isTravelHistoryStatus(trip.status));
         setTrips(sortByPriority(shown));
       } finally {
         setLoading(false);

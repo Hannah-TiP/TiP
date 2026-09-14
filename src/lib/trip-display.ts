@@ -72,6 +72,7 @@ export const STATUS_TO_STEP_KEY: Record<string, TranslationKeys> = {
   'traveling-now': 'trip.step_traveling',
   'travel-completed': 'trip.step_completed',
   canceled: 'trip.step_canceled',
+  'no-show': 'trip.step_no_show',
 };
 
 /**
@@ -112,7 +113,8 @@ export const JOURNEY_STEP_ORDER: JourneyStep[] = [
 /**
  * Active-step index in {@link JOURNEY_STEP_ORDER} for every canonical trip
  * status. `null` means "no active step" — the defined state for `canceled`
- * (all circles render empty; deliberate, see SMA-238 scope decision).
+ * and `no-show` (all circles render empty; deliberate, see SMA-238 scope
+ * decision).
  * The `satisfies` clause makes a newly added TripStatus a compile error here
  * instead of a silently blank stepper.
  */
@@ -126,10 +128,25 @@ export const STATUS_TO_JOURNEY_INDEX = {
   'traveling-now': 6,
   'travel-completed': 7,
   canceled: null,
+  'no-show': null,
 } satisfies Record<TripStatus, number | null>;
 
+/**
+ * Terminal post-travel statuses that belong in Travel History rather than the
+ * upcoming-trips dashboard. `no-show` (SMA-362) is admin-set and terminal:
+ * the trip never accrues points and cannot be reviewed.
+ */
+export const TRAVEL_HISTORY_STATUSES: ReadonlySet<string> = new Set([
+  'travel-completed',
+  'no-show',
+]);
+
+export function isTravelHistoryStatus(status: string): boolean {
+  return TRAVEL_HISTORY_STATUSES.has(status);
+}
+
 export interface JourneyStepState {
-  /** Index of the current step in JOURNEY_STEP_ORDER; null = no active step (canceled). */
+  /** Index of the current step in JOURNEY_STEP_ORDER; null = no active step (canceled / no-show). */
   currentIndex: number | null;
 }
 

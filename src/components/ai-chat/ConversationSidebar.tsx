@@ -82,6 +82,8 @@ function getStatusColor(status: string | null): string {
       return 'bg-gray-100 text-gray-500';
     case 'canceled':
       return 'bg-red-100 text-red-600';
+    case 'no-show':
+      return 'bg-gray-200 text-gray-600';
     default:
       return 'bg-gray-200 text-gray-600';
   }

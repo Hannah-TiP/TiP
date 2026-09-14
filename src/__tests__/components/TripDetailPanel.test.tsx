@@ -256,6 +256,13 @@ describe('TripDetailPanel — journey stepper', () => {
     expect(Object.values(states).every((s) => s === 'upcoming')).toBe(true);
   });
 
+  it('renders a no-show trip with NO active or completed step (terminal, like canceled)', () => {
+    render(<TripDetailPanel tripDetail={makeTripWithVersion([], 'no-show')} />);
+
+    const states = stepStates();
+    expect(Object.values(states).every((s) => s === 'upcoming')).toBe(true);
+  });
+
   it('falls back to the first step (with a console warning) for an unknown status', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     render(

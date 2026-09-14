@@ -11,7 +11,8 @@ export type TripStatus =
   | 'ready-to-travel'
   | 'traveling-now'
   | 'travel-completed'
-  | 'canceled';
+  | 'canceled'
+  | 'no-show';
 
 export type InternalNoteStatus = 'active' | 'archived';
 
