@@ -9,8 +9,10 @@ import type { PointTransaction, PointsLedgerResponse } from '@/types/stay-credit
 
 // A `clawback` row the backend appends when a member deletes an approved
 // review (`notes: 'review_deleted'`, SMA-363) is labelled "Review deleted"
-// and never shows the raw marker; every other clawback keeps the generic
-// "Clawback" qualifier and its free-text note.
+// and never shows the raw marker; the review-reward clawback written when an
+// admin marks a trip no-show (`notes: 'no-show'`, SMA-362) is labelled
+// "No-show" the same way; every other clawback keeps the generic "Clawback"
+// qualifier and its free-text note.
 
 const state = vi.hoisted(() => ({
   lang: 'en' as 'en' | 'kr',
@@ -97,6 +99,24 @@ const LEDGER: PointsLedgerResponse = {
   ],
 };
 
+const NO_SHOW_LEDGER: PointsLedgerResponse = {
+  user_id: 7,
+  balance_points: 0,
+  transactions: [
+    row({ id: 12, notes: 'no-show', trip_id: 42 }),
+    // A grant carrying the same note is NOT a no-show clawback — it renders
+    // as a plain grant with no qualifier.
+    row({
+      id: 11,
+      kind: 'grant',
+      delta_points: 500,
+      notes: 'no-show',
+      trip_id: 42,
+      created_at: '2026-09-01T00:00:00Z',
+    }),
+  ],
+};
+
 beforeEach(() => {
   state.lang = 'en';
   vi.mocked(apiClient.getMyPoints).mockResolvedValue(LEDGER);
@@ -141,5 +161,37 @@ describe('Review-deleted clawback rows on /my-page/credits (SMA-363)', () => {
     expect(within(rows[0]).getByTestId('points-kind').textContent).toBe('후기 삭제');
     expect(rows[0].textContent).not.toContain('review_deleted');
     expect(within(rows[1]).getByTestId('points-kind').textContent).toBe('회수');
+  });
+});
+
+describe('No-show clawback rows on /my-page/credits (SMA-362 marker)', () => {
+  beforeEach(() => {
+    vi.mocked(apiClient.getMyPoints).mockResolvedValue(NO_SHOW_LEDGER);
+  });
+
+  it('EN: labels the clawback "No-show", hides the marker, leaves the grant untouched', async () => {
+    render(<MyCreditsPage />);
+
+    const rows = await screen.findAllByTestId('points-row');
+    expect(rows).toHaveLength(2);
+
+    const clawback = rows[0];
+    expect(within(clawback).getByTestId('points-kind').textContent).toBe('No-show');
+    expect(clawback.textContent).not.toContain('no-show');
+    expect(within(clawback).getByTestId('points-delta').textContent).toBe('−500 P');
+
+    const grant = rows[1];
+    expect(within(grant).queryByTestId('points-kind')).toBeNull();
+    expect(within(grant).getByTestId('points-delta').textContent).toBe('+500 P');
+  });
+
+  it('KR: renders 노쇼 for the clawback and no qualifier on the grant', async () => {
+    state.lang = 'kr';
+    render(<MyCreditsPage />);
+
+    const rows = await screen.findAllByTestId('points-row');
+    expect(within(rows[0]).getByTestId('points-kind').textContent).toBe('노쇼');
+    expect(rows[0].textContent).not.toContain('no-show');
+    expect(within(rows[1]).queryByTestId('points-kind')).toBeNull();
   });
 });

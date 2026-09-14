@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  NO_SHOW_NOTE_MARKER,
   REVIEW_DELETED_NOTE_MARKER,
   isHiddenNoteMarker,
+  isNoShowClawback,
   isReviewDeletedClawback,
   noteMarkerKindQualifier,
   reviewRewardRemaining,
@@ -26,6 +28,9 @@ describe('note markers (SMA-363)', () => {
     expect(REVIEW_DELETED_NOTE_MARKER).toBe('review_deleted');
     expect(isHiddenNoteMarker('review_deleted')).toBe(true);
     expect(isHiddenNoteMarker('Review deleted by admin')).toBe(false);
+    expect(NO_SHOW_NOTE_MARKER).toBe('no-show');
+    expect(isHiddenNoteMarker('no-show')).toBe(true);
+    expect(isHiddenNoteMarker('No-show confirmed by hotel')).toBe(false);
     expect(isHiddenNoteMarker('photo')).toBe(false);
     expect(isHiddenNoteMarker(null)).toBe(false);
     expect(isHiddenNoteMarker(undefined)).toBe(false);
@@ -45,9 +50,26 @@ describe('note markers (SMA-363)', () => {
     expect(noteMarkerKindQualifier(row({ id: 4, notes: 'review_deleted' }), true)).toBeNull();
   });
 
+  it('labels a no-show clawback (SMA-362) and leaves the marker inert on other kinds', () => {
+    const clawback = row({ id: 5, kind: 'clawback', delta_points: -500, notes: 'no-show' });
+    expect(isNoShowClawback(clawback)).toBe(true);
+    expect(noteMarkerKindQualifier(clawback, true)).toBe('No-show');
+    expect(noteMarkerKindQualifier(clawback, false)).toBe('노쇼');
+
+    // Same rule as review_deleted: the marker only means something on a clawback.
+    const grant = row({ id: 6, notes: 'no-show' });
+    expect(isNoShowClawback(grant)).toBe(false);
+    expect(noteMarkerKindQualifier(grant, true)).toBeNull();
+    expect(noteMarkerKindQualifier(grant, false)).toBeNull();
+    const use = row({ id: 7, kind: 'use', delta_points: -500, notes: 'no-show' });
+    expect(noteMarkerKindQualifier(use, true)).toBeNull();
+  });
+
   it('blanks a marker note but returns other rows untouched', () => {
     const marked = row({ id: 2, kind: 'clawback', delta_points: -500, notes: 'review_deleted' });
     expect(withoutHiddenNoteMarker(marked).notes).toBeNull();
+    const noShow = row({ id: 4, kind: 'clawback', delta_points: -500, notes: 'no-show' });
+    expect(withoutHiddenNoteMarker(noShow).notes).toBeNull();
     const plain = row({ id: 3, notes: 'Thanks for the great review' });
     expect(withoutHiddenNoteMarker(plain)).toBe(plain);
   });
