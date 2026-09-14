@@ -137,6 +137,12 @@ test.describe('Quote points wallet panel', () => {
 
     await gotoPage(page, `/quotes/${QUOTE_ID}`);
 
+    // SMA-359: the hint quotes the cap rate the backend is enforcing
+    // (`cap_rate` on the wallet summary), never a literal.
+    await expect(page.getByTestId('points-hint')).toHaveText(
+      'Up to 5% of this booking can be paid with points.',
+    );
+
     // Wallet panel renders balance + max applicable, input defaults to max.
     await expect(page.getByTestId('points-wallet-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('wallet-balance')).toContainText('20,000 P');

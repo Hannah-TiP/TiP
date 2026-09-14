@@ -5,7 +5,9 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import ReviewSessionItem, { type ReviewItemValue } from '@/components/reviews/ReviewSessionItem';
+import { useBenefits } from '@/hooks/useBenefits';
 import { apiClient } from '@/lib/api-client';
+import { reviewRewardFigures } from '@/lib/benefits';
 import {
   getTripReviewableItems,
   getTripWithVersion,
@@ -72,6 +74,9 @@ export default function ReviewsPage() {
   const { t, lang } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const tripId = Number(id);
+  // Review reward amounts from the benefit registry (SMA-359); null on an
+  // older backend / endpoint outage — every line then renders figure-free.
+  const rewardFigures = reviewRewardFigures(useBenefits());
   const [state, setState] = useState<SessionState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -314,6 +319,15 @@ export default function ReviewsPage() {
 
   const { trip, entities, reviewsByEntity } = state;
   const destination = trip.currentVersion?.title?.trim() || t('review_session.your_trip');
+  const submittedNotice = (n: number): string => {
+    const one = n === 1;
+    const template = rewardFigures
+      ? t(one ? 'review_session.submitted_one_figures' : 'review_session.submitted_other_figures')
+          .replace('{text}', rewardFigures.text)
+          .replace('{photo}', rewardFigures.photo)
+      : t(one ? 'review_session.submitted_one' : 'review_session.submitted_other');
+    return template.replace('{n}', String(n));
+  };
   const submittedCount = entities.filter((e) => reviewsByEntity[entityKey(e)]).length;
 
   return (
@@ -344,6 +358,16 @@ export default function ReviewsPage() {
           </div>
         ) : (
           <>
+            <p
+              data-testid="review-reward-intro"
+              className="mb-5 rounded-lg bg-amber-50 px-4 py-2.5 text-sm text-amber-800"
+            >
+              {rewardFigures
+                ? t('review_session.reward_intro')
+                    .replace('{text}', rewardFigures.text)
+                    .replace('{photo}', rewardFigures.photo)
+                : t('review_session.reward_intro_no_figure')}
+            </p>
             <div className="space-y-5">
               {entities.map((entity) => {
                 const key = entityKey(entity);
@@ -364,6 +388,7 @@ export default function ReviewsPage() {
                     onDelete={() => existing && handleDelete(entity, existing)}
                     isDeleting={deletingKey === key}
                     error={itemErrors[key] ?? null}
+                    rewardFigures={rewardFigures}
                   />
                 );
               })}
@@ -373,11 +398,8 @@ export default function ReviewsPage() {
               {result && (
                 <div className="mb-4 text-sm">
                   {result.succeeded > 0 && (
-                    <p className="text-green-700">
-                      {(result.succeeded === 1
-                        ? t('review_session.submitted_one')
-                        : t('review_session.submitted_other')
-                      ).replace('{n}', String(result.succeeded))}
+                    <p className="text-green-700" data-testid="review-submit-success">
+                      {submittedNotice(result.succeeded)}
                     </p>
                   )}
                   {result.failed.length > 0 && (

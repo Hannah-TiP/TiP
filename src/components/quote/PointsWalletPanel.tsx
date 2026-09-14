@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { formatRatePercent } from '@/lib/benefits';
 import { formatCurrency } from '@/lib/format-currency';
 import { formatPoints, parsePoints, pointsInputError } from '@/lib/points-wallet';
 import {
@@ -74,6 +75,15 @@ export default function PointsWalletPanel({
   const maxApplicable = summary?.max_applicable_points ?? 0;
   const inputError = summary ? pointsInputError(input, maxApplicable) : null;
 
+  // The per-booking cap in force (SMA-359) comes from the wallet summary's
+  // `cap_rate` — the backend config value — never a literal. Before the
+  // summary loads (or on an older backend without the field) the hint stays
+  // generic.
+  const capPercent = summary?.cap_rate ? formatRatePercent(summary.cap_rate) : null;
+  const hint = capPercent
+    ? t('quote.points_hint_cap').replace('{cap}', capPercent)
+    : t('quote.points_hint');
+
   const handleApply = async () => {
     const points = parsePoints(input);
     if (points === null || inputError) return;
@@ -112,7 +122,9 @@ export default function PointsWalletPanel({
       className="bg-white rounded-xl border border-gray-200 p-6"
     >
       <h2 className="text-xl font-bold text-gray-900 mb-1">{t('quote.points_title')}</h2>
-      <p className="text-xs text-gray-500 mb-4">{t('quote.points_hint')}</p>
+      <p className="text-xs text-gray-500 mb-4" data-testid="points-hint">
+        {hint}
+      </p>
 
       {hasApplied && (
         <div className="flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 mb-3">

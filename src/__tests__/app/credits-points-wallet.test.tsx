@@ -220,7 +220,7 @@ describe('TiP Points wallet on /my-page/credits (SoT v1.1 §6 golden vector)', (
     }
     const rows = screen.getAllByTestId('points-row');
     expect(rows[0].textContent).toContain('프로모션 코드');
-    expect(rows[1].textContent).toContain('리뷰 보상');
+    expect(rows[1].textContent).toContain('후기 보상');
     expect(rows[2].textContent).toContain('여행 적립');
     expect(rows[3].textContent).toContain('컨시어지');
     expect(
@@ -432,5 +432,103 @@ describe('TiP Points wallet on /my-page/credits (SoT v1.1 §6 golden vector)', (
     });
     expect(vi.mocked(apiClient.getMyPoints)).toHaveBeenCalledTimes(2);
     expect(screen.getByTestId('points-usd-approx').textContent).toBe('≈ USD 265');
+  });
+});
+
+// SMA-359: the live points policy on the wallet — validity footnote from the
+// registry's `point_validity_months` entry and the photo/text review-reward
+// row label from the grant's `notes` marker.
+describe('points policy on /my-page/credits (SMA-359)', () => {
+  const VALIDITY_ENTRY = {
+    key: 'point_validity_months',
+    kind: 'one_off_grant' as const,
+    unit: 'months' as const,
+    values_by_tier: { carte: '24', cercle: '24', confidence: '24', cenacle: '24' },
+    copy: { en: 'Points are valid for a fixed window.', kr: '포인트 유효기간.' },
+  };
+
+  it('EN: appends the validity sentence to the footnote when the registry serves it', async () => {
+    state.benefits = {
+      ...BENEFITS_WITH_UNIT,
+      benefits: [...BENEFITS_WITH_UNIT.benefits, VALIDITY_ENTRY],
+    };
+    mockApi(GOLDEN_LEDGER);
+
+    render(<MyCreditsPage />);
+
+    await screen.findByTestId('points-balance');
+    expect(screen.getByTestId('points-validity-footnote').textContent).toBe(
+      'Points expire 24 months after they are earned.',
+    );
+  });
+
+  it('KR: renders the validity sentence with the month figure', async () => {
+    state.lang = 'kr';
+    state.benefits = {
+      ...BENEFITS_WITH_UNIT,
+      benefits: [...BENEFITS_WITH_UNIT.benefits, VALIDITY_ENTRY],
+    };
+    mockApi(GOLDEN_LEDGER);
+
+    render(<MyCreditsPage />);
+
+    await screen.findByTestId('points-balance');
+    expect(screen.getByTestId('points-validity-footnote').textContent).toBe(
+      '포인트는 적립일로부터 24개월 후 만료됩니다.',
+    );
+  });
+
+  it('omits the validity sentence when the registry lacks the entry; NULL-expiry lots keep No expiry', async () => {
+    state.benefits = BENEFITS_WITH_UNIT;
+    mockApi({
+      ...GOLDEN_LEDGER,
+      transactions: [row({ id: 9, source: 'manual', delta_points: 100, expires_at: null })],
+    });
+
+    render(<MyCreditsPage />);
+
+    await screen.findByTestId('points-balance');
+    expect(screen.queryByTestId('points-validity-footnote')).toBeNull();
+    const rows = await screen.findAllByTestId('points-row');
+    expect(within(rows[0]).getByTestId('points-expiry').textContent).toContain('No expiry');
+  });
+
+  it('labels a photo review reward distinctly from a text one and hides the marker note', async () => {
+    state.benefits = BENEFITS_WITH_UNIT;
+    mockApi({
+      ...GOLDEN_LEDGER,
+      transactions: [
+        row({ id: 12, source: 'review_reward', delta_points: 1000, notes: 'photo' }),
+        row({ id: 11, source: 'review_reward', delta_points: 500, notes: 'text' }),
+        row({ id: 10, source: 'review_reward', delta_points: 500, notes: null }),
+      ],
+    });
+
+    render(<MyCreditsPage />);
+
+    const rows = await screen.findAllByTestId('points-row');
+    expect(rows[0].textContent).toContain('Photo Review');
+    expect(rows[0].textContent).not.toContain('photo');
+    expect(rows[1].textContent).toContain('Review Reward');
+    expect(rows[1].textContent).not.toContain('text');
+    expect(rows[2].textContent).toContain('Review Reward');
+  });
+
+  it('KR: photo vs text review reward labels', async () => {
+    state.lang = 'kr';
+    state.benefits = BENEFITS_WITH_UNIT;
+    mockApi({
+      ...GOLDEN_LEDGER,
+      transactions: [
+        row({ id: 12, source: 'review_reward', delta_points: 1000, notes: 'photo' }),
+        row({ id: 11, source: 'review_reward', delta_points: 500, notes: 'text' }),
+      ],
+    });
+
+    render(<MyCreditsPage />);
+
+    const rows = await screen.findAllByTestId('points-row');
+    expect(rows[0].textContent).toContain('사진 후기 보상');
+    expect(rows[1].textContent).toContain('후기 보상');
   });
 });

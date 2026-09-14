@@ -8,7 +8,10 @@ import {
   isPointsConsumption,
   isPointsGrantLot,
   pointKindText,
+  pointRowNotes,
+  pointRowSourceText,
   pointSourceText,
+  reviewRewardVariant,
   tripIdFromCredit,
   type PointTransaction,
   type PointTransactionKind,
@@ -343,5 +346,75 @@ describe('ledger row classification (SMA-332)', () => {
     ];
     const earned = creditsForTrip(rows, 42).filter((r) => isPointsGrantLot(r.kind));
     expect(earned.map((r) => r.id)).toEqual([1]);
+  });
+});
+
+// SMA-359: a review_reward grant's `notes` marks which reward it was
+// (`photo` / `text`); the wallet label distinguishes them FE-side, preferring
+// the registry's `review_reward_text` / `review_reward_photo` copy.
+describe('review reward rows (SMA-359)', () => {
+  const REVIEW_POLICY: BenefitsResponse = {
+    benefits: [
+      {
+        key: 'review_reward_text',
+        kind: 'one_off_grant',
+        unit: 'points',
+        values_by_tier: { carte: '500' },
+        copy: { en: 'Review reward', kr: '후기 리워드' },
+      },
+      {
+        key: 'review_reward_photo',
+        kind: 'one_off_grant',
+        unit: 'points',
+        values_by_tier: { carte: '1000' },
+        copy: { en: 'Photo review reward', kr: '사진 후기 리워드' },
+      },
+    ],
+    resolved: null,
+  };
+
+  it('classifies review_reward rows by the notes marker; text when absent', () => {
+    expect(reviewRewardVariant(makeCredit({ source: 'review_reward', notes: 'photo' }))).toBe(
+      'photo',
+    );
+    expect(reviewRewardVariant(makeCredit({ source: 'review_reward', notes: 'text' }))).toBe(
+      'text',
+    );
+    expect(reviewRewardVariant(makeCredit({ source: 'review_reward', notes: null }))).toBe('text');
+    expect(reviewRewardVariant(makeCredit({ source: 'welcome', notes: 'photo' }))).toBeNull();
+  });
+
+  it('labels photo vs text rewards with the static fallbacks (EN + KR)', () => {
+    const photo = makeCredit({ source: 'review_reward', notes: 'photo' });
+    const text = makeCredit({ source: 'review_reward', notes: 'text' });
+    const legacy = makeCredit({ source: 'review_reward', notes: null });
+    expect(pointRowSourceText(photo, true)).toBe('Photo Review');
+    expect(pointRowSourceText(photo, false)).toBe('사진 후기 보상');
+    expect(pointRowSourceText(text, true)).toBe('Review Reward');
+    expect(pointRowSourceText(text, false)).toBe('후기 보상');
+    expect(pointRowSourceText(legacy, true)).toBe('Review Reward');
+    expect(creditSourceLabel(photo, false)).toBe('사진 후기 보상');
+  });
+
+  it('prefers the registry copy of the matching policy entry', () => {
+    const photo = makeCredit({ source: 'review_reward', notes: 'photo' });
+    const text = makeCredit({ source: 'review_reward', notes: 'text' });
+    expect(pointRowSourceText(photo, true, REVIEW_POLICY)).toBe('Photo review reward');
+    expect(pointRowSourceText(photo, false, REVIEW_POLICY)).toBe('사진 후기 리워드');
+    expect(pointRowSourceText(text, true, REVIEW_POLICY)).toBe('Review reward');
+    // Non-review rows are untouched by the variant logic.
+    expect(pointRowSourceText(makeCredit({ source: 'birthday' }), true, REVIEW_POLICY)).toBe(
+      'Birthday',
+    );
+  });
+
+  it('hides the variant marker from the notes line but keeps real notes', () => {
+    expect(pointRowNotes(makeCredit({ source: 'review_reward', notes: 'photo' }))).toBeNull();
+    expect(pointRowNotes(makeCredit({ source: 'review_reward', notes: 'text' }))).toBeNull();
+    expect(pointRowNotes(makeCredit({ source: 'review_reward', notes: 'Great stay!' }))).toBe(
+      'Great stay!',
+    );
+    expect(pointRowNotes(makeCredit({ source: 'manual', notes: 'photo' }))).toBe('photo');
+    expect(pointRowNotes(makeCredit({ source: 'manual', notes: null }))).toBeNull();
   });
 });

@@ -2,6 +2,7 @@
 
 import { lazy, Suspense } from 'react';
 import StarRating from '@/components/reviews/StarRating';
+import type { ReviewRewardFigures } from '@/lib/benefits';
 import type { ReviewableEntity } from '@/lib/trip-utils';
 import type { Image } from '@/types/common';
 import { isPendingReview, visibleReviewPhotos, type Review } from '@/types/review';
@@ -47,6 +48,11 @@ interface ReviewSessionItemProps {
   isDeleting: boolean;
   /** Per-item error surfaced after the trip-level submit (or delete). */
   error: string | null;
+  /**
+   * Review reward amounts from the benefit registry (SMA-359). Null when the
+   * backend does not serve them — the pending notice then stays figure-free.
+   */
+  rewardFigures?: ReviewRewardFigures | null;
 }
 
 const TYPE_LABEL_KEY: Record<ReviewableEntity['entityType'], TranslationKey> = {
@@ -95,6 +101,7 @@ export default function ReviewSessionItem({
   onDelete,
   isDeleting,
   error,
+  rewardFigures = null,
 }: ReviewSessionItemProps) {
   const { t } = useLanguage();
   const isLocked = !!existingReview?.locked_at;
@@ -129,7 +136,11 @@ export default function ReviewSessionItem({
           data-testid="review-pending-notice"
           className="mb-4 rounded-lg bg-amber-50 px-4 py-2.5 text-sm text-amber-800"
         >
-          {t('reviews.pending_points_notice')}
+          {rewardFigures
+            ? t('reviews.pending_points_notice_figures')
+                .replace('{text}', rewardFigures.text)
+                .replace('{photo}', rewardFigures.photo)
+            : t('reviews.pending_points_notice')}
         </p>
       )}
 

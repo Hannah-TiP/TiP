@@ -2,6 +2,7 @@ import { cleanup, render, screen, fireEvent, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReviewListResponse, ReviewWithAuthor } from '@/types/review';
 import type { TripWithVersion } from '@/lib/trip-utils';
+import type { BenefitsResponse } from '@/types/v2/benefits';
 
 const getTripWithVersion = vi.fn();
 const getProfile = vi.fn();
@@ -15,6 +16,13 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/components/Footer', () => ({ default: () => <div>Footer</div> }));
+
+// Benefit registry payload (SMA-359): null = older backend / endpoint down,
+// so every reward line renders figure-free.
+const benefitsState = vi.hoisted(() => ({ value: null as BenefitsResponse | null }));
+vi.mock('@/hooks/useBenefits', () => ({
+  useBenefits: () => benefitsState.value,
+}));
 
 vi.mock('@/lib/api-client', () => ({
   apiClient: {
@@ -110,7 +118,30 @@ beforeEach(() => {
   window.localStorage.clear();
   getTripWithVersion.mockResolvedValue(tripWithVersion);
   getProfile.mockResolvedValue({ id: 9 });
+  benefitsState.value = null;
 });
+
+// Tier-agnostic policy entries the backend serves alongside the tier
+// benefits (SMA-359): review reward for a text review vs a photo review.
+const REVIEW_REWARD_POLICY: BenefitsResponse = {
+  benefits: [
+    {
+      key: 'review_reward_text',
+      kind: 'one_off_grant',
+      unit: 'points',
+      values_by_tier: { carte: '500', cercle: '500', confidence: '500', cenacle: '500' },
+      copy: { en: 'Review reward', kr: '후기 보상' },
+    },
+    {
+      key: 'review_reward_photo',
+      kind: 'one_off_grant',
+      unit: 'points',
+      values_by_tier: { carte: '1000', cercle: '1000', confidence: '1000', cenacle: '1000' },
+      copy: { en: 'Photo review reward', kr: '사진 후기 보상' },
+    },
+  ],
+  resolved: null,
+};
 
 describe('Review session page', () => {
   it('renders each reviewable item by status and the single submit button', async () => {
@@ -279,5 +310,111 @@ describe('Review session page', () => {
     await waitFor(() =>
       expect(screen.getByText(/no TiP-listed hotels, restaurants, or activities/i)).toBeTruthy(),
     );
+  });
+
+  describe('points policy copy (SMA-359)', () => {
+    it('shows the figure-free reward intro when the registry has no reward entries', async () => {
+      getReviewsByEntity.mockResolvedValue(emptyList);
+
+      render(<ReviewsPage />);
+      await screen.findByText('Aman Tokyo');
+
+      expect(screen.getByTestId('review-reward-intro').textContent).toBe(
+        'Approved reviews earn TiP Points.',
+      );
+    });
+
+    it('quotes the text and photo reward amounts in the pre-submit intro', async () => {
+      benefitsState.value = REVIEW_REWARD_POLICY;
+      getReviewsByEntity.mockResolvedValue(emptyList);
+
+      render(<ReviewsPage />);
+      await screen.findByText('Aman Tokyo');
+
+      expect(screen.getByTestId('review-reward-intro').textContent).toBe(
+        'Earn 500 P after approval — 1,000 P if you add a photo.',
+      );
+    });
+
+    it('mentions the amounts in the submitted banner (singular and plural)', async () => {
+      benefitsState.value = REVIEW_REWARD_POLICY;
+      getReviewsByEntity.mockResolvedValue(emptyList);
+      createReview.mockResolvedValue({});
+
+      render(<ReviewsPage />);
+      await screen.findByText('Aman Tokyo');
+
+      fireEvent.click(screen.getByLabelText('Rating for Aman Tokyo: 4 stars'));
+      fireEvent.click(screen.getByText('Submit Reviews'));
+
+      expect((await screen.findByTestId('review-submit-success')).textContent).toBe(
+        '1 review submitted — pending approval. 500 P is added once it’s approved — 1,000 P if it includes a photo.',
+      );
+
+      // Plural: rate the second item too and resubmit.
+      fireEvent.click(screen.getByLabelText('Rating for Aman Tokyo: 5 stars'));
+      fireEvent.click(screen.getByLabelText('Rating for Narisawa: 5 stars'));
+      fireEvent.click(screen.getByText('Submit Reviews'));
+
+      await waitFor(() =>
+        expect(screen.getByTestId('review-submit-success').textContent).toBe(
+          '2 reviews submitted — pending approval. 500 P is added for each once approved — 1,000 P for each that includes a photo.',
+        ),
+      );
+    });
+
+    it('keeps the figure-free submitted banner without reward entries', async () => {
+      getReviewsByEntity.mockResolvedValue(emptyList);
+      createReview.mockResolvedValue({});
+
+      render(<ReviewsPage />);
+      await screen.findByText('Aman Tokyo');
+
+      fireEvent.click(screen.getByLabelText('Rating for Aman Tokyo: 4 stars'));
+      fireEvent.click(screen.getByText('Submit Reviews'));
+
+      expect((await screen.findByTestId('review-submit-success')).textContent).toBe(
+        '1 review submitted — pending approval. Points are added once it’s approved.',
+      );
+    });
+
+    it('quotes the amounts in the pending-approval notice of a submitted review', async () => {
+      benefitsState.value = REVIEW_REWARD_POLICY;
+      getReviewsByEntity.mockImplementation((type: string, entityId: number) =>
+        Promise.resolve(
+          listWith(
+            type === 'hotel' && entityId === 10
+              ? reviewFor('hotel', 10, { moderation_status: 'pending' })
+              : null,
+          ),
+        ),
+      );
+
+      render(<ReviewsPage />);
+      await screen.findByText('Aman Tokyo');
+
+      expect(screen.getByTestId('review-pending-notice').textContent).toBe(
+        "Your review is being reviewed. 500 P is added once it's approved — 1,000 P if it includes a photo.",
+      );
+    });
+
+    it('keeps the figure-free pending notice without reward entries', async () => {
+      getReviewsByEntity.mockImplementation((type: string, entityId: number) =>
+        Promise.resolve(
+          listWith(
+            type === 'hotel' && entityId === 10
+              ? reviewFor('hotel', 10, { moderation_status: 'pending' })
+              : null,
+          ),
+        ),
+      );
+
+      render(<ReviewsPage />);
+      await screen.findByText('Aman Tokyo');
+
+      expect(screen.getByTestId('review-pending-notice').textContent).toBe(
+        "Your review is being reviewed. Points are added once it's approved.",
+      );
+    });
   });
 });

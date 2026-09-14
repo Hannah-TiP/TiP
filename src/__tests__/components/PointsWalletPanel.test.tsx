@@ -240,4 +240,56 @@ describe('PointsWalletPanel', () => {
     expect(screen.queryByTestId('points-input')).not.toBeInTheDocument();
     expect(getSummaryMock).not.toHaveBeenCalled();
   });
+
+  it('quotes the live cap rate in the hint (SMA-359) — from cap_rate, never a literal', async () => {
+    getSummaryMock.mockResolvedValue({ ...baseSummary, cap_rate: '0.07' });
+
+    render(
+      <PointsWalletPanel
+        quoteId={42}
+        currentVersion={version()}
+        status="SENT"
+        onApplied={vi.fn()}
+        onError={vi.fn()}
+      />,
+    );
+
+    await screen.findByTestId('wallet-balance');
+    expect(screen.getByTestId('points-hint')).toHaveTextContent(
+      'Up to 7% of this booking can be paid with points.',
+    );
+  });
+
+  it('keeps the generic hint when the summary carries no cap_rate', async () => {
+    getSummaryMock.mockResolvedValue({ ...baseSummary, cap_rate: '' });
+
+    render(
+      <PointsWalletPanel
+        quoteId={42}
+        currentVersion={version()}
+        status="SENT"
+        onApplied={vi.fn()}
+        onError={vi.fn()}
+      />,
+    );
+
+    await screen.findByTestId('wallet-balance');
+    expect(screen.getByTestId('points-hint')).toHaveTextContent(
+      'Use your points to reduce what you pay for this booking. A per-booking limit applies.',
+    );
+  });
+
+  it('shows the generic hint on a locked quote (no wallet fetch, so no cap rate)', () => {
+    render(
+      <PointsWalletPanel
+        quoteId={42}
+        currentVersion={appliedVersion}
+        status="PAID"
+        onApplied={vi.fn()}
+        onError={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('points-hint')).toHaveTextContent(/A per-booking limit applies/);
+  });
 });

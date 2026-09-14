@@ -44,6 +44,11 @@ test.describe('Post-trip review session', () => {
 
     // At least one item card with a status pill + a rating control.
     await expect(page.getByRole('radiogroup').first()).toBeVisible({ timeout: 15_000 });
+    // SMA-359: the reward intro renders above the form — with the live
+    // amounts when the registry serves them, figure-free otherwise.
+    await expect(page.getByTestId('review-reward-intro')).toHaveText(
+      /Earn .+ P after approval|Approved reviews earn TiP Points/,
+    );
     const statusPills = page.getByText(
       /Not Reviewed|Pending approval|Submitted|Locked|Draft|Skipped/,
     );
@@ -89,7 +94,10 @@ test.describe('Post-trip review session', () => {
       await expect(
         page
           .getByTestId('review-pending-notice')
-          .filter({ hasText: /Points are added once it's approved/ }),
+          // SMA-359: with the registry's review-reward entries the notice
+          // quotes the amounts ("500 P is added once it's approved …");
+          // without them it stays figure-free.
+          .filter({ hasText: /(Points are|P is) added once it.s approved/ }),
       ).not.toHaveCount(0);
     }
   });

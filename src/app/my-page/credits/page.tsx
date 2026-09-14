@@ -9,7 +9,7 @@ import Footer from '@/components/Footer';
 import RedeemCodeSection from '@/components/credits/RedeemCodeSection';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { useBenefits } from '@/hooks/useBenefits';
-import { resolvePointUnit } from '@/lib/benefits';
+import { pointValidityMonths, resolvePointUnit } from '@/lib/benefits';
 import { formatDate as formatDateI18n } from '@/lib/format-date';
 import { apiClient } from '@/lib/api-client';
 import { formatPoints, formatSignedPoints, pointsToUsdApprox } from '@/lib/points-wallet';
@@ -17,7 +17,8 @@ import {
   creditSourceLabel,
   isPointsConsumption,
   pointKindText,
-  pointSourceText,
+  pointRowNotes,
+  pointRowSourceText,
   tripIdFromCredit,
   type PointTransaction,
   type ProjectedTripEarn,
@@ -54,6 +55,9 @@ export default function MyCreditsPage() {
   // behind the USD approximation (SMA-322 / SMA-332); null degrades to the
   // static fallback labels and hides the USD line.
   const benefits = useBenefits();
+  // Validity window from the registry policy entry (SMA-359); null on an
+  // older backend — the footnote then omits the expiry sentence.
+  const validityMonths = pointValidityMonths(benefits);
 
   const [loading, setLoading] = useState(true);
   const [balancePoints, setBalancePoints] = useState(0);
@@ -183,6 +187,7 @@ export default function MyCreditsPage() {
                     const kindLabel =
                       row.kind && row.kind !== 'grant' ? pointKindText(row.kind, en) : null;
                     const delta = row.delta_points ?? null;
+                    const notes = pointRowNotes(row);
                     return (
                       <div
                         key={row.id}
@@ -194,7 +199,7 @@ export default function MyCreditsPage() {
                             className="font-medium text-gray-900"
                             aria-label={creditSourceLabel(row, en, benefits)}
                           >
-                            {pointSourceText(row.source, en, benefits)}
+                            {pointRowSourceText(row, en, benefits)}
                             {row.promo_code ? (
                               <span className="text-gray-500"> · {row.promo_code}</span>
                             ) : null}
@@ -204,12 +209,9 @@ export default function MyCreditsPage() {
                               {kindLabel}
                             </div>
                           )}
-                          {row.notes && (
-                            <div
-                              className="text-[12px] text-gray-500 sm:truncate"
-                              title={row.notes}
-                            >
-                              {row.notes}
+                          {notes && (
+                            <div className="text-[12px] text-gray-500 sm:truncate" title={notes}>
+                              {notes}
                             </div>
                           )}
                           {linkedTripId !== null && (
@@ -258,7 +260,17 @@ export default function MyCreditsPage() {
             )}
           </div>
 
-          <p className="mt-10 text-center text-[12px] text-gray-500">{t('credits.footnote')}</p>
+          <p className="mt-10 text-center text-[12px] text-gray-500">
+            {t('credits.footnote')}
+            {validityMonths !== null && (
+              <>
+                {' '}
+                <span data-testid="points-validity-footnote">
+                  {t('credits.validity_footnote').replace('{n}', validityMonths)}
+                </span>
+              </>
+            )}
+          </p>
         </section>
       </main>
       <Footer />
