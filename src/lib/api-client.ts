@@ -773,9 +773,16 @@ class ApiClient {
     return response.data ?? [];
   }
 
-  async createChatSessionForTrip(tripId: number): Promise<AIChatSessionMetadata> {
+  // SMA-469: every concierge-chat call carries the active site language so the
+  // backend's reply language, greeting and localized tool results (hotel
+  // carousel names, benefit labels) follow the EN/KR toggle instead of the
+  // account's stored preference.
+  async createChatSessionForTrip(
+    tripId: number,
+    language?: string,
+  ): Promise<AIChatSessionMetadata> {
     const response = await this.request<{ data: AIChatSessionMetadata }>(
-      '/ai-chat/create-session-for-trip',
+      this.withLanguage('/ai-chat/create-session-for-trip', language),
       {
         method: 'POST',
         body: JSON.stringify({ trip_id: tripId }),
@@ -787,16 +794,24 @@ class ApiClient {
   async sendMessage(
     tripId: number,
     payload: SendAIChatMessageRequest,
+    language?: string,
   ): Promise<SendAIChatMessageResponse> {
-    return this.request<SendAIChatMessageResponse>(`/ai-chat/trips/${tripId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({
-        ...payload,
-      }),
-    });
+    return this.request<SendAIChatMessageResponse>(
+      this.withLanguage(`/ai-chat/trips/${tripId}/messages`, language),
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          ...payload,
+        }),
+      },
+    );
   }
 
-  async getChatHistory(tripId: number, options?: GetChatHistoryOptions): Promise<AIChatMessage[]> {
+  async getChatHistory(
+    tripId: number,
+    options?: GetChatHistoryOptions,
+    language?: string,
+  ): Promise<AIChatMessage[]> {
     // SMA-288: `before=<message_id>` pages older history (messages strictly
     // older than that id, chronological); omitted -> newest tail window.
     const params = new URLSearchParams();
@@ -804,14 +819,17 @@ class ApiClient {
     if (options?.limit != null) params.set('limit', String(options.limit));
     const queryString = params.toString();
     const response = await this.request<AIChatMessagesResponse>(
-      `/ai-chat/trips/${tripId}/messages${queryString ? `?${queryString}` : ''}`,
+      this.withLanguage(
+        `/ai-chat/trips/${tripId}/messages${queryString ? `?${queryString}` : ''}`,
+        language,
+      ),
     );
     return response.data ?? [];
   }
 
-  async requestHumanConcierge(tripId: number): Promise<RequestHumanResponse> {
+  async requestHumanConcierge(tripId: number, language?: string): Promise<RequestHumanResponse> {
     const response = await this.request<{ data: RequestHumanResponse }>(
-      `/ai-chat/trips/${tripId}/request-human`,
+      this.withLanguage(`/ai-chat/trips/${tripId}/request-human`, language),
       { method: 'POST' },
     );
     return response.data;

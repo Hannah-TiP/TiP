@@ -54,7 +54,7 @@ describe('RequestHumanCTA', () => {
     fireEvent.click(screen.getByTestId('request-human-confirm'));
 
     await waitFor(() => {
-      expect(apiClient.requestHumanConcierge).toHaveBeenCalledWith(42);
+      expect(apiClient.requestHumanConcierge).toHaveBeenCalledWith(42, 'en');
     });
     await waitFor(() => {
       expect(onRequested).toHaveBeenCalled();

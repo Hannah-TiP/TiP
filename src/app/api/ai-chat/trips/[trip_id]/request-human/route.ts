@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { languageHeader } from '@/lib/proxy-language';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
@@ -18,14 +19,12 @@ export async function POST(request: NextRequest, context: { params: Promise<unkn
       return NextResponse.json({ success: false, message: 'Missing trip_id' }, { status: 400 });
     }
 
-    const language = request.headers.get('Language') || 'en';
-
     const response = await fetch(`${API_BASE_URL}/api/v2/ai-chat/trips/${trip_id}/request-human`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        Language: language,
+        ...languageHeader(request),
       },
     });
 

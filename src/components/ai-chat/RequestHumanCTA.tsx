@@ -17,7 +17,7 @@ export default function RequestHumanCTA({
   tripId,
   onRequested,
 }: RequestHumanCTAProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export default function RequestHumanCTA({
     setIsSubmitting(true);
     setError(null);
     try {
-      await apiClient.requestHumanConcierge(tripId);
+      await apiClient.requestHumanConcierge(tripId, lang);
       setIsModalOpen(false);
       onRequested();
     } catch {

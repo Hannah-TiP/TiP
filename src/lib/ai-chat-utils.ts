@@ -13,7 +13,7 @@ export async function createTripChatSession(
   language?: Lang,
 ): Promise<TripChatSession> {
   const trip = await apiClient.createTrip(currentVersion, language);
-  const session = await apiClient.createChatSessionForTrip(trip.id);
+  const session = await apiClient.createChatSessionForTrip(trip.id, language);
 
   return {
     trip_id: trip.id,
