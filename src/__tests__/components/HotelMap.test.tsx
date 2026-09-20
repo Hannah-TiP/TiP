@@ -108,7 +108,7 @@ function makeHotel(overrides: Partial<Hotel> = {}): Hotel {
 }
 
 function benefitProgram(benefits: Array<{ en: string; kr: string }>) {
-  return { program_name: 'TiP Program', valid_from: null, valid_until: null, benefits };
+  return { program_name: { en: 'TiP Program' }, valid_from: null, valid_until: null, benefits };
 }
 
 function renderAndSelectHotel(hotel: Hotel = makeHotel()) {

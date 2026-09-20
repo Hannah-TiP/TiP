@@ -44,7 +44,8 @@ export interface HotelFeature {
 }
 
 export interface HotelBenefitProgram {
-  program_name?: string | null;
+  /** Group heading in the benefits box (SMA-467); mirrors the backend MLS. */
+  program_name?: MultiLanguageString | null;
   valid_from?: string | null;
   valid_until?: string | null;
   benefits: MultiLanguageString[];

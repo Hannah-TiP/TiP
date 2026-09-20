@@ -15,14 +15,14 @@ vi.mock('@/contexts/LanguageContext', () => ({
 afterEach(() => cleanup());
 
 describe('HotelBenefits', () => {
-  it('renders all benefit strings flattened across programs as a single bulleted list', () => {
+  it('renders one group per program — program name heading, then that program’s bullets (SMA-467)', () => {
     const benefits: HotelBenefitProgram[] = [
       {
-        program_name: 'Virtuoso',
+        program_name: { en: 'Virtuoso' },
         benefits: [{ en: 'Daily breakfast for two' }, { en: 'Room upgrade on arrival' }],
       },
       {
-        program_name: 'Marriott STARS',
+        program_name: { en: 'Marriott STARS' },
         benefits: [{ en: '$100 property credit' }],
       },
     ];
@@ -34,12 +34,43 @@ describe('HotelBenefits', () => {
         content.includes(enTranslations['hotel.booking_benefits_title']),
       ),
     ).toBeTruthy();
+    const groups = screen.getAllByTestId('benefit-program-group');
+    expect(groups).toHaveLength(2);
+    expect(groups[0].querySelector('p')?.textContent).toBe('Virtuoso');
+    expect(groups[1].querySelector('p')?.textContent).toBe('Marriott STARS');
     const items = screen.getAllByRole('listitem');
     expect(items.map((li) => li.textContent)).toEqual([
       'Daily breakfast for two',
       'Room upgrade on arrival',
       '$100 property credit',
     ]);
+  });
+
+  it('puts the validity label on the program heading, not on the bullets', () => {
+    const benefits: HotelBenefitProgram[] = [
+      {
+        program_name: { en: 'Winter Special' },
+        valid_from: '2020-10-01',
+        valid_until: '2020-12-27',
+        benefits: [{ en: '3rd night free' }],
+      },
+    ];
+
+    render(<HotelBenefits benefits={benefits} />);
+
+    const heading = screen.getByTestId('benefit-program-group').querySelector('p');
+    expect(heading?.textContent).toContain('Winter Special');
+    expect(heading?.textContent).toMatch(/valid Oct–Dec 2020/);
+    expect(screen.getByRole('listitem').textContent).toBe('3rd night free');
+  });
+
+  it('renders an unnamed program as bullets with no heading', () => {
+    const benefits: HotelBenefitProgram[] = [{ benefits: [{ en: 'Late checkout' }] }];
+
+    render(<HotelBenefits benefits={benefits} />);
+
+    expect(screen.getByTestId('benefit-program-group').querySelector('p')).toBeNull();
+    expect(screen.getByText('Late checkout')).toBeTruthy();
   });
 
   it('falls back to the Korean string when English is missing for a bullet', () => {

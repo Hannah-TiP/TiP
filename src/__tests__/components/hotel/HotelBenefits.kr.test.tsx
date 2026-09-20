@@ -21,7 +21,7 @@ describe('HotelBenefits (KR)', () => {
   it('renders the Korean benefit strings under the KR toggle', () => {
     const benefits: HotelBenefitProgram[] = [
       {
-        program_name: 'Virtuoso',
+        program_name: { en: 'Virtuoso', kr: '버추오소' },
         benefits: [
           { en: 'Daily breakfast for two', kr: '2인 조식 매일 제공' },
           { en: 'Room upgrade on arrival', kr: '체크인 시 객실 업그레이드' },
@@ -37,5 +37,8 @@ describe('HotelBenefits (KR)', () => {
       '체크인 시 객실 업그레이드',
     ]);
     expect(screen.queryByText('Daily breakfast for two')).toBeNull();
+    // The program heading is localized too (SMA-467).
+    expect(screen.getByText('버추오소')).toBeTruthy();
+    expect(screen.queryByText('Virtuoso')).toBeNull();
   });
 });

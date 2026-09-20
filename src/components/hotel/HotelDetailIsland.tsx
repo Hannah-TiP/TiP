@@ -15,7 +15,11 @@ import { useHotelBooking } from '@/hooks/useHotelBooking';
 import { getLocalizedText } from '@/types/common';
 import { type Hotel } from '@/types/hotel';
 import type { MagazineHotelArticleRef } from '@/types/magazine-hotel';
-import { filterBenefitsByDates, formatBenefitEligibility } from '@/lib/hotel-benefits';
+import {
+  buildEligibilityTemplates,
+  filterBenefitsByDates,
+  groupBenefitPrograms,
+} from '@/lib/hotel-benefits';
 
 const DEFAULT_ADULTS = 2;
 const DEFAULT_KIDS = 0;
@@ -145,25 +149,18 @@ export default function HotelDetailIsland({
 
   const hotelName = getLocalizedText(hotel.name, lang) || hotel.slug;
 
-  const tipBenefits = (() => {
+  // SMA-467: one group per program (name + "valid …" label on the heading).
+  // With stay dates chosen, programs are filtered to the window and carry no
+  // label; without dates, all programs show and date-bounded ones are labelled.
+  const benefitGroups = (() => {
     const allPrograms = hotel.benefits ?? [];
     const hasDates = Boolean(checkIn) && Boolean(checkOut);
     const programs = hasDates ? filterBenefitsByDates(allPrograms, checkIn, checkOut) : allPrograms;
-    const eligibilityTemplates = {
-      range: t('hotel.benefit_eligibility_range'),
-      from: t('hotel.benefit_eligibility_from'),
-      until: t('hotel.benefit_eligibility_until'),
-      month: (m: number) => t(`hotel.benefit_month_abbr_${m}` as Parameters<typeof t>[0]),
-    };
-    return programs.flatMap((program) => {
-      const label = hasDates
-        ? null
-        : formatBenefitEligibility(program.valid_from, program.valid_until, eligibilityTemplates);
-      return program.benefits
-        .map((benefit) => getLocalizedText(benefit, lang))
-        .filter(Boolean)
-        .map((text) => (label ? `${text} (${label})` : text));
-    });
+    return groupBenefitPrograms(
+      programs,
+      lang,
+      hasDates ? null : buildEligibilityTemplates((key) => t(key as Parameters<typeof t>[0])),
+    );
   })();
 
   const handleSubmitRequest = () => submitRequest(checkIn, checkOut, adults, kids);
@@ -201,7 +198,7 @@ export default function HotelDetailIsland({
         sidebar={
           <BookingCard
             hotelName={hotelName}
-            benefits={tipBenefits}
+            benefitGroups={benefitGroups}
             checkIn={checkIn}
             checkOut={checkOut}
             adults={adults}

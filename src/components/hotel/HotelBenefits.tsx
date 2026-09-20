@@ -1,7 +1,8 @@
 'use client';
 
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getLocalizedText } from '@/types/common';
+import BenefitGroupList from '@/components/hotel/BenefitGroupList';
+import { buildEligibilityTemplates, groupBenefitPrograms } from '@/lib/hotel-benefits';
 import type { HotelBenefitProgram } from '@/types/hotel';
 
 interface HotelBenefitsProps {
@@ -11,11 +12,15 @@ interface HotelBenefitsProps {
 export default function HotelBenefits({ benefits }: HotelBenefitsProps) {
   const { t, lang } = useLanguage();
 
-  const flatBenefits = (benefits ?? []).flatMap((program) =>
-    program.benefits.map((benefit) => getLocalizedText(benefit, lang)).filter(Boolean),
+  // No stay-date context here, so every date-bounded program carries its
+  // "valid …" label on the group heading.
+  const groups = groupBenefitPrograms(
+    benefits,
+    lang,
+    buildEligibilityTemplates((key) => t(key as Parameters<typeof t>[0])),
   );
 
-  if (flatBenefits.length === 0) return null;
+  if (groups.length === 0) return null;
 
   return (
     <div
@@ -26,13 +31,7 @@ export default function HotelBenefits({ benefits }: HotelBenefitsProps) {
       <p className="font-semibold uppercase tracking-[1.5px] text-gold">
         ✦ {t('hotel.booking_benefits_title')}
       </p>
-      <ul className="mt-3 list-disc space-y-1 pl-5">
-        {flatBenefits.map((benefit, index) => (
-          <li key={index} className="text-white/85">
-            {benefit}
-          </li>
-        ))}
-      </ul>
+      <BenefitGroupList groups={groups} />
     </div>
   );
 }

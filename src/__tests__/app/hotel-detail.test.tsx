@@ -190,7 +190,7 @@ describe('HotelDetailIsland', () => {
       ...baseHotel,
       benefits: [
         {
-          program_name: 'TiP Program',
+          program_name: { en: 'TiP Program' },
           valid_from: null,
           valid_until: null,
           benefits: [
@@ -201,9 +201,10 @@ describe('HotelDetailIsland', () => {
       ],
     });
 
-    // Both real benefits render as bullets in the box.
+    // Both real benefits render as bullets in the box, under the program heading.
     expect(await screen.findByText('Daily breakfast for two guests')).toBeTruthy();
     expect(screen.getByText('USD 100 hotel credit')).toBeTruthy();
+    expect(screen.getByText('TiP Program')).toBeTruthy();
   });
 
   it('hides the benefits box when selected dates exclude all benefit programs', async () => {
@@ -211,7 +212,7 @@ describe('HotelDetailIsland', () => {
       ...baseHotel,
       benefits: [
         {
-          program_name: 'Winter Program',
+          program_name: { en: 'Winter Program' },
           valid_from: '2020-01-01',
           valid_until: '2020-12-31',
           benefits: [{ en: 'Daily breakfast for two guests', kr: '2인 매일 조식' }],
