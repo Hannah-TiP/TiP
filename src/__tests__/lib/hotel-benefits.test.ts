@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  groupBenefitPrograms,
   filterBenefitsByDates,
   formatBenefitEligibility,
   localizeBenefitStrings,
@@ -11,7 +12,7 @@ const program = (
   valid_from: string | null,
   valid_until: string | null,
 ): HotelBenefitProgram => ({
-  program_name: name,
+  program_name: { en: name },
   valid_from,
   valid_until,
   benefits: [{ en: `${name} benefit`, kr: `${name} 혜택` }],
@@ -46,22 +47,22 @@ const enTemplates = {
 describe('filterBenefitsByDates', () => {
   it('July stay includes the Bulgari summer program and the always-valid one', () => {
     const result = filterBenefitsByDates([BULGARI, ALWAYS], '2026-07-10', '2026-07-15');
-    expect(result.map((p) => p.program_name)).toEqual(['Summer', 'Always']);
+    expect(result.map((p) => p.program_name?.en)).toEqual(['Summer', 'Always']);
   });
 
   it('November stay hides the date-bounded Bulgari program', () => {
     const result = filterBenefitsByDates([BULGARI, ALWAYS], '2026-11-10', '2026-11-15');
-    expect(result.map((p) => p.program_name)).toEqual(['Always']);
+    expect(result.map((p) => p.program_name?.en)).toEqual(['Always']);
   });
 
   it('no trip dates returns all programs unfiltered', () => {
     const result = filterBenefitsByDates([BULGARI, ALWAYS], '', '');
-    expect(result.map((p) => p.program_name)).toEqual(['Summer', 'Always']);
+    expect(result.map((p) => p.program_name?.en)).toEqual(['Summer', 'Always']);
   });
 
   it('only one date set is treated as no dates (no filtering)', () => {
     const result = filterBenefitsByDates([BULGARI], '2026-11-10', null);
-    expect(result.map((p) => p.program_name)).toEqual(['Summer']);
+    expect(result.map((p) => p.program_name?.en)).toEqual(['Summer']);
   });
 
   it('valid_from-only program overlaps only on/after its start', () => {
@@ -72,14 +73,14 @@ describe('filterBenefitsByDates', () => {
   it('malformed program dates fail open (benefit retained)', () => {
     const bad = program('Bad', 'not-a-date', 'also-bad');
     const result = filterBenefitsByDates([bad], '2026-11-10', '2026-11-15');
-    expect(result.map((p) => p.program_name)).toEqual(['Bad']);
+    expect(result.map((p) => p.program_name?.en)).toEqual(['Bad']);
   });
 });
 
 describe('localizeBenefitStrings', () => {
   it('flattens all programs into localized strings (EN)', () => {
     const multi: HotelBenefitProgram = {
-      program_name: 'Multi',
+      program_name: { en: 'Multi' },
       valid_from: null,
       valid_until: null,
       benefits: [
@@ -111,7 +112,7 @@ describe('localizeBenefitStrings', () => {
 
   it('drops empty localized strings', () => {
     const blank: HotelBenefitProgram = {
-      program_name: 'Blank',
+      program_name: { en: 'Blank' },
       valid_from: null,
       valid_until: null,
       benefits: [
@@ -120,6 +121,63 @@ describe('localizeBenefitStrings', () => {
       ],
     };
     expect(localizeBenefitStrings([blank], 'en')).toEqual(['Kept']);
+  });
+});
+
+describe('groupBenefitPrograms', () => {
+  const templates = {
+    range: 'valid {from}–{until}',
+    from: 'valid from {from}',
+    until: 'valid until {until}',
+    month: (m: number) =>
+      ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1],
+  };
+  const programs: HotelBenefitProgram[] = [
+    {
+      program_name: { en: 'Virtuoso Amenities', kr: '버추오소 혜택' },
+      valid_from: '2020-01-01',
+      valid_until: '2020-12-31',
+      benefits: [
+        { en: 'Daily breakfast', kr: '매일 조식' },
+        { en: '', kr: '' },
+      ],
+    },
+    { program_name: null, benefits: [{ en: 'Late checkout' }] },
+    { program_name: { en: 'Empty program' }, benefits: [] },
+    { program_name: { en: 'EN only' }, benefits: [{ en: 'Upgrade', kr: '업그레이드' }] },
+  ];
+
+  it('yields one group per program in admin order, dropping programs with no bullets', () => {
+    const groups = groupBenefitPrograms(programs, 'en', null);
+    expect(groups.map((g) => g.name)).toEqual(['Virtuoso Amenities', null, 'EN only']);
+    expect(groups[0].items).toEqual(['Daily breakfast']);
+    expect(groups[1].items).toEqual(['Late checkout']);
+  });
+
+  it('localizes the program name with EN fallback', () => {
+    const groups = groupBenefitPrograms(programs, 'kr', null);
+    expect(groups.map((g) => g.name)).toEqual(['버추오소 혜택', null, 'EN only']);
+    expect(groups[0].items).toEqual(['매일 조식']);
+  });
+
+  it('computes the eligibility label once per program when templates are given', () => {
+    const groups = groupBenefitPrograms(programs, 'en', templates);
+    expect(groups[0].eligibility).toBe('valid Jan–Dec 2020');
+    expect(groups[1].eligibility).toBeNull();
+    // Bullets never carry the label.
+    expect(groups[0].items).toEqual(['Daily breakfast']);
+  });
+
+  it('carries no label when templates are null (dates already applied)', () => {
+    expect(groupBenefitPrograms(programs, 'en', null).every((g) => g.eligibility === null)).toBe(
+      true,
+    );
+  });
+
+  it('returns [] for null/undefined/empty', () => {
+    expect(groupBenefitPrograms(null, 'en', null)).toEqual([]);
+    expect(groupBenefitPrograms(undefined, 'en', null)).toEqual([]);
+    expect(groupBenefitPrograms([], 'en', null)).toEqual([]);
   });
 });
 

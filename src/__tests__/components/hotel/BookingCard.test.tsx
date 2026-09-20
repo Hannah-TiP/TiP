@@ -2,6 +2,13 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import BookingCard from '@/components/hotel/BookingCard';
 import enTranslations from '@/translations/en.json';
+import type { BenefitGroup } from '@/lib/hotel-benefits';
+
+const group = (
+  name: string | null,
+  items: string[],
+  eligibility: string | null = null,
+): BenefitGroup => ({ name, eligibility, items });
 
 vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => ({
@@ -14,7 +21,7 @@ vi.mock('@/contexts/LanguageContext', () => ({
 afterEach(() => cleanup());
 
 interface RenderOpts {
-  benefits?: string[];
+  benefitGroups?: BenefitGroup[];
   checkIn?: string;
   checkOut?: string;
   adults?: number;
@@ -39,7 +46,7 @@ function renderCard(opts: RenderOpts = {}) {
   render(
     <BookingCard
       hotelName="Aman Tokyo"
-      benefits={opts.benefits ?? ['Breakfast for two']}
+      benefitGroups={opts.benefitGroups ?? [group('Virtuoso', ['Breakfast for two'])]}
       checkIn={opts.checkIn ?? ''}
       checkOut={opts.checkOut ?? ''}
       adults={opts.adults ?? 2}
@@ -66,7 +73,7 @@ function renderCard(opts: RenderOpts = {}) {
 
 describe('BookingCard', () => {
   it('renders title, all benefits, and both CTAs (Submit Request + Ask Concierge)', () => {
-    renderCard({ benefits: ['Breakfast for two', 'Priority upgrade'] });
+    renderCard({ benefitGroups: [group('Virtuoso', ['Breakfast for two', 'Priority upgrade'])] });
 
     expect(screen.getByText(/Aman Tokyo/)).toBeTruthy();
     expect(screen.getByText('Breakfast for two')).toBeTruthy();
@@ -92,8 +99,29 @@ describe('BookingCard', () => {
     expect(onAsk).toHaveBeenCalledTimes(1);
   });
 
-  it('omits the benefits panel when the benefits array is empty', () => {
-    renderCard({ benefits: [] });
+  it('renders one group per program with the program name and validity on the heading (SMA-467)', () => {
+    renderCard({
+      benefitGroups: [
+        group('Virtuoso Amenities', ['Daily breakfast', 'Room upgrade'], 'valid Jan–Dec'),
+        group('Suite Sojourn', ['USD 100 credit'], 'valid Oct–Dec'),
+        group(null, ['Late checkout']),
+      ],
+    });
+
+    const groups = screen.getAllByTestId('benefit-program-group');
+    expect(groups).toHaveLength(3);
+    expect(groups[0].textContent).toContain('Virtuoso Amenities');
+    expect(groups[0].textContent).toContain('(valid Jan–Dec)');
+    expect(groups[1].textContent).toContain('Suite Sojourn');
+    // Bullets stay clean — the label lives on the heading, not on each bullet.
+    expect(screen.getByText('Daily breakfast').textContent).toBe('Daily breakfast');
+    // An unnamed program renders bullets with no heading.
+    expect(groups[2].querySelector('p')).toBeNull();
+    expect(groups[2].textContent).toContain('Late checkout');
+  });
+
+  it('omits the benefits panel when there are no benefit groups', () => {
+    renderCard({ benefitGroups: [] });
 
     expect(screen.queryByText(/TiP exclusive benefits/i)).toBeNull();
   });

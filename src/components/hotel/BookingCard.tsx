@@ -1,10 +1,13 @@
 'use client';
 
 import { useLanguage } from '@/contexts/LanguageContext';
+import BenefitGroupList from '@/components/hotel/BenefitGroupList';
+import type { BenefitGroup } from '@/lib/hotel-benefits';
 
 interface BookingCardProps {
   hotelName: string;
-  benefits: string[];
+  /** Benefit programs already filtered/labelled by the caller (SMA-467). */
+  benefitGroups: BenefitGroup[];
   checkIn: string;
   checkOut: string;
   adults: number;
@@ -94,7 +97,7 @@ function Stepper({
 
 export default function BookingCard({
   hotelName,
-  benefits,
+  benefitGroups,
   checkIn,
   checkOut,
   adults,
@@ -123,7 +126,7 @@ export default function BookingCard({
           {t('hotel.booking_card_subtitle')}
         </p>
 
-        {benefits.length > 0 && (
+        {benefitGroups.length > 0 && (
           <div
             className="mt-5 bg-gradient-to-br from-green-dark to-[#152b22] p-4 text-[13px] leading-[1.7] text-white sm:p-5"
             role="complementary"
@@ -131,13 +134,7 @@ export default function BookingCard({
             <p className="font-semibold uppercase tracking-[1.5px] text-gold">
               ✦ {resolvedBenefitsTitle}
             </p>
-            <ul className="mt-3 list-disc space-y-1 pl-5">
-              {benefits.map((benefit, index) => (
-                <li key={index} className="text-white/85">
-                  {benefit}
-                </li>
-              ))}
-            </ul>
+            <BenefitGroupList groups={benefitGroups} />
           </div>
         )}
 

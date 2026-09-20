@@ -74,7 +74,7 @@ export function filterBenefitsByDates(
 /** Localized month-abbreviation token for a 1-based month index. */
 export type MonthAbbrevResolver = (monthIndex1Based: number) => string;
 
-interface EligibilityTemplates {
+export interface EligibilityTemplates {
   /** "valid {from}–{until}" — `{from}` / `{until}` get replaced. */
   range: string;
   /** "valid from {from}". */
@@ -130,4 +130,49 @@ export function formatBenefitEligibility(
   const withYear = end!.getUTCFullYear() !== currentYear;
   const untilLabel = formatDateLabel(end!, templates.month, true, withYear);
   return templates.until.replace('{until}', untilLabel);
+}
+
+/** Build the eligibility-label templates from the app's translation function. */
+export function buildEligibilityTemplates(t: (key: string) => string): EligibilityTemplates {
+  return {
+    range: t('hotel.benefit_eligibility_range'),
+    from: t('hotel.benefit_eligibility_from'),
+    until: t('hotel.benefit_eligibility_until'),
+    month: (m: number) => t(`hotel.benefit_month_abbr_${m}`),
+  };
+}
+
+/** One benefit program as rendered on the hotel page: heading + bullets. */
+export interface BenefitGroup {
+  /** Localized program name, or null for an unnamed program (no heading). */
+  name: string | null;
+  /** "valid …" label shown on the heading, or null. */
+  eligibility: string | null;
+  items: string[];
+}
+
+/**
+ * Group programs for display (SMA-467): one group per program, in admin
+ * order, with the program name localized (EN→KR fallback) and the
+ * eligibility label computed ONCE per program — on the heading, not on every
+ * bullet. Pass `templates: null` when stay dates have already been applied
+ * (`filterBenefitsByDates`): the surviving programs need no label. Programs
+ * with no non-empty bullet are dropped.
+ */
+export function groupBenefitPrograms(
+  programs: HotelBenefitProgram[] | null | undefined,
+  lang: 'en' | 'kr',
+  templates: EligibilityTemplates | null,
+): BenefitGroup[] {
+  return (programs ?? []).flatMap((program) => {
+    const items = program.benefits
+      .map((benefit) => getLocalizedText(benefit, lang))
+      .filter(Boolean);
+    if (items.length === 0) return [];
+    const name = getLocalizedText(program.program_name, lang) || null;
+    const eligibility = templates
+      ? formatBenefitEligibility(program.valid_from, program.valid_until, templates)
+      : null;
+    return [{ name, eligibility, items }];
+  });
 }
