@@ -15,7 +15,7 @@ vi.mock('@/lib/api-client', () => ({
 const {
   MAX_REVIEW_PHOTOS,
   MAX_REVIEW_PHOTO_BYTES,
-  isHeicFile,
+  reviewPhotoContentType,
   validateReviewPhotoFile,
   postReviewPhotoToS3,
   uploadReviewPhoto,
@@ -31,11 +31,20 @@ describe('validateReviewPhotoFile', () => {
     expect(validateReviewPhotoFile(fakeFile('b.png', 'image/png'), 5)).toBeNull();
   });
 
-  it('rejects HEIC by extension or mime type BEFORE the generic type check', () => {
-    expect(validateReviewPhotoFile(fakeFile('IMG_1.HEIC', ''), 0)).toBe('heic');
-    expect(validateReviewPhotoFile(fakeFile('a.heif', ''), 0)).toBe('heic');
-    expect(validateReviewPhotoFile(fakeFile('a.bin', 'image/heic'), 0)).toBe('heic');
-    expect(isHeicFile(fakeFile('a.bin', 'image/heif'))).toBe(true);
+  it('accepts HEIC/HEIF by mime type, and by extension when the browser reports no type (SMA-466)', () => {
+    expect(validateReviewPhotoFile(fakeFile('a.bin', 'image/heic'), 0)).toBeNull();
+    expect(validateReviewPhotoFile(fakeFile('a.bin', 'image/heif'), 0)).toBeNull();
+    expect(validateReviewPhotoFile(fakeFile('IMG_1.HEIC', ''), 0)).toBeNull();
+    expect(validateReviewPhotoFile(fakeFile('a.heif', ''), 0)).toBeNull();
+  });
+
+  it('derives the presign content type from the extension only when file.type is empty', () => {
+    expect(reviewPhotoContentType(fakeFile('IMG_1.HEIC', ''))).toBe('image/heic');
+    expect(reviewPhotoContentType(fakeFile('a.heif', ''))).toBe('image/heif');
+    expect(reviewPhotoContentType(fakeFile('a.JPG', ''))).toBe('image/jpeg');
+    expect(reviewPhotoContentType(fakeFile('a.heic', 'image/heic'))).toBe('image/heic');
+    expect(reviewPhotoContentType(fakeFile('noext', ''))).toBe('');
+    expect(validateReviewPhotoFile(fakeFile('noext', ''), 0)).toBe('type');
   });
 
   it('rejects unsupported types', () => {
@@ -120,7 +129,7 @@ describe('postReviewPhotoToS3', () => {
     region: 'us-west-1',
     restrictions: {
       max_file_size_bytes: 10485760,
-      allowed_content_types: ['image/jpeg', 'image/png', 'image/heic'],
+      allowed_content_types: ['image/jpeg', 'image/png', 'image/heic', 'image/heif'],
       expiry_minutes: 15,
     },
   };

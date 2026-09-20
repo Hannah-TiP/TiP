@@ -4,10 +4,10 @@ import { useCallback, useRef, useState } from 'react';
 import Image from 'next/image';
 import type { Image as ReviewImage } from '@/types/common';
 import { resolveS3Url } from '@/types/common';
-import type { ReviewEntityType } from '@/types/review';
-import { REVIEW_PHOTO_HEIC_UNSUPPORTED_CODE } from '@/types/review';
+import { ReviewPhotoFinalizeError, type ReviewEntityType } from '@/types/review';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
+  REVIEW_PHOTO_ACCEPT,
   MAX_REVIEW_PHOTOS,
   uploadReviewPhoto,
   validateReviewPhotoFile,
@@ -17,7 +17,6 @@ import {
 type TranslationKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
 const VALIDATION_ERROR_KEY: Record<ReviewPhotoValidationError, TranslationKey> = {
-  heic: 'reviews.photo_error_heic',
   type: 'reviews.photo_error_type',
   size: 'reviews.photo_error_size',
   limit: 'reviews.photo_error_limit',
@@ -87,15 +86,13 @@ export default function ReviewPhotoSection({
         setPending((prev) => prev.filter((p) => p.id !== id));
         onAddPhoto(image);
       } catch (err) {
-        // 4005 fallback: the backend couldn't finalize a HEIC upload — show
-        // its localized convert-to-JPEG message.
-        const heic =
-          err instanceof Error &&
-          (err as { code?: number | null }).code === REVIEW_PHOTO_HEIC_UNSUPPORTED_CODE;
-        patchPending(id, {
-          status: 'error',
-          message: heic && err.message ? err.message : t('reviews.photo_error_upload'),
-        });
+        // A finalize rejection carries the backend's localized message
+        // (e.g. "invalid image"); anything else gets the generic copy.
+        const message =
+          err instanceof ReviewPhotoFinalizeError && err.message
+            ? err.message
+            : t('reviews.photo_error_upload');
+        patchPending(id, { status: 'error', message });
       }
     },
     [patchPending, tripId, entityType, entityId, lang, onAddPhoto, t],
@@ -232,7 +229,7 @@ export default function ReviewPhotoSection({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+        accept={REVIEW_PHOTO_ACCEPT}
         multiple
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}

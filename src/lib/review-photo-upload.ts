@@ -7,21 +7,40 @@ import type { ReviewEntityType, ReviewPhotoUploadCredentials } from '@/types/rev
 export const MAX_REVIEW_PHOTOS = 20;
 export const MAX_REVIEW_PHOTO_BYTES = 10 * 1024 * 1024;
 
-/** Types the client will actually upload. HEIC is rejected up-front (the
- * backend cannot finalize it — business code 4005). */
-export const UPLOADABLE_REVIEW_PHOTO_TYPES = ['image/jpeg', 'image/png'];
+/** Types the client will upload. HEIC/HEIF is decoded server-side at
+ * finalize and stored as JPEG (SMA-466). */
+export const UPLOADABLE_REVIEW_PHOTO_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/heic',
+  'image/heif',
+];
 
-export type ReviewPhotoValidationError = 'heic' | 'type' | 'size' | 'limit';
+/** File-picker `accept` list matching the uploadable types. */
+export const REVIEW_PHOTO_ACCEPT =
+  'image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif';
 
-export function isHeicFile(file: Pick<File, 'name' | 'type'>): boolean {
-  const name = file.name.toLowerCase();
+export type ReviewPhotoValidationError = 'type' | 'size' | 'limit';
+
+const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  heic: 'image/heic',
+  heif: 'image/heif',
+};
+
+/**
+ * The content type to presign for. Browsers (iOS Safari for HEIC in
+ * particular) can report an empty `file.type`; fall back to the extension so
+ * the presigned POST policy — which pins the exact Content-Type — still
+ * matches what S3 receives.
+ */
+export function reviewPhotoContentType(file: Pick<File, 'name' | 'type'>): string {
   const type = file.type.toLowerCase();
-  return (
-    name.endsWith('.heic') ||
-    name.endsWith('.heif') ||
-    type === 'image/heic' ||
-    type === 'image/heif'
-  );
+  if (type) return type;
+  const extension = file.name.toLowerCase().split('.').pop() ?? '';
+  return CONTENT_TYPE_BY_EXTENSION[extension] ?? '';
 }
 
 /**
@@ -34,8 +53,7 @@ export function validateReviewPhotoFile(
   currentCount: number,
 ): ReviewPhotoValidationError | null {
   if (currentCount >= MAX_REVIEW_PHOTOS) return 'limit';
-  if (isHeicFile(file)) return 'heic';
-  if (!UPLOADABLE_REVIEW_PHOTO_TYPES.includes(file.type.toLowerCase())) return 'type';
+  if (!UPLOADABLE_REVIEW_PHOTO_TYPES.includes(reviewPhotoContentType(file))) return 'type';
   if (file.size > MAX_REVIEW_PHOTO_BYTES) return 'size';
   return null;
 }
@@ -106,7 +124,7 @@ export async function uploadReviewPhoto({
       trip_id: tripId,
       entity_type: entityType,
       entity_id: entityId,
-      content_type: file.type.toLowerCase(),
+      content_type: reviewPhotoContentType(file),
     },
     language,
   );

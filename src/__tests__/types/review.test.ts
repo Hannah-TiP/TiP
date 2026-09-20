@@ -70,11 +70,10 @@ describe('review photo helpers (SMA-280)', () => {
   });
 
   it('ReviewPhotoFinalizeError carries the backend business code', async () => {
-    const { ReviewPhotoFinalizeError, REVIEW_PHOTO_HEIC_UNSUPPORTED_CODE } =
-      await import('@/types/review');
-    expect(new ReviewPhotoFinalizeError('x', 4005).code).toBe(REVIEW_PHOTO_HEIC_UNSUPPORTED_CODE);
+    const { ReviewPhotoFinalizeError } = await import('@/types/review');
+    expect(new ReviewPhotoFinalizeError('x', 4001).code).toBe(4001);
     expect(new ReviewPhotoFinalizeError('x', null).code).toBeNull();
-    expect(new ReviewPhotoFinalizeError('x', 4005)).toBeInstanceOf(Error);
+    expect(new ReviewPhotoFinalizeError('x', 4001)).toBeInstanceOf(Error);
   });
 });
 
