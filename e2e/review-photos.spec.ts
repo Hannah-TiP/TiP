@@ -112,6 +112,12 @@ const JPEG_FILE = {
   buffer: Buffer.from('fake-jpeg-bytes'),
 };
 
+const HEIC_FILE = {
+  name: 'IMG_0001.HEIC',
+  mimeType: 'image/heic',
+  buffer: Buffer.from('fake-heic-bytes'),
+};
+
 test.describe('Review photo attachments (SMA-280)', () => {
   test('attach a photo while writing a review and submit it with the review', async ({ page }) => {
     await stubSessionPage(page);
@@ -216,26 +222,79 @@ test.describe('Review photo attachments (SMA-280)', () => {
     expect(uploadAttempts).toBe(2);
   });
 
-  test('HEIC files are rejected client-side with a convert-to-JPEG message', async ({ page }) => {
+  // SMA-466: HEIC/HEIF is uploaded as-is and decoded to JPEG server-side at
+  // finalize, so the client no longer rejects it up-front.
+  test('HEIC files are accepted client-side and uploaded (SMA-466)', async ({ page }) => {
     await stubSessionPage(page);
-    let credentialRequests = 0;
+    await stubFinalize(page);
+
+    let credentialBody: { content_type?: string } | null = null;
     await page.route(/\/api\/reviews\/photo-upload-credentials(\?|$)/, (route) => {
-      credentialRequests += 1;
-      return route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+      credentialBody = route.request().postDataJSON();
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: envelope({
+          upload_url: UPLOAD_URL,
+          form_data: { key: 'reviews/uploads/9/tmp.heic', 'Content-Type': 'image/heic' },
+          upload_key: 'reviews/uploads/9/tmp.heic',
+          bucket: 'tip-s3-bucket',
+          region: 'us-west-1',
+          restrictions: {
+            max_file_size_bytes: 10485760,
+            allowed_content_types: ['image/jpeg', 'image/png', 'image/heic', 'image/heif'],
+            expiry_minutes: 15,
+          },
+        }),
+      });
     });
+    await page.route(`${UPLOAD_URL}*`, (route) =>
+      route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' }, body: '' }),
+    );
 
     await gotoPage(page, `/my-page/travel-history/${TRIP_ID}/reviews`);
 
     const input = page.getByTestId('review-photo-input');
     await expect(input).toBeAttached({ timeout: 15_000 });
-    await input.setInputFiles({
-      name: 'IMG_0001.HEIC',
-      mimeType: 'image/heic',
-      buffer: Buffer.from('fake-heic-bytes'),
-    });
+    await input.setInputFiles(HEIC_FILE);
+
+    // Goes through the normal credentials → S3 → finalize pipeline and lands
+    // as a thumbnail, presigned for the HEIC content type.
+    await expect(page.getByTestId('review-photo-thumb')).toHaveCount(1, { timeout: 15_000 });
+    await expect(page.getByTestId('review-photo-error')).toHaveCount(0);
+    expect(credentialBody).toEqual(expect.objectContaining({ content_type: 'image/heic' }));
+  });
+
+  test('a HEIC the backend cannot finalize shows the backend message on the tile', async ({
+    page,
+  }) => {
+    await stubSessionPage(page);
+    await stubCredentials(page);
+    await page.route(`${UPLOAD_URL}*`, (route) =>
+      route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' }, body: '' }),
+    );
+    // Business code 4005 (HEIC unsupported) — the localized backend message is
+    // surfaced verbatim instead of the generic "upload failed" copy.
+    await page.route(/\/api\/reviews\/photos\/finalize(\?|$)/, (route) =>
+      route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 4005,
+          message: 'This HEIC photo could not be processed — please convert to JPEG.',
+          data: null,
+        }),
+      }),
+    );
+
+    await gotoPage(page, `/my-page/travel-history/${TRIP_ID}/reviews`);
+
+    const input = page.getByTestId('review-photo-input');
+    await expect(input).toBeAttached({ timeout: 15_000 });
+    await input.setInputFiles(HEIC_FILE);
 
     await expect(page.getByTestId('review-photo-error')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/convert to JPEG/)).toBeVisible();
-    expect(credentialRequests).toBe(0);
+    await expect(page.getByText(/Photo upload failed/)).toHaveCount(0);
   });
 });

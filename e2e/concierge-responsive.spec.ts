@@ -66,7 +66,7 @@ test.describe('Concierge responsive layout (375px)', () => {
       });
     });
 
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,

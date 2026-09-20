@@ -69,7 +69,7 @@ test.describe('Concierge chat message flow', () => {
     });
 
     let messageCallCount = 0;
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -261,7 +261,7 @@ test.describe('Concierge Your Itinerary panel — detailed plan view', () => {
       });
     });
 
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,

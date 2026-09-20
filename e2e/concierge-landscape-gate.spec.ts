@@ -67,7 +67,7 @@ test.describe('Concierge layout gate (width + orientation)', () => {
       });
     });
 
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
