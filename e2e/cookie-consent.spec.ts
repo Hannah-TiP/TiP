@@ -101,10 +101,11 @@ test.describe('Footer links', () => {
   test('Privacy Policy link navigates to /privacy-policy', async ({ page }) => {
     await gotoPage(page, '/about');
 
-    // Scroll to footer and click
-    const footer = page.locator('footer');
-    await footer.scrollIntoViewIfNeeded();
-    await footer.getByText('Privacy Policy').click();
+    // The footer is a React.lazy boundary (SMA-306) and can be swapped out
+    // while hydrating, which makes an explicit scrollIntoViewIfNeeded on it
+    // flake with "Element is not attached to the DOM". click() scrolls the
+    // link into view itself and retries if the element detaches.
+    await page.locator('footer').getByRole('link', { name: 'Privacy Policy' }).click();
 
     await expect(page).toHaveURL(/privacy-policy/);
   });
@@ -112,9 +113,7 @@ test.describe('Footer links', () => {
   test('Terms of Service link navigates to /terms-of-service', async ({ page }) => {
     await gotoPage(page, '/about');
 
-    const footer = page.locator('footer');
-    await footer.scrollIntoViewIfNeeded();
-    await footer.getByText('Terms of Service').click();
+    await page.locator('footer').getByRole('link', { name: 'Terms of Service' }).click();
 
     await expect(page).toHaveURL(/terms-of-service/);
   });

@@ -89,7 +89,7 @@ test.describe('Customer-initiated request for human concierge', () => {
     });
 
     // Messages: empty at start, then include the expectation-setter after the request
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       if (route.request().method() === 'GET') {
         const msgs = requestCount > 0 ? [expectAssistantMsg] : [];
         await route.fulfill({
@@ -110,7 +110,7 @@ test.describe('Customer-initiated request for human concierge', () => {
     });
 
     // request-human endpoint
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/request-human`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/request-human*`, async (route) => {
       requestCount++;
       await route.fulfill({
         status: 200,

@@ -202,7 +202,7 @@ test.describe('Centralized header — variants & active state', () => {
           body: JSON.stringify({ data: tripVersion }),
         }),
       );
-      await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, (route) =>
+      await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, (route) =>
         route.fulfill({
           status: 200,
           contentType: 'application/json',

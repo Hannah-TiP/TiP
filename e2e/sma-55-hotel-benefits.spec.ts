@@ -100,7 +100,7 @@ async function mockSessionAndCarousel(
       body: JSON.stringify({ data: tripVersion }),
     }),
   );
-  await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+  await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
         status: 200,

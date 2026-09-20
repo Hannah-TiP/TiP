@@ -92,7 +92,7 @@ test.describe('SearchBar → Concierge prefill (authed)', () => {
       });
     });
 
-    await context.route('**/api/ai-chat/create-session-for-trip', async (route) => {
+    await context.route('**/api/ai-chat/create-session-for-trip*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -118,7 +118,7 @@ test.describe('SearchBar → Concierge prefill (authed)', () => {
     });
 
     let lastSeed = '';
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,

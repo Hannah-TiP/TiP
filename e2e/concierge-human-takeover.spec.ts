@@ -68,7 +68,7 @@ test.describe('Concierge chat takeover -- customer-facing surface', () => {
 
     // Message history includes a HUMAN_ASSISTANT row -- the bubble must
     // render the generic Concierge Team badge, never an admin id.
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       if (route.request().method() !== 'GET') {
         await route.fulfill({
           status: 200,
@@ -158,7 +158,7 @@ test.describe('Concierge chat takeover -- customer-facing surface', () => {
       });
     });
 
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,

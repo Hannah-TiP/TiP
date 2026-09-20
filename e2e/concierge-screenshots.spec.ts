@@ -81,7 +81,7 @@ async function mockTripAndSession(
 
 async function mockChatSequence(context: BrowserContext, responses: MockChatResponse[]) {
   let call = 0;
-  await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+  await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
         status: 200,
@@ -141,7 +141,7 @@ test.describe('Concierge visual captures', () => {
     await mockTripAndSession(context, tripRef);
     // Delay the assistant response so the optimistic user bubble is alone on screen
     let firstCall = true;
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -221,7 +221,7 @@ test.describe('Concierge visual captures', () => {
     const tripRef = { current: tripVersion({ title: 'Paris Trip' }) };
     await mockTripAndSession(context, tripRef);
     let call = 0;
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -304,7 +304,7 @@ test.describe('Concierge visual captures', () => {
     const tripRef = { current: tripVersion({ title: 'Paris Trip' }) };
     await mockTripAndSession(context, tripRef);
     let call = 0;
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -411,7 +411,7 @@ test.describe('Concierge visual captures', () => {
         body: JSON.stringify({ data: tripRef.current }),
       }),
     );
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -517,7 +517,7 @@ test.describe('Concierge visual captures', () => {
     const tripRef = { current: tripVersion({ title: 'Paris Trip' }) };
     await mockTripAndSession(context, tripRef);
     let call = 0;
-    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages`, async (route) => {
+    await context.route(`**/api/ai-chat/trips/${TRIP_ID}/messages*`, async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
