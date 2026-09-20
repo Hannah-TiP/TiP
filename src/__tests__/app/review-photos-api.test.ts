@@ -122,12 +122,12 @@ describe('POST /api/reviews/photos/finalize', () => {
     expect(body).toEqual(envelope);
   });
 
-  it('preserves the backend business code + status on failure (4005 HEIC)', async () => {
+  it('preserves the backend business code + status on a finalize rejection', async () => {
     mockAuth.mockResolvedValue({ accessToken: 'token-1' });
     mockFetch.mockResolvedValue({
       ok: false,
       status: 400,
-      json: () => Promise.resolve({ code: 4005, message: 'Convert to JPEG' }),
+      json: () => Promise.resolve({ code: 4001, message: 'Not a valid image' }),
     });
 
     const response = await finalizePOST(
@@ -136,8 +136,8 @@ describe('POST /api/reviews/photos/finalize', () => {
     const body = await response.json();
 
     expect(response.status).toBe(400);
-    expect(body.code).toBe(4005);
-    expect(body.message).toBe('Convert to JPEG');
+    expect(body.code).toBe(4001);
+    expect(body.message).toBe('Not a valid image');
   });
 });
 

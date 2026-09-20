@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
 
     // Preserve the backend status + envelope (including the distinct business
-    // `code` — 4005 = HEIC unsupported) so the client can branch on it.
+    // `code`) so the client can surface the server's localized message.
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Review photo finalize API error:', error);

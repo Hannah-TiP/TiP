@@ -82,13 +82,9 @@ export interface ReviewPhotoUploadCredentials {
   restrictions: ReviewPhotoUploadRestrictions;
 }
 
-/** Backend business code for "HEIC can't be finalized — convert to JPEG". */
-export const REVIEW_PHOTO_HEIC_UNSUPPORTED_CODE = 4005;
-
 /**
- * Thrown by `apiClient.finalizeReviewPhoto` so callers can branch on the
- * backend business `code` (4005 = HEIC unsupported) while keeping the
- * server's localized message.
+ * Thrown by `apiClient.finalizeReviewPhoto` so callers keep the backend's
+ * localized message and business `code` (e.g. an undecodable image).
  */
 export class ReviewPhotoFinalizeError extends Error {
   readonly code: number | null;

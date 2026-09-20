@@ -88,26 +88,35 @@ describe('ReviewPhotoSection', () => {
     expect(uploadReviewPhoto).toHaveBeenCalledTimes(2);
   });
 
-  it('shows the server convert-to-JPEG message on a 4005 finalize failure', async () => {
+  it("shows the server's localized message on a finalize rejection", async () => {
     uploadReviewPhoto.mockRejectedValue(
-      new ReviewPhotoFinalizeError('Please convert your HEIC photo to JPEG.', 4005),
+      new ReviewPhotoFinalizeError('That file is not a valid image.', 4001),
     );
     renderSection();
 
-    selectFiles([makeFile('sneaky.jpg', 'image/jpeg')]);
+    selectFiles([makeFile('broken.jpg', 'image/jpeg')]);
 
     await screen.findByTestId('review-photo-error');
-    expect(screen.getByText(/convert your HEIC photo to JPEG/)).toBeTruthy();
+    expect(screen.getByText(/not a valid image/)).toBeTruthy();
   });
 
-  it('rejects HEIC files client-side BEFORE uploading', async () => {
+  it('uploads iPhone HEIC files instead of rejecting them (SMA-466)', async () => {
+    const image: Image = { original: 'reviews/media/1/a.jpg' };
+    uploadReviewPhoto.mockResolvedValue(image);
+    const onAddPhoto = vi.fn();
+    renderSection({ onAddPhoto });
+
+    // iOS Safari can hand over HEIC with an empty type — both forms upload.
+    selectFiles([makeFile('IMG_1.heic', 'image/heic'), makeFile('IMG_2.HEIC', '')]);
+
+    await waitFor(() => expect(onAddPhoto).toHaveBeenCalledTimes(2));
+    expect(uploadReviewPhoto).toHaveBeenCalledTimes(2);
+    expect(screen.queryByTestId('review-photo-error')).toBeNull();
+  });
+
+  it('offers HEIC in the file picker', () => {
     renderSection();
-
-    selectFiles([makeFile('IMG_1.heic', 'image/heic')]);
-
-    await screen.findByTestId('review-photo-error');
-    expect(uploadReviewPhoto).not.toHaveBeenCalled();
-    expect(screen.getByText(/convert to JPEG/)).toBeTruthy();
+    expect(screen.getByTestId('review-photo-input').getAttribute('accept')).toContain('image/heic');
   });
 
   it('rejects wrong types and oversized files client-side', async () => {
@@ -120,7 +129,7 @@ describe('ReviewPhotoSection', () => {
 
     await waitFor(() => expect(screen.getAllByTestId('review-photo-error')).toHaveLength(2));
     expect(uploadReviewPhoto).not.toHaveBeenCalled();
-    expect(screen.getByText(/Only JPEG or PNG/)).toBeTruthy();
+    expect(screen.getByText(/Only JPEG, PNG or HEIC/)).toBeTruthy();
     expect(screen.getByText(/10 MB or smaller/)).toBeTruthy();
     // Validation rejects are removable but not retryable.
     expect(screen.queryByText('Retry')).toBeNull();

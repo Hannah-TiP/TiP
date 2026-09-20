@@ -1006,7 +1006,7 @@ class ApiClient {
 
   // Finalizes a temp S3 upload into a permanent review photo. On failure
   // throws a ReviewPhotoFinalizeError carrying the backend business `code`
-  // (4005 = HEIC unsupported) so the UI can show the convert-to-JPEG message.
+  // so the UI can show the server's localized rejection message.
   async finalizeReviewPhoto(s3Key: string, language?: Lang): Promise<Image> {
     const response = await fetch(
       `${this.baseUrl}${this.withLanguage('/reviews/photos/finalize', language)}`,
