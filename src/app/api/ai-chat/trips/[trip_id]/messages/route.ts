@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { languageHeader } from '@/lib/proxy-language';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest, context: { params: Promise<unkno
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          ...languageHeader(request),
         },
       },
     );
@@ -83,6 +85,10 @@ export async function POST(request: NextRequest, context: { params: Promise<unkn
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
+        // SMA-469: the reply language, hotel carousel names and every other
+        // localized tool result follow the site language — forward it, never
+        // invent it (SMA-260).
+        ...languageHeader(request),
       },
       body: JSON.stringify({
         content,

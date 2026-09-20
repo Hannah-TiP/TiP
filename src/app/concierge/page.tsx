@@ -138,7 +138,7 @@ function ConciergeContent() {
     if (!isHumanMode || activeTripId == null) return;
     const id = window.setInterval(async () => {
       try {
-        const history = await apiClient.getChatHistory(activeTripId);
+        const history = await apiClient.getChatHistory(activeTripId, undefined, lang);
         // Union-merge: the poll returns only the newest tail window, so a
         // wholesale replace would wipe older pages loaded via "load older
         // messages". Merging by id keeps them while still refreshing
@@ -149,7 +149,7 @@ function ConciergeContent() {
       }
     }, 1000);
     return () => window.clearInterval(id);
-  }, [isHumanMode, activeTripId]);
+  }, [isHumanMode, activeTripId, lang]);
 
   // Lock body scroll while either mobile drawer is open, and close the open
   // drawer on Escape (mirrors the Modal.tsx pattern).
@@ -185,7 +185,7 @@ function ConciergeContent() {
 
   async function loadSessionHistory(tripId: number) {
     try {
-      const history = await apiClient.getChatHistory(tripId);
+      const history = await apiClient.getChatHistory(tripId, undefined, lang);
       setMessageStore(mergeMessages(emptyMessageStore(), history));
       // A full window (len == limit) means older history may exist.
       setHasOlderMessages(pageHasMore(history.length, INITIAL_HISTORY_LIMIT));
@@ -203,10 +203,11 @@ function ConciergeContent() {
 
     setIsLoadingOlder(true);
     try {
-      const page = await apiClient.getChatHistory(tripId, {
-        before: oldestId,
-        limit: OLDER_PAGE_LIMIT,
-      });
+      const page = await apiClient.getChatHistory(
+        tripId,
+        { before: oldestId, limit: OLDER_PAGE_LIMIT },
+        lang,
+      );
       setMessageStore((prev) => mergeMessages(prev, page));
       // A short page means we've reached the beginning of the history.
       setHasOlderMessages(pageHasMore(page.length, OLDER_PAGE_LIMIT));
@@ -323,7 +324,7 @@ function ConciergeContent() {
           }
 
           try {
-            const createdSession = await apiClient.createChatSessionForTrip(tripId);
+            const createdSession = await apiClient.createChatSessionForTrip(tripId, lang);
             if (cancelled) return;
 
             // Refetch to pick up the new session with its trip joined.
@@ -398,12 +399,16 @@ function ConciergeContent() {
     setError(null);
 
     try {
-      const response = await apiClient.sendMessage(tripId, {
-        content: widgetResponse ? '' : content,
-        message_type: 'text',
-        widget_response: widgetResponse,
-        include_draft: isPreview,
-      });
+      const response = await apiClient.sendMessage(
+        tripId,
+        {
+          content: widgetResponse ? '' : content,
+          message_type: 'text',
+          widget_response: widgetResponse,
+          include_draft: isPreview,
+        },
+        lang,
+      );
 
       const data: SendAIChatMessageData | undefined = response.data;
       if (!data) {
@@ -728,7 +733,7 @@ function ConciergeContent() {
                 try {
                   const [refreshedBundles, history] = await Promise.all([
                     apiClient.listChatSessions(),
-                    apiClient.getChatHistory(activeSession.session.trip_id),
+                    apiClient.getChatHistory(activeSession.session.trip_id, undefined, lang),
                   ]);
                   setRawSessions(refreshedBundles);
                   setMessageStore((prev) => mergeMessages(prev, history));

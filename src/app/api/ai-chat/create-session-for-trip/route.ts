@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { languageHeader } from '@/lib/proxy-language';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
@@ -19,6 +20,9 @@ export async function POST(request: NextRequest) {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
+        // SMA-469: forward the site language (never invent one) so the
+        // session greeting is in the language the user is looking at.
+        ...languageHeader(request),
       },
       body: JSON.stringify({ trip_id: body.trip_id }),
     });
