@@ -5,16 +5,15 @@ import { useLanguage } from '@/contexts/LanguageContext';
 interface StickyBookingBarProps {
   perksLabel: string;
   perksSubtitle?: string;
-  ctaLabel: string;
-  onReserveClick: () => void;
 }
 
-export default function StickyBookingBar({
-  perksLabel,
-  perksSubtitle,
-  ctaLabel,
-  onReserveClick,
-}: StickyBookingBarProps) {
+/**
+ * The green perks strip pinned to the top of the hotel page. Copy only: its
+ * gold "Submit Request" button was removed in SMA-578 (TestFlight feedback;
+ * the pinned button also surfaced its date-validation error off-screen in
+ * the booking card). Booking actions live in `BookingCard` only.
+ */
+export default function StickyBookingBar({ perksLabel, perksSubtitle }: StickyBookingBarProps) {
   const { t } = useLanguage();
   return (
     <div
@@ -26,13 +25,6 @@ export default function StickyBookingBar({
         <p className="text-[12px] font-semibold uppercase tracking-[2px] text-gold">{perksLabel}</p>
         {perksSubtitle && <p className="mt-1 text-[13px] text-white/70">{perksSubtitle}</p>}
       </div>
-      <button
-        type="button"
-        onClick={onReserveClick}
-        className="flex min-h-[44px] w-full items-center justify-center bg-gold px-6 py-3 text-[12px] font-semibold uppercase tracking-[2px] text-white transition-opacity hover:opacity-90 sm:w-auto"
-      >
-        {ctaLabel}
-      </button>
     </div>
   );
 }

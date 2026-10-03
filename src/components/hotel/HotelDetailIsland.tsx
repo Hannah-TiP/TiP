@@ -191,8 +191,6 @@ export default function HotelDetailIsland({
           <StickyBookingBar
             perksLabel={t('hotel.tip_exclusive_perks')}
             perksSubtitle={t('hotel.exclusive_perks_subtitle')}
-            ctaLabel={t('hotel.submit_request_cta')}
-            onReserveClick={handleSubmitRequest}
           />
         }
         sidebar={

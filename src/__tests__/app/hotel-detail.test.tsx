@@ -146,8 +146,9 @@ describe('HotelDetailIsland', () => {
     // FAQ
     expect(screen.getByText('Check-in time?')).toBeTruthy();
 
-    // Submit Request CTAs (sticky bar + booking card) + Ask Concierge
-    expect(screen.getAllByRole('button', { name: /submit request/i }).length).toBeGreaterThan(0);
+    // Exactly one Submit Request CTA (the booking card's; the sticky bar lost
+    // its button in SMA-578) + Ask Concierge
+    expect(screen.getAllByRole('button', { name: /submit request/i })).toHaveLength(1);
     expect(screen.getByRole('button', { name: /ask concierge/i })).toBeTruthy();
   });
 

@@ -25,12 +25,10 @@ test.describe('Hotel detail — responsive at 375px', () => {
     // Hero title is visible.
     await expect(page.locator('h1').first()).toBeVisible();
 
-    // Sticky booking bar CTA is visible and meets the 44px tap-target minimum.
-    const stickyCta = page.locator('[aria-label="Booking summary"] button');
-    await expect(stickyCta).toBeVisible();
-    const box = await stickyCta.boundingBox();
-    expect(box).not.toBeNull();
-    expect(box!.height).toBeGreaterThanOrEqual(44);
+    // Sticky perks bar is visible and copy-only (SMA-578 dropped its button).
+    const stickyBar = page.locator('[aria-label="Booking summary"]');
+    await expect(stickyBar).toBeVisible();
+    await expect(stickyBar.locator('button')).toHaveCount(0);
 
     await page.screenshot({
       path: 'e2e/screenshots/hotel-detail-375.png',
