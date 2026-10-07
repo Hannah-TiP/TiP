@@ -134,9 +134,9 @@ interface UseHotelBookingResult {
 
 /**
  * Single source of truth for the hotel page's Reserve, Ask Concierge, and
- * Submit Request handlers. All buttons in BookingCard / StickyBookingBar
- * route through this hook so the validation, auth-gate, and API plumbing
- * live in one place.
+ * Submit Request handlers. All buttons in BookingCard route through this
+ * hook so the validation, auth-gate, and API plumbing live in one place
+ * (StickyBookingBar is copy-only since SMA-578).
  */
 export function useHotelBooking({
   hotelId,
