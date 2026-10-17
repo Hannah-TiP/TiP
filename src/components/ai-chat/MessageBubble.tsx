@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { AIChatMessage, AIChatWidgetResponse } from '@/types/ai-chat';
 import WidgetRenderer from './widgets/WidgetRenderer';
 import WidgetResponseDisplay from './WidgetResponseDisplay';
+import MessageAttachment from './MessageAttachment';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
@@ -156,9 +157,26 @@ export default function MessageBubble({
           </div>
         ) : (
           <>
+            {/* Attachment message: the file itself, then an optional caption
+               styled like a normal concierge text bubble. */}
+            {message.message_type === 'attachment' && (
+              <div className="space-y-2">
+                {message.attachment && <MessageAttachment attachment={message.attachment} />}
+                {hasTextContent && (
+                  <div
+                    className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4"
+                    data-testid="attachment-caption"
+                  >
+                    <p className="font-inter text-sm text-gray-800 whitespace-pre-wrap">
+                      {renderMarkdown(message.content ?? '')}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
             {/* The text/audio bubble. Skipped for structured messages (e.g.
-               `quote_sent`) where the widget itself is the entire message. */}
-            {message.message_type !== 'quote_sent' && (
+               `quote_sent`, `attachment`) that render their own body. */}
+            {message.message_type !== 'quote_sent' && message.message_type !== 'attachment' && (
               <div className="bg-gray-50 rounded-2xl rounded-tl-sm px-5 py-4">
                 {message.message_type === 'text' && (
                   <p className="font-inter text-sm text-gray-800 whitespace-pre-wrap">
