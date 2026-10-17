@@ -40,7 +40,7 @@ export default function MessageAttachment({ attachment }: MessageAttachmentProps
           height={280}
           sizes="280px"
           loading="lazy"
-          className="block h-auto w-full"
+          className="block h-auto max-h-[360px] w-full object-cover"
         />
       </a>
     );
