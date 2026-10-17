@@ -12,7 +12,7 @@ import {
   formatTime,
   resolveJourneyStep,
 } from '@/lib/trip-display';
-import { formatDate } from '@/lib/format-date';
+import { formatDate, parseLocalDate } from '@/lib/format-date';
 import type { TripPlanItem } from '@/types/trip';
 
 const FIELD_TO_ROW_KEYS: Record<string, string[]> = {
@@ -30,12 +30,6 @@ function rowKeysFromFields(fields: string[]): Set<string> {
     if (mapped) mapped.forEach((k) => keys.add(k));
   }
   return keys;
-}
-
-/** Parse "YYYY-MM-DD" as local date (avoids UTC midnight → previous day in western timezones) */
-function parseLocalDate(dateStr: string): Date {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d);
 }
 
 // ── Journey Stepper ─────────────────────────────────────────────────────

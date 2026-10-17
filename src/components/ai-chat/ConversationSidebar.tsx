@@ -4,7 +4,12 @@ import type { TripWithVersion } from '@/lib/trip-utils';
 import type { AIChatSessionMetadata } from '@/types/ai-chat';
 import type { Trip } from '@/types/trip';
 import { useLanguage, type Lang, type TranslationKeys } from '@/contexts/LanguageContext';
-import { formatTime as formatTimeI18n, formatDate, formatDateRange } from '@/lib/format-date';
+import {
+  formatTime as formatTimeI18n,
+  formatDate,
+  formatDateRange,
+  parseLocalDate,
+} from '@/lib/format-date';
 import { getStatusLabel } from '@/lib/trip-display';
 
 export interface ConciergeSession {
@@ -49,11 +54,6 @@ function getSessionLabel(s: ConciergeSession): string | null {
   const title = s.tripDetail?.currentVersion?.title?.trim();
   if (title) return title;
   return null; // will use t('chat.new_trip') in the component
-}
-
-function parseLocalDate(dateStr: string): Date {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d);
 }
 
 function formatRange(start: string | null, end: string | null, lang: Lang): string | null {
