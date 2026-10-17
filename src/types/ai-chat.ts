@@ -2,7 +2,23 @@ import type { Trip, TripVersion } from '@/types/trip';
 
 export type AIChatSessionStatus = 'ai' | 'human';
 export type AIChatMessageRole = 'user' | 'assistant' | 'human_assistant' | 'system';
-export type AIChatMessageType = 'text' | 'audio' | 'quote_sent';
+export type AIChatMessageType = 'text' | 'audio' | 'quote_sent' | 'attachment';
+
+export type ChatAttachmentContentType =
+  | 'image/jpeg'
+  | 'image/png'
+  | 'image/webp'
+  | 'image/gif'
+  | 'application/pdf';
+
+/** A file the concierge team sent in the trip chat (`message_type: 'attachment'`). */
+export interface ChatAttachment {
+  /** S3 object key — resolve with `resolveS3Url`. */
+  file: string;
+  file_name: string;
+  content_type: ChatAttachmentContentType;
+  size_bytes: number;
+}
 
 export interface NumberStepperField {
   key: string;
@@ -217,6 +233,8 @@ export interface AIChatMessage {
   media_url?: string | null;
   widget_response?: AIChatWidgetResponse | null;
   widgets?: AIChatWidget[] | null;
+  // Set on `attachment` messages; `content` is then an optional caption.
+  attachment?: ChatAttachment | null;
   sent_at?: string | null;
   // Backend audit field for HUMAN_ASSISTANT (admin takeover) messages. The
   // customer FE intentionally never renders this -- a generic "Concierge
