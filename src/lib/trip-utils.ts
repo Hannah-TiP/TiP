@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client';
+import { parseLocalDate } from '@/lib/format-date';
 import type { Lang } from '@/contexts/LanguageContext';
 import type { Quote } from '@/types/quote';
 import type { Trip, TripDocument, TripPlanItem, TripVersion } from '@/types/trip';
@@ -105,12 +106,6 @@ export function getTripReviewableItems(currentVersion?: TripVersion | null): Tri
         (item.item_type === 'activity' && !!item.activity_id),
     ),
   );
-}
-
-/** Parse "YYYY-MM-DD" as local date (avoids UTC midnight → previous day in western timezones). */
-function parseLocalDate(dateStr: string): Date {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d);
 }
 
 /**
