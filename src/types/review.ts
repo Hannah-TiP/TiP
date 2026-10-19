@@ -31,7 +31,11 @@ export interface Review {
   locked_at: string | null;
   deleted_at: string | null;
   comment: string | null;
-  /** Populated only for the author's own reviews — `[]` for everyone else (Q2). */
+  /**
+   * Public (SMA-643): non-authors get only non-hidden photos (hidden ones are
+   * removed server-side); the author's own copy includes every photo with its
+   * `hidden` flag — render via `visibleReviewPhotos()`.
+   */
   photos: ReviewPhoto[];
   schema_version: number;
   created_at: string | null;
@@ -112,7 +116,7 @@ export function isApprovedReview(review: Review): boolean {
   return review.moderation_status === 'visible';
 }
 
-/** The author-visible (non-hidden) photos of a review. */
+/** The displayable (non-hidden) photos of a review. */
 export function visibleReviewPhotos(review: Review): ReviewPhoto[] {
   return (review.photos ?? []).filter((photo) => !photo.hidden);
 }

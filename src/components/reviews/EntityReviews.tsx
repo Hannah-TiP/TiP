@@ -14,7 +14,7 @@ import StarRating from '@/components/reviews/StarRating';
 import { lazy, Suspense } from 'react';
 
 // Code-split (bundle-size gate): the strip chunk loads only when a review
-// actually has author-visible photos. React.lazy (not next/dynamic) — the
+// actually has visible (non-hidden) photos. React.lazy (not next/dynamic) — the
 // strip only mounts client-side after the reviews fetch, and next/dynamic's
 // loader machinery would be duplicated into every route chunk using this
 // component.
@@ -40,8 +40,8 @@ function ReviewItem({ entry }: { entry: ReviewWithAuthor }) {
   const { t, lang } = useLanguage();
   const { review, author } = entry;
   const submittedAt = formatReviewDate(review.created_at, lang);
-  // Photos are author-only this release (SMA-280 Q2) — the backend returns
-  // [] unless the viewer authored this review.
+  // Photos are public (SMA-643): the backend drops admin-hidden photos for
+  // non-authors; the author's own copy carries `hidden`, filtered here.
   const photos = visibleReviewPhotos(review).map((p) => p.image);
 
   return (

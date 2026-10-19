@@ -140,18 +140,23 @@ describe('EntityReviews', () => {
     expect(screen.queryByText('Load more reviews')).toBeNull();
   });
 
-  it("renders the author's own photos (non-hidden only) and no strip otherwise (SMA-280)", async () => {
+  it("renders the author's own photos (non-hidden only) as full-size links (SMA-280/643)", async () => {
     const own = makeReview(1, 5);
     own.review.photos = [
       {
-        image: { original: 'reviews/media/1/a.jpg', w128: 'reviews/media/1/a_w128.jpg' },
+        image: {
+          original: 'reviews/media/1/a.jpg',
+          w128: 'reviews/media/1/a_w128.jpg',
+          w1200: 'reviews/media/1/a_w1200.jpg',
+        },
         hidden: false,
       },
       { image: { original: 'reviews/media/1/b.jpg' }, hidden: true },
+      { image: { original: 'reviews/media/1/c.jpg' }, hidden: false },
     ];
-    const other = makeReview(2, 4); // backend returns [] for non-authors
+    const noPhotos = makeReview(2, 4);
     getReviewsByEntity.mockResolvedValue({
-      reviews: [own, other],
+      reviews: [own, noPhotos],
       aggregate: { average_rating: 4.5, review_count: 2 },
     });
     vi.stubEnv('NEXT_PUBLIC_S3_ENDPOINT', 'https://bucket.s3.amazonaws.com');
@@ -159,10 +164,59 @@ describe('EntityReviews', () => {
     render(<EntityReviews entityType="hotel" entityId={10} />);
 
     await screen.findByText('Comment 1');
-    // The strip is next/dynamic-loaded — wait for the chunk to resolve.
+    // The strip is React.lazy-loaded — wait for the chunk to resolve.
     const strips = await screen.findAllByTestId('review-photo-strip');
-    // Only the author's review gets a strip, with the hidden photo filtered.
+    // Only the review with photos gets a strip, with the hidden photo filtered.
     expect(strips).toHaveLength(1);
-    expect(strips[0].querySelectorAll('img')).toHaveLength(1);
+    expect(strips[0].querySelectorAll('img')).toHaveLength(2);
+
+    const links = screen.getAllByTestId('review-photo-link');
+    expect(links).toHaveLength(2);
+    // Large variant preferred, falling back to the original.
+    expect(links[0].getAttribute('href')).toBe(
+      'https://bucket.s3.amazonaws.com/reviews/media/1/a_w1200.jpg',
+    );
+    expect(links[1].getAttribute('href')).toBe(
+      'https://bucket.s3.amazonaws.com/reviews/media/1/c.jpg',
+    );
+    for (const link of links) {
+      expect(link.getAttribute('target')).toBe('_blank');
+      expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+      expect(link.getAttribute('aria-label')).toBe('View photo full size');
+    }
+  });
+
+  it("renders another traveller's public photos and never a hidden one (SMA-643)", async () => {
+    // Non-author payload: the backend already dropped hidden photos, but the
+    // client must still never render one if a `hidden: true` slips through.
+    const other = makeReview(2, 4);
+    other.review.photos = [
+      {
+        image: { original: 'reviews/media/2/pub.jpg', w128: 'reviews/media/2/pub_w128.jpg' },
+        hidden: false,
+      },
+      { image: { original: 'reviews/media/2/secret.jpg' }, hidden: true },
+    ];
+    const hiddenOnly = makeReview(3, 3);
+    hiddenOnly.review.photos = [{ image: { original: 'reviews/media/3/x.jpg' }, hidden: true }];
+    getReviewsByEntity.mockResolvedValue({
+      reviews: [other, hiddenOnly],
+      aggregate: { average_rating: 3.5, review_count: 2 },
+    });
+    vi.stubEnv('NEXT_PUBLIC_S3_ENDPOINT', 'https://bucket.s3.amazonaws.com');
+
+    render(<EntityReviews entityType="hotel" entityId={10} />);
+
+    await screen.findByText('Comment 2');
+    const strips = await screen.findAllByTestId('review-photo-strip');
+    expect(strips).toHaveLength(1);
+    expect(strips[0].closest('li[class*="border-b"]')?.textContent).toContain('Comment 2');
+    const links = screen.getAllByTestId('review-photo-link');
+    expect(links).toHaveLength(1);
+    expect(links[0].getAttribute('href')).toBe(
+      'https://bucket.s3.amazonaws.com/reviews/media/2/pub.jpg',
+    );
+    expect(document.body.innerHTML).not.toContain('secret.jpg');
+    expect(document.body.innerHTML).not.toContain('reviews/media/3/x.jpg');
   });
 });
