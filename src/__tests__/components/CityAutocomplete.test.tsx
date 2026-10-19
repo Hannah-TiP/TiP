@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { apiClient } from '@/lib/api-client';
 import type { CitySuggestion, CityWithLocation } from '@/types/location';
+import { newSessionToken } from '@/lib/session-token';
 
 vi.mock('@/lib/api-client', () => ({
   apiClient: {
@@ -197,5 +198,93 @@ describe('CityAutocomplete (Google Places suggestions, SMA-644)', () => {
     vi.mocked(apiClient.resolveCity).mockResolvedValueOnce(resolvedParis);
     fireEvent.mouseDown(screen.getByText('Paris'));
     await waitFor(() => expect(onChange).toHaveBeenCalledWith(42));
+  });
+
+  it('cancels a search scheduled just before a pick so it cannot reopen the dropdown', async () => {
+    vi.mocked(apiClient.getCitySuggestions).mockResolvedValue({
+      source: 'db',
+      suggestions: [seoulDb],
+    });
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+
+    typeInto('Seo');
+    await screen.findByText('Seoul');
+    // Keystroke schedules a debounced search; the pick lands inside the 300 ms.
+    typeInto('Seou');
+    fireEvent.mouseDown(screen.getByText('Seoul'));
+    expect(onChange).toHaveBeenLastCalledWith(7);
+
+    await new Promise((r) => setTimeout(r, 400));
+    expect(apiClient.getCitySuggestions).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Searching...')).toBeNull();
+    expect(screen.queryByRole('listitem')).toBeNull();
+  });
+
+  it('cancels a pending search when picking a place row that needs resolving', async () => {
+    vi.mocked(apiClient.getCitySuggestions).mockResolvedValue({
+      source: 'google',
+      suggestions: [parisGoogle],
+    });
+    vi.mocked(apiClient.resolveCity).mockResolvedValue(resolvedParis);
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+
+    typeInto('Par');
+    await screen.findByText('Île-de-France, France');
+    typeInto('Pari');
+    fireEvent.mouseDown(screen.getByText('Paris'));
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(42));
+
+    await new Promise((r) => setTimeout(r, 400));
+    expect(apiClient.getCitySuggestions).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('listitem')).toBeNull();
+  });
+
+  it('discards a late resolve when the user typed again while it was in flight', async () => {
+    vi.mocked(apiClient.getCitySuggestions).mockResolvedValue({
+      source: 'google',
+      suggestions: [parisGoogle],
+    });
+    let finishResolve: (c: CityWithLocation) => void = () => {};
+    vi.mocked(apiClient.resolveCity).mockImplementationOnce(
+      () =>
+        new Promise<CityWithLocation>((resolve) => {
+          finishResolve = resolve;
+        }),
+    );
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+
+    typeInto('Par');
+    fireEvent.mouseDown(await screen.findByText('Paris'));
+    expect(await screen.findByText('Loading city details…')).toBeTruthy();
+
+    typeInto('Lon');
+    await act(async () => finishResolve(resolvedParis));
+
+    expect(onChange).not.toHaveBeenCalledWith(42);
+    expect((screen.getByPlaceholderText('Search city...') as HTMLInputElement).value).toBe('Lon');
+    expect(screen.queryByText('Loading city details…')).toBeNull();
+  });
+});
+
+describe('newSessionToken', () => {
+  const v4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+  it('falls back to getRandomValues when crypto.randomUUID is unavailable (Safari < 15.4)', () => {
+    const real = globalThis.crypto;
+    vi.stubGlobal('crypto', {
+      getRandomValues: <T extends ArrayBufferView>(a: T) => real.getRandomValues(a),
+    });
+    try {
+      const a = newSessionToken();
+      const b = newSessionToken();
+      expect(a).toMatch(v4);
+      expect(b).toMatch(v4);
+      expect(a).not.toBe(b);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

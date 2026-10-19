@@ -536,13 +536,6 @@ class ApiClient {
     return response.data;
   }
 
-  async searchCities(q: string, language: string = 'en'): Promise<City[]> {
-    const response = await this.request<{ data: City[] }>(
-      `/cities?q=${encodeURIComponent(q)}&language=${language}`,
-    );
-    return response.data;
-  }
-
   /**
    * Google Places-backed home-city suggestions (SMA-644). One `sessionToken`
    * spans a whole typing session plus its resolve call (Places billing).

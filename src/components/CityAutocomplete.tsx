@@ -5,6 +5,7 @@ import { apiClient } from '@/lib/api-client';
 import { getLocalizedText } from '@/types/common';
 import type { CitySuggestion } from '@/types/location';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { newSessionToken } from '@/lib/session-token';
 
 interface CityAutocompleteProps {
   value: number | undefined;
@@ -38,6 +39,8 @@ export default function CityAutocomplete({
   const containerRef = useRef<HTMLDivElement>(null);
   const sessionTokenRef = useRef<string | null>(null);
   const searchSeqRef = useRef(0);
+  // Bumped on every pick, keystroke and clear so a late resolve is discarded.
+  const pickSeqRef = useRef(0);
   // The city we just picked, so the value→name effect needn't refetch it.
   const pickedRef = useRef<{ id: number; name: string; lang: string } | null>(null);
 
@@ -103,6 +106,9 @@ export default function CityAutocomplete({
     const q = e.target.value;
     setInputValue(q);
     setResolveError(false);
+    // Typing supersedes any in-flight resolve.
+    pickSeqRef.current++;
+    setIsResolving(false);
 
     // Clear selection when user starts typing
     if (value !== undefined) {
@@ -111,14 +117,22 @@ export default function CityAutocomplete({
     }
 
     // A new typing session starts a new Places session token.
-    if (!sessionTokenRef.current) sessionTokenRef.current = crypto.randomUUID();
+    if (!sessionTokenRef.current) sessionTokenRef.current = newSessionToken();
     const sessionToken = sessionTokenRef.current;
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => search(q, sessionToken), 300);
   }
 
+  function cancelPendingSearch() {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = null;
+    searchSeqRef.current++;
+    setIsSearching(false);
+  }
+
   function finishPick(cityId: number, name: string) {
+    cancelPendingSearch();
     pickedRef.current = { id: cityId, name, lang };
     sessionTokenRef.current = null;
     setInputValue(name);
@@ -130,6 +144,9 @@ export default function CityAutocomplete({
   async function handleSelect(suggestion: CitySuggestion) {
     if (isResolving) return;
     setResolveError(false);
+    const pickSeq = ++pickSeqRef.current;
+    // A search scheduled just before the pick must not reopen the dropdown.
+    cancelPendingSearch();
 
     if (suggestion.city_id !== null) {
       finishPick(suggestion.city_id, suggestion.primary_text);
@@ -140,18 +157,21 @@ export default function CityAutocomplete({
     setIsResolving(true);
     try {
       const city = await apiClient.resolveCity(suggestion.place_id, sessionTokenRef.current, lang);
+      if (pickSeq !== pickSeqRef.current) return;
       finishPick(city.id, getLocalizedText(city.name, lang) || suggestion.primary_text);
     } catch {
+      if (pickSeq !== pickSeqRef.current) return;
       // Keep the dropdown open so the user can retry or pick another row.
       setResolveError(true);
     } finally {
-      setIsResolving(false);
+      if (pickSeq === pickSeqRef.current) setIsResolving(false);
     }
   }
 
   function handleClear() {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    searchSeqRef.current++;
+    cancelPendingSearch();
+    pickSeqRef.current++;
+    setIsResolving(false);
     pickedRef.current = null;
     sessionTokenRef.current = null;
     setInputValue('');

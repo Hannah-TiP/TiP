@@ -92,13 +92,6 @@ describe('apiClient content detail fetches thread the active language (SMA-139)'
     expect(url()).toBe('/api/cities?language=kr');
   });
 
-  it('searchCities forwards the active language', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse({ data: [] }));
-    await apiClient.searchCities('par', 'kr');
-    expect(url()).toContain('language=kr');
-    expect(url()).toContain('q=par');
-  });
-
   it('getCitySuggestions sends q, session_token and the active language (SMA-644)', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ data: { source: 'google', suggestions: [] } }));
     await apiClient.getCitySuggestions('par is', 'tok-1', 'kr');
