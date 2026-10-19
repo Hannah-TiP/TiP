@@ -26,3 +26,34 @@ export interface City extends LocationBase {
   slug: string;
   link_services: boolean;
 }
+
+/**
+ * City enriched with its parent region + country names (mirrors backend
+ * `CityWithLocation`). Returned by POST /locations/cities/resolve (SMA-644).
+ */
+export interface CityWithLocation extends City {
+  region_name?: MultiLanguageString | string | null;
+  country_iso_code?: string | null;
+  country_name?: MultiLanguageString | string | null;
+}
+
+/** Where city suggestions came from: Google Places, or the DB fallback. */
+export type CitySuggestionSource = 'google' | 'db';
+
+/**
+ * One home-city picker suggestion (mirrors backend `CitySuggestion`).
+ * Google rows carry `place_id` (resolve on pick); DB-fallback rows carry
+ * `city_id` (use directly).
+ */
+export interface CitySuggestion {
+  place_id: string | null;
+  city_id: number | null;
+  primary_text: string;
+  secondary_text: string | null;
+}
+
+/** Mirrors backend `CitySuggestionsResponse` (the envelope's `data`). */
+export interface CitySuggestionsResponse {
+  source: CitySuggestionSource;
+  suggestions: CitySuggestion[];
+}

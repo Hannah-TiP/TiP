@@ -92,10 +92,19 @@ describe('apiClient content detail fetches thread the active language (SMA-139)'
     expect(url()).toBe('/api/cities?language=kr');
   });
 
-  it('searchCities forwards the active language', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse({ data: [] }));
-    await apiClient.searchCities('par', 'kr');
-    expect(url()).toContain('language=kr');
-    expect(url()).toContain('q=par');
+  it('getCitySuggestions sends q, session_token and the active language (SMA-644)', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: { source: 'google', suggestions: [] } }));
+    await apiClient.getCitySuggestions('par is', 'tok-1', 'kr');
+    expect(url()).toBe('/api/cities/suggestions?q=par+is&session_token=tok-1&language=kr');
+  });
+
+  it('resolveCity POSTs place_id + session_token with the active language (SMA-644)', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({ data: { id: 42 } }));
+    const city = await apiClient.resolveCity('ChIJ-x', 'tok-1', 'kr');
+    expect(url()).toBe('/api/cities/resolve?language=kr');
+    const init = mockFetch.mock.calls[0][1] as RequestInit;
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual({ place_id: 'ChIJ-x', session_token: 'tok-1' });
+    expect(city.id).toBe(42);
   });
 });

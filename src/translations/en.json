@@ -281,6 +281,8 @@
   "city_autocomplete.clear": "Clear",
   "city_autocomplete.searching": "Searching...",
   "city_autocomplete.no_results": "No cities found",
+  "city_autocomplete.resolving": "Loading city details…",
+  "city_autocomplete.resolve_error": "Couldn't save the city. Please try again.",
   "date_picker.check_in": "CHECK-IN",
   "date_picker.check_out": "CHECK-OUT",
   "date_picker.select_date": "Select date",

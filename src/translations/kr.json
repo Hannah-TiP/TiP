@@ -281,6 +281,8 @@
   "city_autocomplete.clear": "지우기",
   "city_autocomplete.searching": "검색 중...",
   "city_autocomplete.no_results": "도시를 찾을 수 없습니다",
+  "city_autocomplete.resolving": "도시 정보를 불러오는 중…",
+  "city_autocomplete.resolve_error": "도시를 저장하지 못했어요. 다시 시도해 주세요.",
   "date_picker.check_in": "체크인",
   "date_picker.check_out": "체크아웃",
   "date_picker.select_date": "날짜 선택",
