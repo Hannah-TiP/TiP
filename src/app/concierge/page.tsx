@@ -787,7 +787,11 @@ function ConciergeContent() {
               </span>
             </div>
           )}
+          {/* Keyed by chat so a picked attachment (and its error/uploading
+             state) never carries over into another trip's chat (SMA-647). */}
           <ChatInput
+            // Distinct from MessageList's sibling key.
+            key={`input-${activeSessionId}`}
             onSendMessage={(content) => handleSendMessage(content)}
             onSendAttachment={activeSession ? handleSendAttachment : undefined}
             onUploadAudio={handleUploadAudio}
