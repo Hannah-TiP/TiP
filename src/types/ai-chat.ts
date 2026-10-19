@@ -1,4 +1,5 @@
 import type { Trip, TripVersion } from '@/types/trip';
+import type { ReviewPhotoUploadRestrictions } from '@/types/review';
 
 export type AIChatSessionStatus = 'ai' | 'human';
 export type AIChatMessageRole = 'user' | 'assistant' | 'human_assistant' | 'system';
@@ -327,21 +328,18 @@ export interface ChatAttachmentUploadCredentialsRequest {
   content_type: string;
 }
 
-/** Mirrors backend `ChatAttachmentUploadRestrictions`. */
-export interface ChatAttachmentUploadRestrictions {
-  max_file_size_bytes: number;
-  allowed_content_types: string[];
-  expiry_minutes: number;
-}
-
-/** Mirrors backend `ChatAttachmentUploadCredentials` — presigned POST to S3. */
+/**
+ * Mirrors backend `ChatAttachmentUploadCredentials` — presigned POST to S3.
+ * The backend subclasses `ReviewPhotoUploadCredentials`, so `restrictions`
+ * reuses the review restrictions type.
+ */
 export interface ChatAttachmentUploadCredentials {
   upload_url: string;
   form_data: Record<string, string>;
   upload_key: string;
   bucket: string;
   region: string;
-  restrictions: ChatAttachmentUploadRestrictions;
+  restrictions: ReviewPhotoUploadRestrictions;
 }
 
 /** Mirrors backend `FinalizeChatAttachmentRequest`. */

@@ -383,11 +383,11 @@ function ConciergeContent() {
     content: string,
     widgetResponse: AIChatWidgetResponse | null,
     attachment: ChatAttachment | null = null,
-  ): Promise<boolean> {
+  ): Promise<void> {
     if (!targetSession.trip_id) {
       console.error('[Concierge] Session has no trip_id; cannot send message');
       setError('Chat session is missing its trip identifier. Please refresh.');
-      return false;
+      return;
     }
 
     const tripId = targetSession.trip_id;
@@ -497,14 +497,13 @@ function ConciergeContent() {
         setHighlightedFields(data.field_updated);
         setHighlightToken((t) => t + 1);
       }
-      return true;
     } catch (err) {
       console.error('[Concierge] Failed to send message:', err);
-      // Attachment sends surface their own (i18n) error in the composer,
-      // which keeps the file + caption for a retry.
-      if (!attachment) setError('Failed to send message. Please try again.');
       setPendingMessage(null);
-      return false;
+      // Attachment sends rethrow: the composer shows the (backend-localized)
+      // error and keeps the file + caption for a retry.
+      if (attachment) throw err;
+      setError('Failed to send message. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -527,8 +526,7 @@ function ConciergeContent() {
       tripId: targetSession.trip_id,
       language: lang,
     });
-    const sent = await sendChatMessage(targetSession, caption, null, attachment);
-    if (!sent) throw new Error('Failed to send attachment message');
+    await sendChatMessage(targetSession, caption, null, attachment);
   }
 
   async function handleWidgetSubmit(response: AIChatWidgetResponse) {

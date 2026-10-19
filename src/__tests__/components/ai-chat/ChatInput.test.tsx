@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import en from '@/translations/en.json';
 import ChatInput from '@/components/ai-chat/ChatInput';
+import { ApiError } from '@/lib/api-error';
 
 vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => {
@@ -138,6 +139,23 @@ describe('ChatInput attachments', () => {
     expect(screen.getByTestId('attachment-chip')).toBeDefined();
     expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('Passports');
     expect(sendButton().disabled).toBe(false);
+  });
+
+  it("shows the backend's localized message when the failure carries one", async () => {
+    const onSendAttachment = vi.fn(() =>
+      Promise.reject(new ApiError('지원하지 않는 파일 형식입니다.', 422)),
+    );
+    render(
+      <ChatInput onSendMessage={vi.fn()} onSendAttachment={onSendAttachment} isLoading={false} />,
+    );
+    pick(pdf());
+
+    await act(async () => {
+      fireEvent.click(sendButton());
+    });
+
+    expect(screen.getByRole('alert').textContent).toBe('지원하지 않는 파일 형식입니다.');
+    expect(screen.getByTestId('attachment-chip')).toBeDefined();
   });
 
   it('still sends plain text through onSendMessage', () => {

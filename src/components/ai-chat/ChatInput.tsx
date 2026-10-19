@@ -7,6 +7,7 @@ import {
   isImageFile,
   validateChatAttachmentFile,
 } from '@/lib/chat-attachment-upload';
+import { ApiError } from '@/lib/api-error';
 
 interface ChatInputProps {
   onSendMessage: (content: string) => void;
@@ -37,6 +38,8 @@ export default function ChatInput({
   const [previewFailed, setPreviewFailed] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [errorKey, setErrorKey] = useState<TranslationKeys | null>(null);
+  // Backend-localized v2 `message` from a failed upload/finalize/send.
+  const [serverError, setServerError] = useState<string | null>(null);
   const attachInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,13 +63,15 @@ export default function ChatInput({
     if (file && onSendAttachment) {
       setIsUploading(true);
       setErrorKey(null);
+      setServerError(null);
       try {
         await onSendAttachment(file, inputValue.trim());
         setFile(null);
         setInputValue('');
-      } catch {
+      } catch (err) {
         // Keep the file + caption so the customer can retry.
-        setErrorKey('chat.attachment_upload_error');
+        if (err instanceof ApiError) setServerError(err.message);
+        else setErrorKey('chat.attachment_upload_error');
       } finally {
         setIsUploading(false);
       }
@@ -89,6 +94,7 @@ export default function ChatInput({
       attachInputRef.current.value = '';
     }
     if (!picked) return;
+    setServerError(null);
     const invalid = validateChatAttachmentFile(picked);
     if (invalid) {
       setErrorKey(VALIDATION_ERROR_KEYS[invalid]);
@@ -116,7 +122,7 @@ export default function ChatInput({
 
   return (
     <div className="border-t border-gray-100 px-4 md:px-[60px] py-5">
-      {(file || errorKey) && (
+      {(file || errorKey || serverError) && (
         <div className="mb-2 flex flex-col gap-2">
           {file && (
             <div
@@ -171,6 +177,7 @@ export default function ChatInput({
                 onClick={() => {
                   setFile(null);
                   setErrorKey(null);
+                  setServerError(null);
                 }}
                 disabled={isUploading}
                 aria-label={t('chat.attachment_remove')}
@@ -194,9 +201,13 @@ export default function ChatInput({
               </button>
             </div>
           )}
-          {errorKey && (
-            <p role="alert" className="font-inter text-xs text-red-600">
-              {t(errorKey)}
+          {(serverError || errorKey) && (
+            <p
+              role="alert"
+              className="font-inter text-xs text-red-600"
+              data-testid="attachment-error"
+            >
+              {serverError ?? (errorKey && t(errorKey))}
             </p>
           )}
         </div>

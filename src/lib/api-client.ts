@@ -78,6 +78,7 @@ import type {
   UpdateReview,
 } from '@/types/review';
 import { ReviewPhotoFinalizeError } from '@/types/review';
+import { ApiError } from '@/lib/api-error';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -108,8 +109,10 @@ class ApiClient {
       if (response.status === 401) {
         window.dispatchEvent(new CustomEvent('auth:unauthorized'));
       }
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Request failed');
+      const error: { message?: string } = await response.json().catch(() => ({}));
+      // v2 envelope `message` = backend text; keep it identifiable (ApiError).
+      if (error.message) throw new ApiError(error.message, response.status);
+      throw new Error('Request failed');
     }
 
     return response.json();
