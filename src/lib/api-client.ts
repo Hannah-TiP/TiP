@@ -51,6 +51,10 @@ import type {
   SendAIChatMessageResponse,
   RequestHumanResponse,
   S3UploadCredentialsResponse,
+  ChatAttachment,
+  ChatAttachmentUploadCredentials,
+  ChatAttachmentUploadCredentialsRequest,
+  FinalizeChatAttachmentRequest,
 } from '@/types/ai-chat';
 import type { DestinationSuggestion } from '@/types/destination';
 import type { MemberFreeNightSummary } from '@/types/free-night';
@@ -862,6 +866,32 @@ class ApiClient {
     const response = await this.request<{ data: RequestHumanResponse }>(
       this.withLanguage(`/ai-chat/trips/${tripId}/request-human`, language),
       { method: 'POST' },
+    );
+    return response.data;
+  }
+
+  // SMA-647: customer chat attachments — presign, then (after the direct S3
+  // POST) finalize into a permanent ChatAttachment to send with a message.
+  async getChatAttachmentUploadCredentials(
+    tripId: number,
+    payload: ChatAttachmentUploadCredentialsRequest,
+    language?: string,
+  ): Promise<ChatAttachmentUploadCredentials> {
+    const response = await this.request<{ data: ChatAttachmentUploadCredentials }>(
+      this.withLanguage(`/ai-chat/trips/${tripId}/attachments/upload-credentials`, language),
+      { method: 'POST', body: JSON.stringify(payload) },
+    );
+    return response.data;
+  }
+
+  async finalizeChatAttachment(
+    tripId: number,
+    payload: FinalizeChatAttachmentRequest,
+    language?: string,
+  ): Promise<ChatAttachment> {
+    const response = await this.request<{ data: ChatAttachment }>(
+      this.withLanguage(`/ai-chat/trips/${tripId}/attachments/finalize`, language),
+      { method: 'POST', body: JSON.stringify(payload) },
     );
     return response.data;
   }

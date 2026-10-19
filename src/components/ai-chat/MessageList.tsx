@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { AIChatMessage, PendingMessage, AIChatWidgetResponse } from '@/types/ai-chat';
 import { useLanguage } from '@/contexts/LanguageContext';
-import MessageBubble from './MessageBubble';
+import MessageBubble, { UserAttachmentBody } from './MessageBubble';
 import WidgetResponseDisplay from './WidgetResponseDisplay';
 
 interface MessageListProps {
@@ -177,7 +177,16 @@ export default function MessageList({
           );
         })}
 
-        {pendingMessage && (
+        {pendingMessage?.attachment && (
+          <div className="flex flex-col items-end gap-1" data-testid="pending-message">
+            <UserAttachmentBody
+              attachment={pendingMessage.attachment}
+              caption={pendingMessage.content}
+            />
+          </div>
+        )}
+
+        {pendingMessage && !pendingMessage.attachment && (
           <div className="flex flex-col items-end gap-1" data-testid="pending-message">
             <div className="bg-[#1E3D2F] text-white rounded-2xl rounded-tr-sm px-5 py-4 max-w-[280px] md:max-w-[400px] break-words">
               {pendingMessage.widget_response ? (

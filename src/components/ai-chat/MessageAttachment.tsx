@@ -8,6 +8,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 interface MessageAttachmentProps {
   attachment: ChatAttachment;
+  /** Which side of the thread the bubble sits on — picks the "tail" corner. */
+  align?: 'start' | 'end';
 }
 
 export function isImageAttachment(attachment: ChatAttachment): boolean {
@@ -15,11 +17,12 @@ export function isImageAttachment(attachment: ChatAttachment): boolean {
 }
 
 /**
- * A concierge-sent chat attachment: images render as an inline thumbnail,
+ * A chat attachment (concierge- or customer-sent, SMA-647): images render as an inline thumbnail,
  * everything else (PDF) as a file chip. Both open the full file in a new tab.
  */
-export default function MessageAttachment({ attachment }: MessageAttachmentProps) {
+export default function MessageAttachment({ attachment, align = 'start' }: MessageAttachmentProps) {
   const { t } = useLanguage();
+  const tail = align === 'end' ? 'rounded-tr-sm' : 'rounded-tl-sm';
   const url = resolveS3Url(attachment.file);
   if (!url) return null;
 
@@ -30,7 +33,7 @@ export default function MessageAttachment({ attachment }: MessageAttachmentProps
         target="_blank"
         rel="noopener noreferrer"
         aria-label={t('chat.attachment_open_image').replace('{name}', attachment.file_name)}
-        className="block w-full max-w-[280px] overflow-hidden rounded-2xl rounded-tl-sm border border-gray-100 bg-gray-50"
+        className={`block w-full max-w-[280px] overflow-hidden rounded-2xl ${tail} border border-gray-100 bg-gray-50`}
         data-testid="message-attachment-image"
       >
         <Image
@@ -54,7 +57,7 @@ export default function MessageAttachment({ attachment }: MessageAttachmentProps
       target="_blank"
       rel="noopener noreferrer"
       aria-label={t('chat.attachment_open_file').replace('{name}', attachment.file_name)}
-      className="flex w-full max-w-[320px] items-center gap-3 rounded-2xl rounded-tl-sm border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50"
+      className={`flex w-full max-w-[320px] items-center gap-3 rounded-2xl ${tail} border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50`}
       data-testid="message-attachment-file"
     >
       <span

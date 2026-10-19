@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { AIChatMessage, AIChatWidgetResponse } from '@/types/ai-chat';
+import type { AIChatMessage, AIChatWidgetResponse, ChatAttachment } from '@/types/ai-chat';
 import WidgetRenderer from './widgets/WidgetRenderer';
 import WidgetResponseDisplay from './WidgetResponseDisplay';
 import MessageAttachment from './MessageAttachment';
@@ -33,6 +33,32 @@ function renderMarkdown(text: string) {
   });
 }
 
+/**
+ * Customer-sent attachment (SMA-647): the file right-aligned, then the caption
+ * in a regular user bubble. Shared with the optimistic pending message.
+ */
+export function UserAttachmentBody({
+  attachment,
+  caption,
+}: {
+  attachment: ChatAttachment | null;
+  caption?: string | null;
+}) {
+  return (
+    <div className="flex w-full flex-col items-end gap-2">
+      {attachment && <MessageAttachment attachment={attachment} align="end" />}
+      {caption && (
+        <div
+          className="bg-[#1E3D2F] text-white rounded-2xl rounded-tr-sm px-5 py-4 max-w-[280px] md:max-w-[400px] break-words"
+          data-testid="attachment-caption"
+        >
+          <p className="font-inter text-sm whitespace-pre-wrap">{caption}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface MessageBubbleProps {
   message: AIChatMessage;
   isUser: boolean;
@@ -54,6 +80,23 @@ export default function MessageBubble({
   const widgetResponse = message.widget_response ?? null;
   const hasWidgetResponse = isUser && widgetResponse !== null;
   const hasTextContent = !!message.content;
+
+  if (isUser && message.message_type === 'attachment') {
+    // SMA-647: the customer's own file, then an optional caption bubble.
+    return (
+      <div className="flex flex-col items-end gap-1" data-testid="message-user-attachment">
+        <UserAttachmentBody attachment={message.attachment ?? null} caption={message.content} />
+        {timestamp && (
+          <span
+            className="font-inter text-[10px] text-gray-400 mr-1"
+            data-testid="message-timestamp"
+          >
+            {timestamp}
+          </span>
+        )}
+      </div>
+    );
+  }
 
   if (isUser) {
     return (
