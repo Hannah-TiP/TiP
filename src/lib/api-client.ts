@@ -17,7 +17,13 @@ import type {
   MagazineArticleType,
   MagazineFacetOptions,
 } from '@/types/magazine';
-import type { City, Country, Region } from '@/types/location';
+import type {
+  City,
+  CitySuggestionsResponse,
+  CityWithLocation,
+  Country,
+  Region,
+} from '@/types/location';
 import { magazineArticlesQuery, type MagazineListFilters } from '@/lib/magazine-list';
 import type {
   Trip,
@@ -533,6 +539,38 @@ class ApiClient {
   async searchCities(q: string, language: string = 'en'): Promise<City[]> {
     const response = await this.request<{ data: City[] }>(
       `/cities?q=${encodeURIComponent(q)}&language=${language}`,
+    );
+    return response.data;
+  }
+
+  /**
+   * Google Places-backed home-city suggestions (SMA-644). One `sessionToken`
+   * spans a whole typing session plus its resolve call (Places billing).
+   */
+  async getCitySuggestions(
+    q: string,
+    sessionToken: string,
+    language?: string,
+  ): Promise<CitySuggestionsResponse> {
+    const params = new URLSearchParams({ q, session_token: sessionToken });
+    const response = await this.request<{ data: CitySuggestionsResponse }>(
+      this.withLanguage(`/cities/suggestions?${params.toString()}`, language),
+    );
+    return response.data;
+  }
+
+  /** Resolve a Google `place_id` to our city row (find-or-create, SMA-644). */
+  async resolveCity(
+    placeId: string,
+    sessionToken: string | null,
+    language?: string,
+  ): Promise<CityWithLocation> {
+    const response = await this.request<{ data: CityWithLocation }>(
+      this.withLanguage('/cities/resolve', language),
+      {
+        method: 'POST',
+        body: JSON.stringify({ place_id: placeId, session_token: sessionToken }),
+      },
     );
     return response.data;
   }

@@ -44,7 +44,8 @@ vi.mock('@/lib/api-client', () => ({
     getMyReferrals: vi.fn(),
     claimReferral: vi.fn(),
     getCityById: vi.fn(),
-    searchCities: vi.fn(),
+    getCitySuggestions: vi.fn(),
+    resolveCity: vi.fn(),
   },
 }));
 
