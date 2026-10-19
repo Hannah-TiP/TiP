@@ -363,6 +363,7 @@
   "reviews.photo_remove": "Remove",
   "reviews.photo_uploading": "Uploading…",
   "reviews.photo_alt": "Review photo",
+  "reviews.photo_view_full": "View photo full size",
   "reviews.pending_points_notice_figures": "Your review is being reviewed. {text} P is added once it's approved — {photo} P if it includes a photo.",
   "chat.audio_message": "Audio message",
   "chat.audio_unsupported": "Your browser does not support the audio element.",

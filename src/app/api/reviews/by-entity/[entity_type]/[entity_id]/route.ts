@@ -12,8 +12,9 @@ export async function GET(
     const { entity_type, entity_id } = await params;
 
     // The endpoint is PUBLIC, but it honors the auth header: the author's own
-    // reviews come back with their photos populated (SMA-280) — so forward
-    // the bearer token when a session exists.
+    // reviews come back with all their photos plus the per-photo `hidden`
+    // flag (non-authors get only non-hidden photos, SMA-643) — so forward the
+    // bearer token when a session exists.
     const session = await auth().catch(() => null);
     const accessToken = session?.accessToken;
 

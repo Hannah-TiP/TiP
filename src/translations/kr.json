@@ -363,6 +363,7 @@
   "reviews.photo_remove": "삭제",
   "reviews.photo_uploading": "업로드 중…",
   "reviews.photo_alt": "리뷰 사진",
+  "reviews.photo_view_full": "사진 크게 보기",
   "reviews.pending_points_notice_figures": "후기를 검토 중입니다. 승인되면 {text} P, 사진이 포함된 경우 {photo} P가 적립됩니다.",
   "chat.audio_message": "음성 메시지",
   "chat.audio_unsupported": "사용 중인 브라우저는 오디오 요소를 지원하지 않습니다.",
