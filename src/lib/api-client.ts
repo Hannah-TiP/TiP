@@ -51,6 +51,10 @@ import type {
   SendAIChatMessageResponse,
   RequestHumanResponse,
   S3UploadCredentialsResponse,
+  ChatAttachment,
+  ChatAttachmentUploadCredentials,
+  ChatAttachmentUploadCredentialsRequest,
+  FinalizeChatAttachmentRequest,
 } from '@/types/ai-chat';
 import type { DestinationSuggestion } from '@/types/destination';
 import type { MemberFreeNightSummary } from '@/types/free-night';
@@ -74,6 +78,7 @@ import type {
   UpdateReview,
 } from '@/types/review';
 import { ReviewPhotoFinalizeError } from '@/types/review';
+import { ApiError } from '@/lib/api-error';
 
 class ApiClient {
   private baseUrl = '/api';
@@ -104,8 +109,10 @@ class ApiClient {
       if (response.status === 401) {
         window.dispatchEvent(new CustomEvent('auth:unauthorized'));
       }
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Request failed');
+      const error: { message?: string } = await response.json().catch(() => ({}));
+      // v2 envelope `message` = backend text; keep it identifiable (ApiError).
+      if (error.message) throw new ApiError(error.message, response.status);
+      throw new Error('Request failed');
     }
 
     return response.json();
@@ -862,6 +869,32 @@ class ApiClient {
     const response = await this.request<{ data: RequestHumanResponse }>(
       this.withLanguage(`/ai-chat/trips/${tripId}/request-human`, language),
       { method: 'POST' },
+    );
+    return response.data;
+  }
+
+  // SMA-647: customer chat attachments — presign, then (after the direct S3
+  // POST) finalize into a permanent ChatAttachment to send with a message.
+  async getChatAttachmentUploadCredentials(
+    tripId: number,
+    payload: ChatAttachmentUploadCredentialsRequest,
+    language?: string,
+  ): Promise<ChatAttachmentUploadCredentials> {
+    const response = await this.request<{ data: ChatAttachmentUploadCredentials }>(
+      this.withLanguage(`/ai-chat/trips/${tripId}/attachments/upload-credentials`, language),
+      { method: 'POST', body: JSON.stringify(payload) },
+    );
+    return response.data;
+  }
+
+  async finalizeChatAttachment(
+    tripId: number,
+    payload: FinalizeChatAttachmentRequest,
+    language?: string,
+  ): Promise<ChatAttachment> {
+    const response = await this.request<{ data: ChatAttachment }>(
+      this.withLanguage(`/ai-chat/trips/${tripId}/attachments/finalize`, language),
+      { method: 'POST', body: JSON.stringify(payload) },
     );
     return response.data;
   }

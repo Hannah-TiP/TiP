@@ -78,6 +78,7 @@ export async function POST(request: NextRequest, context: { params: Promise<unkn
       widget_response,
       sent_at,
       include_draft,
+      attachment,
     } = body;
 
     const response = await fetch(`${API_BASE_URL}/api/v2/ai-chat/trips/${trip_id}/messages`, {
@@ -97,6 +98,8 @@ export async function POST(request: NextRequest, context: { params: Promise<unkn
         widget_response,
         sent_at,
         include_draft,
+        // SMA-647: finalized ChatAttachment for `message_type: 'attachment'`.
+        attachment,
       }),
     });
 

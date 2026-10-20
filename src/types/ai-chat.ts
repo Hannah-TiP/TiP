@@ -1,4 +1,5 @@
 import type { Trip, TripVersion } from '@/types/trip';
+import type { ReviewPhotoUploadRestrictions } from '@/types/review';
 
 export type AIChatSessionStatus = 'ai' | 'human';
 export type AIChatMessageRole = 'user' | 'assistant' | 'human_assistant' | 'system';
@@ -11,7 +12,11 @@ export type ChatAttachmentContentType =
   | 'image/gif'
   | 'application/pdf';
 
-/** A file the concierge team sent in the trip chat (`message_type: 'attachment'`). */
+/**
+ * A file attached to a trip-chat message (`message_type: 'attachment'`) —
+ * sent by the concierge team, or by the customer (SMA-647). HEIC uploads are
+ * converted server-side and come back as `image/jpeg`.
+ */
 export interface ChatAttachment {
   /** S3 object key — resolve with `resolveS3Url`. */
   file: string;
@@ -293,6 +298,8 @@ export interface SendAIChatMessageRequest {
   widget_response?: AIChatWidgetResponse | null;
   sent_at?: string | null;
   include_draft?: boolean;
+  // SMA-647: set with `message_type: 'attachment'`; `content` is the caption.
+  attachment?: ChatAttachment | null;
 }
 
 export interface SendAIChatMessageData {
@@ -312,7 +319,33 @@ export interface SendAIChatMessageResponse {
 export interface PendingMessage {
   content: string;
   widget_response: AIChatWidgetResponse | null;
+  attachment?: ChatAttachment | null;
   sent_at: string;
+}
+
+/** Mirrors backend `ChatAttachmentUploadCredentialsRequest` (SMA-647). */
+export interface ChatAttachmentUploadCredentialsRequest {
+  content_type: string;
+}
+
+/**
+ * Mirrors backend `ChatAttachmentUploadCredentials` — presigned POST to S3.
+ * The backend subclasses `ReviewPhotoUploadCredentials`, so `restrictions`
+ * reuses the review restrictions type.
+ */
+export interface ChatAttachmentUploadCredentials {
+  upload_url: string;
+  form_data: Record<string, string>;
+  upload_key: string;
+  bucket: string;
+  region: string;
+  restrictions: ReviewPhotoUploadRestrictions;
+}
+
+/** Mirrors backend `FinalizeChatAttachmentRequest`. */
+export interface FinalizeChatAttachmentRequest {
+  s3_key: string;
+  file_name: string;
 }
 
 export interface RequestHumanResponse {

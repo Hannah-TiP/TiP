@@ -25,7 +25,9 @@ import type {
   SendAIChatMessageData,
   PendingMessage,
   AIChatWidgetResponse,
+  ChatAttachment,
 } from '@/types/ai-chat';
+import { uploadChatAttachment } from '@/lib/chat-attachment-upload';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePreviewMode } from '@/hooks/usePreviewMode';
 import {
@@ -380,7 +382,8 @@ function ConciergeContent() {
     targetSession: AIChatSessionMetadata,
     content: string,
     widgetResponse: AIChatWidgetResponse | null,
-  ) {
+    attachment: ChatAttachment | null = null,
+  ): Promise<void> {
     if (!targetSession.trip_id) {
       console.error('[Concierge] Session has no trip_id; cannot send message');
       setError('Chat session is missing its trip identifier. Please refresh.');
@@ -392,6 +395,7 @@ function ConciergeContent() {
     setPendingMessage({
       content: widgetResponse ? '' : content,
       widget_response: widgetResponse,
+      attachment,
       sent_at: new Date().toISOString(),
     });
 
@@ -401,12 +405,20 @@ function ConciergeContent() {
     try {
       const response = await apiClient.sendMessage(
         tripId,
-        {
-          content: widgetResponse ? '' : content,
-          message_type: 'text',
-          widget_response: widgetResponse,
-          include_draft: isPreview,
-        },
+        attachment
+          ? {
+              // SMA-647: the caption is optional on attachment messages.
+              content: content || null,
+              message_type: 'attachment',
+              attachment,
+              include_draft: isPreview,
+            }
+          : {
+              content: widgetResponse ? '' : content,
+              message_type: 'text',
+              widget_response: widgetResponse,
+              include_draft: isPreview,
+            },
         lang,
       );
 
@@ -487,8 +499,11 @@ function ConciergeContent() {
       }
     } catch (err) {
       console.error('[Concierge] Failed to send message:', err);
-      setError('Failed to send message. Please try again.');
       setPendingMessage(null);
+      // Attachment sends rethrow: the composer shows the (backend-localized)
+      // error and keeps the file + caption for a retry.
+      if (attachment) throw err;
+      setError('Failed to send message. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -498,6 +513,20 @@ function ConciergeContent() {
     const targetSession = sessionOverride ?? activeSession?.session ?? null;
     if (!targetSession || !content.trim()) return;
     await sendChatMessage(targetSession, content, null);
+  }
+
+  // SMA-647: upload (presign → S3 → finalize), then send as an attachment
+  // message. Same path in AI and human modes. Rejects on failure so the
+  // composer keeps the file + caption.
+  async function handleSendAttachment(file: File, caption: string) {
+    const targetSession = activeSession?.session ?? null;
+    if (!targetSession) throw new Error('No active chat session');
+    const attachment = await uploadChatAttachment({
+      file,
+      tripId: targetSession.trip_id,
+      language: lang,
+    });
+    await sendChatMessage(targetSession, caption, null, attachment);
   }
 
   async function handleWidgetSubmit(response: AIChatWidgetResponse) {
@@ -756,8 +785,13 @@ function ConciergeContent() {
               </span>
             </div>
           )}
+          {/* Keyed by chat so a picked attachment (and its error/uploading
+             state) never carries over into another trip's chat (SMA-647). */}
           <ChatInput
+            // Distinct from MessageList's sibling key.
+            key={`input-${activeSessionId}`}
             onSendMessage={(content) => handleSendMessage(content)}
+            onSendAttachment={activeSession ? handleSendAttachment : undefined}
             onUploadAudio={handleUploadAudio}
             isLoading={isLoading}
           />

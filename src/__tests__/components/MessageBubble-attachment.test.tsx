@@ -168,3 +168,38 @@ describe('MessageBubble attachment messages', () => {
     expect(screen.queryByTestId('message-attachment-image')).toBeNull();
   });
 });
+
+describe('MessageBubble customer (user) attachment messages (SMA-647)', () => {
+  const userMessage = (overrides: Partial<AIChatMessage> = {}) =>
+    makeAttachmentMessage({ role: 'user', ...overrides });
+
+  it('renders the image attachment right-aligned with the user-side tail', () => {
+    render(<MessageBubble message={userMessage()} isUser />);
+
+    expect(screen.getByTestId('message-user-attachment')).toBeDefined();
+    const link = screen.getByTestId('message-attachment-image');
+    expect(link.getAttribute('href')).toBe(`${S3}/chat/attachments/abc123.jpg`);
+    expect(link.className).toContain('rounded-tr-sm');
+    expect(link.className).not.toContain('rounded-tl-sm');
+    expect(screen.queryByTestId('message-human-concierge')).toBeNull();
+  });
+
+  it('renders a PDF chip and the caption in a user bubble after it', () => {
+    render(
+      <MessageBubble message={userMessage({ attachment: PDF, content: 'Our passports' })} isUser />,
+    );
+
+    const chip = screen.getByTestId('message-attachment-file');
+    expect(screen.getByText('Itinerary.pdf')).toBeDefined();
+    const caption = screen.getByTestId('attachment-caption');
+    expect(caption.textContent).toBe('Our passports');
+    expect(caption.className).toContain('bg-[#1E3D2F]');
+    expect(chip.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('renders no caption bubble for a caption-less attachment', () => {
+    render(<MessageBubble message={userMessage({ content: null })} isUser />);
+    expect(screen.queryByTestId('attachment-caption')).toBeNull();
+    expect(screen.getByTestId('message-attachment-image')).toBeDefined();
+  });
+});
