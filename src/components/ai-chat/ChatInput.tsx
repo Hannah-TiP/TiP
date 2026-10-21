@@ -229,7 +229,7 @@ export default function ChatInput({
               type="button"
               onClick={() => attachInputRef.current?.click()}
               disabled={busy}
-              className="text-gray-400 hover:text-[#1E3D2F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="shrink-0 text-gray-400 hover:text-[#1E3D2F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title={t('chat.attach_file')}
               aria-label={t('chat.attach_file')}
             >
@@ -265,7 +265,7 @@ export default function ChatInput({
             <button
               onClick={() => audioInputRef.current?.click()}
               disabled={busy}
-              className="text-gray-400 hover:text-[#1E3D2F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="shrink-0 text-gray-400 hover:text-[#1E3D2F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title={t('chat.upload_audio')}
             >
               <svg
@@ -295,12 +295,12 @@ export default function ChatInput({
           onKeyDown={handleKeyDown}
           placeholder={file ? t('chat.attachment_caption_placeholder') : t('chat.placeholder')}
           disabled={busy}
-          className="flex-1 bg-transparent outline-none font-inter text-sm text-gray-800 placeholder:text-gray-400 disabled:opacity-50"
+          className="min-w-0 flex-1 bg-transparent outline-none font-inter text-sm text-gray-800 placeholder:text-gray-400 disabled:opacity-50"
         />
         <button
           onClick={() => void handleSend()}
           disabled={!canSend}
-          className="bg-[#1E3D2F] text-white rounded-lg px-5 py-2 font-inter text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          className="shrink-0 bg-[#1E3D2F] text-white rounded-lg px-5 py-2 font-inter text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {busy ? t('chat.sending') : t('chat.send')}
         </button>
