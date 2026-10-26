@@ -1,9 +1,10 @@
 'use client';
 
+import AppleLogo from '@/components/icons/AppleLogo';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { startGoogleRedirect } from '@/lib/google-oauth';
-import { startSocialRedirect } from '@/lib/social-oauth';
+import { APPLE_SERVICES_ID, startSocialRedirect } from '@/lib/social-oauth';
 import type { SocialProvider } from '@/lib/social-oauth';
 import { LUCIDE_ICONS } from '@/lib/lucide-icons';
 
@@ -35,7 +36,12 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
   const handleSocialClick = (provider: SocialProvider) => {
     startSocialRedirect({
       provider,
-      clientId: provider === 'kakao' ? KAKAO_REST_API_KEY : NAVER_CLIENT_ID,
+      clientId:
+        provider === 'apple'
+          ? APPLE_SERVICES_ID
+          : provider === 'kakao'
+            ? KAKAO_REST_API_KEY
+            : NAVER_CLIENT_ID,
       returnTo: '',
       ref: null,
       from: 'sign-in',
@@ -92,6 +98,15 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
                 </svg>
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => handleSocialClick('apple')}
+              aria-label={t('auth.continue_with_apple')}
+              data-testid="modal-apple-signin"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-black transition-opacity hover:opacity-90"
+            >
+              <AppleLogo className="h-5 w-5" />
+            </button>
             {KAKAO_REST_API_KEY && (
               <button
                 type="button"

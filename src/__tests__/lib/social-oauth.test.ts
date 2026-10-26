@@ -7,6 +7,8 @@ import {
   generateNonce,
   nonceStorageKey,
   startSocialRedirect,
+  APPLE_SERVICES_ID,
+  completionPath,
 } from '@/lib/social-oauth';
 
 describe('social-oauth helpers', () => {
@@ -43,6 +45,33 @@ describe('social-oauth helpers', () => {
       expect(url.searchParams.get('client_id')).toBe('naver-id');
       expect(url.searchParams.get('response_type')).toBe('code');
       expect(url.searchParams.has('scope')).toBe(false);
+    });
+  });
+
+  describe('Sign in with Apple (SMA-720)', () => {
+    it('asks for an id_token + name/email, posted back to the callback route', () => {
+      const url = new URL(
+        buildSocialAuthUrl({
+          provider: 'apple',
+          clientId: APPLE_SERVICES_ID,
+          redirectUri: 'https://www.travelinyourpocket.com/auth/apple/callback',
+          state: 'enc',
+        }),
+      );
+      expect(`${url.origin}${url.pathname}`).toBe('https://appleid.apple.com/auth/authorize');
+      expect(url.searchParams.get('client_id')).toBe('com.travelinyourpocket.tip.web');
+      expect(url.searchParams.get('response_type')).toBe('code id_token');
+      // Apple requires form_post whenever name/email are requested.
+      expect(url.searchParams.get('response_mode')).toBe('form_post');
+      expect(url.searchParams.get('scope')).toBe('name email');
+      expect(url.searchParams.get('state')).toBe('enc');
+    });
+
+    it('posts to the route handler, completes on its own page', () => {
+      expect(callbackPath('apple')).toBe('/auth/apple/callback');
+      expect(completionPath('apple')).toBe('/auth/apple/complete');
+      expect(completionPath('kakao')).toBe('/auth/kakao/callback');
+      expect(nonceStorageKey('apple')).not.toBe(nonceStorageKey('kakao'));
     });
   });
 

@@ -47,6 +47,24 @@ describe('POST /api/auth/social-login — auth-code flow passthrough (SMA-119)',
     expect(bodySentToBackend()).toEqual({ provider: 'google', auth_code: '4/0AbCdEf' });
   });
 
+  it("forwards Sign in with Apple's first-authorization name (SMA-720)", async () => {
+    await POST(
+      mockRequest({
+        provider: 'apple',
+        id_token: 'apple.jwt',
+        first_name: 'Hannah',
+        last_name: 'Kim',
+        extra: 'x',
+      }) as never,
+    );
+    expect(bodySentToBackend()).toEqual({
+      provider: 'apple',
+      id_token: 'apple.jwt',
+      first_name: 'Hannah',
+      last_name: 'Kim',
+    });
+  });
+
   it('still forwards the legacy id_token when present', async () => {
     await POST(mockRequest({ provider: 'google', id_token: 'legacy.jwt.token' }) as never);
 

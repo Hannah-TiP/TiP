@@ -9,7 +9,7 @@ import { buildAuthRedirectUrl, isSafeRedirectPath } from '@/lib/redirect-validat
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 import SocialSignInButtons from '@/components/SocialSignInButtons';
 import { startGoogleRedirect } from '@/lib/google-oauth';
-import { startSocialRedirect } from '@/lib/social-oauth';
+import { APPLE_SERVICES_ID, startSocialRedirect } from '@/lib/social-oauth';
 import type { SocialProvider } from '@/lib/social-oauth';
 import { useInAppBrowser } from '@/lib/in-app-browser';
 import PasswordInput from '@/components/PasswordInput';
@@ -73,7 +73,12 @@ function SignInForm() {
     setIsLoading(true);
     startSocialRedirect({
       provider,
-      clientId: provider === 'kakao' ? KAKAO_REST_API_KEY : NAVER_CLIENT_ID,
+      clientId:
+        provider === 'apple'
+          ? APPLE_SERVICES_ID
+          : provider === 'kakao'
+            ? KAKAO_REST_API_KEY
+            : NAVER_CLIENT_ID,
       returnTo: safeRedirect,
       ref: referralCode || null,
       from: 'sign-in',
@@ -82,7 +87,9 @@ function SignInForm() {
 
   const showKakao = !!KAKAO_REST_API_KEY && !webview.inApp;
   const showNaver = !!NAVER_CLIENT_ID && !webview.inApp;
-  const showAnySocial = (!!GOOGLE_CLIENT_ID && !webview.inApp) || showKakao || showNaver;
+  const showApple = !webview.inApp;
+  const showAnySocial =
+    (!!GOOGLE_CLIENT_ID && !webview.inApp) || showKakao || showNaver || showApple;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,10 +133,11 @@ function SignInForm() {
               {GOOGLE_CLIENT_ID && !webview.inApp && (
                 <GoogleSignInButton onClick={handleGoogleClick} disabled={isLoading} />
               )}
-              {(showKakao || showNaver) && (
+              {(showApple || showKakao || showNaver) && (
                 <SocialSignInButtons
                   onProviderClick={handleSocialClick}
                   providers={[
+                    ...(showApple ? (['apple'] as const) : []),
                     ...(showKakao ? (['kakao'] as const) : []),
                     ...(showNaver ? (['naver'] as const) : []),
                   ]}

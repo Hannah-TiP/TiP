@@ -113,6 +113,59 @@ describe('SocialOAuthCallback', () => {
     expect(href.value).toContain('redirect=%2Fconcierge');
   });
 
+  it('completes Sign in with Apple from the fragment, forwarding the name, and scrubs the URL', async () => {
+    const href = { value: '' };
+    const rawState = encodeState({
+      returnTo: '/concierge',
+      ref: null,
+      nonce: NONCE,
+      from: 'sign-in',
+    });
+    const fragment = new URLSearchParams({
+      id_token: 'apple.jwt',
+      first_name: 'Hannah',
+      last_name: 'Kim',
+      state: rawState,
+    });
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        hash: `#${fragment.toString()}`,
+        pathname: '/auth/apple/complete',
+        get href() {
+          return href.value;
+        },
+        set href(v: string) {
+          href.value = v;
+        },
+      },
+    });
+    const replaceState = vi
+      .spyOn(window.history, 'replaceState')
+      .mockImplementation(() => undefined);
+    window.sessionStorage.setItem(nonceStorageKey('apple'), NONCE);
+    searchParamsRef.current = new URLSearchParams();
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ data: { access_token: 'at', refresh_token: 'rt' } }),
+    });
+    signInMock.mockResolvedValue({ error: undefined });
+    getSessionMock.mockResolvedValue({ user: { onboarding_completed: true } });
+
+    render(<SocialOAuthCallback provider="apple" />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body as string)).toEqual({
+      provider: 'apple',
+      id_token: 'apple.jwt',
+      first_name: 'Hannah',
+      last_name: 'Kim',
+    });
+    expect(replaceState).toHaveBeenCalledWith(null, '', '/auth/apple/complete');
+    await waitFor(() => expect(href.value).toBe('/concierge'));
+    replaceState.mockRestore();
+  });
+
   it('shows an error and does not sign in on a CSRF nonce mismatch', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     window.sessionStorage.setItem(nonceStorageKey('kakao'), 'stored-nonce');

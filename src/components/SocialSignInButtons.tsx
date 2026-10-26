@@ -1,5 +1,6 @@
 'use client';
 
+import AppleLogo from '@/components/icons/AppleLogo';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { SocialProvider } from '@/lib/social-oauth';
 
@@ -13,7 +14,8 @@ interface SocialSignInButtonsProps {
 }
 
 /**
- * Branded "Continue with Kakao" / "Continue with Naver" buttons (SMA-114),
+ * Branded "Continue with Apple" (SMA-720, Apple's black style), "Continue
+ * with Kakao" / "Continue with Naver" buttons (SMA-114),
  * shown alongside the Google button on the sign-in and register pages.
  *
  * Each button drives the full-page top-level redirect auth-code flow — same
@@ -32,6 +34,19 @@ export default function SocialSignInButtons({
 
   return (
     <div className="flex flex-col gap-3">
+      {providers.includes('apple') && (
+        <button
+          type="button"
+          onClick={() => onProviderClick('apple')}
+          disabled={disabled}
+          data-testid="apple-signin-button"
+          className="flex h-10 w-full items-center justify-center gap-3 rounded-lg bg-black px-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          <AppleLogo className="h-[18px] w-[18px] shrink-0" />
+          <span>{t('auth.continue_with_apple')}</span>
+        </button>
+      )}
+
       {providers.includes('kakao') && (
         <button
           type="button"

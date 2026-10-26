@@ -17,7 +17,21 @@
  */
 
 /** Social providers that use this shared redirect helper. */
-export type SocialProvider = 'kakao' | 'naver';
+export type SocialProvider = 'kakao' | 'naver' | 'apple';
+
+/**
+ * Sign in with Apple on the web (SMA-720) uses the Services ID, grouped under
+ * the iOS app's App ID so one Apple user is one TiP account on both. Public,
+ * not a secret — hence a constant, not a NEXT_PUBLIC_* build arg.
+ */
+export const APPLE_SERVICES_ID = 'com.travelinyourpocket.tip.web';
+
+/** Where the callback page for each provider lives. Apple differs: it POSTs
+ *  (`form_post`) to {@link callbackPath}, a route handler that hands the
+ *  result to this page in the URL fragment. */
+export function completionPath(provider: SocialProvider): string {
+  return provider === 'apple' ? '/auth/apple/complete' : callbackPath(provider);
+}
 
 interface ProviderConfig {
   /** The provider's OAuth authorization endpoint. */
@@ -40,6 +54,12 @@ const PROVIDER_CONFIG: Record<SocialProvider, ProviderConfig> = {
     authEndpoint: 'https://nid.naver.com/oauth2.0/authorize',
     scope: '',
     nonceStorageKey: 'tip-naver-oauth-nonce',
+  },
+  apple: {
+    authEndpoint: 'https://appleid.apple.com/auth/authorize',
+    // Requesting name/email REQUIRES response_mode=form_post (Apple).
+    scope: 'name email',
+    nonceStorageKey: 'tip-apple-oauth-nonce',
   },
 };
 
@@ -115,9 +135,12 @@ export function buildSocialAuthUrl(params: {
   const query = new URLSearchParams({
     client_id: params.clientId,
     redirect_uri: params.redirectUri,
-    response_type: 'code',
+    // Apple: the identity token comes back directly (the backend verifies
+    // it like the app's), POSTed to the redirect URI.
+    response_type: params.provider === 'apple' ? 'code id_token' : 'code',
     state: params.state,
   });
+  if (params.provider === 'apple') query.set('response_mode', 'form_post');
   if (config.scope) query.set('scope', config.scope);
   return `${config.authEndpoint}?${query.toString()}`;
 }

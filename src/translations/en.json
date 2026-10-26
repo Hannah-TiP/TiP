@@ -461,6 +461,7 @@
   "auth.sign_in_subtitle": "Access your personalized travel recommendations",
   "auth.continue_with_google": "Continue with Google",
   "auth.continue_with_kakao": "Continue with Kakao",
+  "auth.continue_with_apple": "Continue with Apple",
   "auth.continue_with_naver": "Continue with Naver",
   "auth.error_google_failed": "Google sign-in failed",
   "auth.error_google_cancelled": "Google sign-in was cancelled. Please try again.",
