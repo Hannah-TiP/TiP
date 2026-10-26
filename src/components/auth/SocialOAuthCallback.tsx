@@ -35,9 +35,17 @@ function SocialCallback({ provider }: SocialOAuthCallbackProps) {
     if (startedRef.current) return;
     startedRef.current = true;
 
-    const code = searchParams.get('code');
-    const rawState = searchParams.get('state');
-    const oauthError = searchParams.get('error');
+    // Apple (SMA-720) arrives via its form_post route handler with the
+    // values in the URL fragment; Kakao/Naver bring `?code` in the query.
+    const fromFragment = provider === 'apple';
+    const params = fromFragment ? new URLSearchParams(window.location.hash.slice(1)) : searchParams;
+    if (fromFragment && window.location.hash) {
+      // Drop the identity token from the address bar / history at once.
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+    const code = params.get(fromFragment ? 'id_token' : 'code');
+    const rawState = params.get('state');
+    const oauthError = params.get('error');
     const state = decodeState(rawState);
 
     const back = originPath(state);
@@ -81,11 +89,21 @@ function SocialCallback({ provider }: SocialOAuthCallbackProps) {
         const res = await fetch('/api/auth/social-login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Language: lang },
-          body: JSON.stringify({
-            provider,
-            auth_code: code,
-            ...(rawState ? { state: rawState } : {}),
-          }),
+          body: JSON.stringify(
+            fromFragment
+              ? {
+                  provider,
+                  id_token: code,
+                  // Apple sends the name on the first authorization only.
+                  ...(params.get('first_name') ? { first_name: params.get('first_name') } : {}),
+                  ...(params.get('last_name') ? { last_name: params.get('last_name') } : {}),
+                }
+              : {
+                  provider,
+                  auth_code: code,
+                  ...(rawState ? { state: rawState } : {}),
+                },
+          ),
         });
 
         if (!res.ok) {

@@ -461,6 +461,7 @@
   "auth.sign_in_subtitle": "나만의 맞춤 여행 추천을 확인하세요",
   "auth.continue_with_google": "Google로 계속하기",
   "auth.continue_with_kakao": "카카오로 계속하기",
+  "auth.continue_with_apple": "Apple로 계속하기",
   "auth.continue_with_naver": "네이버로 계속하기",
   "auth.error_google_failed": "Google 로그인에 실패했습니다",
   "auth.error_google_cancelled": "Google 로그인이 취소되었습니다. 다시 시도해 주세요.",

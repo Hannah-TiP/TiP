@@ -15,7 +15,7 @@ import { maxBenefitPoints } from '@/lib/benefits';
 import { formatPoints } from '@/lib/points-wallet';
 import { buildAuthRedirectUrl } from '@/lib/redirect-validation';
 import { startGoogleRedirect } from '@/lib/google-oauth';
-import { startSocialRedirect } from '@/lib/social-oauth';
+import { APPLE_SERVICES_ID, startSocialRedirect } from '@/lib/social-oauth';
 import type { SocialProvider } from '@/lib/social-oauth';
 import { useInAppBrowser } from '@/lib/in-app-browser';
 
@@ -82,7 +82,12 @@ function RegisterForm() {
     setIsLoading(true);
     startSocialRedirect({
       provider,
-      clientId: provider === 'kakao' ? KAKAO_REST_API_KEY : NAVER_CLIENT_ID,
+      clientId:
+        provider === 'apple'
+          ? APPLE_SERVICES_ID
+          : provider === 'kakao'
+            ? KAKAO_REST_API_KEY
+            : NAVER_CLIENT_ID,
       returnTo: rawRedirect,
       ref: referralCode || null,
       from: 'register',
@@ -91,7 +96,9 @@ function RegisterForm() {
 
   const showKakao = !!KAKAO_REST_API_KEY && !webview.inApp;
   const showNaver = !!NAVER_CLIENT_ID && !webview.inApp;
-  const showAnySocial = (!!GOOGLE_CLIENT_ID && !webview.inApp) || showKakao || showNaver;
+  const showApple = !webview.inApp;
+  const showAnySocial =
+    (!!GOOGLE_CLIENT_ID && !webview.inApp) || showKakao || showNaver || showApple;
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,10 +272,11 @@ function RegisterForm() {
                 {GOOGLE_CLIENT_ID && !webview.inApp && (
                   <GoogleSignInButton onClick={handleGoogleClick} disabled={isLoading} />
                 )}
-                {(showKakao || showNaver) && (
+                {(showApple || showKakao || showNaver) && (
                   <SocialSignInButtons
                     onProviderClick={handleSocialClick}
                     providers={[
+                      ...(showApple ? (['apple'] as const) : []),
                       ...(showKakao ? (['kakao'] as const) : []),
                       ...(showNaver ? (['naver'] as const) : []),
                     ]}

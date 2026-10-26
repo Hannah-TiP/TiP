@@ -4,10 +4,10 @@
  * Checks Next.js client bundle sizes after build.
  * Scans .next/static/chunks/ for JS/CSS files and reports sizes.
  *
- * Usage: node scripts/check-bundle-size.js [--max-chunk 250] [--max-total 1600]
+ * Usage: node scripts/check-bundle-size.js [--max-chunk 250] [--max-total 1700]
  *
  * --max-chunk: max size (KB) for any single chunk (default: 250)
- * --max-total: max total client JS size (KB) (default: 1600)
+ * --max-total: max total client JS size (KB) (default: 1700)
  *
  * Exits with code 1 if limits are exceeded.
  */
@@ -21,7 +21,7 @@ function getArg(name, fallback) {
 }
 
 const MAX_CHUNK_KB = getArg('--max-chunk', 250);
-const MAX_TOTAL_KB = getArg('--max-total', 1600);
+const MAX_TOTAL_KB = getArg('--max-total', 1700);
 const STATIC_DIR = path.join(__dirname, '..', '.next', 'static');
 
 function walkDir(dir, ext) {

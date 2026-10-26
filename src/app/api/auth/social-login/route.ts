@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { provider, auth_code, id_token, state } = body;
+    const { provider, auth_code, id_token, state, first_name, last_name } = body;
     const language = request.headers.get('Language') || 'en';
 
     const response = await fetch(`${API_BASE_URL}/api/v2/auth/social-login`, {
@@ -27,6 +27,9 @@ export async function POST(request: NextRequest) {
         ...(auth_code ? { auth_code } : {}),
         ...(id_token ? { id_token } : {}),
         ...(state ? { state } : {}),
+        // Sign in with Apple's first-authorization name (SMA-720).
+        ...(typeof first_name === 'string' && first_name ? { first_name } : {}),
+        ...(typeof last_name === 'string' && last_name ? { last_name } : {}),
       }),
     });
 
