@@ -233,3 +233,77 @@ test.describe('SearchBar mobile collapse (375px)', () => {
     });
   }
 });
+
+// SMA-768 regression: the overlay must APPLY what the user taps, not just open
+// on-screen. A CSS-hidden desktop twin of each picker used to be mounted
+// alongside the overlay's, and its outside-click `mousedown` listener closed
+// the picker before the tap's `click` landed — every pick was silently
+// discarded. Real touch taps (hasTouch) reproduce the phone event sequence.
+test.describe('SearchBar mobile overlay applies picks (375px, touch)', () => {
+  test.use({ viewport: PHONE, hasTouch: true, isMobile: true });
+
+  test.beforeEach(async ({ page }) => {
+    await stubLists(page);
+    await page.route('**/api/destinations/search**', async (route: Route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id: 7,
+              type: 'city',
+              name: { en: 'Paris', kr: '파리' },
+              slug: 'paris',
+              region_name: { en: 'Ile-de-France', kr: '일드프랑스' },
+              country_name: { en: 'France', kr: '프랑스' },
+            },
+          ],
+        }),
+      });
+    });
+  });
+
+  test('tapped destination, dates, guests, trip type and travel style are applied', async ({
+    page,
+  }) => {
+    await gotoPage(page, '/');
+    await page.getByTestId('searchbar-mobile-cta').tap();
+    const overlay = page.getByTestId('searchbar-overlay');
+    await expect(overlay).toBeVisible();
+
+    // Only the overlay's picker may be mounted (no hidden desktop twin).
+    await overlay.getByText('Destination', { exact: true }).tap();
+    await expect(page.getByPlaceholder('Search destinations...')).toHaveCount(1);
+    await overlay.getByText('Paris', { exact: true }).tap();
+    await expect(page.getByPlaceholder('Search destinations...')).toHaveCount(0);
+    await expect(overlay.getByText('Paris', { exact: true })).toBeVisible();
+    await expect(overlay.getByText('Where to?')).toHaveCount(0);
+
+    // Dates: two future days in the second (next-month) calendar, so the test
+    // never lands on a disabled past day regardless of when it runs.
+    await overlay.getByText('Check-in', { exact: true }).tap();
+    await overlay.getByRole('button', { name: '10', exact: true }).nth(1).tap();
+    await overlay.getByRole('button', { name: '15', exact: true }).nth(1).tap();
+    await overlay.getByText('Done', { exact: true }).tap();
+    await expect(overlay.getByText('Add date')).toHaveCount(0);
+    await expect(overlay.getByText(/^\d{4}-\d{2}-10$/)).toBeVisible();
+    await expect(overlay.getByText(/^\d{4}-\d{2}-15$/)).toBeVisible();
+
+    await overlay.getByText('Guests', { exact: true }).tap();
+    await overlay.getByRole('button', { name: '+', exact: true }).first().tap();
+    await expect(overlay.getByText('3 Guests', { exact: true })).toBeVisible();
+    // The guests picker stays open for multiple +/- taps; close it via Done.
+    await overlay.getByText('Done', { exact: true }).tap();
+
+    await overlay.getByText('Trip Type', { exact: true }).tap();
+    await overlay.getByText('Business', { exact: true }).tap();
+    await expect(overlay.getByText('Bleisure', { exact: true })).toHaveCount(0);
+    await expect(overlay.getByText('Business', { exact: true })).toBeVisible();
+
+    await overlay.getByText('Travel Style', { exact: true }).tap();
+    await overlay.getByText('Romantic Escape', { exact: true }).tap();
+    await expect(overlay.getByText('Any Style', { exact: true })).toHaveCount(0);
+    await expect(overlay.getByText('Romantic Escape', { exact: true })).toBeVisible();
+  });
+});
