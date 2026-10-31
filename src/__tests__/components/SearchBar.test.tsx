@@ -350,11 +350,10 @@ describe('SearchBar mobile overlay', () => {
       // Open the field inside the overlay (last label match is the overlay's).
       fireEvent.click(screen.getAllByText(label).slice(-1)[0]);
 
-      // The overlay's dropdown is the last rendered instance (the desktop bar
-      // shares activeDropdown state and may also render the field).
-      const dropdowns = screen.getAllByTestId(dropdownTestId);
-      const overlayDropdown = dropdowns[dropdowns.length - 1];
-      expect(overlayDropdown.getAttribute('data-mobile')).toBe('true');
+      // Exactly ONE instance: the desktop bar shares activeDropdown state, and
+      // a hidden desktop twin's outside-click listener used to swallow every
+      // overlay pick (SMA-768). getByTestId throws if a twin is mounted.
+      expect(screen.getByTestId(dropdownTestId).getAttribute('data-mobile')).toBe('true');
     },
   );
 
@@ -377,12 +376,10 @@ describe('SearchBar mobile overlay', () => {
     fireEvent.click(screen.getByTestId('searchbar-mobile-cta'));
 
     // Pick a destination inside the overlay, then submit via the overlay's
-    // own "Plan My Trip" button (the last one in DOM order). The desktop bar
-    // and the overlay share activeDropdown state, so the mocked dropdown can
-    // render in both — click the last "Pick Paris" (the overlay's).
+    // own "Plan My Trip" button (the last one in DOM order). Only the
+    // overlay's picker is mounted while it is open (SMA-768).
     fireEvent.click(screen.getAllByText('Destination').slice(-1)[0]);
-    const pickParis = screen.getAllByText('Pick Paris');
-    fireEvent.click(pickParis[pickParis.length - 1]);
+    fireEvent.click(screen.getByText('Pick Paris'));
 
     const submitButtons = screen.getAllByRole('button', { name: /plan my trip/i });
     fireEvent.click(submitButtons[submitButtons.length - 1]);

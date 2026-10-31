@@ -192,56 +192,64 @@ export default function SearchBar() {
           </button>
         </div>
 
-        {/* Desktop dropdowns */}
-        {activeDropdown === 'destination' && (
-          <DestinationDropdown
-            value={destination?.name || ''}
-            onChange={(picked) => {
-              setDestination(picked);
-              setActiveDropdown(null);
-            }}
-            onClose={() => setActiveDropdown(null)}
-          />
-        )}
+        {/* Desktop dropdowns. Mounted only while the mobile overlay is closed:
+            both layouts share `activeDropdown`, so without this guard opening a
+            picker in the overlay also mounts its CSS-hidden desktop twin, whose
+            document-level outside-click listener treats every tap inside the
+            overlay picker as "outside" and closes it before the click lands. */}
+        {!isOverlayOpen && (
+          <>
+            {activeDropdown === 'destination' && (
+              <DestinationDropdown
+                value={destination?.name || ''}
+                onChange={(picked) => {
+                  setDestination(picked);
+                  setActiveDropdown(null);
+                }}
+                onClose={() => setActiveDropdown(null)}
+              />
+            )}
 
-        {activeDropdown === 'dates' && (
-          <DatePickerDropdown
-            checkIn={dates.checkIn}
-            checkOut={dates.checkOut}
-            onChange={(checkIn, checkOut) => setDates({ checkIn, checkOut })}
-            onClose={() => setActiveDropdown(null)}
-          />
-        )}
+            {activeDropdown === 'dates' && (
+              <DatePickerDropdown
+                checkIn={dates.checkIn}
+                checkOut={dates.checkOut}
+                onChange={(checkIn, checkOut) => setDates({ checkIn, checkOut })}
+                onClose={() => setActiveDropdown(null)}
+              />
+            )}
 
-        {activeDropdown === 'guests' && (
-          <GuestsDropdown
-            adults={guests.adults}
-            kids={guests.children}
-            onChange={(adults, children) => setGuests({ adults, children })}
-            onClose={() => setActiveDropdown(null)}
-          />
-        )}
+            {activeDropdown === 'guests' && (
+              <GuestsDropdown
+                adults={guests.adults}
+                kids={guests.children}
+                onChange={(adults, children) => setGuests({ adults, children })}
+                onClose={() => setActiveDropdown(null)}
+              />
+            )}
 
-        {activeDropdown === 'tripType' && (
-          <TripTypeDropdown
-            value={tripType}
-            onChange={(val) => {
-              setTripType(val);
-              setActiveDropdown(null);
-            }}
-            onClose={() => setActiveDropdown(null)}
-          />
-        )}
+            {activeDropdown === 'tripType' && (
+              <TripTypeDropdown
+                value={tripType}
+                onChange={(val) => {
+                  setTripType(val);
+                  setActiveDropdown(null);
+                }}
+                onClose={() => setActiveDropdown(null)}
+              />
+            )}
 
-        {activeDropdown === 'travelStyle' && (
-          <TravelStyleDropdown
-            value={travelStyle}
-            onChange={(val) => {
-              setTravelStyle(val);
-              setActiveDropdown(null);
-            }}
-            onClose={() => setActiveDropdown(null)}
-          />
+            {activeDropdown === 'travelStyle' && (
+              <TravelStyleDropdown
+                value={travelStyle}
+                onChange={(val) => {
+                  setTravelStyle(val);
+                  setActiveDropdown(null);
+                }}
+                onClose={() => setActiveDropdown(null)}
+              />
+            )}
+          </>
         )}
       </div>
 
