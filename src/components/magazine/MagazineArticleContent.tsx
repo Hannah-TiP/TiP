@@ -11,6 +11,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import MagazineRelationSections from '@/components/magazine/MagazineRelationSections';
 import MagazineGuideSteps from '@/components/magazine/MagazineGuideSteps';
 import MagazineTypeMeta from '@/components/magazine/MagazineTypeMeta';
+import { NEW_CONCIERGE_CHAT_HREF } from '@/lib/concierge-links';
 
 interface MagazineArticleContentProps {
   detail: MagazineArticleDetail;
@@ -440,7 +441,8 @@ export default function MagazineArticleContent({ detail }: MagazineArticleConten
               {t('magazine.cta_body')}
             </p>
             <Link
-              href="/concierge"
+              href={NEW_CONCIERGE_CHAT_HREF}
+              prefetch={false}
               className="mt-8 inline-block rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
             >
               {t('magazine.cta_button')}

@@ -245,6 +245,40 @@ describe('Concierge — prefill consumption', () => {
   });
 });
 
+const existingSession = {
+  session: { id: 1, user_id: 1, trip_id: 123, status: 'ai' as const, last_message_at: new Date().toISOString() },
+  trip: { id: 123, user_id: 1, status: 'draft' as const, schema_version: 1 },
+};
+
+describe('Concierge — ?new=1 start-a-conversation CTAs (SMA-788)', () => {
+  it('opens a NEW chat even when an older session exists, then strips the flag', async () => {
+    vi.mocked(apiClient.listChatSessions).mockResolvedValue([existingSession]);
+    searchParamsRef.current = new URLSearchParams('new=1');
+
+    const ConciergePage = await importPage();
+    render(<ConciergePage />);
+
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/concierge', { scroll: false }));
+    expect(aiChatUtils.createTripChatSession).toHaveBeenCalledTimes(1);
+    // The flag is stripped only AFTER the new chat exists (the app's SMA-787 trap).
+    expect(vi.mocked(aiChatUtils.createTripChatSession).mock.invocationCallOrder[0]).toBeLessThan(
+      replaceMock.mock.invocationCallOrder[0],
+    );
+    expect(apiClient.getChatHistory).not.toHaveBeenCalledWith(123, expect.anything());
+    expect(apiClient.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('a bare /concierge still resumes the existing session', async () => {
+    vi.mocked(apiClient.listChatSessions).mockResolvedValue([existingSession]);
+
+    const ConciergePage = await importPage();
+    render(<ConciergePage />);
+
+    await waitFor(() => expect(apiClient.getChatHistory).toHaveBeenCalled());
+    expect(aiChatUtils.createTripChatSession).not.toHaveBeenCalled();
+  });
+});
+
 describe('Concierge — unauth redirect preserves prefill params', () => {
   it('redirects unauthed users to /sign-in with the full prefill URL in the redirect param', async () => {
     sessionRef.current = { status: 'unauthenticated', data: null };

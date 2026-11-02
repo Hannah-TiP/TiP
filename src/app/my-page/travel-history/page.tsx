@@ -13,6 +13,7 @@ import {
   toReviewableEntities,
   type TripWithVersion,
 } from '@/lib/trip-utils';
+import { NEW_CONCIERGE_CHAT_HREF } from '@/lib/concierge-links';
 
 interface TripReviewStatus {
   reviewed: number;
@@ -131,7 +132,8 @@ export default function TravelHistory() {
           <div className="text-center py-20">
             <p className="text-gray-500 text-lg mb-4">{t('travel_history.empty')}</p>
             <Link
-              href="/concierge"
+              href={NEW_CONCIERGE_CHAT_HREF}
+              prefetch={false}
               className="inline-block px-6 py-3 bg-[#1E3D2F] text-white rounded-full text-sm font-medium hover:bg-[#2a5240] transition-colors"
             >
               {t('travel_history.plan_first')}

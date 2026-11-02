@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import Footer from '@/components/Footer';
 import PartnersMarquee from '@/components/PartnersMarquee';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { NEW_CONCIERGE_CHAT_HREF } from '@/lib/concierge-links';
 
 type Bilingual = { en: string; kr: string };
 
@@ -261,7 +262,7 @@ export default function AboutPage() {
   // visitors land on /register first. We don't add a callback param — once
   // they finish signup + onboarding the existing flow already routes them
   // into the app, and the About-page CTA's job ends there.
-  const ctaHref = status === 'authenticated' ? '/concierge' : '/register';
+  const ctaHref = status === 'authenticated' ? NEW_CONCIERGE_CHAT_HREF : '/register';
 
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
