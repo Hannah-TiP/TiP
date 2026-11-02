@@ -74,7 +74,7 @@ function EmptyState() {
         <p className="text-gray-500 mb-8">{t('my_page.no_upcoming_subtitle')}</p>
         <Link
           href={NEW_CONCIERGE_CHAT_HREF}
-              prefetch={false}
+          prefetch={false}
           className="inline-block px-8 py-3 bg-[#1E3D2F] text-white rounded-full text-sm font-medium hover:bg-[#2a5240] transition-colors"
         >
           {t('my_page.plan_a_trip')}

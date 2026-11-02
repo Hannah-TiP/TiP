@@ -433,7 +433,7 @@ function SignatureJourneysContent() {
           </p>
           <Link
             href={NEW_CONCIERGE_CHAT_HREF}
-              prefetch={false}
+            prefetch={false}
             className="mt-8 inline-block rounded-lg bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-white/90"
           >
             {t('signature_journeys.cta_button')}

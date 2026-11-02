@@ -246,7 +246,13 @@ describe('Concierge — prefill consumption', () => {
 });
 
 const existingSession = {
-  session: { id: 1, user_id: 1, trip_id: 123, status: 'ai' as const, last_message_at: new Date().toISOString() },
+  session: {
+    id: 1,
+    user_id: 1,
+    trip_id: 123,
+    status: 'ai' as const,
+    last_message_at: new Date().toISOString(),
+  },
   trip: { id: 123, user_id: 1, status: 'draft' as const, schema_version: 1 },
 };
 
