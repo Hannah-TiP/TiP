@@ -7,6 +7,7 @@ import { getTripsWithVersions, type TripWithVersion } from '@/lib/trip-utils';
 import { useLanguage, type Lang } from '@/contexts/LanguageContext';
 import { formatDate as formatDateI18n } from '@/lib/format-date';
 import { getStatusLabel, isTravelHistoryStatus } from '@/lib/trip-display';
+import { NEW_CONCIERGE_CHAT_HREF } from '@/lib/concierge-links';
 
 const STATUS_PRIORITY = [
   'draft',
@@ -72,7 +73,8 @@ function EmptyState() {
         <h2 className="text-2xl font-bold text-gray-900 mb-3">{t('my_page.no_upcoming_trips')}</h2>
         <p className="text-gray-500 mb-8">{t('my_page.no_upcoming_subtitle')}</p>
         <Link
-          href="/concierge"
+          href={NEW_CONCIERGE_CHAT_HREF}
+          prefetch={false}
           className="inline-block px-8 py-3 bg-[#1E3D2F] text-white rounded-full text-sm font-medium hover:bg-[#2a5240] transition-colors"
         >
           {t('my_page.plan_a_trip')}

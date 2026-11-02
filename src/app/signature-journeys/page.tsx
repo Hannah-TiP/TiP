@@ -12,6 +12,7 @@ import { buildSuggestions } from '@/lib/signature-journey-search';
 import type { CitySuggestion, SignatureJourneySuggestions } from '@/lib/signature-journey-search';
 import type { SignatureJourney } from '@/types/signatureJourney';
 import type { City } from '@/types/location';
+import { NEW_CONCIERGE_CHAT_HREF } from '@/lib/concierge-links';
 
 /** Debounce window for the server-side `q` search. */
 const SEARCH_DEBOUNCE_MS = 280;
@@ -431,7 +432,8 @@ function SignatureJourneysContent() {
             {t('signature_journeys.cta_subtitle')}
           </p>
           <Link
-            href="/concierge"
+            href={NEW_CONCIERGE_CHAT_HREF}
+            prefetch={false}
             className="mt-8 inline-block rounded-lg bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-white/90"
           >
             {t('signature_journeys.cta_button')}

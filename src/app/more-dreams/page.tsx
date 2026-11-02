@@ -16,6 +16,7 @@ import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Activity } from '@/types/activity';
 import type { Restaurant } from '@/types/restaurant';
 import type { City } from '@/types/location';
+import { NEW_CONCIERGE_CHAT_HREF } from '@/lib/concierge-links';
 
 const MORE_DREAMS_PER_PAGE = 12;
 
@@ -448,7 +449,8 @@ function MoreDreamsContent() {
             {t('more_dreams.cta_body')}
           </p>
           <Link
-            href="/concierge"
+            href={NEW_CONCIERGE_CHAT_HREF}
+            prefetch={false}
             className="mt-8 inline-block rounded-lg bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-colors hover:bg-white/90"
           >
             {t('more_dreams.cta_button')}

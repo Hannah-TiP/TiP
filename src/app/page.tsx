@@ -8,13 +8,14 @@ import Footer from '@/components/Footer';
 import WelcomeOfferPopup from '@/components/WelcomeOfferPopup';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LUCIDE_ICONS } from '@/lib/lucide-icons';
+import { NEW_CONCIERGE_CHAT_HREF } from '@/lib/concierge-links';
 
 const elevateCards = [
   {
     titleKey: 'home.card_ai_title',
     descriptionKey: 'home.card_ai_body',
     icon: '✨',
-    link: '/concierge',
+    link: NEW_CONCIERGE_CHAT_HREF,
   },
   {
     titleKey: 'home.card_stays_title',
@@ -26,7 +27,7 @@ const elevateCards = [
     titleKey: 'home.card_itineraries_title',
     descriptionKey: 'home.card_itineraries_body',
     icon: '📍',
-    link: '/concierge',
+    link: NEW_CONCIERGE_CHAT_HREF,
   },
 ] as const;
 
@@ -215,7 +216,8 @@ export default function HomePage() {
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
-              href="/concierge"
+              href={NEW_CONCIERGE_CHAT_HREF}
+              prefetch={false}
               className="flex items-center gap-2 rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
             >
               <span className="icon-lucide">{LUCIDE_ICONS.sparkles}</span>
@@ -327,7 +329,8 @@ export default function HomePage() {
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="/concierge"
+              href={NEW_CONCIERGE_CHAT_HREF}
+              prefetch={false}
               className="flex items-center gap-2 rounded-full bg-green-dark px-8 py-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
             >
               <span className="icon-lucide">{LUCIDE_ICONS.sparkles}</span>

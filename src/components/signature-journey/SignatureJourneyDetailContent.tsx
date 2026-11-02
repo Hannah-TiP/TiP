@@ -16,6 +16,7 @@ import { apiClient } from '@/lib/api-client';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import { toFaqItems, type SignatureJourney } from '@/types/signatureJourney';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { NEW_CONCIERGE_CHAT_HREF } from '@/lib/concierge-links';
 
 interface SignatureJourneyDetailContentProps {
   slug: string;
@@ -218,7 +219,8 @@ export default function SignatureJourneyDetailContent({
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/concierge"
+              href={NEW_CONCIERGE_CHAT_HREF}
+              prefetch={false}
               className="rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
             >
               {t('detail.chat_with_concierge')}

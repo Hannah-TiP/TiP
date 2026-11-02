@@ -40,6 +40,7 @@ import {
   sortedMessages,
   type ChatMessageStore,
 } from '@/lib/chat-message-store';
+import { isNewChatRequest, NEW_CHAT_PARAM } from '@/lib/concierge-links';
 
 function sortSessions(
   bundles: AIChatSessionWithTrip[],
@@ -307,6 +308,17 @@ function ConciergeContent() {
             setError('Failed to start your search. Please try again.');
             // Fall through to default bootstrap so the user isn't stranded.
           }
+        }
+
+        // A "start a conversation" CTA (SMA-788) — never resume the last
+        // thread. Create + select (which stores the active-session id) BEFORE
+        // stripping the flag, so nothing can resume the old chat in between
+        // (the app's SMA-787 regression); stripping keeps a refresh from
+        // opening yet another new chat.
+        if (isNewChatRequest(searchParams.get(NEW_CHAT_PARAM))) {
+          await handleNewChat();
+          if (!cancelled) router.replace('/concierge', { scroll: false });
+          return;
         }
 
         const tripIdParam = searchParams.get('trip_id');

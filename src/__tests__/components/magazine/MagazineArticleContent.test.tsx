@@ -129,7 +129,7 @@ describe('MagazineArticleContent — cta block button (SMA-266)', () => {
     // The generic footer CTA is unchanged and links to /concierge.
     const footer = screen.getByTestId('magazine-footer-cta');
     const footerLink = footer.querySelector('a');
-    expect(footerLink?.getAttribute('href')).toBe('/concierge');
+    expect(footerLink?.getAttribute('href')).toBe('/concierge?new=1');
     expect(footerLink?.textContent).toBe(
       (enTranslations as Record<string, string>)['magazine.cta_button'],
     );

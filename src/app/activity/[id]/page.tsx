@@ -10,6 +10,7 @@ import { apiClient } from '@/lib/api-client';
 import { getImageUrl, getLocalizedText } from '@/types/common';
 import type { Activity } from '@/types/activity';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { NEW_CONCIERGE_CHAT_HREF } from '@/lib/concierge-links';
 
 export default function ActivityDetailPage() {
   const { t, lang } = useLanguage();
@@ -201,7 +202,8 @@ export default function ActivityDetailPage() {
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Link
-              href="/concierge"
+              href={NEW_CONCIERGE_CHAT_HREF}
+              prefetch={false}
               className="rounded-full bg-white px-8 py-4 text-[13px] font-semibold text-green-dark transition-opacity hover:opacity-90"
             >
               {t('detail.chat_with_concierge')}
