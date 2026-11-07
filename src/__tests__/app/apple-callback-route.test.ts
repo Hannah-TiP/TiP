@@ -69,4 +69,29 @@ describe('POST /auth/apple/callback', () => {
     );
     expect(fragmentOf(response).get('error')).toBe('invalid_request');
   });
+
+  it('sends the Android app flow (state client=app) to the app deep link instead', async () => {
+    const appState = Buffer.from(JSON.stringify({ nonce: 'n1', client: 'app' })).toString(
+      'base64url',
+    );
+    const response = await POST(post({ id_token: 't', state: appState }));
+    const location = response.headers.get('Location') ?? '';
+    expect(location.startsWith('tip://auth/apple#')).toBe(true);
+    expect(Object.fromEntries(new URLSearchParams(location.split('#')[1]))).toEqual({
+      id_token: 't',
+      state: appState,
+    });
+    const cancelled = await POST(post({ error: 'user_cancelled_authorize', state: appState }));
+    expect(cancelled.headers.get('Location')).toMatch(/^tip:\/\/auth\/apple#error=access_denied/);
+  });
+
+  it('keeps web states (no client, or a garbage state) on the web completion page', async () => {
+    const webState = Buffer.from(JSON.stringify({ nonce: 'n1', from: 'sign-in' })).toString(
+      'base64url',
+    );
+    expect(fragmentOf(await POST(post({ id_token: 't', state: webState }))).get('id_token')).toBe(
+      't',
+    );
+    expect(fragmentOf(await POST(post({ id_token: 't', state: '%%%' }))).get('id_token')).toBe('t');
+  });
 });
