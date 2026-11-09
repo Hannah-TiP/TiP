@@ -30,7 +30,9 @@ export default function WidgetRenderer({ block, onSubmit, disabled }: WidgetRend
     case 'restaurant_carousel':
       return <RestaurantCarousel widget={block} onSubmit={onSubmit} disabled={disabled} />;
     case 'quote_sent':
-      return <QuoteSent widget={block} disabled={disabled} />;
+      // A link to the quote, not an answer to a question: it stays tappable
+      // after later messages (the concierge usually follows up with text).
+      return <QuoteSent widget={block} />;
     default:
       return null;
   }

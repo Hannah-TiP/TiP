@@ -7,7 +7,6 @@ import type { AIChatQuoteSentWidget } from '@/types/ai-chat';
 
 interface Props {
   widget: AIChatQuoteSentWidget;
-  disabled?: boolean;
 }
 
 function formatSentAt(sentAt: string, lang: Lang): string {
@@ -19,7 +18,7 @@ function formatSentAt(sentAt: string, lang: Lang): string {
   });
 }
 
-export default function QuoteSent({ widget, disabled }: Props) {
+export default function QuoteSent({ widget }: Props) {
   const router = useRouter();
   const { t, lang } = useLanguage();
   const handleOpen = () => router.push(`/quotes/${widget.quote_id}`);
@@ -61,8 +60,7 @@ export default function QuoteSent({ widget, disabled }: Props) {
       <button
         type="button"
         onClick={handleOpen}
-        disabled={disabled}
-        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#1E3D2F] px-5 py-2.5 font-inter text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#1E3D2F] px-5 py-2.5 font-inter text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
       >
         {cta}
         <svg
