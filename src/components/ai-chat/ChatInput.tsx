@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, KeyboardEvent } from 'react';
+import { useCallback, useEffect, useState, useRef, KeyboardEvent } from 'react';
 import { useLanguage, type TranslationKeys } from '@/contexts/LanguageContext';
 import {
   CHAT_ATTACHMENT_ACCEPT,
@@ -8,6 +8,11 @@ import {
   validateChatAttachmentFile,
 } from '@/lib/chat-attachment-upload';
 import { ApiError } from '@/lib/api-error';
+import {
+  formatRecordingTime,
+  useVoiceRecorder,
+  type VoiceRecorderError,
+} from '@/components/ai-chat/useVoiceRecorder';
 
 interface ChatInputProps {
   onSendMessage: (content: string) => void;
@@ -16,7 +21,12 @@ interface ChatInputProps {
    * upload/send failure so the composer keeps the file + text for a retry.
    */
   onSendAttachment?: (file: File, caption: string) => Promise<void>;
-  onUploadAudio?: (file: File) => void;
+  /**
+   * SMA-896: speech-to-text for the mic. Resolves the transcript, which is
+   * put into the message box for the customer to review and send. Must
+   * reject (ApiError for a localized server message) on failure.
+   */
+  onTranscribeVoice?: (audio: Blob) => Promise<string>;
   isLoading: boolean;
 }
 
@@ -25,10 +35,16 @@ const VALIDATION_ERROR_KEYS: Record<'type' | 'size', TranslationKeys> = {
   size: 'chat.attachment_size_error',
 };
 
+const VOICE_ERROR_KEYS: Record<VoiceRecorderError, TranslationKeys> = {
+  unsupported: 'chat.voice_unsupported',
+  permission: 'chat.voice_permission_denied',
+  failed: 'chat.voice_transcribe_error',
+};
+
 export default function ChatInput({
   onSendMessage,
   onSendAttachment,
-  onUploadAudio,
+  onTranscribeVoice,
   isLoading,
 }: ChatInputProps) {
   const { t } = useLanguage();
@@ -40,8 +56,39 @@ export default function ChatInput({
   const [errorKey, setErrorKey] = useState<TranslationKeys | null>(null);
   // Backend-localized v2 `message` from a failed upload/finalize/send.
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const attachInputRef = useRef<HTMLInputElement>(null);
-  const audioInputRef = useRef<HTMLInputElement>(null);
+  const textInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRecorded = useCallback(
+    async (audio: Blob) => {
+      if (!onTranscribeVoice) return;
+      setIsTranscribing(true);
+      try {
+        const text = await onTranscribeVoice(audio);
+        // Append to anything already typed; the customer reviews, then sends.
+        setInputValue((prev) => (prev.trim() ? `${prev.trimEnd()} ${text}` : text));
+        textInputRef.current?.focus();
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 413) setErrorKey('chat.voice_too_long');
+        else if (err instanceof ApiError && err.message) setServerError(err.message);
+        else setErrorKey('chat.voice_transcribe_error');
+      } finally {
+        setIsTranscribing(false);
+      }
+    },
+    [onTranscribeVoice],
+  );
+
+  const handleRecorderError = useCallback((error: VoiceRecorderError) => {
+    setServerError(null);
+    setErrorKey(VOICE_ERROR_KEYS[error]);
+  }, []);
+
+  const recorder = useVoiceRecorder({
+    onRecorded: (audio) => void handleRecorded(audio),
+    onError: handleRecorderError,
+  });
 
   // Object-URL thumbnail for an image attachment, revoked on change/unmount.
   useEffect(() => {
@@ -55,7 +102,7 @@ export default function ChatInput({
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  const busy = isLoading || isUploading;
+  const busy = isLoading || isUploading || isTranscribing || recorder.isRecording;
   const canSend = !busy && (file !== null || inputValue.trim() !== '');
 
   const handleSend = async () => {
@@ -104,20 +151,10 @@ export default function ChatInput({
     setFile(picked);
   };
 
-  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && onUploadAudio) {
-      // Validate file size (max 20MB)
-      if (file.size > 20 * 1024 * 1024) {
-        alert(t('chat.audio_size_error'));
-        return;
-      }
-      onUploadAudio(file);
-    }
-    // Reset input
-    if (audioInputRef.current) {
-      audioInputRef.current.value = '';
-    }
+  const startRecording = () => {
+    setErrorKey(null);
+    setServerError(null);
+    void recorder.start();
   };
 
   return (
@@ -251,59 +288,112 @@ export default function ChatInput({
           </>
         )}
 
-        {/* Audio upload button */}
-        {onUploadAudio && (
-          <>
-            <input
-              ref={audioInputRef}
-              type="file"
-              accept="audio/*"
-              onChange={handleAudioChange}
-              className="hidden"
-              disabled={busy}
+        {/* Voice input (SMA-896): record -> transcript into the message box */}
+        {onTranscribeVoice && !recorder.isRecording && (
+          <button
+            type="button"
+            onClick={startRecording}
+            disabled={busy}
+            className="shrink-0 text-gray-400 hover:text-[#1E3D2F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={t('chat.voice_start')}
+            aria-label={t('chat.voice_start')}
+            data-testid="voice-start"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" y1="19" x2="12" y2="23" />
+              <line x1="8" y1="23" x2="16" y2="23" />
+            </svg>
+          </button>
+        )}
+
+        {recorder.isRecording ? (
+          <div
+            className="flex min-w-0 flex-1 items-center gap-3"
+            role="status"
+            data-testid="voice-recording"
+          >
+            <span
+              aria-hidden="true"
+              className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-500"
             />
+            <span className="min-w-0 flex-1 truncate font-inter text-sm text-gray-800">
+              {t('chat.voice_recording').replace(
+                '{time}',
+                formatRecordingTime(recorder.elapsedSeconds),
+              )}
+            </span>
             <button
-              onClick={() => audioInputRef.current?.click()}
-              disabled={busy}
-              className="shrink-0 text-gray-400 hover:text-[#1E3D2F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title={t('chat.upload_audio')}
+              type="button"
+              onClick={recorder.cancel}
+              className="shrink-0 text-gray-400 hover:text-gray-700"
+              title={t('chat.voice_cancel')}
+              aria-label={t('chat.voice_cancel')}
+              data-testid="voice-cancel"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                aria-hidden="true"
               >
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                <line x1="12" y1="19" x2="12" y2="23" />
-                <line x1="8" y1="23" x2="16" y2="23" />
+                <path d="M18 6 6 18M6 6l12 12" />
               </svg>
+            </button>
+            <button
+              type="button"
+              onClick={recorder.stop}
+              className="shrink-0 rounded-lg bg-red-500 px-4 py-2 font-inter text-sm text-white hover:opacity-90"
+              data-testid="voice-stop"
+            >
+              {t('chat.voice_stop')}
+            </button>
+          </div>
+        ) : (
+          <>
+            <input
+              ref={textInputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={
+                isTranscribing
+                  ? t('chat.voice_transcribing')
+                  : file
+                    ? t('chat.attachment_caption_placeholder')
+                    : t('chat.placeholder')
+              }
+              disabled={busy}
+              className="min-w-0 flex-1 bg-transparent outline-none font-inter text-sm text-gray-800 placeholder:text-gray-400 disabled:opacity-50"
+            />
+            <button
+              onClick={() => void handleSend()}
+              disabled={!canSend}
+              className="shrink-0 bg-[#1E3D2F] text-white rounded-lg px-5 py-2 font-inter text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading || isUploading ? t('chat.sending') : t('chat.send')}
             </button>
           </>
         )}
-
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={file ? t('chat.attachment_caption_placeholder') : t('chat.placeholder')}
-          disabled={busy}
-          className="min-w-0 flex-1 bg-transparent outline-none font-inter text-sm text-gray-800 placeholder:text-gray-400 disabled:opacity-50"
-        />
-        <button
-          onClick={() => void handleSend()}
-          disabled={!canSend}
-          className="shrink-0 bg-[#1E3D2F] text-white rounded-lg px-5 py-2 font-inter text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {busy ? t('chat.sending') : t('chat.send')}
-        </button>
       </div>
     </div>
   );

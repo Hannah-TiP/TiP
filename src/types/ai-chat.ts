@@ -353,25 +353,7 @@ export interface RequestHumanResponse {
   assistant_message: AIChatMessage | null;
 }
 
-export interface S3UploadCredentialsResponse {
-  success?: boolean;
-  code?: number;
-  data?: {
-    upload_url: string;
-    form_data: Record<string, string>;
-    upload_key: string;
-    bucket: string;
-    region: string;
-    public_url: string;
-    restrictions: {
-      max_file_size: string;
-      allowed_types: string[];
-      expiry_minutes: number;
-      upload_method: string;
-      access_level: string;
-    };
-  };
-  upload_url?: string;
-  form_data?: Record<string, string>;
-  public_url?: string;
+/** Mirrors backend `VoiceTranscription` (SMA-896). */
+export interface VoiceTranscription {
+  text: string;
 }
