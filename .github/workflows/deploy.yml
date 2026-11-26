@@ -111,7 +111,7 @@ jobs:
           retention-days: 7
 
   e2e-pr-smoke:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # Playwright 1.58 has no Chromium deps for ubuntu-latest (26.04) yet
     needs: [test-and-build]
     if: github.event_name == 'pull_request'
     steps:
@@ -480,7 +480,7 @@ jobs:
           echo "All production pages responding"
 
   e2e-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # Playwright 1.58 has no Chromium deps for ubuntu-latest (26.04) yet
     needs: [build-and-push-docker, deploy-preview, deploy-production]
     if: |
       always() &&
