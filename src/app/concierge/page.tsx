@@ -547,70 +547,11 @@ function ConciergeContent() {
     await sendChatMessage(targetSession, '', response);
   }
 
-  async function handleUploadAudio(file: File) {
+  // SMA-896: concierge mic — recorded clip -> transcript for the composer.
+  async function handleTranscribeVoice(audio: Blob): Promise<string> {
     const targetSession = activeSession?.session ?? null;
-    if (!targetSession) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const ext = file.name.split('.').pop() || 'm4a';
-      const credentialsResponse = await apiClient.getS3UploadCredentials(
-        String(targetSession.trip_id),
-        'audio',
-        ext,
-      );
-      const credentialsData = credentialsResponse.data || credentialsResponse;
-      const uploadUrl = credentialsData.upload_url;
-      const formData = credentialsData.form_data;
-      const mediaUrl = credentialsData.public_url;
-
-      if (!uploadUrl || !formData || !mediaUrl) {
-        throw new Error('Invalid credentials response');
-      }
-
-      await apiClient.uploadToS3(uploadUrl, formData, file);
-      const response = await apiClient.sendAudioMessage(targetSession.trip_id, mediaUrl);
-      const data = response.data;
-
-      if (!data) {
-        throw new Error('Missing audio message response data');
-      }
-
-      setMessageStore((prev) =>
-        mergeMessages(
-          prev,
-          data.assistant_message
-            ? [data.user_message, data.assistant_message]
-            : [data.user_message],
-        ),
-      );
-
-      const updatedLastMessageAt =
-        data.assistant_message?.sent_at ?? data.user_message.sent_at ?? new Date().toISOString();
-
-      setRawSessions((prev) => {
-        const updated = prev.find((item) => item.session.id === targetSession.id);
-        if (!updated) return prev;
-        const patched: AIChatSessionWithTrip = {
-          ...updated,
-          session: { ...updated.session, last_message_at: updatedLastMessageAt },
-        };
-        const others = prev.filter((item) => item.session.id !== targetSession.id);
-        return [patched, ...others];
-      });
-
-      logChatResponse({
-        userMessage: data.user_message,
-        assistantMessage: data.assistant_message,
-      });
-    } catch (err) {
-      console.error('[Concierge] Failed to upload audio:', err);
-      setError('Failed to upload audio. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    if (!targetSession) throw new Error('No active chat');
+    return apiClient.transcribeVoice(targetSession.trip_id, audio, lang);
   }
 
   if (authLoading || isBootstrapping) {
@@ -804,7 +745,7 @@ function ConciergeContent() {
             key={`input-${activeSessionId}`}
             onSendMessage={(content) => handleSendMessage(content)}
             onSendAttachment={activeSession ? handleSendAttachment : undefined}
-            onUploadAudio={handleUploadAudio}
+            onTranscribeVoice={activeSession ? handleTranscribeVoice : undefined}
             isLoading={isLoading}
           />
         </div>

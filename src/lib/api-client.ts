@@ -46,16 +46,16 @@ import type {
   AIChatSessionMetadata,
   AIChatSessionsResponse,
   AIChatSessionWithTrip,
-  AIChatMessageType,
   SendAIChatMessageRequest,
   SendAIChatMessageResponse,
   RequestHumanResponse,
-  S3UploadCredentialsResponse,
   ChatAttachment,
   ChatAttachmentUploadCredentials,
   ChatAttachmentUploadCredentialsRequest,
   FinalizeChatAttachmentRequest,
+  VoiceTranscription,
 } from '@/types/ai-chat';
+import { voiceFileName } from '@/lib/voice-file-name';
 import type { DestinationSuggestion } from '@/types/destination';
 import type { MemberFreeNightSummary } from '@/types/free-night';
 import type { BenefitsResponse } from '@/types/v2/benefits';
@@ -899,84 +899,24 @@ class ApiClient {
     return response.data;
   }
 
-  // S3 Direct Upload Methods
-  async getS3UploadCredentials(
-    sessionId: string,
-    mediaType: 'image' | 'audio',
-    fileExtension: string,
-  ): Promise<S3UploadCredentialsResponse> {
-    return this.request<S3UploadCredentialsResponse>('/media/get-upload-credentials', {
-      method: 'POST',
-      body: JSON.stringify({
-        session_id: sessionId,
-        media_type: mediaType,
-        file_extension: fileExtension,
-      }),
-    });
-  }
-
-  async uploadToS3(
-    uploadUrl: string,
-    formData: Record<string, string>,
-    file: File,
-  ): Promise<string> {
+  // SMA-896: concierge voice input — one recorded clip -> transcript for the
+  // message box. Multipart, so it bypasses `request()` (which forces JSON).
+  async transcribeVoice(tripId: number, audio: Blob, language?: string): Promise<string> {
     const form = new FormData();
-
-    // Add all form fields from backend first (order matters for S3)
-    Object.entries(formData).forEach(([key, value]) => {
-      form.append(key, value);
-    });
-
-    // Add Content-Type field explicitly (required by S3 policy)
-    // This must match the file's actual MIME type
-    form.append('Content-Type', file.type);
-
-    // Add the file last (required by S3)
-    form.append('file', file);
-
-    console.log('[ApiClient] Uploading to S3:', {
-      uploadUrl,
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-      formFields: Object.keys(formData),
-    });
-
-    const response = await fetch(uploadUrl, {
-      method: 'POST',
-      body: form,
-      // Don't set Content-Type header - browser will set it with boundary
-    });
-
+    form.append('audio', audio, voiceFileName(audio.type));
+    const response = await fetch(
+      `${this.baseUrl}${this.withLanguage(`/ai-chat/trips/${tripId}/transcribe`, language)}`,
+      { method: 'POST', body: form, credentials: 'include' },
+    );
     if (!response.ok) {
-      const text = await response.text().catch(() => 'Upload failed');
-      console.error('[ApiClient] S3 upload failed:', {
-        status: response.status,
-        statusText: response.statusText,
-        responseBody: text,
-      });
-      throw new Error(`S3 upload failed: ${text}`);
+      if (response.status === 401) {
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      }
+      const error: { message?: string } = await response.json().catch(() => ({}));
+      throw new ApiError(error.message ?? '', response.status);
     }
-
-    console.log('[ApiClient] S3 upload successful');
-
-    // Extract the file URL from the Location header or construct it
-    const location = response.headers.get('Location');
-    if (location) {
-      return location;
-    }
-
-    // If no Location header, construct URL from upload URL and key
-    const key = formData['key'];
-    const baseUrl = uploadUrl.split('?')[0];
-    return `${baseUrl}/${key}`;
-  }
-
-  async sendAudioMessage(tripId: number, mediaUrl: string): Promise<SendAIChatMessageResponse> {
-    return this.sendMessage(tripId, {
-      message_type: 'audio' as AIChatMessageType,
-      media_url: mediaUrl,
-    });
+    const body: { data: VoiceTranscription } = await response.json();
+    return body.data.text;
   }
 
   // Wishlist methods
